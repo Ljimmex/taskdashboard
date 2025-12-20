@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 
-const FROM_EMAIL = 'noreply@flowboard.app'
+const FROM_EMAIL = 'noreply@zadano.app'
 
 // Hardcoded Mailtrap credentials (will be overridden by ENV in production)
 const DEFAULT_MAILTRAP_USER = '078d72e0e25160'
@@ -60,13 +60,13 @@ export async function sendOTPEmail({ to, otp, type }: SendOTPEmailOptions): Prom
 function getSubject(type: string): string {
     switch (type) {
         case 'sign-in':
-            return 'FlowBoard - Your Login Code'
+            return 'Zadano.app - Your Login Code'
         case 'email-verification':
-            return 'FlowBoard - Verify Your Email'
+            return 'Zadano.app - Verify Your Email'
         case 'forget-password':
-            return 'FlowBoard - Reset Your Password'
+            return 'Zadano.app - Reset Your Password'
         default:
-            return 'FlowBoard - Your Verification Code'
+            return 'Zadano.app - Your Verification Code'
     }
 }
 
@@ -85,7 +85,7 @@ function getEmailHtml(otp: string, type: string): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
     <meta name="supported-color-schemes" content="light dark">
-    <title>FlowBoard OTP</title>
+    <title>Zadano.app OTP</title>
     <style>
         :root {
             color-scheme: light dark;
@@ -119,8 +119,8 @@ function getEmailHtml(otp: string, type: string): string {
                     
                     <tr>
                         <td align="center" style="padding: 40px 40px 20px 40px;">
-                            <img src="https://ui-avatars.com/api/?name=F+B&background=f59e0b&color=fff&size=64&font-size=0.5&rounded=true" alt="FlowBoard Logo" width="64" height="64" style="display: block; width: 64px; height: 64px; border: 0; border-radius: 14px;">
-                            <h1 style="margin: 20px 0 0 0; color: #ffffff; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">FlowBoard</h1>
+                            <img src="https://ui-avatars.com/api/?name=Z+A&background=f59e0b&color=fff&size=64&font-size=0.5&rounded=true" alt="Zadano.app Logo" width="64" height="64" style="display: block; width: 64px; height: 64px; border: 0; border-radius: 14px;">
+                            <h1 style="margin: 20px 0 0 0; color: #ffffff; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">Zadano.app</h1>
                         </td>
                     </tr>
 
@@ -165,7 +165,7 @@ function getEmailHtml(otp: string, type: string): string {
                     <tr>
                         <td align="center" style="padding-top: 24px;">
                             <p style="margin: 0; color: #4b5563; font-size: 12px;">
-                                &copy; 2024 FlowBoard Inc. Wszelkie prawa zastrzeżone.<br>
+                                &copy; 2024 Zadano.app Inc. Wszelkie prawa zastrzeżone.<br>
                                 <a href="#" style="color: #6b7280; text-decoration: underline;">Pomoc</a> &bull; <a href="#" style="color: #6b7280; text-decoration: underline;">Prywatność</a>
                             </p>
                         </td>

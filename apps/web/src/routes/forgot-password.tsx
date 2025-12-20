@@ -52,7 +52,7 @@ function ForgotPasswordPage() {
                     {/* Logo */}
                     <div className="mb-10">
                         <h1 className="text-3xl font-bold text-white">
-                            <span className="text-amber-500">FlowBoard</span>
+                            <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-8" />
                         </h1>
                         <p className="mt-2 text-gray-400">Zresetuj swoje hasło</p>
                     </div>

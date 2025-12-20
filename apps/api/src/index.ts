@@ -79,8 +79,8 @@ app.doc('/doc', {
     openapi: '3.0.0',
     info: {
         version: '0.1.0',
-        title: 'FlowBoard API',
-        description: 'API documentation for FlowBoard',
+        title: 'Zadano.app API',
+        description: 'API documentation for Zadano.app',
     },
 })
 
@@ -88,7 +88,7 @@ app.doc('/doc', {
 app.get(
     '/reference',
     apiReference({
-        pageTitle: 'FlowBoard API Reference',
+        pageTitle: 'Zadano.app API Reference',
         spec: {
             url: '/doc',
         },

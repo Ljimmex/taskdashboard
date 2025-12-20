@@ -1,0 +1,10 @@
+<svg width="250" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Zadano Logo Full Dark</title>
+  <!-- Symbol -->
+  <g transform="translate(0, 5) scale(0.08)">
+     <path d="M128 128H384L128 384H320L384 320" stroke="#F9A01B" stroke-width="80" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Text -->
+  <text x="48" y="36" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-weight="800" font-size="28" fill="#F8FAFC" letter-spacing="-0.03em">Zadano</text>
+  <text x="159" y="36" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-weight="500" font-size="28" fill="#94A3B8" letter-spacing="-0.02em">.app</text>
+</svg>

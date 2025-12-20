@@ -1,85 +1,200 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useSession, signOut } from '@/lib/auth'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useSession } from '@/lib/auth'
+import {
+    DashboardLayout,
+    TaskCard,
+    AddNewTaskCard,
+    ProjectCard,
+    OverallProgress,
+    ChatSection,
+    TeamActivity,
+    CalendarSection,
+} from '@/components/dashboard'
 
 export const Route = createFileRoute('/_dashboard/dashboard')({
     component: DashboardPage,
 })
+
+// Mock data - replace with real API data later
+const mockTasks = [
+    {
+        id: '1',
+        title: 'Design Meeting',
+        description: 'Development Task Assign for the product Page project, collaboration with the designer.',
+        priority: 'high' as const,
+        assignees: [
+            { id: '1', name: 'Will Loqso' },
+            { id: '2', name: 'Elena Smith' },
+            { id: '3', name: 'Tomas Green' },
+            { id: '4', name: 'Erick Brown' },
+        ],
+        type: 'call' as const,
+    },
+    {
+        id: '2',
+        title: 'Client Meeting',
+        description: 'Updating the current User Interface of header in the picko Designe project.',
+        priority: 'medium' as const,
+        assignees: [
+            { id: '5', name: 'Sarah Johnson' },
+            { id: '6', name: 'Mike Wilson' },
+        ],
+        type: 'call' as const,
+    },
+    {
+        id: '3',
+        title: 'Dribble Shot',
+        description: 'Creating the main UI Assets and Illustration for the upcoming landing page screens.',
+        priority: 'low' as const,
+        assignees: [
+            { id: '7', name: 'Anna Lee' },
+            { id: '8', name: 'Chris Davis' },
+            { id: '9', name: 'Olivia White' },
+        ],
+        type: 'task' as const,
+    },
+]
+
+const mockProjects = [
+    {
+        id: '1',
+        title: 'Startup Web with responsive',
+        icon: '🎨',
+        timeRange: '12:00 PM - 8:30 PM',
+        progress: 78,
+        daysLeft: 6,
+        assignees: [
+            { id: '1', name: 'Will Loqso' },
+            { id: '2', name: 'Sara Hosten' },
+        ],
+    },
+    {
+        id: '2',
+        title: 'Product Design & App Design',
+        icon: '📱',
+        timeRange: '13:00 PM - 9:20 PM',
+        progress: 53,
+        daysLeft: 6,
+        assignees: [
+            { id: '3', name: 'Tomas Green' },
+            { id: '4', name: 'Elena Smith' },
+        ],
+    },
+]
+
+const mockChatContacts = [
+    { id: '1', name: 'Tomas Green', isOnline: true },
+    { id: '2', name: 'Elena Smith', isOnline: true },
+    { id: '3', name: 'Erick Brown', isOnline: false },
+    { id: '4', name: 'Anna Lee', isOnline: true },
+    { id: '5', name: 'Elena White', isOnline: false },
+]
+
+const mockActivities = [
+    {
+        id: '1',
+        user: { name: 'Will Loqso', role: 'Backend Developer' },
+        message: 'How can i buy only the design?',
+        likes: 34,
+        comments: 3,
+        timeAgo: '5min ago',
+    },
+    {
+        id: '2',
+        user: { name: 'Sareh Hosten', role: 'Project Manager' },
+        message: 'I need react version asap!',
+        likes: 14,
+        comments: 3,
+        timeAgo: '1hour ago',
+    },
+    {
+        id: '3',
+        user: { name: 'Will Loqso', role: 'Backend Developer' },
+        message: 'Working on the new API endpoints',
+        likes: 8,
+        comments: 1,
+        timeAgo: '20min ago',
+    },
+]
 
 function DashboardPage() {
     const { data: session, isPending } = useSession()
 
     if (isPending) {
         return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="text-white">Ładowanie...</div>
-            </div>
+            <DashboardLayout>
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-white">Ładowanie...</div>
+                </div>
+            </DashboardLayout>
         )
     }
 
-    const user = session?.user
-
     return (
-        <div className="p-8">
-            <div className="mb-8 flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-                    <p className="text-gray-400">Witaj, {user?.name || user?.email}!</p>
+        <DashboardLayout>
+            <div className="space-y-6">
+                {/* Top Row: Tasks + Overall Progress side by side */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {/* Tasks - takes 2/3 */}
+                    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {mockTasks.map((task) => (
+                            <TaskCard key={task.id} {...task} />
+                        ))}
+                        <AddNewTaskCard onClick={() => console.log('Add new task')} />
+                    </div>
+
+                    {/* Overall Progress - takes 1/3 */}
+                    <div>
+                        <OverallProgress
+                            inProgress={24}
+                            totalProjects={45}
+                            upcoming={12}
+                        />
+                    </div>
                 </div>
-                <Button
-                    variant="outline"
-                    onClick={() => signOut()}
-                    className="border-gray-700 text-gray-300 hover:bg-gray-800"
-                >
-                    Wyloguj się
-                </Button>
+
+                {/* Main Content Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column: Projects + Calendar */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Projects Section */}
+                        <section>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-semibold text-white">Project</h2>
+                                <div className="flex gap-2">
+                                    <button className="px-4 py-1.5 rounded-full bg-amber-500 text-black text-sm font-medium">
+                                        Ongoing
+                                    </button>
+                                    <button className="px-4 py-1.5 rounded-full bg-gray-800 text-gray-400 text-sm font-medium hover:text-white transition-colors">
+                                        Pending
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {mockProjects.map((project) => (
+                                    <ProjectCard
+                                        key={project.id}
+                                        {...project}
+                                        onViewProject={() => console.log('View project', project.id)}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* Calendar Section */}
+                        <CalendarSection />
+                    </div>
+
+                    {/* Right Column: Chat + Activity */}
+                    <div className="space-y-6">
+                        <ChatSection
+                            contacts={mockChatContacts}
+                            onSeeAll={() => console.log('See all chats')}
+                        />
+                        <TeamActivity activities={mockActivities} />
+                    </div>
+                </div>
             </div>
-
-            <div className="grid gap-6 md:grid-cols-3">
-                <Card className="border-gray-800 bg-[hsl(222,47%,9%)]">
-                    <CardHeader>
-                        <CardTitle className="text-white">📋 Zadania</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-4xl font-bold text-amber-500">0</p>
-                        <p className="text-gray-400">aktywnych zadań</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-gray-800 bg-[hsl(222,47%,9%)]">
-                    <CardHeader>
-                        <CardTitle className="text-white">👥 Zespoły</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-4xl font-bold text-amber-500">0</p>
-                        <p className="text-gray-400">zespołów</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-gray-800 bg-[hsl(222,47%,9%)]">
-                    <CardHeader>
-                        <CardTitle className="text-white">📁 Projekty</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-4xl font-bold text-amber-500">0</p>
-                        <p className="text-gray-400">projektów</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="mt-8">
-                <Card className="border-gray-800 bg-[hsl(222,47%,9%)]">
-                    <CardHeader>
-                        <CardTitle className="text-white">🚧 W budowie</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-gray-400">
-                            Dashboard jest w trakcie budowy. Funkcje zostaną dodane w kolejnych sprintach.
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+        </DashboardLayout>
     )
 }

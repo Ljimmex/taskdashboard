@@ -66,6 +66,8 @@ export const auth = betterAuth({
         'http://localhost:5173',
         'http://localhost:3000',
         'https://flowboard.bartlomiejorianski.workers.dev',
+        'https://taskdashboard.bartlomiejorianski.workers.dev',
+        'https://taskdashboard-api.bartlomiejorianski.workers.dev',
     ],
 
     // Plugins

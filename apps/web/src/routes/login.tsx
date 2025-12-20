@@ -40,11 +40,16 @@ function LoginPage() {
         }
     }
 
+    const getCallbackURL = () => {
+        const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'
+        return `${origin}/dashboard`
+    }
+
     const handleOAuthLogin = async (provider: 'google' | 'github' | 'slack') => {
         try {
             await signIn.social({
                 provider,
-                callbackURL: 'http://localhost:5173/dashboard',
+                callbackURL: getCallbackURL(),
             })
         } catch (err) {
             setError(`Błąd logowania przez ${provider}`)
@@ -59,7 +64,7 @@ function LoginPage() {
                     {/* Logo */}
                     <div className="mb-10">
                         <h1 className="text-3xl font-bold text-white">
-                            Welcome To <span className="text-amber-500">FlowBoard</span>
+                            <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-8" />
                         </h1>
                         <p className="mt-2 text-gray-400">Zaloguj się do swojego konta</p>
                     </div>
