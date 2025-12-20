@@ -1,0 +1,35 @@
+{
+  "name": "taskdashboard",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=web",
+    "dev:api": "turbo run dev --filter=api",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:generate": "turbo run db:generate --filter=api",
+    "db:migrate": "turbo run db:migrate --filter=api",
+    "db:studio": "turbo run db:studio --filter=api",
+    "deploy": "turbo run deploy",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "bun@1.1.38",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
