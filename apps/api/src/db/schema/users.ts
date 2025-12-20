@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, varchar, text, timestamp, boolean, pgEnum } from 'drizzle-orm/pg-core'
 
 // =============================================================================
 // ENUMS
@@ -8,15 +8,21 @@ export const userRoleEnum = pgEnum('user_role', ['admin', 'manager', 'member'])
 export const userStatusEnum = pgEnum('user_status', ['active', 'inactive', 'pending'])
 
 // =============================================================================
-// USERS TABLE
+// USERS TABLE (Compatible with Better Auth)
 // =============================================================================
 
 export const users = pgTable('users', {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: text('id').primaryKey(), // Better Auth generates string IDs
     email: varchar('email', { length: 255 }).notNull().unique(),
+    emailVerified: boolean('email_verified').default(false).notNull(),
+    name: varchar('name', { length: 255 }),
+    image: text('image'),
+    // Custom fields
     firstName: varchar('first_name', { length: 100 }),
     lastName: varchar('last_name', { length: 100 }),
-    avatarUrl: text('avatar_url'),
+    birthDate: timestamp('birth_date'),
+    gender: varchar('gender', { length: 50 }),
+    phone: varchar('phone', { length: 50 }),
     role: userRoleEnum('role').default('member').notNull(),
     status: userStatusEnum('status').default('pending').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

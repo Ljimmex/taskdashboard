@@ -1,4 +1,9 @@
-import { Hono } from 'hono'
+// Load environment variables FIRST, before any other imports
+// This is critical for ES module loading order
+import './loadEnv'
+
+import { OpenAPIHono } from '@hono/zod-openapi'
+import { apiReference } from '@scalar/hono-api-reference'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
@@ -11,7 +16,7 @@ import { tasksRoutes } from './modules/tasks/routes'
 import { teamsRoutes } from './modules/teams/routes'
 
 // Create Hono app
-const app = new Hono()
+const app = new OpenAPIHono()
 
 // =============================================================================
 // MIDDLEWARE
@@ -58,15 +63,42 @@ app.get('/', (c) => {
     return c.json({
         name: 'Task Dashboard API',
         version: '0.1.0',
-        docs: '/docs',
+        docs: '/reference',
+        openapi: '/doc',
     })
 })
 
-// Mount routes
-app.route('/auth', authRoutes)
-app.route('/users', usersRoutes)
-app.route('/tasks', tasksRoutes)
-app.route('/teams', teamsRoutes)
+// Mount routes under /api prefix
+app.route('/api/auth', authRoutes)
+app.route('/api/users', usersRoutes)
+// app.route('/api/tasks', tasksRoutes)
+// app.route('/api/teams', teamsRoutes)
+
+// OpenAPI Spec (must be registered after routes to include them)
+app.doc('/doc', {
+    openapi: '3.0.0',
+    info: {
+        version: '0.1.0',
+        title: 'FlowBoard API',
+        description: 'API documentation for FlowBoard',
+    },
+})
+
+// Scalar API Reference
+app.get(
+    '/reference',
+    apiReference({
+        pageTitle: 'FlowBoard API Reference',
+        spec: {
+            url: '/doc',
+        },
+        theme: 'deepSpace',
+        defaultHttpClient: {
+            targetKey: 'js',
+            clientKey: 'fetch',
+        },
+    } as any),
+)
 
 // =============================================================================
 // ERROR HANDLING

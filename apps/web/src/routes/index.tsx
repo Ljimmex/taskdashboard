@@ -13,7 +13,7 @@ function HomePage() {
                 <nav className="flex items-center justify-between py-6">
                     <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-lg bg-amber-500" />
-                        <span className="text-xl font-bold">TaskDashboard</span>
+                        <span className="text-xl font-bold">FlowBoard</span>
                     </div>
                     <div className="flex items-center gap-4">
                         <Link
@@ -42,7 +42,7 @@ function HomePage() {
                         <span className="gradient-text">szybciej niż kiedykolwiek</span>
                     </h1>
                     <p className="mb-8 max-w-2xl text-lg text-gray-400">
-                        Task Management Dashboard to nowoczesna platforma do zarządzania zadaniami
+                        FlowBoard to nowoczesna platforma do zarządzania zadaniami
                         dla zespołów. Kanban board, real-time chat, kalendarz i wiele więcej.
                     </p>
                     <div className="flex gap-4">
@@ -102,7 +102,7 @@ function HomePage() {
 
                 {/* Footer */}
                 <footer className="border-t border-gray-800 py-8 text-center text-gray-500">
-                    <p>© 2024 TaskDashboard. Zbudowane z ❤️ używając Vite + React + Hono</p>
+                    <p>© 2024 FlowBoard. Zbudowane z ❤️ używając Vite + React + Hono</p>
                 </footer>
             </div>
         </div>

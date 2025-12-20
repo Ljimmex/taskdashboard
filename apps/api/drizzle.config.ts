@@ -2,7 +2,9 @@ import { defineConfig } from 'drizzle-kit'
 import { config } from 'dotenv'
 import { resolve } from 'path'
 
-// Load .env.local from root
+// Load .env from current dir first (priority)
+config({ path: resolve(__dirname, '.env') })
+// Load .env.local from root (fallback)
 config({ path: resolve(__dirname, '../../.env.local') })
 
 export default defineConfig({
