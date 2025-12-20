@@ -1,0 +1,7 @@
+{
+    "name": "taskdashboard-web",
+    "compatibility_date": "2024-12-20",
+    "assets": {
+        "directory": "./apps/web/dist"
+    }
+}

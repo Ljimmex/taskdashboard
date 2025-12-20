@@ -1,0 +1,21 @@
+name = "taskdashboard-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+
+# For development
+[dev]
+port = 3000
+local_protocol = "http"
+
+# Build settings
+[build]
+command = "bun run build"
+
+# Routes (optional - configure in Cloudflare dashboard)
+# routes = [
+#   { pattern = "api.yourdomain.com/*", zone_name = "yourdomain.com" }
+# ]
