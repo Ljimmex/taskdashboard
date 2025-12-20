@@ -118,7 +118,7 @@ const mockActivities = [
 ]
 
 function DashboardPage() {
-    const { data: session, isPending } = useSession()
+    const { isPending } = useSession()
 
     if (isPending) {
         return (
