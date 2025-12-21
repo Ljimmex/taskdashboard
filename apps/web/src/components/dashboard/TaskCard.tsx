@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 interface TaskCardProps {
     id: string
@@ -19,6 +19,17 @@ export function TaskCard({
     type = 'task'
 }: TaskCardProps) {
     const [showMenu, setShowMenu] = useState(false)
+    const menuRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setShowMenu(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     const priorityStyles = {
         high: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -33,98 +44,100 @@ export function TaskCard({
     }
 
     return (
-        <div className="rounded-2xl bg-[#12121a] p-4 relative group h-[140px] flex flex-col">
+        <div className="rounded-2xl bg-[#12121a] p-4 relative h-[140px] flex flex-col">
             {/* Menu Button - always visible in top right */}
-            <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="absolute top-4 right-4 w-6 h-6 rounded flex items-center justify-center text-gray-600 hover:text-white transition-all"
-            >
-                ⋮
-            </button>
+            <div ref={menuRef}>
+                <button
+                    onClick={() => setShowMenu(!showMenu)}
+                    className="absolute top-4 right-4 w-6 h-6 rounded flex items-center justify-center text-gray-600 hover:text-white transition-all"
+                >
+                    ⋮
+                </button>
 
-            {/* Dropdown Menu with SVG icons */}
-            {showMenu && (
-                <div className="absolute top-10 right-4 w-36 bg-[#1a1a24] border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-10">
-                    <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
-                        <div className="w-4 h-4 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                <path d="M22.5 4.5L27.5 9.5L12 25L7 20L22.5 4.5Z" fill="#545454" />
-                                <path d="M12 25L7 20L4 28L12 25Z" fill="#9E9E9E" />
-                                <rect x="6" y="24" width="4" height="4" rx="1" fill="#545454" />
-                            </svg>
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                <path d="M22.5 4.5L27.5 9.5L12 25L7 20L22.5 4.5Z" fill="#7A664E" />
-                                <path d="M12 25L7 20L4 28L12 25Z" fill="#F2CE88" />
-                                <rect x="6" y="24" width="4" height="4" rx="1" fill="#7A664E" />
-                            </svg>
-                        </div>
-                        Edit
-                    </button>
-                    <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
-                        <div className="w-4 h-4 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                <rect x="10" y="10" width="16" height="16" rx="3" fill="#9E9E9E" />
-                                <path d="M8 22V10C8 7.79086 9.79086 6 12 6H22" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
-                            </svg>
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                <rect x="10" y="10" width="16" height="16" rx="3" fill="#F2CE88" />
-                                <path d="M8 22V10C8 7.79086 9.79086 6 12 6H22" stroke="#7A664E" strokeWidth="4" strokeLinecap="round" />
-                            </svg>
-                        </div>
-                        Duplicate
-                    </button>
-                    <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
-                        <div className="w-4 h-4 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                <rect x="4" y="12" width="24" height="16" rx="3" fill="#545454" />
-                                <rect x="6" y="8" width="20" height="4" rx="1" fill="#9E9E9E" />
-                                <rect x="12" y="16" width="8" height="4" rx="1" fill="#9E9E9E" />
-                            </svg>
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                <rect x="4" y="12" width="24" height="16" rx="3" fill="#7A664E" />
-                                <rect x="6" y="8" width="20" height="4" rx="1" fill="#F2CE88" />
-                                <rect x="12" y="16" width="8" height="4" rx="1" fill="#F2CE88" />
-                            </svg>
-                        </div>
-                        Archive
-                    </button>
-                    <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
-                        <div className="w-4 h-4 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                <circle cx="16" cy="16" r="12" fill="#545454" />
-                                <rect x="14.5" y="14" width="3" height="8" rx="1.5" fill="#9E9E9E" />
-                                <circle cx="16" cy="10" r="2" fill="#9E9E9E" />
-                            </svg>
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                <circle cx="16" cy="16" r="12" fill="#7A664E" />
-                                <rect x="14.5" y="14" width="3" height="8" rx="1.5" fill="#F2CE88" />
-                                <circle cx="16" cy="10" r="2" fill="#F2CE88" />
-                            </svg>
-                        </div>
-                        Info
-                    </button>
-                    <div className="border-t border-gray-700" />
-                    <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-red-500/10 hover:text-red-400 transition-colors group">
-                        <div className="w-4 h-4 flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                <path d="M6 10V24C6 26.2091 7.79086 28 10 28H22C24.2091 28 26 26.2091 26 24V10H6Z" fill="#545454" />
-                                <path d="M12 16V22" stroke="#9E9E9E" strokeWidth="3" strokeLinecap="round" />
-                                <path d="M20 16V22" stroke="#9E9E9E" strokeWidth="3" strokeLinecap="round" />
-                                <rect x="4" y="6" width="24" height="4" rx="2" fill="#9E9E9E" />
-                                <rect x="13" y="4" width="6" height="2" rx="1" fill="#9E9E9E" />
-                            </svg>
-                            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                <path d="M6 10V24C6 26.2091 7.79086 28 10 28H22C24.2091 28 26 26.2091 26 24V10H6Z" fill="#7A664E" />
-                                <path d="M12 16V22" stroke="#F2CE88" strokeWidth="3" strokeLinecap="round" />
-                                <path d="M20 16V22" stroke="#F2CE88" strokeWidth="3" strokeLinecap="round" />
-                                <rect x="4" y="6" width="24" height="4" rx="2" fill="#F2CE88" />
-                                <rect x="13" y="4" width="6" height="2" rx="1" fill="#F2CE88" />
-                            </svg>
-                        </div>
-                        Delete
-                    </button>
-                </div>
-            )}
+                {/* Dropdown Menu with SVG icons */}
+                {showMenu && (
+                    <div className="absolute top-10 right-4 w-36 bg-[#1a1a24] rounded-xl shadow-2xl overflow-hidden z-10 p-2 space-y-1">
+                        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                            <div className="w-4 h-4 flex items-center justify-center">
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
+                                    <path d="M22.5 4.5L27.5 9.5L12 25L7 20L22.5 4.5Z" fill="#545454" />
+                                    <path d="M12 25L7 20L4 28L12 25Z" fill="#9E9E9E" />
+                                    <rect x="6" y="24" width="4" height="4" rx="1" fill="#545454" />
+                                </svg>
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover/item:block">
+                                    <path d="M22.5 4.5L27.5 9.5L12 25L7 20L22.5 4.5Z" fill="#7A664E" />
+                                    <path d="M12 25L7 20L4 28L12 25Z" fill="#F2CE88" />
+                                    <rect x="6" y="24" width="4" height="4" rx="1" fill="#7A664E" />
+                                </svg>
+                            </div>
+                            Edit
+                        </button>
+                        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                            <div className="w-4 h-4 flex items-center justify-center">
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
+                                    <rect x="10" y="10" width="16" height="16" rx="3" fill="#9E9E9E" />
+                                    <path d="M8 22V10C8 7.79086 9.79086 6 12 6H22" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
+                                </svg>
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover/item:block">
+                                    <rect x="10" y="10" width="16" height="16" rx="3" fill="#F2CE88" />
+                                    <path d="M8 22V10C8 7.79086 9.79086 6 12 6H22" stroke="#7A664E" strokeWidth="4" strokeLinecap="round" />
+                                </svg>
+                            </div>
+                            Duplicate
+                        </button>
+                        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                            <div className="w-4 h-4 flex items-center justify-center">
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
+                                    <rect x="4" y="12" width="24" height="16" rx="3" fill="#545454" />
+                                    <rect x="6" y="8" width="20" height="4" rx="1" fill="#9E9E9E" />
+                                    <rect x="12" y="16" width="8" height="4" rx="1" fill="#9E9E9E" />
+                                </svg>
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover/item:block">
+                                    <rect x="4" y="12" width="24" height="16" rx="3" fill="#7A664E" />
+                                    <rect x="6" y="8" width="20" height="4" rx="1" fill="#F2CE88" />
+                                    <rect x="12" y="16" width="8" height="4" rx="1" fill="#F2CE88" />
+                                </svg>
+                            </div>
+                            Archive
+                        </button>
+                        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                            <div className="w-4 h-4 flex items-center justify-center">
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
+                                    <circle cx="16" cy="16" r="12" fill="#545454" />
+                                    <rect x="14.5" y="14" width="3" height="8" rx="1.5" fill="#9E9E9E" />
+                                    <circle cx="16" cy="10" r="2" fill="#9E9E9E" />
+                                </svg>
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover/item:block">
+                                    <circle cx="16" cy="16" r="12" fill="#7A664E" />
+                                    <rect x="14.5" y="14" width="3" height="8" rx="1.5" fill="#F2CE88" />
+                                    <circle cx="16" cy="10" r="2" fill="#F2CE88" />
+                                </svg>
+                            </div>
+                            Info
+                        </button>
+
+                        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                            <div className="w-4 h-4 flex items-center justify-center">
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
+                                    <path d="M6 10V24C6 26.2091 7.79086 28 10 28H22C24.2091 28 26 26.2091 26 24V10H6Z" fill="#545454" />
+                                    <path d="M12 16V22" stroke="#9E9E9E" strokeWidth="3" strokeLinecap="round" />
+                                    <path d="M20 16V22" stroke="#9E9E9E" strokeWidth="3" strokeLinecap="round" />
+                                    <rect x="4" y="6" width="24" height="4" rx="2" fill="#9E9E9E" />
+                                    <rect x="13" y="4" width="6" height="2" rx="1" fill="#9E9E9E" />
+                                </svg>
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="hidden group-hover/item:block">
+                                    <path d="M6 10V24C6 26.2091 7.79086 28 10 28H22C24.2091 28 26 26.2091 26 24V10H6Z" fill="#7A664E" />
+                                    <path d="M12 16V22" stroke="#F2CE88" strokeWidth="3" strokeLinecap="round" />
+                                    <path d="M20 16V22" stroke="#F2CE88" strokeWidth="3" strokeLinecap="round" />
+                                    <rect x="4" y="6" width="24" height="4" rx="2" fill="#F2CE88" />
+                                    <rect x="13" y="4" width="6" height="2" rx="1" fill="#F2CE88" />
+                                </svg>
+                            </div>
+                            Delete
+                        </button>
+                    </div>
+                )}
+            </div>
 
             {/* Header: Title + Badge INLINE */}
             <div className="flex items-center gap-2 mb-3 pr-8">
@@ -165,38 +178,38 @@ export function TaskCard({
                 {/* Action Icons with SVG */}
                 <div className="flex items-center gap-2">
                     {type === 'call' && (
-                        <button className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors group">
+                        <button className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors group/btn">
                             {/* Video conference icon */}
-                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
+                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="group-hover/btn:hidden">
                                 <rect x="4" y="8" width="18" height="16" rx="3" fill="#545454" />
                                 <path d="M22 16L28 11V21L22 16Z" fill="#9E9E9E" />
                                 <circle cx="13" cy="16" r="3" fill="#9E9E9E" />
                             </svg>
-                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
+                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="hidden group-hover/btn:block">
                                 <rect x="4" y="8" width="18" height="16" rx="3" fill="#7A664E" />
                                 <path d="M22 16L28 11V21L22 16Z" fill="#F2CE88" />
                                 <circle cx="13" cy="16" r="3" fill="#F2CE88" />
                             </svg>
                         </button>
                     )}
-                    <button className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors group">
+                    <button className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors group/btn">
                         {/* Normal conversation / phone icon */}
-                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
+                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="group-hover/btn:hidden">
                             <path d="M24.6419 20.4751C23.414 20.4751 22.2198 20.2829 21.0893 19.9096C20.3949 19.6723 19.5256 19.9177 19.0607 20.3976L16.7584 23.2765C13.7785 21.8552 10.9994 19.0761 9.56282 16.0723L12.371 13.7877C12.884 13.2975 13.1346 12.381 12.8973 11.6866C12.524 10.556 12.3319 9.36182 12.3319 8.13396C12.3319 7.50413 11.8189 7 11.189 7H7.14303C6.5132 7 6 7.50413 6 8.13396C6 18.3927 14.4302 26.8229 24.689 26.8229C25.3189 26.8229 25.8321 26.3188 25.8321 25.6889V21.6181C25.8321 20.9883 25.3189 20.4751 24.689 20.4751H24.6419Z" fill="#545454" />
                             <rect x="19" y="7" width="8" height="8" rx="4" fill="#9E9E9E" />
                         </svg>
-                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
+                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="hidden group-hover/btn:block">
                             <path d="M24.6419 20.4751C23.414 20.4751 22.2198 20.2829 21.0893 19.9096C20.3949 19.6723 19.5256 19.9177 19.0607 20.3976L16.7584 23.2765C13.7785 21.8552 10.9994 19.0761 9.56282 16.0723L12.371 13.7877C12.884 13.2975 13.1346 12.381 12.8973 11.6866C12.524 10.556 12.3319 9.36182 12.3319 8.13396C12.3319 7.50413 11.8189 7 11.189 7H7.14303C6.5132 7 6 7.50413 6 8.13396C6 18.3927 14.4302 26.8229 24.689 26.8229C25.3189 26.8229 25.8321 26.3188 25.8321 25.6889V21.6181C25.8321 20.9883 25.3189 20.4751 24.689 20.4751H24.6419Z" fill="#7A664E" />
                             <rect x="19" y="7" width="8" height="8" rx="4" fill="#F2CE88" />
                         </svg>
                     </button>
-                    <button className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors group">
+                    <button className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center hover:bg-gray-700 transition-colors group/btn">
                         {/* Chat icon */}
-                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
+                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="group-hover/btn:hidden">
                             <path d="M10 6C6.68629 6 4 8.68629 4 12V24L9 20H18C21.3137 20 24 17.3137 24 14V12C24 8.68629 21.3137 6 18 6H10Z" fill="#545454" />
                             <path d="M28 8H20C22.2091 8 24 9.79086 24 12V14C24 16.2091 22.2091 18 20 18H14C14 21.3137 16.6863 24 20 24H25L28 27V8Z" fill="#9E9E9E" />
                         </svg>
-                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
+                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="hidden group-hover/btn:block">
                             <path d="M10 6C6.68629 6 4 8.68629 4 12V24L9 20H18C21.3137 20 24 17.3137 24 14V12C24 8.68629 21.3137 6 18 6H10Z" fill="#7A664E" />
                             <path d="M28 8H20C22.2091 8 24 9.79086 24 12V14C24 16.2091 22.2091 18 20 18H14C14 21.3137 16.6863 24 20 24H25L28 27V8Z" fill="#F2CE88" />
                         </svg>

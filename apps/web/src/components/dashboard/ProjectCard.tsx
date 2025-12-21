@@ -19,7 +19,7 @@ export function ProjectCard({
     onViewProject,
 }: ProjectCardProps) {
     return (
-        <div className="rounded-2xl bg-[#12121a] p-5">
+        <div className="rounded-2xl bg-[#1a1a24] p-5 relative">
             {/* Header with icon and title */}
             <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-lg">
@@ -27,8 +27,13 @@ export function ProjectCard({
                 </div>
                 <div className="flex-1">
                     <h3 className="font-medium text-white text-sm mb-0.5">{title}</h3>
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                        <span className="w-1 h-1 rounded-full bg-gray-600" />
+                    <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="16" r="12" fill="#9E9E9E" />
+                            <path d="M16 16V10" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
+                            <path d="M16 16L20 20" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
+                            <circle cx="16" cy="16" r="2" fill="#545454" />
+                        </svg>
                         {timeRange}
                     </p>
                 </div>
@@ -55,7 +60,7 @@ export function ProjectCard({
                         {assignees.slice(0, 3).map((assignee, i) => (
                             <div
                                 key={assignee.id}
-                                className="w-6 h-6 rounded-full border-2 border-[#12121a] bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black text-[10px] font-bold"
+                                className="w-6 h-6 rounded-full border-2 border-[#1a1a24] bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black text-[10px] font-bold"
                                 style={{ zIndex: assignees.length - i }}
                                 title={assignee.name}
                             >
@@ -72,7 +77,7 @@ export function ProjectCard({
 
                 <button
                     onClick={onViewProject}
-                    className="px-3 py-1.5 rounded-lg border border-gray-700 text-xs text-gray-400 hover:bg-gray-800 hover:text-white transition-all"
+                    className="px-3 py-1.5 rounded-lg bg-[#252530] text-xs text-gray-300 hover:bg-[#2f2f3d] hover:text-white transition-all shadow-md group"
                 >
                     View project
                 </button>

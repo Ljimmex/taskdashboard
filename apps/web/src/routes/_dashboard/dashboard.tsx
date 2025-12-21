@@ -157,19 +157,22 @@ function DashboardPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column: Projects + Calendar */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Projects Section */}
-                        <section>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-semibold text-white">Project</h2>
-                                <div className="flex gap-2">
-                                    <button className="px-4 py-1.5 rounded-full bg-amber-500 text-black text-sm font-medium">
+                        {/* Projects Section - Unified Container */}
+                        <section className="rounded-2xl bg-[#12121a] p-5">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-lg font-semibold text-white">Project</h2>
+
+                                {/* Unified Switch Toggle */}
+                                <div className="flex bg-[#0a0a0f] p-1 rounded-full">
+                                    <button className="px-4 py-1.5 rounded-full bg-[#F2CE88] text-[#0a0a0f] text-xs font-bold transition-all shadow-lg shadow-amber-500/10">
                                         Ongoing
                                     </button>
-                                    <button className="px-4 py-1.5 rounded-full bg-gray-800 text-gray-400 text-sm font-medium hover:text-white transition-colors">
+                                    <button className="px-4 py-1.5 rounded-full text-gray-500 text-xs font-medium hover:text-white transition-all">
                                         Pending
                                     </button>
                                 </div>
                             </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {mockProjects.map((project) => (
                                     <ProjectCard

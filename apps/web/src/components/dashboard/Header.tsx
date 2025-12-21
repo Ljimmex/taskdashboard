@@ -1,10 +1,28 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSession, signOut } from '@/lib/auth'
+import { DropdownArrowUp, DropdownArrowDown } from './icons'
 
 export function Header() {
     const { data: session } = useSession()
     const [showUserMenu, setShowUserMenu] = useState(false)
     const [showNotifications, setShowNotifications] = useState(false)
+
+    // Refs for click outside
+    const userMenuRef = useRef<HTMLDivElement>(null)
+    const notifRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+                setShowUserMenu(false)
+            }
+            if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+                setShowNotifications(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     const user = session?.user
 
@@ -53,7 +71,7 @@ export function Header() {
                 </button>
 
                 {/* Notifications with SVG icon */}
-                <div className="relative">
+                <div className="relative" ref={notifRef}>
                     <button
                         onClick={() => setShowNotifications(!showNotifications)}
                         className="relative p-2 rounded-lg text-gray-400 hover:bg-gray-800 transition-colors group"
@@ -73,7 +91,7 @@ export function Header() {
                         <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full" />
                     </button>
                     {showNotifications && (
-                        <div className="absolute right-0 top-12 w-72 bg-[#12121a] border border-gray-800 rounded-xl shadow-2xl p-4 z-50">
+                        <div className="absolute right-0 top-12 w-72 bg-[#12121a] rounded-xl shadow-2xl p-4 z-50">
                             <h3 className="font-medium text-white mb-3">Notifications</h3>
                             <div className="space-y-3">
                                 <div className="flex gap-3 p-2 rounded-lg hover:bg-gray-800/50">
@@ -96,10 +114,10 @@ export function Header() {
                 </div>
 
                 {/* User Profile */}
-                <div className="relative">
+                <div className="relative" ref={userMenuRef}>
                     <button
                         onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-800 transition-colors"
+                        className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-800 transition-colors group"
                     >
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black font-bold">
                             {user?.name?.charAt(0) || user?.email?.charAt(0) || '?'}
@@ -108,12 +126,17 @@ export function Header() {
                             <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
                             <p className="text-xs text-gray-500">Project Manager</p>
                         </div>
-                        <span className="text-gray-500">▼</span>
+                        {/* Arrow icon - changes direction based on menu state */}
+                        {showUserMenu ? (
+                            <DropdownArrowUp isHovered={false} />
+                        ) : (
+                            <DropdownArrowDown isHovered={false} />
+                        )}
                     </button>
 
                     {showUserMenu && (
-                        <div className="absolute right-0 top-14 w-56 bg-[#12121a] border border-gray-800 rounded-xl shadow-2xl overflow-hidden z-50">
-                            <div className="p-2">
+                        <div className="absolute right-0 top-14 w-56 bg-[#12121a] rounded-xl shadow-2xl overflow-hidden z-50">
+                            <div className="p-2 space-y-1">
                                 <a href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
                                     {/* My Profile icon */}
                                     <div className="w-5 h-5 flex items-center justify-center">
@@ -182,13 +205,12 @@ export function Header() {
                                     </div>
                                     <span>Settings</span>
                                 </a>
-                            </div>
-                            <div className="border-t border-gray-800 p-2">
+
                                 <button
                                     onClick={() => signOut()}
-                                    className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg text-gray-300 hover:bg-red-500/10 hover:text-red-400 transition-colors group"
+                                    className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group"
                                 >
-                                    {/* Logout icon from Sidebar */}
+                                    {/* Logout icon */}
                                     <div className="w-5 h-5 flex items-center justify-center">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
                                             <path d="M12 8H8C5.79086 8 4 9.79086 4 12V20C4 22.2091 5.79086 24 8 24H12" stroke="#545454" strokeWidth="3" strokeLinecap="round" />

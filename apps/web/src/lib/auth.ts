@@ -3,7 +3,7 @@ import { emailOTPClient } from 'better-auth/client/plugins'
 
 // Better Auth client for frontend
 export const authClient = createAuthClient({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+    baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3000' : window.location.origin),
     plugins: [
         emailOTPClient(),
     ],

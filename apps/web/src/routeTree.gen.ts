@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardTasksDemoRouteImport } from './routes/_dashboard/tasks-demo'
 import { Route as DashboardDashboardRouteImport } from './routes/_dashboard/dashboard'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -46,6 +47,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardTasksDemoRoute = DashboardTasksDemoRouteImport.update({
+  id: '/tasks-demo',
+  path: '/tasks-demo',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardDashboardRoute = DashboardDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof DashboardDashboardRoute
+  '/tasks-demo': typeof DashboardTasksDemoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof DashboardDashboardRoute
+  '/tasks-demo': typeof DashboardTasksDemoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_dashboard/dashboard': typeof DashboardDashboardRoute
+  '/_dashboard/tasks-demo': typeof DashboardTasksDemoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/dashboard'
+    | '/tasks-demo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/dashboard'
+    | '/tasks-demo'
   id:
     | '__root__'
     | '/'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/_dashboard/dashboard'
+    | '/_dashboard/tasks-demo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -159,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard/tasks-demo': {
+      id: '/_dashboard/tasks-demo'
+      path: '/tasks-demo'
+      fullPath: '/tasks-demo'
+      preLoaderRoute: typeof DashboardTasksDemoRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/dashboard': {
       id: '/_dashboard/dashboard'
       path: '/dashboard'
@@ -171,10 +190,12 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardDashboardRoute: typeof DashboardDashboardRoute
+  DashboardTasksDemoRoute: typeof DashboardTasksDemoRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardDashboardRoute: DashboardDashboardRoute,
+  DashboardTasksDemoRoute: DashboardTasksDemoRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

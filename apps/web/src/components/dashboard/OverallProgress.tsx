@@ -1,50 +1,11 @@
 import { useState } from 'react'
+import { ChecklistIcon, HistoryIcon, FoldersIcon, CalendarSmallIcon } from './icons'
 
 interface OverallProgressProps {
     inProgress?: number
     totalProjects?: number
     upcoming?: number
 }
-
-// SVG Icons for stats
-const ChecklistIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-        <rect x="4" y="4" width="24" height="24" rx="3" fill="#7A664E" />
-        <path d="M9 10.5L11 12.5L15 8.5" stroke="#F2CE88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M9 16.5L11 18.5L15 14.5" stroke="#F2CE88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M9 22.5L11 24.5L15 20.5" stroke="#F2CE88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <rect x="18" y="10" width="8" height="2" rx="1" fill="#F2CE88" />
-        <rect x="18" y="16" width="8" height="2" rx="1" fill="#F2CE88" />
-        <rect x="18" y="22" width="6" height="2" rx="1" fill="#F2CE88" />
-    </svg>
-)
-
-const HistoryIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-        <path d="M16 4C9.37258 4 4 9.37258 4 16C4 22.6274 9.37258 28 16 28C22.6274 28 28 22.6274 28 16" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
-        <path d="M28 10V16H22" stroke="#545454" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="16" cy="16" r="2" fill="#9E9E9E" />
-        <path d="M16 16L16 10" stroke="#9E9E9E" strokeWidth="3" strokeLinecap="round" />
-        <path d="M16 16L20 20" stroke="#9E9E9E" strokeWidth="3" strokeLinecap="round" />
-    </svg>
-)
-
-const FoldersIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-        <path d="M4 8C4 6.89543 4.89543 6 6 6H12L14 8H20C21.1046 8 22 8.89543 22 10V22C22 23.1046 21.1046 24 20 24H6C4.89543 24 4 23.1046 4 22V8Z" fill="#545454" />
-        <path d="M8 14C8 12.8954 8.89543 12 10 12H16L18 14H26C27.1046 14 28 14.8954 28 16V26C28 27.1046 27.1046 28 26 28H10C8.89543 28 8 27.1046 8 26V14Z" fill="#545454" />
-        <path d="M28 22L14 28L18 22L14 16L28 22Z" fill="#9E9E9E" />
-    </svg>
-)
-
-const CalendarSmallIcon = () => (
-    <svg width="12" height="12" viewBox="0 0 32 32" fill="none">
-        <path d="M6 10C6 7.79086 7.79086 6 10 6H22C24.2091 6 26 7.79086 26 10V24C26 26.2091 24.2091 28 22 28H10C7.79086 28 6 26.2091 6 24V10Z" fill="#545454" />
-        <path d="M6 12H26" stroke="#9E9E9E" strokeWidth="3" />
-        <path d="M11 4V8" stroke="#9E9E9E" strokeWidth="3" strokeLinecap="round" />
-        <path d="M21 4V8" stroke="#9E9E9E" strokeWidth="3" strokeLinecap="round" />
-    </svg>
-)
 
 // Chart data points - more points for smoother curve
 const chartData = [5, 8, 6, 12, 10, 15, 13, 18, 14, 20, 17, 22, 19, 25]
