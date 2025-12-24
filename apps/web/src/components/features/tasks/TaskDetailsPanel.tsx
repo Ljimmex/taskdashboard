@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { usePanelStore } from '../../../lib/panelStore'
 import { StatusBadge } from './StatusBadge'
 import type { Label } from '../labels/LabelBadge'
 import { LabelPicker } from '../labels/LabelPicker'
@@ -17,16 +18,10 @@ import { CommentInput } from '../comments/CommentInput'
 import { ActivityFeed, type Activity } from './ActivityFeed'
 import type { Comment } from '../comments/CommentList'
 import type { TaskCardProps } from './TaskCard'
+import { SubtaskList, type Subtask } from './SubtaskList'
+import { AssigneePicker, type Assignee } from './AssigneePicker'
 
-// Shared Types are imported from components
-interface Subtask {
-    id: string
-    title: string
-    description?: string
-    status: string
-    priority: string
-    completed?: boolean // keeping for transition, but we'll use status
-}
+// Subtask type is imported from SubtaskList
 
 
 interface SharedFile {
@@ -45,6 +40,7 @@ interface TaskDetailsPanelProps {
     comments?: Comment[]
     sharedFiles?: SharedFile[]
     onSubtaskToggle?: (subtaskId: string) => void
+    onSubtasksChange?: (subtasks: Subtask[]) => void
     onAddComment?: (content: string) => void
     onAddSubtask?: (title: string) => void
     activities?: Activity[]
@@ -171,90 +167,21 @@ const TabButton = ({
 // Priority Badge
 const PriorityBadge = ({ priority }: { priority: string }) => {
     const config: Record<string, { label: string; color: string; bg: string }> = {
-        urgent: { label: 'Urgent', color: 'text-red-400', bg: 'bg-red-500/20' },
-        high: { label: 'High', color: 'text-orange-400', bg: 'bg-orange-500/20' },
-        medium: { label: 'Medium', color: 'text-amber-400', bg: 'bg-amber-500/20' },
-        low: { label: 'Low', color: 'text-green-400', bg: 'bg-green-500/20' },
+        urgent: { label: 'Pilne', color: 'text-red-400', bg: 'bg-red-500/20' },
+        high: { label: 'Wysoki', color: 'text-orange-400', bg: 'bg-orange-500/20' },
+        medium: { label: 'Średni', color: 'text-amber-400', bg: 'bg-amber-500/20' },
+        low: { label: 'Niski', color: 'text-green-400', bg: 'bg-green-500/20' },
     }
     const { label, color, bg } = config[priority] || config.medium
     return (
-        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${bg} ${color} capitalize`}>
+        <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${bg} ${color}`}>
             {label}
         </span>
     )
 }
 
+// SubtaskItem moved to SubtaskList.tsx
 
-// Subtask Item
-const SubtaskItem = ({
-    subtask,
-    onToggle
-}: {
-    subtask: Subtask
-    onToggle?: () => void
-}) => {
-    const [expanded, setExpanded] = useState(false)
-    const isCompleted = subtask.status === 'done' || subtask.completed
-
-    return (
-        <div className="border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors bg-gray-900/30">
-            <div className="flex items-start gap-3">
-                <button
-                    onClick={onToggle}
-                    className={`w-5 h-5 rounded-md border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${isCompleted
-                        ? 'bg-amber-500 border-amber-500'
-                        : 'border-gray-600 hover:border-gray-500'
-                        }`}
-                >
-                    {isCompleted && (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                    )}
-                </button>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className={`text-sm font-medium ${isCompleted ? 'text-gray-500 line-through' : 'text-white'}`}>
-                                {subtask.title}
-                            </span>
-                            <div className="flex items-center gap-2 mt-1">
-                                <StatusBadge status={subtask.status} />
-                                <PriorityBadge priority={subtask.priority} />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            {subtask.description && (
-                                <button
-                                    onClick={() => setExpanded(!expanded)}
-                                    className="p-1 text-gray-500 hover:text-gray-300 transition-colors"
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>
-                                        <path d="M6 9L12 15L18 9" />
-                                    </svg>
-                                </button>
-                            )}
-                            <button className="p-1 text-gray-500 hover:text-gray-300 transition-colors">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                    <circle cx="12" cy="5" r="2" />
-                                    <circle cx="12" cy="12" r="2" />
-                                    <circle cx="12" cy="19" r="2" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    {subtask.description && expanded && (
-                        <p className="mt-2 text-xs text-gray-500 leading-relaxed border-t border-gray-800 pt-2">
-                            {subtask.description}
-                        </p>
-                    )}
-                </div>
-            </div>
-        </div>
-    )
-}
-
-// Comment Item moved to CommentList.tsx
 
 
 // Main Component
@@ -267,15 +194,36 @@ export function TaskDetailsPanel({
     sharedFiles = MOCK_FILES,
     activities: propActivities = MOCK_ACTIVITIES,
     onSubtaskToggle,
+    onSubtasksChange,
     onAddComment,
     availableLabels: propAvailableLabels,
     onCreateLabel: propOnCreateLabel,
 }: TaskDetailsPanelProps) {
     const [activeTab, setActiveTab] = useState<'subtasks' | 'comments' | 'shared' | 'activity'>('subtasks')
     const panelRef = useRef<HTMLDivElement>(null)
+    const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
+
+    // Sync isOpen with global panel store
+    useEffect(() => {
+        setIsPanelOpen(isOpen)
+    }, [isOpen, setIsPanelOpen])
+
+    // Subtasks state for interactive demo
+    const [localSubtasks, setLocalSubtasks] = useState<Subtask[]>(subitems)
+
+    // Sync subtasks changes with parent component
+    useEffect(() => {
+        onSubtasksChange?.(localSubtasks)
+    }, [localSubtasks, onSubtasksChange])
 
     // Labels state - use props if provided, otherwise fall back to defaults
     const [taskLabels, setTaskLabels] = useState<Label[]>(task?.labels || [])
+
+    // Assignees state for interactive demo
+    const [localAssignees, setLocalAssignees] = useState<Assignee[]>(
+        task?.assignees?.map(a => ({ id: a.id, name: a.name, avatar: a.avatar })) || []
+    )
+
 
     // Comments state for interactive demo
     const [localComments, setLocalComments] = useState<Comment[]>(propComments)
@@ -300,8 +248,6 @@ export function TaskDetailsPanel({
         const newLabel: Label = { id: `label_${Date.now()}`, name, color }
         return newLabel
     }
-
-    const [newComment, setNewComment] = useState('')
 
     // Reply state
     const [replyingTo, setReplyingTo] = useState<{ id: string; author: string } | null>(null)
@@ -441,7 +387,7 @@ export function TaskDetailsPanel({
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-lg bg-[#12121a] border border-gray-800 rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-lg bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
                     }`}
             >
                 {/* Header */}
@@ -495,19 +441,16 @@ export function TaskDetailsPanel({
                         )}
 
                         {/* Assignees */}
-                        {task.assignees && task.assignees.length > 0 && (
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-20">Assignee</span>
-                                <div className="flex items-center gap-2">
-                                    {task.assignees.map(a => (
-                                        <div key={a.id} className="flex items-center gap-2">
-                                            <Avatar name={a.name} />
-                                            <span className="text-sm text-white">{a.name}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                        <div className="flex items-start gap-4">
+                            <span className="text-sm text-gray-500 w-20 pt-2">Assignee</span>
+                            <div className="flex-1">
+                                <AssigneePicker
+                                    selectedAssignees={localAssignees}
+                                    onSelect={setLocalAssignees}
+                                    maxVisible={2}
+                                />
                             </div>
-                        )}
+                        </div>
 
                         {/* Status */}
                         <div className="flex items-center gap-4">
@@ -592,23 +535,54 @@ export function TaskDetailsPanel({
                     {activeTab === 'subtasks' && (
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-sm font-semibold text-white">Subtasks</h3>
-                                <span className="text-xs text-gray-500">{subitems.filter(s => s.status === 'done' || s.completed).length}/{subitems.length}</span>
+                                <h3 className="text-sm font-semibold text-white">Podzadania</h3>
+                                <span className="text-xs text-gray-500">{localSubtasks.filter(s => s.status === 'done' || s.completed).length}/{localSubtasks.length}</span>
                             </div>
-                            <div className="space-y-3">
-                                {subitems.map(subitem => (
-                                    <SubtaskItem
-                                        key={subitem.id}
-                                        subtask={subitem}
-                                        onToggle={() => handleSubtaskToggle(subitem.id)}
-                                    />
-                                ))}
-                                {subitems.length === 0 && (
-                                    <div className="text-center py-8 border-2 border-dashed border-gray-800 rounded-2xl">
-                                        <p className="text-sm text-gray-500">No subtasks found.</p>
-                                    </div>
-                                )}
-                            </div>
+                            <SubtaskList
+                                subtasks={localSubtasks}
+                                onToggle={(subtaskId) => {
+                                    setLocalSubtasks(prev => prev.map(s =>
+                                        s.id === subtaskId
+                                            ? { ...s, status: s.status === 'done' ? 'todo' : 'done', completed: s.status !== 'done' }
+                                            : s
+                                    ))
+                                    handleSubtaskToggle(subtaskId)
+                                }}
+                                onReorder={(newOrder) => setLocalSubtasks(newOrder)}
+                                onEdit={(id, updates) => {
+                                    setLocalSubtasks(prev => prev.map(s =>
+                                        s.id === id ? { ...s, ...updates } : s
+                                    ))
+                                }}
+                                onDelete={(id) => {
+                                    setLocalSubtasks(prev => prev.filter(s => s.id !== id))
+                                }}
+                                onAdd={(title, afterId) => {
+                                    if (title.trim()) {
+                                        const newSubtask: Subtask = {
+                                            id: `subtask_${Date.now()}`,
+                                            title: title.trim(),
+                                            status: 'todo',
+                                            priority: 'medium',
+                                        }
+                                        if (afterId) {
+                                            // Insert after the specified subtask
+                                            setLocalSubtasks(prev => {
+                                                const index = prev.findIndex(s => s.id === afterId)
+                                                if (index !== -1) {
+                                                    const newList = [...prev]
+                                                    newList.splice(index + 1, 0, newSubtask)
+                                                    return newList
+                                                }
+                                                return [...prev, newSubtask]
+                                            })
+                                        } else {
+                                            // Add at the end
+                                            setLocalSubtasks(prev => [...prev, newSubtask])
+                                        }
+                                    }
+                                }}
+                            />
                         </div>
                     )}
 
@@ -648,19 +622,19 @@ export function TaskDetailsPanel({
                             </div>
 
                             {/* Files Table */}
-                            <div className="rounded-xl border border-gray-800 overflow-hidden">
+                            <div className="rounded-xl overflow-hidden">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="border-b border-gray-800 text-left">
-                                            <th className="px-4 py-3 text-xs font-medium text-gray-500">Name</th>
-                                            <th className="px-4 py-3 text-xs font-medium text-gray-500">Date Shared</th>
-                                            <th className="px-4 py-3 text-xs font-medium text-gray-500">Shared By</th>
-                                            <th className="px-4 py-3 w-10"></th>
+                                        <tr className="text-left bg-gray-800/50 rounded-xl">
+                                            <th className="px-4 py-3 text-xs font-medium text-gray-400 first:rounded-l-xl">Name</th>
+                                            <th className="px-4 py-3 text-xs font-medium text-gray-400">Date Shared</th>
+                                            <th className="px-4 py-3 text-xs font-medium text-gray-400">Shared By</th>
+                                            <th className="px-4 py-3 w-10 last:rounded-r-xl"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {sharedFiles.map(file => (
-                                            <tr key={file.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                                            <tr key={file.id} className="hover:bg-gray-800/30 transition-colors">
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-3">
                                                         <FileTypeIcon type={file.type} />

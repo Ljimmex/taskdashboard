@@ -1,4 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
+import {
+    PriorityHighIcon,
+    PriorityMediumIcon,
+    PriorityLowIcon
+} from '../features/tasks/TaskIcons'
 
 interface TaskCardProps {
     id: string
@@ -31,16 +36,28 @@ export function TaskCard({
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
-    const priorityStyles = {
-        high: 'bg-red-500/20 text-red-400 border-red-500/30',
-        medium: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-        low: 'bg-green-500/20 text-green-400 border-green-500/30',
-    }
-
-    const priorityLabels = {
-        high: 'High',
-        medium: 'Medium',
-        low: 'Low',
+    const priorityConfig = {
+        high: {
+            bg: 'bg-red-500/20',
+            text: 'text-red-400',
+            border: 'border-red-500/30',
+            Icon: PriorityHighIcon,
+            label: 'Wysoki'
+        },
+        medium: {
+            bg: 'bg-amber-500/20',
+            text: 'text-amber-400',
+            border: 'border-amber-500/30',
+            Icon: PriorityMediumIcon,
+            label: 'Średni'
+        },
+        low: {
+            bg: 'bg-green-500/20',
+            text: 'text-green-400',
+            border: 'border-green-500/30',
+            Icon: PriorityLowIcon,
+            label: 'Niski'
+        },
     }
 
     return (
@@ -142,8 +159,12 @@ export function TaskCard({
             {/* Header: Title + Badge INLINE */}
             <div className="flex items-center gap-2 mb-3 pr-8">
                 <h3 className="font-semibold text-white">{title}</h3>
-                <span className={`px-2.5 py-0.5 rounded-md text-xs font-medium ${priorityStyles[priority]}`}>
-                    {priorityLabels[priority]}
+                <span className={`px-2.5 py-0.5 rounded-md text-xs font-medium flex items-center gap-1.5 ${priorityConfig[priority].bg} ${priorityConfig[priority].text}`}>
+                    {(() => {
+                        const PriorityIcon = priorityConfig[priority].Icon
+                        return <PriorityIcon size={12} />
+                    })()}
+                    {priorityConfig[priority].label}
                 </span>
             </div>
 

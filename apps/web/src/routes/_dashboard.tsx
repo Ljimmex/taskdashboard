@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { getSession } from '@/lib/auth'
+import { FloatingTimer } from '@/components/features/time/FloatingTimer'
 
 // Protected route layout - requires authentication
 export const Route = createFileRoute('/_dashboard')({
@@ -28,6 +29,7 @@ function DashboardLayout() {
         <div className="min-h-screen bg-[hsl(222,47%,6%)]">
             {/* Sidebar will go here */}
             <Outlet />
+            <FloatingTimer />
         </div>
     )
 }

@@ -6,6 +6,7 @@ import { KanbanBoard } from '@/components/features/tasks/KanbanBoard'
 import { TaskListView } from '@/components/features/tasks/TaskListView'
 import { TaskDetailsPanel } from '@/components/features/tasks/TaskDetailsPanel'
 import { CreateTaskPanel } from '@/components/features/tasks/CreateTaskPanel'
+import { BulkActions } from '@/components/features/tasks/BulkActions'
 import type { TaskCardProps } from '@/components/features/tasks/TaskCard'
 import type { Label } from '@/components/features/labels/LabelBadge' // Import Label type
 
@@ -78,7 +79,7 @@ function TasksDemo() {
                         name,
                         description,
                         icon,
-                        stages:industry_template_stages(name, color, position)
+                        stages:industry_template_stages!industry_template_stages_template_id_fkey(name, color, position)
                     `)
                     .order('name')
 
@@ -423,8 +424,44 @@ function TasksDemo() {
     }
 
     const handleSelectAll = (selected: boolean) => {
-        setSelectedTasks(selected ? tasks.map(t => t.id) : [])
+        // Use the same task list that TaskListView displays
+        const visibleTasks = columnsWithTasks.flatMap(c => c.tasks)
+        setSelectedTasks(selected ? visibleTasks.map(t => t.id) : [])
     }
+
+    // Bulk operations
+    const handleBulkDelete = () => {
+        setTasks(prev => prev.filter(t => !selectedTasks.includes(t.id)))
+        setSelectedTasks([])
+    }
+
+    const handleBulkMove = (columnId: string) => {
+        console.log('🔄 Bulk Move:', { columnId, selectedTasks, columns })
+        setTasks(prev => prev.map(t =>
+            selectedTasks.includes(t.id) ? { ...t, status: columnId } : t
+        ))
+        setSelectedTasks([])
+    }
+
+    const handleBulkAssign = (assigneeIds: string[]) => {
+        const newAssignees = assigneeIds.map(id => ({
+            id,
+            name: id === '1' ? 'Jan Kowalski' : id === '2' ? 'Anna Nowak' : 'Piotr Wiśniewski'
+        }))
+        setTasks(prev => prev.map(t =>
+            selectedTasks.includes(t.id)
+                ? { ...t, assignees: [...(t.assignees || []), ...newAssignees] }
+                : t
+        ))
+        setSelectedTasks([])
+    }
+
+    // Available assignees for bulk assign
+    const availableAssignees = [
+        { id: '1', name: 'Jan Kowalski' },
+        { id: '2', name: 'Anna Nowak' },
+        { id: '3', name: 'Piotr Wiśniewski' },
+    ]
 
     // Derived selected template
     const selectedTemplate = useMemo(() =>
@@ -548,7 +585,34 @@ function TasksDemo() {
                 onSubtaskToggle={(subtaskId) => {
                     console.log('Toggle subtask:', subtaskId)
                 }}
+                onSubtasksChange={(newSubtasks) => {
+                    if (selectedTask) {
+                        setTasks(prev => prev.map(t =>
+                            t.id === selectedTask.id
+                                ? {
+                                    ...t,
+                                    subitems: newSubtasks,
+                                    subtaskCount: newSubtasks.length,
+                                    subtaskCompleted: newSubtasks.filter(s => s.status === 'done' || s.completed).length
+                                }
+                                : t
+                        ))
+                    }
+                }}
             />
+
+            {/* Bulk Actions Toolbar - hide when details panel is open */}
+            {!isDetailsPanelOpen && (
+                <BulkActions
+                    selectedCount={selectedTasks.length}
+                    columns={columns}
+                    assignees={availableAssignees}
+                    onDelete={handleBulkDelete}
+                    onMove={handleBulkMove}
+                    onAssign={handleBulkAssign}
+                    onClearSelection={() => setSelectedTasks([])}
+                />
+            )}
 
             {/* Create Task Panel */}
             <CreateTaskPanel

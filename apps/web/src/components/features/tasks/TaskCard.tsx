@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { LabelBadge } from '../labels/LabelBadge'
+import { SubtaskProgress } from './ProgressBar'
 import {
-    FlagIcon,
     UserIcon,
     CalendarSmallIcon,
     CheckIcon,
@@ -11,7 +11,11 @@ import {
     CommentIcon,
     CommentIconGold,
     DocumentIcon,
-    DocumentIconGold
+    DocumentIconGold,
+    PriorityUrgentIcon,
+    PriorityHighIcon,
+    PriorityMediumIcon,
+    PriorityLowIcon,
 } from './TaskIcons'
 
 // Types matching our API schema
@@ -98,12 +102,12 @@ export function TaskCard({
         setShowMenu(!showMenu)
     }
 
-    // Priority styles - matching existing badge style from Meeting card
+    // Priority styles with custom icons
     const priorityConfig = {
-        urgent: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', label: 'Urgent' },
-        high: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', label: 'High' },
-        medium: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30', label: 'Medium' },
-        low: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30', label: 'Low' },
+        urgent: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', label: 'Pilne', Icon: PriorityUrgentIcon },
+        high: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30', label: 'Wysoki', Icon: PriorityHighIcon },
+        medium: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30', label: 'Średni', Icon: PriorityMediumIcon },
+        low: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30', label: 'Niski', Icon: PriorityLowIcon },
     }
 
     // Check if overdue
@@ -115,19 +119,16 @@ export function TaskCard({
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     }
 
-    // Calculate progress
-    const progress = subtaskCount > 0 ? Math.round((subtaskCompleted / subtaskCount) * 100) : 0
-
     // Edit mode state
     const [editTitle, setEditTitle] = useState(title)
     const [editPriority, setEditPriority] = useState(priority)
     const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
 
     const priorities = [
-        { value: 'urgent', label: 'Urgent', color: 'text-red-400', bgColor: 'bg-red-500/20' },
-        { value: 'high', label: 'High', color: 'text-orange-400', bgColor: 'bg-orange-500/20' },
-        { value: 'medium', label: 'Medium', color: 'text-amber-400', bgColor: 'bg-amber-500/20' },
-        { value: 'low', label: 'Low', color: 'text-green-400', bgColor: 'bg-green-500/20' },
+        { value: 'urgent', label: 'Pilne', color: 'text-red-400', bgColor: 'bg-red-500/20', Icon: PriorityUrgentIcon },
+        { value: 'high', label: 'Wysoki', color: 'text-orange-400', bgColor: 'bg-orange-500/20', Icon: PriorityHighIcon },
+        { value: 'medium', label: 'Średni', color: 'text-amber-400', bgColor: 'bg-amber-500/20', Icon: PriorityMediumIcon },
+        { value: 'low', label: 'Niski', color: 'text-blue-400', bgColor: 'bg-blue-500/20', Icon: PriorityLowIcon },
     ]
 
     const handleEditSubmit = () => {
@@ -170,7 +171,10 @@ export function TaskCard({
                             onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
                             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-800 text-gray-400 text-xs hover:bg-gray-700 transition-colors"
                         >
-                            <FlagIcon />
+                            {(() => {
+                                const p = priorities.find(p => p.value === editPriority)
+                                return p ? <p.Icon size={12} /> : null
+                            })()}
                             Priorytet
                         </button>
                         {showPriorityDropdown && (
@@ -179,8 +183,9 @@ export function TaskCard({
                                     <button
                                         key={p.value}
                                         onClick={() => { setEditPriority(p.value as typeof priority); setShowPriorityDropdown(false) }}
-                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors ${editPriority === p.value ? p.color : 'text-gray-400'}`}
+                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors flex items-center gap-2 ${editPriority === p.value ? p.color : 'text-gray-400'}`}
                                     >
+                                        <p.Icon size={14} />
                                         {p.label}
                                     </button>
                                 ))}
@@ -324,7 +329,11 @@ export function TaskCard({
                         <path d="M12 25L7 20L4 28L12 25Z" fill="currentColor" />
                     </svg>
                 </button>
-                <span className={`px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 ${priorityConfig[priority].bg} ${priorityConfig[priority].text}`}>
+                <span className={`px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5 ${priorityConfig[priority].bg} ${priorityConfig[priority].text}`}>
+                    {(() => {
+                        const PriorityIcon = priorityConfig[priority].Icon
+                        return <PriorityIcon size={12} />
+                    })()}
                     {priorityConfig[priority].label}
                 </span>
             </div>
@@ -361,17 +370,9 @@ export function TaskCard({
                                 <span className="text-xs">{formatDate(dueDate)}</span>
                             </div>
                         )}
-                        {subtaskCount > 0 && (
-                            <span className="text-xs text-amber-400 font-medium">{progress}%</span>
-                        )}
                     </div>
                     {subtaskCount > 0 && (
-                        <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
+                        <SubtaskProgress completed={subtaskCompleted} total={subtaskCount} />
                     )}
                 </div>
             )}
