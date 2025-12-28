@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useSession } from '@/lib/auth'
 import {
@@ -10,6 +11,7 @@ import {
     TeamActivity,
     CalendarSection,
 } from '@/components/dashboard'
+import { CreateTaskPanel } from '@/components/features/tasks/CreateTaskPanel'
 
 export const Route = createFileRoute('/_dashboard/dashboard')({
     component: DashboardPage,
@@ -119,6 +121,7 @@ const mockActivities = [
 
 function DashboardPage() {
     const { isPending } = useSession()
+    const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false)
 
     if (isPending) {
         return (
@@ -140,7 +143,7 @@ function DashboardPage() {
                         {mockTasks.map((task) => (
                             <TaskCard key={task.id} {...task} />
                         ))}
-                        <AddNewTaskCard onClick={() => console.log('Add new task')} />
+                        <AddNewTaskCard onClick={() => setIsCreatePanelOpen(true)} />
                     </div>
 
                     {/* Overall Progress - takes 1/3 */}
@@ -198,6 +201,12 @@ function DashboardPage() {
                     </div>
                 </div>
             </div>
+
+            <CreateTaskPanel
+                isOpen={isCreatePanelOpen}
+                onClose={() => setIsCreatePanelOpen(false)}
+                onCreate={(data) => console.log('Task created:', data)}
+            />
         </DashboardLayout>
     )
 }

@@ -73,7 +73,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     <span className="text-[11px] text-gray-500">• {comment.createdAt}</span>
                 </div>
 
-                <div className="bg-gray-800/40 rounded-2xl px-4 py-3 border border-gray-700/50 group-hover:border-gray-600/50 group-hover:bg-gray-800/60 transition-all">
+                <div className="bg-gray-800/40 rounded-2xl px-4 py-3 group-hover:bg-gray-800/60 transition-all">
                     <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap break-words">
                         {comment.content.split(/(@\w+\s\w+)/g).map((part, i) => {
                             if (part.startsWith('@')) {
@@ -109,7 +109,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
                 {/* Replies */}
                 {comment.replies && comment.replies.length > 0 && (
-                    <div className="mt-4 space-y-4 border-l-2 border-gray-800/50 pl-4">
+                    <div className="mt-4 space-y-4 pl-4">
                         {comment.replies.map((reply) => (
                             <CommentItem
                                 key={reply.id}
@@ -136,7 +136,7 @@ export const CommentList: React.FC<CommentListProps> = ({
     if (comments.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-12 h-12 rounded-full bg-gray-800/50 flex items-center justify-center mb-4 border border-gray-700">
+                <div className="w-12 h-12 rounded-full bg-gray-800/50 flex items-center justify-center mb-4">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-500">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                     </svg>

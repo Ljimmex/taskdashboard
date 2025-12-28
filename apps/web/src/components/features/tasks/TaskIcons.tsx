@@ -386,3 +386,29 @@ export const PlusIconGold = () => (
     </svg>
 )
 
+// Priority Icons
+export const PriorityUrgentIcon = ({ size = 16 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 3C13 7 8 12 8 18C8 23.5 11.5 28 16 28C20.5 28 24 23.5 24 18C24 12 19 7 16 3Z" fill="#7A664E" />
+        <path d="M16 10C14.5 12 12 15 12 18C12 21 13.5 23 16 23C18.5 23 20 21 20 18C20 15 17.5 12 16 10Z" fill="#F2CE88" />
+    </svg>
+)
+
+export const PriorityHighIcon = ({ size = 16 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="12" fill="#F2CE88" stroke="#7A664E" strokeWidth="2" />
+    </svg>
+)
+
+export const PriorityMediumIcon = ({ size = 16 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="10" stroke="#F2CE88" strokeWidth="6" />
+    </svg>
+)
+
+export const PriorityLowIcon = ({ size = 16 }: { size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="11" stroke="#7A664E" strokeWidth="3" />
+        <circle cx="16" cy="16" r="5" fill="#F2CE88" />
+    </svg>
+)

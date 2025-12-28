@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
+import { usePanelStore } from '../../../lib/panelStore'
 import { LabelPicker } from '../labels/LabelPicker'
 import type { Label } from '../labels/LabelBadge'
+import { PrioritySelector } from './PrioritySelector'
+import { DueDatePicker } from './DueDatePicker'
+import { AssigneePicker, type Assignee } from './AssigneePicker'
 import {
-    FlagIcon,
-    UserIcon,
-    CalendarSmallIcon,
     PaperclipIcon,
     SubtaskCheckboxIcon,
     ChevronDoubleRightIcon,
@@ -35,14 +36,6 @@ interface NewTaskData {
     estimate?: string
 }
 
-// Priority options
-const PRIORITIES = [
-    { value: 'urgent', label: 'Pilne', icon: '🔥', color: 'text-red-400', bg: 'bg-red-500/20' },
-    { value: 'high', label: 'Wysoki', icon: '🔴', color: 'text-orange-400', bg: 'bg-orange-500/20' },
-    { value: 'medium', label: 'Średni', icon: '🟡', color: 'text-amber-400', bg: 'bg-amber-500/20' },
-    { value: 'low', label: 'Niski', icon: '🔵', color: 'text-blue-400', bg: 'bg-blue-500/20' },
-]
-
 // Default labels
 const DEFAULT_LABELS = [
     { id: 'bug', name: 'Bug', color: '#ef4444' },
@@ -53,30 +46,12 @@ const DEFAULT_LABELS = [
     { id: 'docs', name: 'Dokumentacja', color: '#6b7280' },
 ]
 
-// Mock team members
-const MOCK_TEAM = [
-    { id: '1', name: 'Jan Kowalski' },
-    { id: '2', name: 'Anna Nowak' },
-    { id: '3', name: 'Piotr Wiśniewski' },
-]
-
 // Mock projects
 const MOCK_PROJECTS = [
     { id: 'marketing', name: 'Marketing' },
     { id: 'development', name: 'Development' },
     { id: 'design', name: 'Design System' },
 ]
-
-// Avatar component
-const Avatar = ({ name, size = 'sm' }: { name: string; size?: 'sm' | 'md' }) => {
-    const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2)
-    const sizeClass = size === 'sm' ? 'w-6 h-6 text-[10px]' : 'w-8 h-8 text-xs'
-    return (
-        <div className={`${sizeClass} rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center font-semibold text-black`}>
-            {initials}
-        </div>
-    )
-}
 
 // Property Chip Button
 const PropertyChip = ({
@@ -132,7 +107,7 @@ const Dropdown = ({
     return (
         <div
             ref={ref}
-            className={`absolute top-full left-0 mt-2 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden ${className}`}
+            className={`absolute top-full left-0 mt-2 bg-[#1a1a24] rounded-xl shadow-2xl z-50 overflow-hidden ${className}`}
         >
             {children}
         </div>
@@ -148,7 +123,6 @@ export function CreateTaskPanel({
     defaultProject,
     projects = MOCK_PROJECTS,
     columns = [],
-    teamMembers = MOCK_TEAM,
     availableLabels: propAvailableLabels,
     onCreateLabel: propOnCreateLabel,
 }: CreateTaskPanelProps & { availableLabels?: Label[]; onCreateLabel?: (name: string, color: string) => Label }) {
@@ -156,7 +130,7 @@ export function CreateTaskPanel({
     const [description, setDescription] = useState('')
     const [status, setStatus] = useState(defaultStatus)
     const [priority, setPriority] = useState<'urgent' | 'high' | 'medium' | 'low'>('medium')
-    const [assignees, setAssignees] = useState<string[]>([])
+    const [assignees, setAssignees] = useState<Assignee[]>([])
     const [dueDate, setDueDate] = useState('')
     const [labels, setLabels] = useState<Label[]>([])
     const [projectId, setProjectId] = useState(defaultProject || projects[0]?.id || '')
@@ -175,15 +149,17 @@ export function CreateTaskPanel({
     // Dropdown states
     const [showProjectDropdown, setShowProjectDropdown] = useState(false)
     const [showStatusDropdown, setShowStatusDropdown] = useState(false)
-    const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
-    const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false)
-    const [showDatePicker, setShowDatePicker] = useState(false)
 
     const titleInputRef = useRef<HTMLInputElement>(null)
     const descriptionRef = useRef<HTMLTextAreaElement>(null)
     const panelRef = useRef<HTMLDivElement>(null)
-    const dateInputRef = useRef<HTMLInputElement>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
+
+    // Sync isOpen with global panel store
+    useEffect(() => {
+        setIsPanelOpen(isOpen)
+    }, [isOpen, setIsPanelOpen])
 
     // Autofocus on title
     useEffect(() => {
@@ -191,6 +167,7 @@ export function CreateTaskPanel({
             setTimeout(() => titleInputRef.current?.focus(), 300)
         }
     }, [isOpen])
+
 
     // Close on escape
     useEffect(() => {
@@ -228,7 +205,7 @@ export function CreateTaskPanel({
             description: description.trim(),
             status,
             priority,
-            assignees,
+            assignees: assignees.map(a => a.id),
             dueDate: dueDate || undefined,
             labels: labels as any, // Label[] compatible with TaskLabel[]
             projectId: projectId || undefined,
@@ -289,13 +266,6 @@ export function CreateTaskPanel({
         if (editingSubtaskIndex === index) setEditingSubtaskIndex(null)
     }
 
-    // Toggle assignee
-    const toggleAssignee = (id: string) => {
-        setAssignees(prev =>
-            prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
-        )
-    }
-
     // Handle label creation
     const handleCreateLabel = async (name: string, color: string): Promise<Label> => {
         if (propOnCreateLabel) {
@@ -321,7 +291,6 @@ export function CreateTaskPanel({
 
     const selectedProject = projects.find(p => p.id === projectId)
     const selectedStatus = statusOptions.find(s => s.id === status)
-    const selectedPriority = PRIORITIES.find(p => p.value === priority)
 
     return (
         <>
@@ -336,7 +305,7 @@ export function CreateTaskPanel({
             <div
                 ref={panelRef}
                 onKeyDown={handleKeyDown}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[#12121a] border border-gray-800 rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
                     }`}
             >
                 {/* Header */}
@@ -399,7 +368,7 @@ export function CreateTaskPanel({
                             onChange={(e) => setTitle(e.target.value)}
                             onKeyDown={handleTitleKeyDown}
                             placeholder="Co jest do zrobienia?"
-                            className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-gray-800 focus:border-amber-500/50 transition-colors"
+                            className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
                         />
                     </div>
 
@@ -411,7 +380,7 @@ export function CreateTaskPanel({
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Dodaj opis zadania... (wspiera Markdown)"
                             rows={4}
-                            className="w-full text-sm text-gray-300 bg-[#1a1a24] rounded-xl p-4 placeholder-gray-500 outline-none resize-none border border-gray-800 focus:border-gray-700 transition-colors"
+                            className="w-full text-sm text-gray-300 bg-[#1a1a24] rounded-xl p-4 placeholder-gray-500 outline-none resize-none transition-colors"
                         />
                         <p className="text-xs text-gray-600 mt-2">
                             Wskazówka: Użyj **pogrubienia**, *kursywy*, - listy
@@ -450,108 +419,29 @@ export function CreateTaskPanel({
                             </Dropdown>
                         </div>
 
+
                         {/* Priority */}
-                        <div className="relative">
-                            <PropertyChip
-                                icon={<FlagIcon />}
-                                label="Priorytet"
-                                value={selectedPriority ? `${selectedPriority.icon} ${selectedPriority.label}` : undefined}
-                                onClick={() => setShowPriorityDropdown(!showPriorityDropdown)}
-                            />
-                            <Dropdown
-                                isOpen={showPriorityDropdown}
-                                onClose={() => setShowPriorityDropdown(false)}
-                                className="w-40"
-                            >
-                                {PRIORITIES.map(p => (
-                                    <button
-                                        key={p.value}
-                                        onClick={() => {
-                                            setPriority(p.value as any)
-                                            setShowPriorityDropdown(false)
-                                        }}
-                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center gap-2 ${priority === p.value ? 'text-amber-400' : 'text-gray-300'
-                                            }`}
-                                    >
-                                        <span>{p.icon}</span>
-                                        {p.label}
-                                    </button>
-                                ))}
-                            </Dropdown>
-                        </div>
+                        <PrioritySelector
+                            value={priority}
+                            onChange={setPriority}
+                            size="md"
+                        />
 
                         {/* Assignee */}
-                        <div className="relative">
-                            <PropertyChip
-                                icon={<UserIcon />}
-                                label="Przypisz"
-                                value={assignees.length > 0 ? `${assignees.length} osób` : undefined}
-                                onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
+                        <div className="flex-1 min-w-[180px]">
+                            <AssigneePicker
+                                selectedAssignees={assignees}
+                                onSelect={setAssignees}
+                                maxVisible={2}
+                                placeholder="Przypisz osobę..."
                             />
-                            <Dropdown
-                                isOpen={showAssigneeDropdown}
-                                onClose={() => setShowAssigneeDropdown(false)}
-                                className="w-56"
-                            >
-                                <div className="p-2">
-                                    <button
-                                        onClick={() => {
-                                            // Assign to me - assuming first team member is "me"
-                                            if (teamMembers.length > 0) {
-                                                toggleAssignee(teamMembers[0].id)
-                                            }
-                                        }}
-                                        className="w-full text-left px-3 py-2 text-sm text-amber-400 hover:bg-gray-800 rounded-lg transition-colors"
-                                    >
-                                        👤 Przypisz do mnie
-                                    </button>
-                                </div>
-                                <div className="border-t border-gray-800">
-                                    {teamMembers.map(member => (
-                                        <button
-                                            key={member.id}
-                                            onClick={() => toggleAssignee(member.id)}
-                                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center gap-3"
-                                        >
-                                            <Avatar name={member.name} />
-                                            <span className={assignees.includes(member.id) ? 'text-amber-400' : 'text-gray-300'}>
-                                                {member.name}
-                                            </span>
-                                            {assignees.includes(member.id) && (
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-auto text-amber-400">
-                                                    <polyline points="20 6 9 17 4 12" />
-                                                </svg>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            </Dropdown>
                         </div>
 
                         {/* Due Date */}
-                        <div className="relative">
-                            <PropertyChip
-                                icon={<CalendarSmallIcon />}
-                                label="Termin"
-                                value={dueDate ? new Date(dueDate).toLocaleDateString('pl-PL') : undefined}
-                                onClick={() => setShowDatePicker(!showDatePicker)}
-                            />
-                            {showDatePicker && (
-                                <div className="absolute top-full left-0 mt-2 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-2xl z-50 p-4">
-                                    <input
-                                        ref={dateInputRef}
-                                        type="date"
-                                        value={dueDate}
-                                        onChange={(e) => {
-                                            setDueDate(e.target.value)
-                                            setShowDatePicker(false)
-                                        }}
-                                        className="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 outline-none focus:border-amber-500"
-                                        autoFocus
-                                    />
-                                </div>
-                            )}
-                        </div>
+                        <DueDatePicker
+                            value={dueDate}
+                            onChange={(date) => setDueDate(date || '')}
+                        />
                     </div>
 
                     {/* Labels Section - Full Width Below */}
@@ -585,7 +475,7 @@ export function CreateTaskPanel({
 
                     {/* Extended Options */}
                     {showMore && (
-                        <div className="space-y-4 pt-4 border-t border-gray-800">
+                        <div className="space-y-4 pt-4 ">
                             {/* Subtasks */}
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
@@ -596,10 +486,10 @@ export function CreateTaskPanel({
                                     {subtasks.map((subtask, index) => (
                                         <div
                                             key={index}
-                                            className="bg-gray-800/50 rounded-xl border border-gray-800 overflow-hidden"
+                                            className="bg-gray-800/50 rounded-xl overflow-hidden"
                                         >
                                             <div className="flex items-center gap-3 px-4 py-3">
-                                                <div className="w-5 h-5 rounded-md border-2 border-gray-600 flex-shrink-0" />
+                                                <div className="w-5 h-5 rounded-md flex-shrink-0" />
                                                 <span className="text-sm text-white flex-1 font-medium">{subtask.title}</span>
                                                 <div className="flex items-center gap-2">
                                                     {/* Status Badge */}
@@ -647,7 +537,7 @@ export function CreateTaskPanel({
                                                             <select
                                                                 value={subtask.status}
                                                                 onChange={(e) => updateSubtask(index, { status: e.target.value })}
-                                                                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
+                                                                className="w-full bg-gray-900 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
                                                             >
                                                                 <option value="todo">To-Do</option>
                                                                 <option value="in_progress">W trakcie</option>
@@ -660,7 +550,7 @@ export function CreateTaskPanel({
                                                             <select
                                                                 value={subtask.priority}
                                                                 onChange={(e) => updateSubtask(index, { priority: e.target.value as any })}
-                                                                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
+                                                                className="w-full bg-gray-900 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
                                                             >
                                                                 <option value="low">Niski</option>
                                                                 <option value="medium">Średni</option>
@@ -676,7 +566,7 @@ export function CreateTaskPanel({
                                                             onChange={(e) => updateSubtask(index, { description: e.target.value })}
                                                             placeholder="Dodaj opis tego zadania..."
                                                             rows={2}
-                                                            className="w-full text-xs text-gray-400 bg-gray-900/50 rounded-lg p-3 placeholder-gray-600 outline-none resize-none border border-gray-700 focus:border-amber-500/50 transition-colors"
+                                                            className="w-full text-xs text-gray-400 bg-gray-900/50 rounded-lg p-3 placeholder-gray-600 outline-none resize-none focus:border-amber-500/50 transition-colors"
                                                         />
                                                     </div>
                                                 </div>
@@ -697,7 +587,7 @@ export function CreateTaskPanel({
                                             onChange={(e) => setNewSubtask(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && addSubtask()}
                                             placeholder="Dodaj zadanie podrzędne..."
-                                            className="flex-1 px-4 py-3 bg-gray-800/50 rounded-xl text-sm text-white placeholder-gray-500 outline-none border border-gray-800 focus:border-amber-500/50 transition-colors"
+                                            className="flex-1 px-4 py-3 bg-gray-800/50 rounded-xl text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500/50 transition-colors"
                                         />
                                         <button
                                             onClick={addSubtask}
@@ -740,7 +630,7 @@ export function CreateTaskPanel({
                                 {attachments.length > 0 && (
                                     <div className="space-y-2 mb-3">
                                         {attachments.map((file, index) => (
-                                            <div key={index} className="flex items-center gap-3 px-4 py-3 bg-gray-800/50 rounded-xl border border-gray-800">
+                                            <div key={index} className="flex items-center gap-3 px-4 py-3 bg-gray-800/50 rounded-xl">
                                                 <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
                                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2CE88" strokeWidth="2">
                                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -766,9 +656,9 @@ export function CreateTaskPanel({
 
                                 {/* Drop zone */}
                                 <div
-                                    className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${isDragging
-                                        ? 'border-amber-500 bg-amber-500/10'
-                                        : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/30'
+                                    className={`rounded-xl p-6 text-center cursor-pointer transition-all ${isDragging
+                                        ? 'bg-amber-500/10'
+                                        : 'hover:bg-gray-800/30'
                                         }`}
                                     onClick={() => fileInputRef.current?.click()}
                                     onDragOver={(e) => {
@@ -813,14 +703,14 @@ export function CreateTaskPanel({
                 </div>
 
                 {/* Footer */}
-                <div className="flex-none p-6 border-t border-gray-800 bg-[#0f0f14] rounded-b-2xl">
+                <div className="flex-none p-6 bg-[#0f0f14] rounded-b-2xl">
                     <div className="flex items-center justify-between">
                         {/* Left side - Create more toggle */}
                         <label className="flex items-center gap-3 cursor-pointer select-none">
                             <div
-                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer ${createMore
-                                    ? 'bg-amber-500 border-amber-500'
-                                    : 'border-gray-600 hover:border-gray-500'
+                                className={`w-5 h-5 border border-gray-800 rounded-md flex items-center justify-center transition-all cursor-pointer ${createMore
+                                    ? 'bg-amber-500'
+                                    : 'hover:bg-gray-800/30'
                                     }`}
                                 onClick={() => setCreateMore(!createMore)}
                             >

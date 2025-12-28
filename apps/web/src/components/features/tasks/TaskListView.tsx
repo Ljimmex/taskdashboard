@@ -53,8 +53,23 @@ const Checkbox = ({ checked, onChange, indeterminate = false }: {
 
 
 
-// Status badge component
-const StatusBadge = ({ status }: { status: string }) => {
+// Status badge component - now supports dynamic column-based statuses
+const StatusBadge = ({ status, columns }: { status: string; columns?: { id: string; title: string; color?: string }[] }) => {
+    // Try to find matching column first
+    const column = columns?.find(c => c.id === status)
+
+    if (column) {
+        return (
+            <span
+                className="inline-flex px-3 py-1 rounded-full text-xs font-medium text-white"
+                style={{ backgroundColor: column.color || '#6366f1' }}
+            >
+                {column.title}
+            </span>
+        )
+    }
+
+    // Fallback to hardcoded statuses
     const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
         todo: { label: 'To-Do', bg: 'bg-indigo-500', text: 'text-white' },
         in_progress: { label: 'In Progress', bg: 'bg-amber-500', text: 'text-black' },
@@ -62,7 +77,7 @@ const StatusBadge = ({ status }: { status: string }) => {
         done: { label: 'Completed', bg: 'bg-emerald-500', text: 'text-white' },
         cancelled: { label: 'Cancelled', bg: 'bg-red-500', text: 'text-white' },
     }
-    const config = statusConfig[status] || statusConfig.todo
+    const config = statusConfig[status] || { label: status, bg: 'bg-gray-500', text: 'text-white' }
     return (
         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
             {config.label}
@@ -223,7 +238,8 @@ export function TaskListView({
     onTaskDelete,
     onTaskDuplicate,
     onTaskArchive,
-    selectedTasks = []
+    selectedTasks = [],
+    columns = []
 }: TaskListViewProps) {
     const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -278,7 +294,7 @@ export function TaskListView({
     }
 
     const allSelected = tasks.length > 0 && selectedTasks.length === tasks.length
-    const someSelected = selectedTasks.length > 0 && selectedTasks.length < tasks.length
+
 
     const getSortDirection = (column: SortColumn): 'asc' | 'desc' | null => {
         return sortColumn === column ? sortDirection : null
@@ -293,7 +309,6 @@ export function TaskListView({
                             <th className="w-12 p-4">
                                 <Checkbox
                                     checked={allSelected}
-                                    indeterminate={someSelected}
                                     onChange={(selected) => onSelectAll?.(selected)}
                                 />
                             </th>
@@ -346,7 +361,7 @@ export function TaskListView({
                                         <span className="group-hover/subtasks:text-[#F2CE88] transition-colors">{task.subtaskCompleted || 0}/{task.subtaskCount || 0}</span>
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 text-center"><StatusBadge status={task.status} /></td>
+                                <td className="px-4 py-3 text-center"><StatusBadge status={task.status} columns={columns} /></td>
                                 <td className="px-4 py-3"><div className="flex justify-center"><PriorityBadge priority={task.priority} /></div></td>
                                 <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate(task.dueDate)}</span></td>
                                 <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate(task.dueDate)}</span></td>
