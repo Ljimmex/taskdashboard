@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useLocation } from '@tanstack/react-router'
+import { useLocation, useParams } from '@tanstack/react-router'
 import { signOut } from '@/lib/auth'
 import { sidebarIcons as icons } from './icons'
+import { WorkspaceSwitcher } from '../features/workspace/WorkspaceSwitcher'
 
 interface SidebarProps {
     isOpen?: boolean
@@ -10,17 +11,21 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen = true }: SidebarProps) {
     const location = useLocation()
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
     const [isDarkMode, setIsDarkMode] = useState(true)
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
 
+    // Default to 'dashboard' if no slug (shouldn't happen in workspace route)
+    const baseUrl = workspaceSlug ? `/${workspaceSlug}` : '/dashboard'
+
     const navItems = [
-        { iconKey: 'dashboard', label: 'Dashboard', path: '/dashboard', count: null },
-        { iconKey: 'team', label: 'Team', path: '/dashboard/team', count: 4 },
-        { iconKey: 'messages', label: 'Messages', path: '/dashboard/messages', count: 21 },
-        { iconKey: 'calendar', label: 'Calendar', path: '/dashboard/calendar', count: null },
-        { iconKey: 'files', label: 'Files', path: '/dashboard/files', count: 32 },
-        { iconKey: 'product', label: 'Product', path: '/dashboard/product', count: 36 },
-        { iconKey: 'contact', label: 'Contact', path: '/dashboard/contact', count: 10 },
+        { iconKey: 'dashboard', label: 'Dashboard', path: `${baseUrl}`, count: null },
+        { iconKey: 'team', label: 'Team', path: `${baseUrl}/team`, count: 4 },
+        { iconKey: 'messages', label: 'Messages', path: `${baseUrl}/messages`, count: 21 },
+        { iconKey: 'calendar', label: 'Calendar', path: `${baseUrl}/calendar`, count: null },
+        { iconKey: 'files', label: 'Files', path: `${baseUrl}/files`, count: 32 },
+        { iconKey: 'product', label: 'Product', path: `${baseUrl}/product`, count: 36 },
+        { iconKey: 'contact', label: 'Contact', path: `${baseUrl}/contact`, count: 10 },
     ]
 
     return (
@@ -35,7 +40,11 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
             {/* Navigation */}
             <nav className="px-3 space-y-0.5">
                 {navItems.map((item) => {
-                    const isActive = location.pathname === item.path || (item.path === '/dashboard' && location.pathname === '/dashboard')
+                    // Exact match for dashboard root, startsWith for others
+                    const isActive = item.path === baseUrl
+                        ? location.pathname === baseUrl || location.pathname === `${baseUrl}/`
+                        : location.pathname.startsWith(item.path)
+
                     const isHovered = hoveredItem === item.path
                     const showGold = isActive || isHovered
                     const icon = icons[item.iconKey as keyof typeof icons]
@@ -75,7 +84,10 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
             {/* Logout */}
             <div className="px-3 py-2">
                 <button
-                    onClick={() => signOut()}
+                    onClick={async () => {
+                        await signOut()
+                        window.location.href = '/'
+                    }}
                     onMouseEnter={() => setHoveredItem('logout')}
                     onMouseLeave={() => setHoveredItem(null)}
                     className="flex items-center gap-3 px-3 py-2 w-full text-gray-500 hover:text-[#F2CE88] rounded-lg hover:bg-gray-800/30 transition-all"
@@ -130,19 +142,14 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                 </div>
             </div>
 
-            {/* Add Project */}
-            <div className="px-3 pb-4 mt-4">
-                <button className="flex flex-col items-center justify-center w-full p-3 rounded-xl border border-dashed border-gray-700 hover:border-amber-500/50 text-gray-500 hover:text-amber-400 transition-all">
-                    <div className="w-7 h-7 rounded-full bg-gray-800/50 flex items-center justify-center mb-1">
-                        <span className="text-base">+</span>
-                    </div>
-                    <span className="text-[10px] font-medium">Add New Project</span>
-                    <span className="text-[9px] text-gray-600">Or use invite link</span>
-                </button>
-            </div>
-
             {/* Flex spacer */}
             <div className="flex-1" />
+
+            {/* Workspace Switcher */}
+            <WorkspaceSwitcher />
+
+
+
         </aside>
     )
 }

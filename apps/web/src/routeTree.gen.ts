@@ -13,10 +13,12 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as DashboardRouteImport } from './routes/_dashboard'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as WorkspaceSlugRouteImport } from './routes/$workspaceSlug'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DashboardTasksDemoRouteImport } from './routes/_dashboard/tasks-demo'
-import { Route as DashboardDashboardRouteImport } from './routes/_dashboard/dashboard'
+import { Route as WorkspaceSlugIndexRouteImport } from './routes/$workspaceSlug/index'
+import { Route as InviteInviteIdRouteImport } from './routes/invite/$inviteId'
+import { Route as WorkspaceSlugTeamIndexRouteImport } from './routes/$workspaceSlug/team/index'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -39,7 +41,13 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
-  id: '/_dashboard',
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceSlugRoute = WorkspaceSlugRouteImport.update({
+  id: '/$workspaceSlug',
+  path: '/$workspaceSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -47,84 +55,105 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardTasksDemoRoute = DashboardTasksDemoRouteImport.update({
-  id: '/tasks-demo',
-  path: '/tasks-demo',
-  getParentRoute: () => DashboardRoute,
+const WorkspaceSlugIndexRoute = WorkspaceSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => WorkspaceSlugRoute,
 } as any)
-const DashboardDashboardRoute = DashboardDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => DashboardRoute,
+const InviteInviteIdRoute = InviteInviteIdRouteImport.update({
+  id: '/invite/$inviteId',
+  path: '/invite/$inviteId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceSlugTeamIndexRoute = WorkspaceSlugTeamIndexRouteImport.update({
+  id: '/team/',
+  path: '/team/',
+  getParentRoute: () => WorkspaceSlugRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$workspaceSlug': typeof WorkspaceSlugRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/dashboard': typeof DashboardDashboardRoute
-  '/tasks-demo': typeof DashboardTasksDemoRoute
+  '/invite/$inviteId': typeof InviteInviteIdRoute
+  '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
+  '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/dashboard': typeof DashboardDashboardRoute
-  '/tasks-demo': typeof DashboardTasksDemoRoute
+  '/invite/$inviteId': typeof InviteInviteIdRoute
+  '/$workspaceSlug': typeof WorkspaceSlugIndexRoute
+  '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_dashboard': typeof DashboardRouteWithChildren
+  '/$workspaceSlug': typeof WorkspaceSlugRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/_dashboard/dashboard': typeof DashboardDashboardRoute
-  '/_dashboard/tasks-demo': typeof DashboardTasksDemoRoute
+  '/invite/$inviteId': typeof InviteInviteIdRoute
+  '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
+  '/$workspaceSlug/team/': typeof WorkspaceSlugTeamIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$workspaceSlug'
+    | '/dashboard'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/dashboard'
-    | '/tasks-demo'
+    | '/invite/$inviteId'
+    | '/$workspaceSlug/'
+    | '/$workspaceSlug/team'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/dashboard'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/dashboard'
-    | '/tasks-demo'
+    | '/invite/$inviteId'
+    | '/$workspaceSlug'
+    | '/$workspaceSlug/team'
   id:
     | '__root__'
     | '/'
-    | '/_dashboard'
+    | '/$workspaceSlug'
+    | '/dashboard'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/_dashboard/dashboard'
-    | '/_dashboard/tasks-demo'
+    | '/invite/$inviteId'
+    | '/$workspaceSlug/'
+    | '/$workspaceSlug/team/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRouteWithChildren
+  WorkspaceSlugRoute: typeof WorkspaceSlugRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  InviteInviteIdRoute: typeof InviteInviteIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -157,11 +186,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_dashboard': {
-      id: '/_dashboard'
-      path: ''
-      fullPath: ''
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$workspaceSlug': {
+      id: '/$workspaceSlug'
+      path: '/$workspaceSlug'
+      fullPath: '/$workspaceSlug'
+      preLoaderRoute: typeof WorkspaceSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -171,44 +207,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_dashboard/tasks-demo': {
-      id: '/_dashboard/tasks-demo'
-      path: '/tasks-demo'
-      fullPath: '/tasks-demo'
-      preLoaderRoute: typeof DashboardTasksDemoRouteImport
-      parentRoute: typeof DashboardRoute
+    '/$workspaceSlug/': {
+      id: '/$workspaceSlug/'
+      path: '/'
+      fullPath: '/$workspaceSlug/'
+      preLoaderRoute: typeof WorkspaceSlugIndexRouteImport
+      parentRoute: typeof WorkspaceSlugRoute
     }
-    '/_dashboard/dashboard': {
-      id: '/_dashboard/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardDashboardRouteImport
-      parentRoute: typeof DashboardRoute
+    '/invite/$inviteId': {
+      id: '/invite/$inviteId'
+      path: '/invite/$inviteId'
+      fullPath: '/invite/$inviteId'
+      preLoaderRoute: typeof InviteInviteIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$workspaceSlug/team/': {
+      id: '/$workspaceSlug/team/'
+      path: '/team'
+      fullPath: '/$workspaceSlug/team'
+      preLoaderRoute: typeof WorkspaceSlugTeamIndexRouteImport
+      parentRoute: typeof WorkspaceSlugRoute
     }
   }
 }
 
-interface DashboardRouteChildren {
-  DashboardDashboardRoute: typeof DashboardDashboardRoute
-  DashboardTasksDemoRoute: typeof DashboardTasksDemoRoute
+interface WorkspaceSlugRouteChildren {
+  WorkspaceSlugIndexRoute: typeof WorkspaceSlugIndexRoute
+  WorkspaceSlugTeamIndexRoute: typeof WorkspaceSlugTeamIndexRoute
 }
 
-const DashboardRouteChildren: DashboardRouteChildren = {
-  DashboardDashboardRoute: DashboardDashboardRoute,
-  DashboardTasksDemoRoute: DashboardTasksDemoRoute,
+const WorkspaceSlugRouteChildren: WorkspaceSlugRouteChildren = {
+  WorkspaceSlugIndexRoute: WorkspaceSlugIndexRoute,
+  WorkspaceSlugTeamIndexRoute: WorkspaceSlugTeamIndexRoute,
 }
 
-const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
-  DashboardRouteChildren,
+const WorkspaceSlugRouteWithChildren = WorkspaceSlugRoute._addFileChildren(
+  WorkspaceSlugRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRouteWithChildren,
+  WorkspaceSlugRoute: WorkspaceSlugRouteWithChildren,
+  DashboardRoute: DashboardRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  InviteInviteIdRoute: InviteInviteIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

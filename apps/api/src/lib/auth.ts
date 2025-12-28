@@ -100,14 +100,14 @@ export const auth = betterAuth({
                 required: false,
             },
             birthDate: {
-                type: 'string',
+                type: 'date',
                 required: false,
             },
             gender: {
                 type: 'string',
                 required: false,
             },
-            phone: {
+            position: {
                 type: 'string',
                 required: false,
             },

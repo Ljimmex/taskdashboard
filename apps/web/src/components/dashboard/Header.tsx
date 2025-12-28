@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useParams } from '@tanstack/react-router'
 import { useSession, signOut } from '@/lib/auth'
 import { DropdownArrowUp, DropdownArrowDown } from './icons'
 
@@ -25,6 +26,8 @@ export function Header() {
     }, [])
 
     const user = session?.user
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
+    const baseUrl = workspaceSlug ? `/${workspaceSlug}` : '/dashboard'
 
     return (
         <header className="h-16 bg-[#0d0d14] flex items-center justify-between px-6">
@@ -137,7 +140,7 @@ export function Header() {
                     {showUserMenu && (
                         <div className="absolute right-0 top-14 w-56 bg-[#12121a] rounded-xl shadow-2xl overflow-hidden z-50">
                             <div className="p-2 space-y-1">
-                                <a href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
+                                <a href={baseUrl} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
                                     {/* My Profile icon */}
                                     <div className="w-5 h-5 flex items-center justify-center">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
@@ -153,7 +156,7 @@ export function Header() {
                                     </div>
                                     <span>My Profile</span>
                                 </a>
-                                <a href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
+                                <a href={baseUrl} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
                                     {/* My Chat icon - Messages from Sidebar */}
                                     <div className="w-5 h-5 flex items-center justify-center">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
@@ -169,7 +172,7 @@ export function Header() {
                                     </div>
                                     <span>My Chat</span>
                                 </a>
-                                <a href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
+                                <a href={baseUrl} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
                                     {/* Tasks icon */}
                                     <div className="w-5 h-5 flex items-center justify-center">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
@@ -191,7 +194,7 @@ export function Header() {
                                     </div>
                                     <span>Tasks</span>
                                 </a>
-                                <a href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
+                                <a href={baseUrl} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
                                     {/* Settings icon */}
                                     <div className="w-5 h-5 flex items-center justify-center">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
@@ -207,7 +210,10 @@ export function Header() {
                                 </a>
 
                                 <button
-                                    onClick={() => signOut()}
+                                    onClick={async () => {
+                                        await signOut()
+                                        window.location.href = '/'
+                                    }}
                                     className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group"
                                 >
                                     {/* Logout icon */}

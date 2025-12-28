@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ... existing styles ... */
+/* Actually I will skip this call and view the file first to be safe */
+@tailwind components;
+@tailwind utilities;
+
 /* =============================================================================
    CSS VARIABLES - DESIGN SYSTEM
    ============================================================================= */
@@ -110,4 +115,14 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Autofill Fix for Dark Theme */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #0a0a0f inset !important;
+  -webkit-text-fill-color: white !important;
+  caret-color: white !important;
 }

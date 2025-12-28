@@ -22,10 +22,11 @@ export const users = pgTable('users', {
     lastName: varchar('last_name', { length: 100 }),
     birthDate: timestamp('birth_date'),
     gender: varchar('gender', { length: 50 }),
-    phone: varchar('phone', { length: 50 }),
+    position: varchar('position', { length: 100 }), // e.g. "Web Designer", "Programmer"
     role: userRoleEnum('role').default('member').notNull(),
     status: userStatusEnum('status').default('pending').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    lastActiveAt: timestamp('last_active_at'),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 

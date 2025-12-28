@@ -4,6 +4,8 @@
 
 export * from './auth'
 export * from './users'
+export * from './workspaces'
+export * from './roles'
 export * from './teams'
 export * from './pipelines'
 export * from './projects'
