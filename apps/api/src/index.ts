@@ -52,6 +52,10 @@ if (process.env.NODE_ENV !== 'production') {
     app.use('*', prettyJSON())
 }
 
+// Activity tracking - update lastActiveAt for authenticated users
+import { updateLastActivity } from './middleware/activity'
+app.use('/api/*', updateLastActivity)
+
 // =============================================================================
 // ROUTES
 // =============================================================================

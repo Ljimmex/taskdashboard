@@ -1,3 +1,5 @@
+export type TeamLevel = 'team_lead' | 'senior' | 'mid' | 'junior' | 'intern'
+
 export interface TeamMember {
     id: string
     name: string
@@ -6,10 +8,18 @@ export interface TeamMember {
     projects: string[]
     projectCount: number
     dateAdded: string
+    dateAddedRaw?: Date | null
     lastActive: string
+    lastActiveDate?: Date | null
     avatar?: string
     position?: string
     teams?: string[]
+    status?: 'active' | 'inactive' | 'pending'
+    // Location
+    city?: string
+    country?: string
+    // Team level
+    teamLevel?: TeamLevel
 }
 
 export interface Team {

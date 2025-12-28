@@ -4,15 +4,37 @@ import {
     tasks, subtasks, taskLabels, labels, taskActivityLog,
     type NewTask, type NewSubtask
 } from '../../db/schema/tasks'
+import { projects } from '../../db/schema/projects'
 import { eq, desc, and } from 'drizzle-orm'
+import {
+    canCreateTasks,
+    canUpdateTasks,
+    canDeleteTasks,
+    canAssignTasks,
+    type TeamLevel
+} from '../../lib/permissions'
 
 export const tasksRoutes = new Hono()
+
+// Helper: Get user's team level for a project's team
+async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
+    const member = await db.query.teamMembers.findFirst({
+        where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId))
+    })
+    return (member?.teamLevel as TeamLevel) || null
+}
+
+// Helper: Get teamId from projectId
+async function getTeamIdFromProject(projectId: string): Promise<string | null> {
+    const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, projectId)).limit(1)
+    return project?.teamId || null
+}
 
 // =============================================================================
 // TASKS CRUD (3.11)
 // =============================================================================
 
-// GET /api/tasks
+// GET /api/tasks - List tasks (filtered by project membership)
 tasksRoutes.get('/', async (c) => {
     try {
         const { projectId, status, priority, assigneeId, isArchived } = c.req.query()
@@ -29,7 +51,7 @@ tasksRoutes.get('/', async (c) => {
     }
 })
 
-// GET /api/tasks/:id
+// GET /api/tasks/:id - Get single task with subitems and labels
 tasksRoutes.get('/:id', async (c) => {
     try {
         const id = c.req.param('id')
@@ -49,19 +71,34 @@ tasksRoutes.get('/:id', async (c) => {
     }
 })
 
-// POST /api/tasks
+// POST /api/tasks - Create task (requires tasks.create permission)
 tasksRoutes.post('/', async (c) => {
     try {
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
         const body = await c.req.json()
+
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(body.projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canCreateTasks(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to create tasks' }, 403)
+        }
+
         const newTask: NewTask = {
             projectId: body.projectId, title: body.title, description: body.description || null,
             status: body.status || 'todo', priority: body.priority || 'medium',
-            assigneeId: body.assigneeId || null, reporterId: body.reporterId,
+            assigneeId: body.assigneeId || null, reporterId: body.reporterId || userId,
             parentId: body.parentId || null,
             dueDate: body.dueDate ? new Date(body.dueDate) : null, estimatedHours: body.estimatedHours || null,
         }
         const [created] = await db.insert(tasks).values(newTask).returning()
-        await db.insert(taskActivityLog).values({ taskId: created.id, userId: body.reporterId, activityType: 'created', newValue: created.title })
+        await db.insert(taskActivityLog).values({ taskId: created.id, userId: body.reporterId || userId, activityType: 'created', newValue: created.title })
         return c.json({ success: true, data: created }, 201)
     } catch (error) {
         console.error('Error creating task:', error)
@@ -69,11 +106,39 @@ tasksRoutes.post('/', async (c) => {
     }
 })
 
-// PATCH /api/tasks/:id
+// PATCH /api/tasks/:id - Update task (requires tasks.update OR is assignee)
 tasksRoutes.patch('/:id', async (c) => {
     try {
         const id = c.req.param('id')
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
         const body = await c.req.json()
+
+        // Get task
+        const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
+        if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(task.projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        // Allow if: has update permission OR is assignee
+        const isAssignee = task.assigneeId === userId
+        if (!canUpdateTasks(null, teamLevel) && !isAssignee) {
+            return c.json({ success: false, error: 'Unauthorized to update task' }, 403)
+        }
+
+        // Check if trying to assign - requires assign permission
+        if (body.assigneeId !== undefined && body.assigneeId !== task.assigneeId) {
+            if (!canAssignTasks(null, teamLevel)) {
+                return c.json({ success: false, error: 'Unauthorized to assign tasks' }, 403)
+            }
+        }
+
         const updateData: any = { updatedAt: new Date() }
         if (body.title !== undefined) updateData.title = body.title
         if (body.description !== undefined) updateData.description = body.description
@@ -84,6 +149,7 @@ tasksRoutes.patch('/:id', async (c) => {
         if (body.estimatedHours !== undefined) updateData.estimatedHours = body.estimatedHours
         if (body.progress !== undefined) updateData.progress = body.progress
         if (body.isArchived !== undefined) updateData.isArchived = body.isArchived
+
         const [updated] = await db.update(tasks).set(updateData).where(eq(tasks.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Task not found' }, 404)
         return c.json({ success: true, data: updated })
@@ -93,10 +159,29 @@ tasksRoutes.patch('/:id', async (c) => {
     }
 })
 
-// DELETE /api/tasks/:id
+// DELETE /api/tasks/:id - Delete task (requires tasks.delete permission)
 tasksRoutes.delete('/:id', async (c) => {
     try {
         const id = c.req.param('id')
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
+
+        // Get task
+        const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
+        if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(task.projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canDeleteTasks(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to delete task' }, 403)
+        }
+
         const [deleted] = await db.delete(tasks).where(eq(tasks.id, id)).returning()
         if (!deleted) return c.json({ success: false, error: 'Task not found' }, 404)
         return c.json({ success: true, message: `Task "${deleted.title}" deleted` })
@@ -113,10 +198,32 @@ tasksRoutes.delete('/:id', async (c) => {
 tasksRoutes.patch('/:id/move', async (c) => {
     try {
         const id = c.req.param('id')
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
         const body = await c.req.json()
+
+        // Get task
+        const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
+        if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(task.projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        // Allow move if can update tasks or is assignee
+        const isAssignee = task.assigneeId === userId
+        if (!canUpdateTasks(null, teamLevel) && !isAssignee) {
+            return c.json({ success: false, error: 'Unauthorized to move task' }, 403)
+        }
+
         const updateData: any = { updatedAt: new Date() }
         if (body.status) updateData.status = body.status
         if (body.position !== undefined) updateData.position = body.position
+
         const [updated] = await db.update(tasks).set(updateData).where(eq(tasks.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Task not found' }, 404)
         return c.json({ success: true, data: updated })
@@ -127,7 +234,7 @@ tasksRoutes.patch('/:id/move', async (c) => {
 })
 
 // =============================================================================
-// SUBTASKS CRUD (3.13)
+// SUBTASKS CRUD (3.13) - Inherit permissions from parent task
 // =============================================================================
 
 tasksRoutes.get('/:id/subtasks', async (c) => {

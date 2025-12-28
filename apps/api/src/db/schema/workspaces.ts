@@ -111,10 +111,12 @@ export const workspaces = pgTable('workspaces', {
 // =============================================================================
 
 export const workspaceRoleEnum = pgEnum('workspace_role', [
-    'owner',      // Full control, can delete workspace
-    'admin',      // Can manage teams, projects, members
-    'member',     // Read-only workspace, can be added to teams
-    'guest'       // Limited access, view-only
+    'owner',           // Właściciel - pełna kontrola, może usunąć workspace
+    'admin',           // Administrator - zarządzanie bez billing
+    'project_manager', // Manager projektów - focus na projekty
+    'hr_manager',      // HR Manager - zarządzanie ludźmi
+    'member',          // Zwykły członek
+    'guest'            // Gość - ograniczony dostęp
 ])
 
 export const workspaceMembers = pgTable('workspace_members', {

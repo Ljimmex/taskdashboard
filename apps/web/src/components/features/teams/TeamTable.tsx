@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Team, TeamMember } from './types'
 import { PencilIcon, PencilIconGold, TrashIcon, TrashRedIcon } from '../tasks/TaskIcons'
 
@@ -24,9 +24,98 @@ const EyeIconGold = () => (
     </svg>
 )
 
+// Team Menu Component (3-dot)
+function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?: (team: Team) => void; onDeleteTeam?: (team: Team) => void }) {
+    const [isOpen, setIsOpen] = useState(false)
+    const menuRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setIsOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    return (
+        <div className="relative" ref={menuRef}>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation()
+                    setIsOpen(!isOpen)
+                }}
+                className="hover:text-white transition-colors p-1 rounded hover:bg-gray-700"
+            >
+                •••
+            </button>
+
+            {isOpen && (
+                <div className="absolute right-0 top-full mt-1 w-44 bg-[#1a1a24] rounded-xl shadow-2xl z-[100] py-1"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ position: 'fixed', transform: 'translateY(4px)' }}
+                >
+                    <button
+                        onClick={() => {
+                            onEditTeam?.(team)
+                            setIsOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800/80 hover:text-white transition-colors flex items-center gap-3"
+                    >
+                        <PencilIcon />
+                        Edit Team
+                    </button>
+                    <button
+                        onClick={() => {
+                            // Export members as CSV
+                            const csv = ['Name,Email,Role,Date Added'].concat(
+                                team.members.map(m => `${m.name},${m.email},${m.role},${m.dateAdded}`)
+                            ).join('\n')
+                            const blob = new Blob([csv], { type: 'text/csv' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `${team.name}-members.csv`
+                            a.click()
+                            setIsOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800/80 hover:text-white transition-colors flex items-center gap-3"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Export Members
+                    </button>
+                    <div className="my-1 mx-2 h-px bg-gray-800" />
+                    <button
+                        onClick={() => {
+                            onDeleteTeam?.(team)
+                            setIsOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3"
+                    >
+                        <TrashIcon />
+                        Delete Team
+                    </button>
+                </div>
+            )}
+        </div>
+    )
+}
+
 type SortColumn = 'name' | 'email' | 'role' | 'dateAdded' | 'lastActive'
 
-export function TeamTable({ team, onInvite, onEditMember, onViewMember }: { team: Team; onInvite: (team: Team) => void; onEditMember: (member: TeamMember) => void; onViewMember: (member: TeamMember) => void }) {
+interface TeamTableProps {
+    team: Team
+    onInvite: (team: Team) => void
+    onEditMember: (member: TeamMember) => void
+    onViewMember: (member: TeamMember) => void
+    onEditTeam?: (team: Team) => void
+    onDeleteTeam?: (team: Team) => void
+}
+
+export function TeamTable({ team, onInvite, onEditMember, onViewMember, onEditTeam, onDeleteTeam }: TeamTableProps) {
     const [isExpanded, setIsExpanded] = useState(true)
     const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -139,25 +228,47 @@ export function TeamTable({ team, onInvite, onEditMember, onViewMember }: { team
 
                 {/* Header Row (Team Name) */}
                 <div
-                    className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-800/30 transition-colors ${selectedMemberIds.size > 0 ? 'opacity-0 pointer-events-none' : ''}`} // Hide when bulk actions visible
+                    className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-800/30 transition-colors ${selectedMemberIds.size > 0 ? 'opacity-0 pointer-events-none' : ''}`}
                     onClick={() => setIsExpanded(!isExpanded)}
                 >
                     <h3 className="text-sm font-semibold text-gray-300">{team.name}</h3>
 
                     <div className="flex items-center gap-4">
-                        {team.members.length > 0 && isExpanded && (
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                        {isExpanded && (
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                                {/* Add Member */}
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         onInvite(team)
                                     }}
-                                    className="hover:text-white transition-colors text-lg leading-none"
-                                    title="Invite Members"
+                                    className="p-1.5 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                                    title="Add Member"
                                 >
-                                    +
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M12 5v14M5 12h14" />
+                                    </svg>
                                 </button>
-                                <button className="hover:text-white transition-colors" onClick={(e) => e.stopPropagation()}>•••</button>
+                                {/* Team Menu (3-dot) */}
+                                <TeamMenu
+                                    team={team}
+                                    onEditTeam={onEditTeam}
+                                    onDeleteTeam={onDeleteTeam}
+                                />
+                                {/* Expand/Fullscreen */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        // Toggle expanded view / fullscreen for this team
+                                        setIsExpanded(!isExpanded)
+                                    }}
+                                    className="p-1.5 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                                    title={isExpanded ? "Collapse" : "Expand"}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                                    </svg>
+                                </button>
                             </div>
                         )}
                         <svg

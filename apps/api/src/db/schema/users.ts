@@ -23,6 +23,8 @@ export const users = pgTable('users', {
     birthDate: timestamp('birth_date'),
     gender: varchar('gender', { length: 50 }),
     position: varchar('position', { length: 100 }), // e.g. "Web Designer", "Programmer"
+    city: varchar('city', { length: 100 }), // Location - City
+    country: varchar('country', { length: 100 }), // Location - Country
     role: userRoleEnum('role').default('member').notNull(),
     status: userStatusEnum('status').default('pending').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

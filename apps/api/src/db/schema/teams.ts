@@ -7,7 +7,8 @@ import { workspaces } from './workspaces'
 // ENUMS
 // =============================================================================
 
-export const teamMemberRoleEnum = pgEnum('team_member_role', ['owner', 'admin', 'member'])
+// Team Levels - hierarchy within a team
+export const teamLevelEnum = pgEnum('team_level', ['team_lead', 'senior', 'mid', 'junior', 'intern'])
 
 // =============================================================================
 // TEAMS TABLE
@@ -45,7 +46,8 @@ export const teamMembers = pgTable('team_members', {
     id: uuid('id').primaryKey().defaultRandom(),
     teamId: uuid('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    role: teamMemberRoleEnum('role').default('member').notNull(),
+    // Team level - hierarchy within the team (team_lead, senior, mid, junior, intern)
+    teamLevel: teamLevelEnum('team_level').default('junior').notNull(),
     joinedAt: timestamp('joined_at').defaultNow().notNull(),
 })
 

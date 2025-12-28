@@ -1,11 +1,33 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
-import { taskComments, type NewTaskComment } from '../../db/schema/tasks'
+import { taskComments, type NewTaskComment, tasks } from '../../db/schema/tasks'
+import { projects } from '../../db/schema/projects'
 import { eq } from 'drizzle-orm'
+import {
+    canCreateComments,
+    canModerateComments,
+    type TeamLevel
+} from '../../lib/permissions'
 
 export const commentsRoutes = new Hono()
 
-// GET /api/comments
+// Helper: Get user's team level for a project's team
+async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
+    const member = await db.query.teamMembers.findFirst({
+        where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId))
+    })
+    return (member?.teamLevel as TeamLevel) || null
+}
+
+// Helper: Get teamId from taskId
+async function getTeamIdFromTask(taskId: string): Promise<string | null> {
+    const [task] = await db.select({ projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1)
+    if (!task) return null
+    const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, task.projectId)).limit(1)
+    return project?.teamId || null
+}
+
+// GET /api/comments - List comments for a task (anyone with project access can view)
 commentsRoutes.get('/', async (c) => {
     try {
         const taskId = c.req.query('taskId')
@@ -18,13 +40,28 @@ commentsRoutes.get('/', async (c) => {
     }
 })
 
-// POST /api/comments
+// POST /api/comments - Create comment (requires comments.create permission)
 commentsRoutes.post('/', async (c) => {
     try {
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
         const body = await c.req.json()
+
+        // Get teamId from task
+        const teamId = await getTeamIdFromTask(body.taskId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Task not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canCreateComments(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to create comments' }, 403)
+        }
+
         const newComment: NewTaskComment = {
             taskId: body.taskId,
-            userId: body.userId,
+            userId: body.userId || userId,
             content: body.content,
             parentId: body.parentId || null, // Support for replies
             likes: '[]', // Initialize empty likes array
@@ -37,11 +74,33 @@ commentsRoutes.post('/', async (c) => {
     }
 })
 
-// PATCH /api/comments/:id
+// PATCH /api/comments/:id - Update comment (author OR moderate permission)
 commentsRoutes.patch('/:id', async (c) => {
     try {
         const id = c.req.param('id')
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
         const body = await c.req.json()
+
+        // Get comment to check author
+        const [comment] = await db.select().from(taskComments).where(eq(taskComments.id, id)).limit(1)
+        if (!comment) return c.json({ success: false, error: 'Comment not found' }, 404)
+
+        const isAuthor = comment.userId === userId
+
+        // Get teamId from task
+        const teamId = await getTeamIdFromTask(comment.taskId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Task not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        // Allow if: is author OR has moderate permission
+        if (!isAuthor && !canModerateComments(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to update comment' }, 403)
+        }
+
         const [updated] = await db.update(taskComments)
             .set({ content: body.content, updatedAt: new Date() })
             .where(eq(taskComments.id, id))
@@ -54,10 +113,32 @@ commentsRoutes.patch('/:id', async (c) => {
     }
 })
 
-// DELETE /api/comments/:id
+// DELETE /api/comments/:id - Delete comment (author OR moderate permission)
 commentsRoutes.delete('/:id', async (c) => {
     try {
         const id = c.req.param('id')
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
+
+        // Get comment to check author
+        const [comment] = await db.select().from(taskComments).where(eq(taskComments.id, id)).limit(1)
+        if (!comment) return c.json({ success: false, error: 'Comment not found' }, 404)
+
+        const isAuthor = comment.userId === userId
+
+        // Get teamId from task
+        const teamId = await getTeamIdFromTask(comment.taskId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Task not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        // Allow if: is author OR has moderate permission
+        if (!isAuthor && !canModerateComments(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to delete comment' }, 403)
+        }
+
         const [deleted] = await db.delete(taskComments).where(eq(taskComments.id, id)).returning()
         if (!deleted) return c.json({ success: false, error: 'Comment not found' }, 404)
         return c.json({ success: true, message: 'Comment deleted' })
@@ -67,7 +148,7 @@ commentsRoutes.delete('/:id', async (c) => {
     }
 })
 
-// POST /api/comments/:id/like
+// POST /api/comments/:id/like - Toggle like on comment
 commentsRoutes.post('/:id/like', async (c) => {
     try {
         const id = c.req.param('id')
@@ -104,15 +185,33 @@ commentsRoutes.post('/:id/like', async (c) => {
     }
 })
 
-// POST /api/comments/:id/reply
+// POST /api/comments/:id/reply - Reply to a comment
 commentsRoutes.post('/:id/reply', async (c) => {
     try {
         const parentId = c.req.param('id')
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
         const body = await c.req.json()
 
+        // Get parent comment to get taskId
+        const [parentComment] = await db.select().from(taskComments).where(eq(taskComments.id, parentId)).limit(1)
+        if (!parentComment) return c.json({ success: false, error: 'Parent comment not found' }, 404)
+
+        // Get teamId from task
+        const teamId = await getTeamIdFromTask(parentComment.taskId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Task not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canCreateComments(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to reply to comments' }, 403)
+        }
+
         const newReply: NewTaskComment = {
-            taskId: body.taskId,
-            userId: body.userId,
+            taskId: body.taskId || parentComment.taskId,
+            userId: body.userId || userId,
             content: body.content,
             parentId: parentId,
             likes: '[]',

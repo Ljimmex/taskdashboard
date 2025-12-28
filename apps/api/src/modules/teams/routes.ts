@@ -3,8 +3,29 @@ import { eq, and } from 'drizzle-orm'
 import { db } from '../../db'
 import { teams, teamMembers } from '../../db/schema/teams'
 import { users } from '../../db/schema/users'
+import {
+    canManageTeamMembers,
+    type WorkspaceRole,
+    type TeamLevel
+} from '../../lib/permissions'
 
 export const teamsRoutes = new Hono()
+
+// Helper: Get user's workspace role
+async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    const member = await db.query.workspaceMembers.findFirst({
+        where: (wm, { eq, and }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId))
+    })
+    return (member?.role as WorkspaceRole) || null
+}
+
+// Helper: Get user's team level
+async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
+    const member = await db.query.teamMembers.findFirst({
+        where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId))
+    })
+    return (member?.teamLevel as TeamLevel) || null
+}
 
 // GET /api/teams - List teams (optionally filtered by workspaceId)
 teamsRoutes.get('/', async (c) => {
@@ -75,38 +96,26 @@ teamsRoutes.post('/', async (c) => {
             return c.json({ error: 'You must be a member of the workspace to create a team' }, 403)
         }
 
-        // Transaction: Create team, add creator as owner, AND add initial members
+        // Transaction: Create team and add initial members (creator NOT auto-added)
         const result = await db.transaction(async (tx) => {
             const [newTeam] = await tx.insert(teams).values({
                 name,
                 description,
                 workspaceId,
                 color: color || '#3B82F6',
-                ownerId: userId, // Legacy
+                ownerId: userId, // Legacy field - still tracks who created it
             }).returning()
 
-            // 1. Add creator as owner
-            await tx.insert(teamMembers).values({
-                teamId: newTeam.id,
-                userId: userId,
-                role: 'owner',
-            })
-
-            // 2. Add other invited members
+            // Add invited members (if any)
             if (members && Array.isArray(members) && members.length > 0) {
                 const membersToInsert = members.map((m: any) => ({
                     teamId: newTeam.id,
-                    userId: m.id, // Frontend sends { id: userId, role: ... }
-                    role: m.role || 'member'
+                    userId: m.id,
+                    teamLevel: m.teamLevel || 'junior'
                 }))
 
-                // Filter out creator if they added themselves? 
-                // DB unique constraint should handle duplicates if (teamId, userId) allows only one.
-                // Or safekeeping:
-                const validMembers = membersToInsert.filter((m: any) => m.userId !== userId)
-
-                if (validMembers.length > 0) {
-                    await tx.insert(teamMembers).values(validMembers)
+                if (membersToInsert.length > 0) {
+                    await tx.insert(teamMembers).values(membersToInsert)
                 }
             }
 
@@ -170,17 +179,23 @@ teamsRoutes.patch('/:id', async (c) => {
     const body = await c.req.json()
 
     try {
-        const member = await db.query.teamMembers.findFirst({
-            where: (tm, { eq, and }) => and(eq(tm.teamId, id), eq(tm.userId, userId))
+        // Get team to find workspaceId
+        const team = await db.query.teams.findFirst({
+            where: (t, { eq }) => eq(t.id, id)
         })
+        if (!team) return c.json({ error: 'Team not found' }, 404)
 
-        if (!member || !['owner', 'admin'].includes(member.role)) {
-            // Also check workspace admin?
+        // Get user's workspace role and team level
+        const workspaceRole = await getUserWorkspaceRole(userId, team.workspaceId)
+        const teamLevel = await getUserTeamLevel(userId, id)
+
+        // Check permission: can manage teams
+        if (!canManageTeamMembers(workspaceRole, teamLevel)) {
             return c.json({ error: 'Unauthorized to update team' }, 403)
         }
 
         const [updated] = await db.update(teams)
-            .set({ ...body }) // removed updatedAt since it's not in schema yet
+            .set({ ...body })
             .where(eq(teams.id, id))
             .returning()
 
@@ -196,12 +211,19 @@ teamsRoutes.delete('/:id', async (c) => {
     const userId = c.req.header('x-user-id') || 'temp-user-id'
 
     try {
-        const member = await db.query.teamMembers.findFirst({
-            where: (tm, { eq, and }) => and(eq(tm.teamId, id), eq(tm.userId, userId))
+        // Get team to find workspaceId
+        const team = await db.query.teams.findFirst({
+            where: (t, { eq }) => eq(t.id, id)
         })
+        if (!team) return c.json({ error: 'Team not found' }, 404)
 
-        // Only owner can delete
-        if (!member || member.role !== 'owner') {
+        // Get user's workspace role and team level
+        const workspaceRole = await getUserWorkspaceRole(userId, team.workspaceId)
+        const teamLevel = await getUserTeamLevel(userId, id)
+
+        // Only owner/admin at workspace level OR team_lead can delete
+        const canDelete = workspaceRole === 'owner' || workspaceRole === 'admin' || teamLevel === 'team_lead'
+        if (!canDelete) {
             return c.json({ error: 'Unauthorized to delete team' }, 403)
         }
 
@@ -216,14 +238,21 @@ teamsRoutes.delete('/:id', async (c) => {
 teamsRoutes.post('/:id/members', async (c) => {
     const teamId = c.req.param('id')
     const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const { userId: memberIdToAdd, email, role = 'member' } = await c.req.json()
+    const { userId: memberIdToAdd, email, teamLevel: newMemberLevel = 'junior' } = await c.req.json()
 
     try {
-        // Validation: Requestor must be owner/admin of team
-        const requestor = await db.query.teamMembers.findFirst({
-            where: (tm, { eq, and }) => and(eq(tm.teamId, teamId), eq(tm.userId, userId))
+        // Get team to find workspaceId
+        const team = await db.query.teams.findFirst({
+            where: (t, { eq }) => eq(t.id, teamId)
         })
-        if (!requestor || !['owner', 'admin'].includes(requestor.role)) {
+        if (!team) return c.json({ error: 'Team not found' }, 404)
+
+        // Get user's permissions
+        const workspaceRole = await getUserWorkspaceRole(userId, team.workspaceId)
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        // Check permission to manage team members
+        if (!canManageTeamMembers(workspaceRole, teamLevel)) {
             return c.json({ error: 'Unauthorized to add members' }, 403)
         }
 
@@ -244,7 +273,7 @@ teamsRoutes.post('/:id/members', async (c) => {
         const [newMember] = await db.insert(teamMembers).values({
             teamId,
             userId: targetUserId,
-            role,
+            teamLevel: newMemberLevel,
         }).returning()
 
         return c.json({ data: newMember }, 201)
@@ -260,12 +289,19 @@ teamsRoutes.delete('/:id/members/:memberId', async (c) => {
     const userId = c.req.header('x-user-id') || 'temp-user-id'
 
     try {
-        const requestor = await db.query.teamMembers.findFirst({
-            where: (tm, { eq, and }) => and(eq(tm.teamId, teamId), eq(tm.userId, userId))
+        // Get team to find workspaceId
+        const team = await db.query.teams.findFirst({
+            where: (t, { eq }) => eq(t.id, teamId)
         })
+        if (!team) return c.json({ error: 'Team not found' }, 404)
 
-        // Can remove if: I am owner/admin OR I am removing myself
-        if (memberId !== userId && (!requestor || !['owner', 'admin'].includes(requestor.role))) {
+        // Get user's permissions
+        const workspaceRole = await getUserWorkspaceRole(userId, team.workspaceId)
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        // Can remove if: has manageMembers permission OR removing self
+        const canRemove = memberId === userId || canManageTeamMembers(workspaceRole, teamLevel)
+        if (!canRemove) {
             return c.json({ error: 'Unauthorized to remove members' }, 403)
         }
 
@@ -284,36 +320,47 @@ teamsRoutes.patch('/:id/members/:memberId', async (c) => {
     const teamId = c.req.param('id')
     const memberId = c.req.param('memberId')
     const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const { role, firstName, lastName, position } = await c.req.json()
+    const { firstName, lastName, position, city, country, teamLevel: newTeamLevel } = await c.req.json()
 
-    console.log('PATCH member', { teamId, memberId, role, firstName, lastName, position })
+    console.log('PATCH member', { teamId, memberId, firstName, lastName, position, city, country, newTeamLevel })
 
     try {
-        // Validation: Requestor must be owner/admin of team
-        const requestor = await db.query.teamMembers.findFirst({
-            where: (tm, { eq, and }) => and(eq(tm.teamId, teamId), eq(tm.userId, userId))
+        // Get team to find workspaceId
+        const team = await db.query.teams.findFirst({
+            where: (t, { eq }) => eq(t.id, teamId)
         })
+        if (!team) return c.json({ error: 'Team not found' }, 404)
 
-        if (!requestor || !['owner', 'admin'].includes(requestor.role)) {
-            console.log('Unauthorized requestor', requestor)
+        // Get user's permissions
+        const workspaceRole = await getUserWorkspaceRole(userId, team.workspaceId)
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        // Check permission to manage team members
+        if (!canManageTeamMembers(workspaceRole, teamLevel)) {
+            console.log('Unauthorized - workspaceRole:', workspaceRole, 'teamLevel:', teamLevel)
             return c.json({ error: 'Unauthorized to update members' }, 403)
         }
 
-        // Update team_members role if provided
-        if (role) {
-            console.log('Updating role', role)
+        // Update team_members teamLevel if provided AND valid
+        const validTeamLevels = ['team_lead', 'senior', 'mid', 'junior', 'intern']
+        if (newTeamLevel && validTeamLevels.includes(newTeamLevel)) {
+            console.log('Updating teamLevel', newTeamLevel)
             await db.update(teamMembers)
-                .set({ role })
+                .set({ teamLevel: newTeamLevel })
                 .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, memberId)))
+        } else if (newTeamLevel) {
+            console.log('Invalid teamLevel value ignored:', newTeamLevel)
         }
 
         // Update user details (Global Profile)
         // Note: Ideally this should be in /api/users, but facilitating here for "Edit Member" flow
-        if (firstName !== undefined || lastName !== undefined || position !== undefined) {
+        if (firstName !== undefined || lastName !== undefined || position !== undefined || city !== undefined || country !== undefined) {
             const updates: any = {}
             if (firstName !== undefined) updates.firstName = firstName
             if (lastName !== undefined) updates.lastName = lastName
             if (position !== undefined) updates.position = position
+            if (city !== undefined) updates.city = city
+            if (country !== undefined) updates.country = country
 
             // Consolidate full name
             if (firstName !== undefined || lastName !== undefined) {
@@ -329,11 +376,6 @@ teamsRoutes.patch('/:id/members/:memberId', async (c) => {
             }
 
             console.log('Updating user', updates)
-            // Update user
-            // Assuming 'users' table is imported or accessible via db.query.users.schema
-            // If 'users' is not directly imported, you might need to import it or use db.schema.users
-            // For this example, I'll assume `users` is available from a schema import.
-            // If not, you'd need to add `import { users } from '../../db/schema';` or similar.
             await db.update(users)
                 .set(updates)
                 .where(eq(users.id, memberId))

@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { createFileRoute, useParams } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { TeamHeader } from '@/components/features/teams/TeamHeader'
+import { TeamHeader, SortOption, SortDirection, FilterOption } from '@/components/features/teams/TeamHeader'
 import { TeamTable } from '@/components/features/teams/TeamTable'
 import { CreateTeamPanel } from '@/components/features/teams/CreateTeamPanel'
 import { InviteMemberPanel } from '@/components/features/teams/InviteMemberPanel'
@@ -27,6 +27,12 @@ export default function TeamPage() {
     })
     const [viewingSession, setViewingSession] = useState<{ member: TeamMember; teamName: string } | null>(null)
     const [editingSession, setEditingSession] = useState<{ member: TeamMember; teamName: string } | null>(null)
+
+    // Filter/Sort State
+    const [searchQuery, setSearchQuery] = useState('')
+    const [sortBy, setSortBy] = useState<SortOption>('name')
+    const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+    const [filters, setFilters] = useState<FilterOption>({})
 
     // 1. Fetch Current Workspace to get ID
     const { data: workspaces } = useQuery({
@@ -68,22 +74,139 @@ export default function TeamPage() {
         id: t.id,
         name: t.name,
         color: t.color || '#3B82F6',
-        members: t.members ? t.members.map((m: any) => ({
-            id: m.userId, // Use user_id from relation
-            name: m.user?.name || 'Unknown',
-            email: m.user?.email || '',
-            role: m.user?.position || m.role || 'Member', // Prefer User Position (Job Title), fallback to Team Role
-            projects: [], // Placeholder: Backend to implement
-            projectCount: 0,
-            dateAdded: m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : 'Unknown', // Use joinedAt from team_members
-            lastActive: 'Recently', // Placeholder
-            avatar: m.user?.image,
-            teams: [t.name], // Current team context
-            position: m.user?.position // Also set explicit position field
-        })) : []
+        members: t.members ? t.members.map((m: any) => {
+            // Format lastActiveAt date
+            let lastActiveStr = 'Never'
+            let lastActiveDate: Date | null = null
+            if (m.user?.lastActiveAt) {
+                lastActiveDate = new Date(m.user.lastActiveAt)
+                const now = new Date()
+                const diffMs = now.getTime() - lastActiveDate.getTime()
+                const diffMins = Math.floor(diffMs / (1000 * 60))
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+                if (diffMins < 5) {
+                    lastActiveStr = 'Just now'
+                } else if (diffMins < 60) {
+                    lastActiveStr = `${diffMins}m ago`
+                } else if (diffHours < 24) {
+                    lastActiveStr = `${diffHours}h ago`
+                } else if (diffDays < 7) {
+                    lastActiveStr = `${diffDays}d ago`
+                } else {
+                    lastActiveStr = lastActiveDate.toLocaleDateString()
+                }
+            }
+
+            return {
+                id: m.userId,
+                name: m.user?.name || 'Unknown',
+                email: m.user?.email || '',
+                role: m.user?.position || 'Member', // Job title from users table
+                projects: m.user?.projects || [],
+                projectCount: m.user?.projectCount || 0,
+                dateAdded: m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : 'Unknown',
+                dateAddedRaw: m.joinedAt ? new Date(m.joinedAt) : null,
+                lastActive: lastActiveStr,
+                lastActiveDate,
+                avatar: m.user?.image,
+                teams: [t.name],
+                position: m.user?.position,
+                status: m.user?.status || 'active',
+                city: m.user?.city,
+                country: m.user?.country,
+                teamLevel: m.teamLevel // Team level from team_members table
+            }
+        }) : []
     }))
 
-    // 4. Mutations
+    // 4. Get available options for filters
+    const availableRoles = useMemo(() => {
+        const roles = new Set<string>()
+        teams.forEach(t => t.members.forEach(m => {
+            if (m.role) roles.add(m.role)
+        }))
+        return Array.from(roles).sort()
+    }, [teams])
+
+    const availableTeams = useMemo(() => {
+        return teams.map(t => t.name).sort()
+    }, [teams])
+
+    const availableProjects = useMemo(() => {
+        const projects = new Set<string>()
+        teams.forEach(t => t.members.forEach(m => {
+            m.projects?.forEach((p: string) => projects.add(p))
+        }))
+        return Array.from(projects).sort()
+    }, [teams])
+
+    // 5. Apply Filters and Search
+    const filteredTeams = useMemo(() => {
+        return teams.map(team => {
+            let filteredMembers = team.members
+
+            // Search filter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase()
+                filteredMembers = filteredMembers.filter(m =>
+                    m.name.toLowerCase().includes(query) ||
+                    m.email.toLowerCase().includes(query) ||
+                    m.role.toLowerCase().includes(query)
+                )
+            }
+
+            // Role filter
+            if (filters.roles && filters.roles.length > 0) {
+                filteredMembers = filteredMembers.filter(m => filters.roles!.includes(m.role))
+            }
+
+            // Team filter (if showing all members)
+            if (filters.teams && filters.teams.length > 0) {
+                if (!filters.teams.includes(team.name)) {
+                    return { ...team, members: [] }
+                }
+            }
+
+            // Status filter
+            if (filters.status && filters.status.length > 0) {
+                filteredMembers = filteredMembers.filter(m => filters.status!.includes(m.status as any))
+            }
+
+            // Sort
+            filteredMembers = [...filteredMembers].sort((a, b) => {
+                let comparison = 0
+                switch (sortBy) {
+                    case 'name':
+                        comparison = a.name.localeCompare(b.name)
+                        break
+                    case 'email':
+                        comparison = a.email.localeCompare(b.email)
+                        break
+                    case 'role':
+                        comparison = a.role.localeCompare(b.role)
+                        break
+                    case 'dateAdded':
+                        comparison = (a.dateAddedRaw?.getTime() || 0) - (b.dateAddedRaw?.getTime() || 0)
+                        break
+                    case 'lastActive':
+                        comparison = (a.lastActiveDate?.getTime() || 0) - (b.lastActiveDate?.getTime() || 0)
+                        break
+                    case 'projectCount':
+                        comparison = (a.projectCount || 0) - (b.projectCount || 0)
+                        break
+                    default:
+                        comparison = 0
+                }
+                return sortDirection === 'asc' ? comparison : -comparison
+            })
+
+            return { ...team, members: filteredMembers }
+        }).filter(team => team.members.length > 0 || !searchQuery) // Show empty teams only if no search
+    }, [teams, searchQuery, filters, sortBy, sortDirection])
+
+    // 6. Mutations
     const createTeamMutation = useMutation({
         mutationFn: async (newTeam: { name: string; description?: string; color: string; members: any[] }) => {
             const res = await fetch('/api/teams', {
@@ -161,6 +284,22 @@ export default function TeamPage() {
         }
     })
 
+    const deleteTeamMutation = useMutation({
+        mutationFn: async (teamId: string) => {
+            const res = await fetch(`/api/teams/${teamId}`, {
+                method: 'DELETE',
+                headers: {
+                    'x-user-id': session?.user?.id || ''
+                }
+            })
+            if (!res.ok) throw new Error('Failed to delete team')
+            return res.json()
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['teams'] })
+        }
+    })
+
     // Handlers
     const handleCreateTeam = (teamData: { name: string; description?: string; color: string; members: any[] }) => {
         createTeamMutation.mutate(teamData)
@@ -208,6 +347,21 @@ export default function TeamPage() {
         })
     }
 
+    const handleDeleteTeam = (team: Team) => {
+        if (confirm(`Are you sure you want to delete "${team.name}"? This action cannot be undone.`)) {
+            deleteTeamMutation.mutate(team.id)
+        }
+    }
+
+    const handleEditTeam = (team: Team) => {
+        // TODO: Open edit team panel
+        console.log('Edit team:', team)
+    }
+
+    const handleSortChange = (sort: SortOption, direction: SortDirection) => {
+        setSortBy(sort)
+        setSortDirection(direction)
+    }
 
     if (isLoadingTeams) {
         return <div className="p-8 text-center text-gray-500">Loading teams...</div>
@@ -216,19 +370,31 @@ export default function TeamPage() {
     return (
         <div className="p-8 max-w-[1600px] mx-auto min-h-screen">
             <TeamHeader
-                teamCount={teams.length}
-                memberCount={teams.reduce((acc, t) => acc + t.members.length, 0)}
+                teamCount={filteredTeams.length}
+                memberCount={filteredTeams.reduce((acc, t) => acc + t.members.length, 0)}
                 onAddTeam={() => setIsCreatePanelOpen(true)}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSortChange={handleSortChange}
+                filters={filters}
+                onFiltersChange={setFilters}
+                availableRoles={availableRoles}
+                availableTeams={availableTeams}
+                availableProjects={availableProjects}
             />
 
             <div className="space-y-2">
-                {teams.map(team => (
+                {filteredTeams.map(team => (
                     <TeamTable
                         key={team.id}
                         team={team}
                         onInvite={handleInviteClick}
                         onEditMember={(member) => setEditingSession({ member, teamName: team.name })}
                         onViewMember={(member) => setViewingSession({ member, teamName: team.name })}
+                        onEditTeam={handleEditTeam}
+                        onDeleteTeam={handleDeleteTeam}
                     />
                 ))}
             </div>
@@ -253,7 +419,7 @@ export default function TeamPage() {
                 member={editingSession?.member || null}
                 currentTeamName={editingSession?.teamName}
                 availableTeams={teams.map(t => t.name)}
-                availableProjects={['Wortix', 'Pragion', 'Plague Inc.', 'UppApp', 'Handix', 'Clinic Web', 'Driftly', 'Internal', 'Apex', 'Hero', 'Nation', 'Mu', 'Zeta', 'Xi - Xian Group']}
+                availableProjects={availableProjects}
                 onSave={handleSaveMember}
                 onDelete={handleDeleteMember}
             />

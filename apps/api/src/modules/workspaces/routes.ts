@@ -3,8 +3,22 @@ import { eq } from 'drizzle-orm'
 import { db } from '../../db'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { auth } from '../../lib/auth'
+import {
+    canManageWorkspaceSettings,
+    canManageWorkspaceMembers,
+    canDeleteWorkspace,
+    type WorkspaceRole
+} from '../../lib/permissions'
 
 export const workspacesRoutes = new Hono()
+
+// Helper: Get user's workspace role
+async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    const member = await db.query.workspaceMembers.findFirst({
+        where: (wm, { eq, and }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId))
+    })
+    return (member?.role as WorkspaceRole) || null
+}
 
 // GET /api/workspaces - Get user's workspaces
 workspacesRoutes.get('/', async (c) => {
@@ -82,21 +96,16 @@ workspacesRoutes.post('/', async (c) => {
     }
 })
 
-// GET /api/workspaces/:id - Get workspace details
+// GET /api/workspaces/:id - Get workspace details (member access)
 workspacesRoutes.get('/:id', async (c) => {
     const id = c.req.param('id')
     const userId = c.req.header('x-user-id') || 'temp-user-id'
 
     try {
-        // Check membership first (RLS handles this in DB, but explicit check is good for API response)
-        const membership = await db.query.workspaceMembers.findFirst({
-            where: (members, { eq, and }) => and(
-                eq(members.workspaceId, id),
-                eq(members.userId, userId)
-            )
-        })
+        // Check membership
+        const workspaceRole = await getUserWorkspaceRole(userId, id)
 
-        if (!membership) {
+        if (!workspaceRole) {
             return c.json({ error: 'Workspace not found or access denied' }, 404)
         }
 
@@ -110,22 +119,17 @@ workspacesRoutes.get('/:id', async (c) => {
     }
 })
 
-// PATCH /api/workspaces/:id - Update workspace
+// PATCH /api/workspaces/:id - Update workspace (requires workspace.manageSettings)
 workspacesRoutes.patch('/:id', async (c) => {
     const id = c.req.param('id')
     const userId = c.req.header('x-user-id') || 'temp-user-id'
     const body = await c.req.json()
 
     try {
-        // Verify owner/admin role
-        const membership = await db.query.workspaceMembers.findFirst({
-            where: (members, { eq, and }) => and(
-                eq(members.workspaceId, id),
-                eq(members.userId, userId)
-            )
-        })
+        // Get user's workspace role
+        const workspaceRole = await getUserWorkspaceRole(userId, id)
 
-        if (!membership || !['owner', 'admin'].includes(membership.role)) {
+        if (!canManageWorkspaceSettings(workspaceRole)) {
             return c.json({ error: 'Unauthorized to update workspace' }, 403)
         }
 
@@ -140,21 +144,16 @@ workspacesRoutes.patch('/:id', async (c) => {
     }
 })
 
-// DELETE /api/workspaces/:id - Delete workspace
+// DELETE /api/workspaces/:id - Delete workspace (requires workspace.deleteWorkspace - only owner)
 workspacesRoutes.delete('/:id', async (c) => {
     const id = c.req.param('id')
     const userId = c.req.header('x-user-id') || 'temp-user-id'
 
     try {
-        // Verify owner role (ONLY owner can delete)
-        const membership = await db.query.workspaceMembers.findFirst({
-            where: (members, { eq, and }) => and(
-                eq(members.workspaceId, id),
-                eq(members.userId, userId)
-            )
-        })
+        // Get user's workspace role
+        const workspaceRole = await getUserWorkspaceRole(userId, id)
 
-        if (!membership || membership.role !== 'owner') {
+        if (!canDeleteWorkspace(workspaceRole)) {
             return c.json({ error: 'Only owner can delete workspace' }, 403)
         }
 
@@ -163,5 +162,58 @@ workspacesRoutes.delete('/:id', async (c) => {
         return c.json({ message: 'Workspace deleted successfully' })
     } catch (error) {
         return c.json({ error: 'Failed to delete workspace', details: String(error) }, 500)
+    }
+})
+
+// POST /api/workspaces/:id/members - Add member to workspace (requires workspace.manageMembers)
+workspacesRoutes.post('/:id/members', async (c) => {
+    const workspaceId = c.req.param('id')
+    const userId = c.req.header('x-user-id') || 'temp-user-id'
+    const body = await c.req.json()
+    const { userId: newMemberId, role = 'member' } = body
+
+    try {
+        // Get user's workspace role
+        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+
+        if (!canManageWorkspaceMembers(workspaceRole)) {
+            return c.json({ error: 'Unauthorized to manage workspace members' }, 403)
+        }
+
+        const [member] = await db.insert(workspaceMembers).values({
+            workspaceId,
+            userId: newMemberId,
+            role,
+            invitedBy: userId,
+        }).returning()
+
+        return c.json({ data: member }, 201)
+    } catch (error) {
+        return c.json({ error: 'Failed to add member', details: String(error) }, 500)
+    }
+})
+
+// DELETE /api/workspaces/:id/members/:memberId - Remove member from workspace
+workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
+    const workspaceId = c.req.param('id')
+    const memberId = c.req.param('memberId')
+    const userId = c.req.header('x-user-id') || 'temp-user-id'
+
+    try {
+        // Get user's workspace role
+        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+
+        // Can remove if: is the member themselves OR has manageMembers permission
+        const isSelf = memberId === userId
+        if (!isSelf && !canManageWorkspaceMembers(workspaceRole)) {
+            return c.json({ error: 'Unauthorized to remove workspace members' }, 403)
+        }
+
+        await db.delete(workspaceMembers)
+            .where(eq(workspaceMembers.id, memberId))
+
+        return c.json({ message: 'Member removed from workspace' })
+    } catch (error) {
+        return c.json({ error: 'Failed to remove member', details: String(error) }, 500)
     }
 })

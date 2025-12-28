@@ -1,12 +1,34 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { projectStages, industryTemplateStages, industryTemplates } from '../../db/schema'
+import { projects } from '../../db/schema/projects'
 import { eq, asc, max } from 'drizzle-orm'
+import {
+    canCreateStages,
+    canUpdateStages,
+    canDeleteStages,
+    canReorderStages,
+    type TeamLevel
+} from '../../lib/permissions'
 
 const app = new Hono()
 
+// Helper: Get user's team level for a project's team
+async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
+    const member = await db.query.teamMembers.findFirst({
+        where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId))
+    })
+    return (member?.teamLevel as TeamLevel) || null
+}
+
+// Helper: Get teamId from projectId
+async function getTeamIdFromProject(projectId: string): Promise<string | null> {
+    const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, projectId)).limit(1)
+    return project?.teamId || null
+}
+
 // =============================================================================
-// GET /api/projects/:projectId/stages - Get project stages
+// GET /api/projects/:projectId/stages - Get project stages (anyone with project access)
 // =============================================================================
 app.get('/:projectId/stages', async (c) => {
     const { projectId } = c.req.param()
@@ -29,10 +51,11 @@ app.get('/:projectId/stages', async (c) => {
 })
 
 // =============================================================================
-// POST /api/projects/:projectId/stages - Add custom stage
+// POST /api/projects/:projectId/stages - Add custom stage (requires stages.create)
 // =============================================================================
 app.post('/:projectId/stages', async (c) => {
     const { projectId } = c.req.param()
+    const userId = c.req.header('x-user-id') || 'temp-user-id'
     const body = await c.req.json()
     const { name, color = '#6B7280', isFinal = false } = body
 
@@ -41,6 +64,19 @@ app.post('/:projectId/stages', async (c) => {
     }
 
     try {
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canCreateStages(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to create stages' }, 403)
+        }
+
         // Get max position
         const [maxPos] = await db
             .select({ maxPosition: max(projectStages.position) })
@@ -68,14 +104,28 @@ app.post('/:projectId/stages', async (c) => {
 })
 
 // =============================================================================
-// PATCH /api/projects/:projectId/stages/:stageId - Update stage
+// PATCH /api/projects/:projectId/stages/:stageId - Update stage (requires stages.update)
 // =============================================================================
 app.patch('/:projectId/stages/:stageId', async (c) => {
-    const { stageId } = c.req.param()
+    const { projectId, stageId } = c.req.param()
+    const userId = c.req.header('x-user-id') || 'temp-user-id'
     const body = await c.req.json()
     const { name, color, isFinal } = body
 
     try {
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canUpdateStages(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to update stages' }, 403)
+        }
+
         const updateData: Partial<typeof projectStages.$inferInsert> = {}
         if (name !== undefined) updateData.name = name
         if (color !== undefined) updateData.color = color
@@ -99,13 +149,25 @@ app.patch('/:projectId/stages/:stageId', async (c) => {
 })
 
 // =============================================================================
-// DELETE /api/projects/:projectId/stages/:stageId - Delete stage
+// DELETE /api/projects/:projectId/stages/:stageId - Delete stage (requires stages.delete)
 // =============================================================================
 app.delete('/:projectId/stages/:stageId', async (c) => {
-    const { stageId } = c.req.param()
+    const { projectId, stageId } = c.req.param()
+    const userId = c.req.header('x-user-id') || 'temp-user-id'
 
     try {
-        // TODO: Check if any tasks are in this stage and handle migration
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canDeleteStages(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to delete stages' }, 403)
+        }
 
         const [deleted] = await db
             .delete(projectStages)
@@ -124,10 +186,11 @@ app.delete('/:projectId/stages/:stageId', async (c) => {
 })
 
 // =============================================================================
-// POST /api/projects/:projectId/stages/reorder - Reorder stages
+// POST /api/projects/:projectId/stages/reorder - Reorder stages (requires stages.reorder)
 // =============================================================================
 app.post('/:projectId/stages/reorder', async (c) => {
     const { projectId } = c.req.param()
+    const userId = c.req.header('x-user-id') || 'temp-user-id'
     const body = await c.req.json()
     const { stageIds } = body // Array of stage IDs in new order
 
@@ -136,6 +199,19 @@ app.post('/:projectId/stages/reorder', async (c) => {
     }
 
     try {
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canReorderStages(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to reorder stages' }, 403)
+        }
+
         // Update positions
         await Promise.all(
             stageIds.map((stageId, index) =>
@@ -165,6 +241,7 @@ app.post('/:projectId/stages/reorder', async (c) => {
 // =============================================================================
 app.post('/:projectId/stages/import', async (c) => {
     const { projectId } = c.req.param()
+    const userId = c.req.header('x-user-id') || 'temp-user-id'
     const body = await c.req.json()
     const { templateStageId } = body
 
@@ -173,6 +250,19 @@ app.post('/:projectId/stages/import', async (c) => {
     }
 
     try {
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canCreateStages(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to import stages' }, 403)
+        }
+
         // Get template stage
         const [templateStage] = await db
             .select()
@@ -216,6 +306,7 @@ app.post('/:projectId/stages/import', async (c) => {
 // =============================================================================
 app.post('/:projectId/stages/init-from-template', async (c) => {
     const { projectId } = c.req.param()
+    const userId = c.req.header('x-user-id') || 'temp-user-id'
     const body = await c.req.json()
     const { templateSlug } = body
 
@@ -224,6 +315,19 @@ app.post('/:projectId/stages/init-from-template', async (c) => {
     }
 
     try {
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        // Get permissions
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+
+        if (!canCreateStages(null, teamLevel)) {
+            return c.json({ success: false, error: 'Unauthorized to initialize stages' }, 403)
+        }
+
         // Get template
         const [template] = await db
             .select()

@@ -82,6 +82,34 @@ export const roles = pgTable('roles', {
             complete?: boolean
             viewAll?: boolean
         }
+        // Comment permissions
+        comments?: {
+            create?: boolean    // Tworzenie komentarzy
+            update?: boolean    // Edycja swoich komentarzy
+            delete?: boolean    // Usuwanie swoich komentarzy
+            moderate?: boolean  // Usuwanie/edycja cudzych komentarzy
+        }
+        // Label permissions
+        labels?: {
+            create?: boolean
+            update?: boolean
+            delete?: boolean
+        }
+        // Project stages (Kanban) permissions
+        stages?: {
+            create?: boolean
+            update?: boolean
+            delete?: boolean
+            reorder?: boolean
+        }
+        // Time tracking permissions
+        timeTracking?: {
+            create?: boolean    // Tworzenie wpisów
+            update?: boolean    // Edycja swoich wpisów
+            delete?: boolean    // Usuwanie swoich wpisów
+            viewAll?: boolean   // Widok wszystkich wpisów
+            manage?: boolean    // Zarządzanie cudzymi wpisami
+        }
         // File permissions
         files?: {
             upload?: boolean
@@ -172,6 +200,30 @@ export const SYSTEM_ROLES = {
                 complete: true,
                 viewAll: true,
             },
+            comments: {
+                create: true,
+                update: true,
+                delete: true,
+                moderate: true,
+            },
+            labels: {
+                create: true,
+                update: true,
+                delete: true,
+            },
+            stages: {
+                create: true,
+                update: true,
+                delete: true,
+                reorder: true,
+            },
+            timeTracking: {
+                create: true,
+                update: true,
+                delete: true,
+                viewAll: true,
+                manage: true,
+            },
             files: {
                 upload: true,
                 download: true,
@@ -218,6 +270,30 @@ export const SYSTEM_ROLES = {
                 assign: true,
                 complete: true,
                 viewAll: true,
+            },
+            comments: {
+                create: true,
+                update: true,
+                delete: true,
+                moderate: true,
+            },
+            labels: {
+                create: true,
+                update: true,
+                delete: true,
+            },
+            stages: {
+                create: true,
+                update: true,
+                delete: true,
+                reorder: true,
+            },
+            timeTracking: {
+                create: true,
+                update: true,
+                delete: true,
+                viewAll: true,
+                manage: true,
             },
             files: {
                 upload: true,
@@ -266,6 +342,30 @@ export const SYSTEM_ROLES = {
                 complete: true,
                 viewAll: true,
             },
+            comments: {
+                create: true,
+                update: true,
+                delete: true,
+                moderate: true,
+            },
+            labels: {
+                create: true,
+                update: true,
+                delete: true,
+            },
+            stages: {
+                create: true,
+                update: true,
+                delete: true,
+                reorder: true,
+            },
+            timeTracking: {
+                create: true,
+                update: true,
+                delete: true,
+                viewAll: true,
+                manage: false,
+            },
             files: {
                 upload: true,
                 download: true,
@@ -312,6 +412,30 @@ export const SYSTEM_ROLES = {
                 assign: true, // Może przypisywać zadania
                 complete: false,
                 viewAll: true,
+            },
+            comments: {
+                create: true,
+                update: true,
+                delete: false,
+                moderate: false,
+            },
+            labels: {
+                create: false,
+                update: false,
+                delete: false,
+            },
+            stages: {
+                create: false,
+                update: false,
+                delete: false,
+                reorder: false,
+            },
+            timeTracking: {
+                create: true,
+                update: true,
+                delete: true,
+                viewAll: true,
+                manage: false,
             },
             files: {
                 upload: true,
@@ -360,6 +484,30 @@ export const SYSTEM_ROLES = {
                 complete: true,
                 viewAll: false,
             },
+            comments: {
+                create: true,
+                update: true, // Tylko swoje
+                delete: true, // Tylko swoje
+                moderate: false,
+            },
+            labels: {
+                create: false,
+                update: false,
+                delete: false,
+            },
+            stages: {
+                create: false,
+                update: false,
+                delete: false,
+                reorder: false,
+            },
+            timeTracking: {
+                create: true,
+                update: true, // Tylko swoje
+                delete: true, // Tylko swoje
+                viewAll: false,
+                manage: false,
+            },
             files: {
                 upload: true,
                 download: true,
@@ -405,6 +553,30 @@ export const SYSTEM_ROLES = {
                 complete: true,
                 viewAll: false,
             },
+            comments: {
+                create: true,
+                update: true,
+                delete: true,
+                moderate: true, // Team lead może moderować
+            },
+            labels: {
+                create: true,
+                update: true,
+                delete: true,
+            },
+            stages: {
+                create: true,
+                update: true,
+                delete: true,
+                reorder: true,
+            },
+            timeTracking: {
+                create: true,
+                update: true,
+                delete: true,
+                viewAll: true, // Widzi czas zespołu
+                manage: true, // Może zarządzać czasem zespołu
+            },
             files: {
                 upload: true,
                 download: true,
@@ -445,6 +617,30 @@ export const SYSTEM_ROLES = {
                 assign: true, // Może przypisywać zadania juniorom
                 complete: true,
                 viewAll: false,
+            },
+            comments: {
+                create: true,
+                update: true,
+                delete: true,
+                moderate: true, // Senior może moderować
+            },
+            labels: {
+                create: true,
+                update: true,
+                delete: false,
+            },
+            stages: {
+                create: false,
+                update: true,
+                delete: false,
+                reorder: true,
+            },
+            timeTracking: {
+                create: true,
+                update: true,
+                delete: true,
+                viewAll: false,
+                manage: false,
             },
             files: {
                 upload: true,
@@ -487,6 +683,30 @@ export const SYSTEM_ROLES = {
                 complete: true,
                 viewAll: false,
             },
+            comments: {
+                create: true,
+                update: true, // Tylko swoje
+                delete: true, // Tylko swoje
+                moderate: false,
+            },
+            labels: {
+                create: false,
+                update: false,
+                delete: false,
+            },
+            stages: {
+                create: false,
+                update: false,
+                delete: false,
+                reorder: false,
+            },
+            timeTracking: {
+                create: true,
+                update: true, // Tylko swoje
+                delete: true, // Tylko swoje
+                viewAll: false,
+                manage: false,
+            },
             files: {
                 upload: true,
                 download: true,
@@ -528,6 +748,30 @@ export const SYSTEM_ROLES = {
                 complete: true, // Może oznaczać jako done
                 viewAll: false,
             },
+            comments: {
+                create: true,
+                update: true, // Tylko swoje
+                delete: true, // Tylko swoje
+                moderate: false,
+            },
+            labels: {
+                create: false,
+                update: false,
+                delete: false,
+            },
+            stages: {
+                create: false,
+                update: false,
+                delete: false,
+                reorder: false,
+            },
+            timeTracking: {
+                create: true,
+                update: true, // Tylko swoje
+                delete: true, // Tylko swoje
+                viewAll: false,
+                manage: false,
+            },
             files: {
                 upload: true,
                 download: true,
@@ -568,6 +812,30 @@ export const SYSTEM_ROLES = {
                 assign: false,
                 complete: true, // Może oznaczać swoje jako done
                 viewAll: false,
+            },
+            comments: {
+                create: true,
+                update: true, // Tylko swoje
+                delete: false, // Nie może usuwać
+                moderate: false,
+            },
+            labels: {
+                create: false,
+                update: false,
+                delete: false,
+            },
+            stages: {
+                create: false,
+                update: false,
+                delete: false,
+                reorder: false,
+            },
+            timeTracking: {
+                create: true,
+                update: true, // Tylko swoje
+                delete: false, // Nie może usuwać
+                viewAll: false,
+                manage: false,
             },
             files: {
                 upload: true, // Może uploadować pliki

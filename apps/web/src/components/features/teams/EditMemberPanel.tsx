@@ -4,7 +4,7 @@ import { usePanelStore } from '../../../lib/panelStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { TeamMember } from './types'
+import { TeamMember, TeamLevel } from './types'
 
 interface EditMemberPanelProps {
     isOpen: boolean
@@ -38,6 +38,9 @@ export function EditMemberPanel({
     const [lastName, setLastName] = useState('')
     const [position, setPosition] = useState('')
     const [email, setEmail] = useState('')
+    const [city, setCity] = useState('')
+    const [country, setCountry] = useState('')
+    const [teamLevel, setTeamLevel] = useState<TeamLevel | ''>('')
 
     // Arrays state
     const [teams, setTeams] = useState<string[]>([])
@@ -61,6 +64,9 @@ export function EditMemberPanel({
 
             setPosition(member.position || member.role || '')
             setEmail(member.email)
+            setCity(member.city || '')
+            setCountry(member.country || '')
+            setTeamLevel(member.teamLevel || '')
             // If currentTeamName is provided, ensure it's in the list, otherwise defaults
             const initialTeams = currentTeamName ? [currentTeamName] : (member.teams || [])
             // Ensure unique
@@ -107,8 +113,10 @@ export function EditMemberPanel({
                 name: `${firstName} ${lastName}`.trim(),
                 firstName,
                 lastName,
-                role: position,
                 position: position,
+                city: city || undefined,
+                country: country || undefined,
+                teamLevel: teamLevel || undefined,
             } as any)
             onClose()
         } catch (error) {
@@ -236,6 +244,45 @@ export function EditMemberPanel({
                             className="bg-[#1a1a24] border-gray-800 text-white rounded-lg focus:border-amber-500/50"
                             placeholder="e.g. Product Designer"
                         />
+                    </div>
+
+                    {/* Team Level */}
+                    <div className="space-y-2">
+                        <Label className="text-gray-400 text-xs">Team Level</Label>
+                        <select
+                            value={teamLevel}
+                            onChange={(e) => setTeamLevel(e.target.value as TeamLevel | '')}
+                            className="w-full px-3 py-2 bg-[#1a1a24] border border-gray-800 text-white rounded-lg focus:border-amber-500/50 focus:outline-none text-sm"
+                        >
+                            <option value="">Select level...</option>
+                            <option value="team_lead">Team Lead</option>
+                            <option value="senior">Senior</option>
+                            <option value="mid">Mid-level</option>
+                            <option value="junior">Junior</option>
+                            <option value="intern">Intern</option>
+                        </select>
+                    </div>
+
+                    {/* Location */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-gray-400 text-xs">City</Label>
+                            <Input
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                                className="bg-[#1a1a24] border-gray-800 text-white rounded-lg focus:border-amber-500/50"
+                                placeholder="e.g. Warsaw"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-gray-400 text-xs">Country</Label>
+                            <Input
+                                value={country}
+                                onChange={(e) => setCountry(e.target.value)}
+                                className="bg-[#1a1a24] border-gray-800 text-white rounded-lg focus:border-amber-500/50"
+                                placeholder="e.g. Poland"
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-2">
