@@ -74,6 +74,7 @@ export default function TeamPage() {
         id: t.id,
         name: t.name,
         color: t.color || '#3B82F6',
+        projects: t.projects || [],
         members: t.members ? t.members.map((m: any) => {
             // Format lastActiveAt date
             let lastActiveStr = 'Never'
@@ -105,7 +106,7 @@ export default function TeamPage() {
                 email: m.user?.email || '',
                 role: m.user?.position || 'Member', // Job title from users table
                 projects: m.user?.projects || [],
-                projectCount: m.user?.projectCount || 0,
+                projectCount: m.user?.projects?.length || m.user?.projectCount || 0,
                 dateAdded: m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : 'Unknown',
                 dateAddedRaw: m.joinedAt ? new Date(m.joinedAt) : null,
                 lastActive: lastActiveStr,
@@ -136,9 +137,11 @@ export default function TeamPage() {
 
     const availableProjects = useMemo(() => {
         const projects = new Set<string>()
-        teams.forEach(t => t.members.forEach(m => {
-            m.projects?.forEach((p: string) => projects.add(p))
-        }))
+        teams.forEach(t => {
+            // Add projects from the team itself (fetched from API)
+            t.projects?.forEach((p: any) => projects.add(p.name))
+            // Also keep existing logic just in case (optional, but cleaner to rely on team.projects)
+        })
         return Array.from(projects).sort()
     }, [teams])
 

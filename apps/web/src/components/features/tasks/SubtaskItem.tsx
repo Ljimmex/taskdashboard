@@ -22,10 +22,10 @@ const DEFAULT_STATUSES = [
 export interface Subtask {
     id: string
     title: string
-    description?: string
-    status: 'todo' | 'in_progress' | 'done' | string
+    description?: string | null
+    status: 'todo' | 'in_progress' | 'review' | 'done' | string
     priority: 'urgent' | 'high' | 'medium' | 'low' | string
-    completed?: boolean
+    isCompleted: boolean
 }
 
 // Priority config with icons
@@ -89,7 +89,7 @@ export function SubtaskItem({
     const inputRef = useRef<HTMLInputElement>(null)
     const addAfterInputRef = useRef<HTMLInputElement>(null)
 
-    const isCompleted = subtask.status === 'done' || subtask.completed
+    const isCompleted = subtask.status === 'done' || subtask.isCompleted
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -297,7 +297,7 @@ export function SubtaskItem({
                                                     <button
                                                         key={s.id}
                                                         onClick={() => {
-                                                            onEdit?.({ status: s.id, completed: s.id === 'done' })
+                                                            onEdit?.({ status: s.id, isCompleted: s.id === 'done' })
                                                             setShowMenu(false)
                                                         }}
                                                         className={cn(

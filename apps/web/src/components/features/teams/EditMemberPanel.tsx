@@ -117,6 +117,7 @@ export function EditMemberPanel({
                 city: city || undefined,
                 country: country || undefined,
                 teamLevel: teamLevel || undefined,
+                projects: projectNames,
             } as any)
             onClose()
         } catch (error) {

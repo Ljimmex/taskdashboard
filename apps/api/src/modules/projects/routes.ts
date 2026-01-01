@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
-import { projects, type NewProject } from '../../db/schema/projects'
-import { eq, desc } from 'drizzle-orm'
+import { eq, asc } from 'drizzle-orm'
+import { projects, projectMembers, industryTemplateStages, projectStages, type NewProject } from '../../db/schema'
 import {
     canCreateProjects,
     canUpdateProjects,
@@ -31,7 +31,56 @@ async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLev
 // GET /api/projects - List projects (anyone logged in can see projects they have access to)
 projectsRoutes.get('/', async (c) => {
     try {
-        const result = await db.select().from(projects).orderBy(desc(projects.createdAt))
+        const { workspaceSlug } = c.req.query()
+
+        let workspaceId: string | null = null
+        if (workspaceSlug) {
+            const ws = await db.query.workspaces.findFirst({
+                where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
+            })
+            if (!ws) return c.json({ success: true, data: [] })
+            workspaceId = ws.id
+        }
+
+        let teamIds: string[] = []
+        if (workspaceId) {
+            const workspaceTeams = await db.query.teams.findMany({
+                where: (t, { eq }) => eq(t.workspaceId, workspaceId)
+            })
+            teamIds = workspaceTeams.map(t => t.id)
+            if (teamIds.length === 0) return c.json({ success: true, data: [] })
+        }
+
+        const result = await db.query.projects.findMany({
+            where: (p, { inArray }) => {
+                if (teamIds.length > 0) return inArray(p.teamId, teamIds)
+                return undefined
+            },
+            with: {
+                stages: {
+                    orderBy: (s, { asc }) => [asc(s.position)]
+                },
+                members: {
+                    with: {
+                        user: {
+                            columns: { id: true, name: true, image: true }
+                        }
+                    }
+                },
+                team: {
+                    with: {
+                        members: {
+                            with: {
+                                user: {
+                                    columns: { id: true, name: true, image: true }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: (p, { desc }) => [desc(p.createdAt)]
+        })
         return c.json({ success: true, data: result })
     } catch (error) {
         console.error('Error fetching projects:', error)
@@ -43,7 +92,14 @@ projectsRoutes.get('/', async (c) => {
 projectsRoutes.get('/:id', async (c) => {
     try {
         const id = c.req.param('id')
-        const [project] = await db.select().from(projects).where(eq(projects.id, id)).limit(1)
+        const project = await db.query.projects.findFirst({
+            where: (p, { eq }) => eq(p.id, id),
+            with: {
+                stages: {
+                    orderBy: (s, { asc }) => [asc(s.position)]
+                }
+            }
+        })
         if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
         return c.json({ success: true, data: project })
     } catch (error) {
@@ -76,9 +132,51 @@ projectsRoutes.post('/', async (c) => {
             teamId: body.teamId,
             name: body.name,
             description: body.description || null,
+            color: body.color || undefined,
+            industryTemplateId: body.industryTemplateId || null,
+            startDate: body.startDate ? new Date(body.startDate) : null,
             deadline: body.deadline ? new Date(body.deadline) : null,
         }
         const [created] = await db.insert(projects).values(newProject).returning()
+
+        // Initialize stages if template is selected
+        if (body.industryTemplateId) {
+            const templateStages = await db
+                .select()
+                .from(industryTemplateStages)
+                .where(eq(industryTemplateStages.templateId, body.industryTemplateId))
+                .orderBy(asc(industryTemplateStages.position))
+
+            if (templateStages.length > 0) {
+                await Promise.all(
+                    templateStages.map((ts) =>
+                        db.insert(projectStages).values({
+                            projectId: created.id,
+                            name: ts.name,
+                            color: ts.color,
+                            position: ts.position,
+                            isFinal: ts.isFinal,
+                        })
+                    )
+                )
+            }
+        }
+
+        // Auto-add team members to the project
+        const teamMems = await db.query.teamMembers.findMany({
+            where: (tm, { eq }) => eq(tm.teamId, teamId)
+        })
+
+        if (teamMems.length > 0) {
+            await db.insert(projectMembers).values(
+                teamMems.map(tm => ({
+                    projectId: created.id,
+                    userId: tm.userId,
+                    role: 'member'
+                }))
+            )
+        }
+
         return c.json({ success: true, data: created }, 201)
     } catch (error) {
         console.error('Error creating project:', error)

@@ -1,161 +1,78 @@
-import { pgTable, text, varchar, timestamp, jsonb, pgEnum, boolean, uuid } from 'drizzle-orm/pg-core'
-import { workspaces } from './workspaces'
-import { teams } from './teams'
-
 // =============================================================================
-// ENUMS
+// SYSTEM ROLES - Permission Definitions (Code-based, not database tables)
 // =============================================================================
-
-export const roleTypeEnum = pgEnum('role_type', [
-    'global',      // Workspace-wide role
-    'team'         // Team-specific role
-])
-
-export const roleLevelEnum = pgEnum('role_level', [
-    // Global Workspace Levels
-    'owner',           // Właściciel firmy
-    'admin',           // Administrator workspace
-    'project_manager', // Manager projektów
-    'hr_manager',      // HR / Manager
-    'member',          // Zwykły członek
-    // Team Levels
-    'team_lead',       // Lider zespołu
-    'senior',          // Senior
-    'mid',             // Mid-level
-    'junior',          // Junior
-    'intern'           // Stażysta
-])
-
-// =============================================================================
-// ROLES TABLE
+// 
+// NOTE: Roles are NOT stored in a separate database table. Instead:
+// - workspaceMembers.role uses workspaceRoleEnum (workspaces.ts)
+// - teamMembers.teamLevel uses teamLevelEnum (teams.ts)
+// - This file defines the permission mappings for those roles
 // =============================================================================
 
-export const roles = pgTable('roles', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-
-    // Basic Info
-    name: varchar('name', { length: 100 }).notNull(),
-    description: text('description'),
-
-    // Type & Scope
-    type: roleTypeEnum('type').notNull(),
-    level: roleLevelEnum('level').notNull(),
-
-    // Scope (workspace for global, workspace+team for team-specific)
-    workspaceId: text('workspace_id')
-        .notNull()
-        .references(() => workspaces.id, { onDelete: 'cascade' }),
-    teamId: uuid('team_id')
-        .references(() => teams.id, { onDelete: 'cascade' }), // NULL for global roles
-
-    // Permissions (granular control)
-    permissions: jsonb('permissions').$type<{
-        // Workspace permissions
-        workspace?: {
-            manageSettings?: boolean
-            manageBilling?: boolean
-            manageMembers?: boolean
-            deleteWorkspace?: boolean
-        }
-        // Team permissions
-        teams?: {
-            create?: boolean
-            update?: boolean
-            delete?: boolean
-            manageMembers?: boolean
-            viewAll?: boolean // Can see all teams
-        }
-        // Project permissions
-        projects?: {
-            create?: boolean
-            update?: boolean
-            delete?: boolean
-            manageMembers?: boolean
-            viewAll?: boolean
-        }
-        // Task permissions
-        tasks?: {
-            create?: boolean
-            update?: boolean
-            delete?: boolean
-            assign?: boolean
-            complete?: boolean
-            viewAll?: boolean
-        }
-        // Comment permissions
-        comments?: {
-            create?: boolean    // Tworzenie komentarzy
-            update?: boolean    // Edycja swoich komentarzy
-            delete?: boolean    // Usuwanie swoich komentarzy
-            moderate?: boolean  // Usuwanie/edycja cudzych komentarzy
-        }
-        // Label permissions
-        labels?: {
-            create?: boolean
-            update?: boolean
-            delete?: boolean
-        }
-        // Project stages (Kanban) permissions
-        stages?: {
-            create?: boolean
-            update?: boolean
-            delete?: boolean
-            reorder?: boolean
-        }
-        // Time tracking permissions
-        timeTracking?: {
-            create?: boolean    // Tworzenie wpisów
-            update?: boolean    // Edycja swoich wpisów
-            delete?: boolean    // Usuwanie swoich wpisów
-            viewAll?: boolean   // Widok wszystkich wpisów
-            manage?: boolean    // Zarządzanie cudzymi wpisami
-        }
-        // File permissions
-        files?: {
-            upload?: boolean
-            download?: boolean
-            delete?: boolean
-        }
-        // Advanced
-        analytics?: {
-            view?: boolean
-            export?: boolean
-        }
-        apiAccess?: boolean
-        [key: string]: any
-    }>().notNull(),
-
-    // Metadata
-    isSystem: boolean('is_system').default(false).notNull(), // System roles can't be deleted
-    isActive: boolean('is_active').default(true).notNull(),
-
-    // Timestamps
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
-
-// =============================================================================
-// USER ROLES (assigns roles to users)
-// =============================================================================
-
-export const userRoles = pgTable('user_roles', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-
-    userId: text('user_id').notNull(), // FK to users
-    roleId: text('role_id')
-        .notNull()
-        .references(() => roles.id, { onDelete: 'cascade' }),
-
-    workspaceId: text('workspace_id')
-        .notNull()
-        .references(() => workspaces.id, { onDelete: 'cascade' }),
-    teamId: uuid('team_id')
-        .references(() => teams.id, { onDelete: 'cascade' }), // NULL for global roles
-
-    // Metadata
-    assignedBy: text('assigned_by'), // FK to users
-    assignedAt: timestamp('assigned_at').defaultNow().notNull(),
-})
+// Permission structure type
+export interface RolePermissions {
+    workspace?: {
+        manageSettings?: boolean
+        manageBilling?: boolean
+        manageMembers?: boolean
+        deleteWorkspace?: boolean
+    }
+    teams?: {
+        create?: boolean
+        update?: boolean
+        delete?: boolean
+        manageMembers?: boolean
+        viewAll?: boolean
+    }
+    projects?: {
+        create?: boolean
+        update?: boolean
+        delete?: boolean
+        manageMembers?: boolean
+        viewAll?: boolean
+    }
+    tasks?: {
+        create?: boolean
+        update?: boolean
+        delete?: boolean
+        assign?: boolean
+        complete?: boolean
+        viewAll?: boolean
+    }
+    comments?: {
+        create?: boolean
+        update?: boolean
+        delete?: boolean
+        moderate?: boolean
+    }
+    labels?: {
+        create?: boolean
+        update?: boolean
+        delete?: boolean
+    }
+    stages?: {
+        create?: boolean
+        update?: boolean
+        delete?: boolean
+        reorder?: boolean
+    }
+    timeTracking?: {
+        create?: boolean
+        update?: boolean
+        delete?: boolean
+        viewAll?: boolean
+        manage?: boolean
+    }
+    files?: {
+        upload?: boolean
+        download?: boolean
+        delete?: boolean
+    }
+    analytics?: {
+        view?: boolean
+        export?: boolean
+    }
+    apiAccess?: boolean
+}
 
 // =============================================================================
 // PREDEFINED SYSTEM ROLES
@@ -234,7 +151,7 @@ export const SYSTEM_ROLES = {
                 export: true,
             },
             apiAccess: true,
-        },
+        } as RolePermissions,
     },
 
     ADMIN: {
@@ -305,7 +222,7 @@ export const SYSTEM_ROLES = {
                 export: true,
             },
             apiAccess: false,
-        },
+        } as RolePermissions,
     },
 
     PROJECT_MANAGER: {
@@ -325,7 +242,7 @@ export const SYSTEM_ROLES = {
                 update: false,
                 delete: false,
                 manageMembers: false,
-                viewAll: true, // Widzi wszystkie zespoły
+                viewAll: true,
             },
             projects: {
                 create: true,
@@ -376,7 +293,7 @@ export const SYSTEM_ROLES = {
                 export: true,
             },
             apiAccess: false,
-        },
+        } as RolePermissions,
     },
 
     HR_MANAGER: {
@@ -388,28 +305,28 @@ export const SYSTEM_ROLES = {
             workspace: {
                 manageSettings: false,
                 manageBilling: false,
-                manageMembers: true, // Może zarządzać członkami
+                manageMembers: true,
                 deleteWorkspace: false,
             },
             teams: {
                 create: true,
                 update: true,
                 delete: false,
-                manageMembers: true, // Główna kompetencja
+                manageMembers: true,
                 viewAll: true,
             },
             projects: {
                 create: false,
                 update: false,
                 delete: false,
-                manageMembers: true, // Może przypisywać ludzi
+                manageMembers: true,
                 viewAll: true,
             },
             tasks: {
                 create: false,
                 update: false,
                 delete: false,
-                assign: true, // Może przypisywać zadania
+                assign: true,
                 complete: false,
                 viewAll: true,
             },
@@ -443,11 +360,11 @@ export const SYSTEM_ROLES = {
                 delete: false,
             },
             analytics: {
-                view: true, // Widzi metryki zespołowe
+                view: true,
                 export: true,
             },
             apiAccess: false,
-        },
+        } as RolePermissions,
     },
 
     WORKSPACE_MEMBER: {
@@ -467,7 +384,7 @@ export const SYSTEM_ROLES = {
                 update: false,
                 delete: false,
                 manageMembers: false,
-                viewAll: false, // Widzi tylko swoje zespoły
+                viewAll: false,
             },
             projects: {
                 create: false,
@@ -478,7 +395,7 @@ export const SYSTEM_ROLES = {
             },
             tasks: {
                 create: true,
-                update: true, // Tylko swoje taski
+                update: true,
                 delete: false,
                 assign: false,
                 complete: true,
@@ -486,8 +403,8 @@ export const SYSTEM_ROLES = {
             },
             comments: {
                 create: true,
-                update: true, // Tylko swoje
-                delete: true, // Tylko swoje
+                update: true,
+                delete: true,
                 moderate: false,
             },
             labels: {
@@ -503,8 +420,8 @@ export const SYSTEM_ROLES = {
             },
             timeTracking: {
                 create: true,
-                update: true, // Tylko swoje
-                delete: true, // Tylko swoje
+                update: true,
+                delete: true,
                 viewAll: false,
                 manage: false,
             },
@@ -518,7 +435,7 @@ export const SYSTEM_ROLES = {
                 export: false,
             },
             apiAccess: false,
-        },
+        } as RolePermissions,
     },
 
     // =============================================================================
@@ -533,9 +450,9 @@ export const SYSTEM_ROLES = {
         permissions: {
             teams: {
                 create: false,
-                update: true, // Może edytować swój zespół
+                update: true,
                 delete: false,
-                manageMembers: true, // Zarządza członkami zespołu
+                manageMembers: true,
                 viewAll: false,
             },
             projects: {
@@ -543,13 +460,13 @@ export const SYSTEM_ROLES = {
                 update: true,
                 delete: true,
                 manageMembers: true,
-                viewAll: false, // Tylko projekty zespołu
+                viewAll: false,
             },
             tasks: {
                 create: true,
                 update: true,
                 delete: true,
-                assign: true, // Może przypisywać zadania
+                assign: true,
                 complete: true,
                 viewAll: false,
             },
@@ -557,7 +474,7 @@ export const SYSTEM_ROLES = {
                 create: true,
                 update: true,
                 delete: true,
-                moderate: true, // Team lead może moderować
+                moderate: true,
             },
             labels: {
                 create: true,
@@ -574,8 +491,8 @@ export const SYSTEM_ROLES = {
                 create: true,
                 update: true,
                 delete: true,
-                viewAll: true, // Widzi czas zespołu
-                manage: true, // Może zarządzać czasem zespołu
+                viewAll: true,
+                manage: true,
             },
             files: {
                 upload: true,
@@ -583,11 +500,11 @@ export const SYSTEM_ROLES = {
                 delete: true,
             },
             analytics: {
-                view: true, // Widzi metryki zespołu
+                view: true,
                 export: false,
             },
             apiAccess: false,
-        },
+        } as RolePermissions,
     },
 
     SENIOR: {
@@ -605,7 +522,7 @@ export const SYSTEM_ROLES = {
             },
             projects: {
                 create: false,
-                update: true, // Może modyfikować projekty
+                update: true,
                 delete: false,
                 manageMembers: false,
                 viewAll: false,
@@ -613,8 +530,8 @@ export const SYSTEM_ROLES = {
             tasks: {
                 create: true,
                 update: true,
-                delete: true, // Senior może usuwać taski
-                assign: true, // Może przypisywać zadania juniorom
+                delete: true,
+                assign: true,
                 complete: true,
                 viewAll: false,
             },
@@ -622,7 +539,7 @@ export const SYSTEM_ROLES = {
                 create: true,
                 update: true,
                 delete: true,
-                moderate: true, // Senior może moderować
+                moderate: true,
             },
             labels: {
                 create: true,
@@ -652,7 +569,7 @@ export const SYSTEM_ROLES = {
                 export: false,
             },
             apiAccess: false,
-        },
+        } as RolePermissions,
     },
 
     MID: {
@@ -678,15 +595,15 @@ export const SYSTEM_ROLES = {
             tasks: {
                 create: true,
                 update: true,
-                delete: false, // Mid nie może usuwać
+                delete: false,
                 assign: false,
                 complete: true,
                 viewAll: false,
             },
             comments: {
                 create: true,
-                update: true, // Tylko swoje
-                delete: true, // Tylko swoje
+                update: true,
+                delete: true,
                 moderate: false,
             },
             labels: {
@@ -702,8 +619,8 @@ export const SYSTEM_ROLES = {
             },
             timeTracking: {
                 create: true,
-                update: true, // Tylko swoje
-                delete: true, // Tylko swoje
+                update: true,
+                delete: true,
                 viewAll: false,
                 manage: false,
             },
@@ -717,7 +634,7 @@ export const SYSTEM_ROLES = {
                 export: false,
             },
             apiAccess: false,
-        },
+        } as RolePermissions,
     },
 
     JUNIOR: {
@@ -741,17 +658,17 @@ export const SYSTEM_ROLES = {
                 viewAll: false,
             },
             tasks: {
-                create: true, // Może tworzyć taski
-                update: true, // Może edytować swoje
+                create: true,
+                update: true,
                 delete: false,
                 assign: false,
-                complete: true, // Może oznaczać jako done
+                complete: true,
                 viewAll: false,
             },
             comments: {
                 create: true,
-                update: true, // Tylko swoje
-                delete: true, // Tylko swoje
+                update: true,
+                delete: true,
                 moderate: false,
             },
             labels: {
@@ -767,8 +684,8 @@ export const SYSTEM_ROLES = {
             },
             timeTracking: {
                 create: true,
-                update: true, // Tylko swoje
-                delete: true, // Tylko swoje
+                update: true,
+                delete: true,
                 viewAll: false,
                 manage: false,
             },
@@ -782,7 +699,7 @@ export const SYSTEM_ROLES = {
                 export: false,
             },
             apiAccess: false,
-        },
+        } as RolePermissions,
     },
 
     INTERN: {
@@ -806,17 +723,17 @@ export const SYSTEM_ROLES = {
                 viewAll: false,
             },
             tasks: {
-                create: false, // Nie może tworzyć tasków
-                update: true, // Może edytować przypisane do niego
+                create: true,
+                update: true,
                 delete: false,
                 assign: false,
-                complete: true, // Może oznaczać swoje jako done
+                complete: true,
                 viewAll: false,
             },
             comments: {
                 create: true,
-                update: true, // Tylko swoje
-                delete: false, // Nie może usuwać
+                update: true,
+                delete: true,
                 moderate: false,
             },
             labels: {
@@ -832,13 +749,13 @@ export const SYSTEM_ROLES = {
             },
             timeTracking: {
                 create: true,
-                update: true, // Tylko swoje
-                delete: false, // Nie może usuwać
+                update: true,
+                delete: true,
                 viewAll: false,
                 manage: false,
             },
             files: {
-                upload: true, // Może uploadować pliki
+                upload: true,
                 download: true,
                 delete: false,
             },
@@ -847,15 +764,47 @@ export const SYSTEM_ROLES = {
                 export: false,
             },
             apiAccess: false,
-        },
+        } as RolePermissions,
     },
 } as const
 
 // =============================================================================
-// TYPES
+// HELPER FUNCTIONS
 // =============================================================================
 
-export type Role = typeof roles.$inferSelect
-export type NewRole = typeof roles.$inferInsert
-export type UserRole = typeof userRoles.$inferSelect
-export type NewUserRole = typeof userRoles.$inferInsert
+/**
+ * Get permissions for a workspace role
+ */
+export function getWorkspaceRolePermissions(role: string): RolePermissions | null {
+    const roleMap: Record<string, keyof typeof SYSTEM_ROLES> = {
+        'owner': 'OWNER',
+        'admin': 'ADMIN',
+        'project_manager': 'PROJECT_MANAGER',
+        'hr_manager': 'HR_MANAGER',
+        'member': 'WORKSPACE_MEMBER',
+        'guest': 'WORKSPACE_MEMBER', // Guests have same permissions as members
+    }
+
+    const systemRole = roleMap[role]
+    if (!systemRole) return null
+
+    return SYSTEM_ROLES[systemRole].permissions
+}
+
+/**
+ * Get permissions for a team level
+ */
+export function getTeamLevelPermissions(level: string): RolePermissions | null {
+    const levelMap: Record<string, keyof typeof SYSTEM_ROLES> = {
+        'team_lead': 'TEAM_LEAD',
+        'senior': 'SENIOR',
+        'mid': 'MID',
+        'junior': 'JUNIOR',
+        'intern': 'INTERN',
+    }
+
+    const systemRole = levelMap[level]
+    if (!systemRole) return null
+
+    return SYSTEM_ROLES[systemRole].permissions
+}

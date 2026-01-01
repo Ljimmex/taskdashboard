@@ -1,5 +1,5 @@
-import { pgTable, uuid, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { pgTable, uuid, varchar, text, timestamp, pgEnum, pgPolicy } from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm'
 import { teams } from './teams'
 import { users } from './users'
 import { industryTemplates, projectStages } from './pipelines'
@@ -8,7 +8,7 @@ import { industryTemplates, projectStages } from './pipelines'
 // ENUMS
 // =============================================================================
 
-export const projectStatusEnum = pgEnum('project_status', ['active', 'archived', 'completed'])
+export const projectStatusEnum = pgEnum('project_status', ['pending', 'active', 'on_hold', 'completed', 'archived'])
 
 // =============================================================================
 // PROJECTS TABLE
@@ -20,10 +20,25 @@ export const projects = pgTable('projects', {
     industryTemplateId: uuid('industry_template_id').references(() => industryTemplates.id, { onDelete: 'set null' }),
     name: varchar('name', { length: 100 }).notNull(),
     description: text('description'),
+    color: varchar('color', { length: 7 }).default('#F87171').notNull(), // Default coral color
     status: projectStatusEnum('status').default('active').notNull(),
+    startDate: timestamp('start_date'),
     deadline: timestamp('deadline'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Team members can view projects", {
+        for: "select",
+        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+    pgPolicy("Team members can create projects", {
+        for: "insert",
+        withCheck: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+    pgPolicy("Team members can update projects", {
+        for: "update",
+        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+])
 
 // =============================================================================
 // PROJECT MEMBERS TABLE
@@ -46,6 +61,10 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     industryTemplate: one(industryTemplates, { fields: [projects.industryTemplateId], references: [industryTemplates.id] }),
     stages: many(projectStages),
     members: many(projectMembers),
+}))
+
+export const projectStagesRelations = relations(projectStages, ({ one }) => ({
+    project: one(projects, { fields: [projectStages.projectId], references: [projects.id] }),
 }))
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({

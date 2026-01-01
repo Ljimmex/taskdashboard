@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocation, useParams } from '@tanstack/react-router'
-import { signOut } from '@/lib/auth'
+import { useQuery } from '@tanstack/react-query'
+import { signOut, useSession } from '@/lib/auth'
 import { sidebarIcons as icons } from './icons'
 import { WorkspaceSwitcher } from '../features/workspace/WorkspaceSwitcher'
 
@@ -15,17 +16,48 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
     const [isDarkMode, setIsDarkMode] = useState(true)
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
 
+    const { data: session } = useSession()
+
+    // Fetch workspaces to find current workspace ID
+    const { data: workspaces } = useQuery({
+        queryKey: ['workspaces', session?.user?.id],
+        queryFn: async () => {
+            const res = await fetch('/api/workspaces', {
+                headers: { 'x-user-id': session?.user?.id || '' }
+            })
+            const data = await res.json()
+            return data.data
+        },
+        enabled: !!session?.user?.id,
+        staleTime: 1000 * 60 * 5 // Cache for 5 mins
+    })
+
+    const currentWorkspace = workspaces?.find((w: any) => w.slug === workspaceSlug)
+
+    // Fetch teams count
+    const { data: teams } = useQuery({
+        queryKey: ['teams', currentWorkspace?.id],
+        queryFn: async () => {
+            const res = await fetch(`/api/teams?workspaceId=${currentWorkspace.id}`, {
+                headers: { 'x-user-id': session?.user?.id || '' }
+            })
+            const data = await res.json()
+            return data.data
+        },
+        enabled: !!currentWorkspace?.id
+    })
+
     // Default to 'dashboard' if no slug (shouldn't happen in workspace route)
     const baseUrl = workspaceSlug ? `/${workspaceSlug}` : '/dashboard'
 
     const navItems = [
         { iconKey: 'dashboard', label: 'Dashboard', path: `${baseUrl}`, count: null },
-        { iconKey: 'team', label: 'Team', path: `${baseUrl}/team`, count: 4 },
-        { iconKey: 'messages', label: 'Messages', path: `${baseUrl}/messages`, count: 21 },
+        { iconKey: 'team', label: 'Team', path: `${baseUrl}/team`, count: teams?.length || null },
+        { iconKey: 'product', label: 'Projects', path: `${baseUrl}/projects`, count: null },
+        { iconKey: 'messages', label: 'Messages', path: `${baseUrl}/messages`, count: null },
         { iconKey: 'calendar', label: 'Calendar', path: `${baseUrl}/calendar`, count: null },
-        { iconKey: 'files', label: 'Files', path: `${baseUrl}/files`, count: 32 },
-        { iconKey: 'product', label: 'Product', path: `${baseUrl}/product`, count: 36 },
-        { iconKey: 'contact', label: 'Contact', path: `${baseUrl}/contact`, count: 10 },
+        { iconKey: 'files', label: 'Files', path: `${baseUrl}/files`, count: null },
+        { iconKey: 'contact', label: 'Contact', path: `${baseUrl}/contact`, count: null },
     ]
 
     return (

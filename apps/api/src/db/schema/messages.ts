@@ -1,5 +1,5 @@
-import { pgTable, uuid, varchar, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { pgTable, uuid, varchar, text, timestamp, pgEnum, pgPolicy } from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm'
 import { users } from './users'
 import { teams } from './teams'
 
@@ -19,7 +19,16 @@ export const conversations = pgTable('conversations', {
     name: varchar('name', { length: 100 }),
     type: conversationTypeEnum('type').default('direct').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Team members can view conversations", {
+        for: "select",
+        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+    pgPolicy("Team members can create conversations", {
+        for: "insert",
+        withCheck: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+])
 
 // =============================================================================
 // MESSAGES TABLE
@@ -32,7 +41,24 @@ export const messages = pgTable('messages', {
     content: text('content').notNull(),
     readAt: timestamp('read_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Team members can view messages", {
+        for: "select",
+        using: sql`conversation_id IN (
+            SELECT id FROM conversations WHERE team_id IN (
+                SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
+            )
+        )`,
+    }),
+    pgPolicy("Team members can send messages", {
+        for: "insert",
+        withCheck: sql`sender_id = auth.uid()::text`,
+    }),
+    pgPolicy("Sender can delete own messages", {
+        for: "delete",
+        using: sql`sender_id = auth.uid()::text`,
+    }),
+])
 
 // =============================================================================
 // RELATIONS

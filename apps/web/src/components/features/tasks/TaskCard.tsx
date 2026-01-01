@@ -37,6 +37,7 @@ export interface TaskCardProps {
     projectColor?: string
     title: string
     description?: string | null
+    type?: 'task' | 'meeting'
     priority: 'urgent' | 'high' | 'medium' | 'low'
     status: string // Can be any column ID
     assignees?: TaskAssignee[]
@@ -46,7 +47,7 @@ export interface TaskCardProps {
     subtaskCompleted?: number
     commentCount?: number
     attachmentCount?: number
-    subitems?: { id: string; title: string; description?: string; status: string; priority: string }[]
+    subtasks?: { id: string; title: string; description?: string | null; status: string; priority: string; isCompleted: boolean }[]
     onClick?: () => void
     onEdit?: () => void
     onDelete?: () => void

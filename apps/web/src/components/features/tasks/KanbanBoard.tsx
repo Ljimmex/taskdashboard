@@ -22,7 +22,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { TaskCard, TaskCardProps } from './TaskCard'
-import { TaskColumn, AddColumn } from './TaskColumn'
+import { TaskColumn, AddColumn, QuickEditTask } from './TaskColumn'
 
 // Sortable Task wrapper
 function SortableTask({
@@ -32,6 +32,9 @@ function SortableTask({
     onTaskDelete,
     onTaskDuplicate,
     onTaskArchive,
+    isEditing,
+    onQuickUpdate,
+    onCancelEdit,
 }: {
     task: TaskCardProps
     onTaskClick?: (id: string) => void
@@ -39,6 +42,9 @@ function SortableTask({
     onTaskDelete?: (id: string) => void
     onTaskDuplicate?: (id: string) => void
     onTaskArchive?: (id: string) => void
+    isEditing?: boolean
+    onQuickUpdate?: (data: { id: string; title: string; priority: string }) => void
+    onCancelEdit?: () => void
 }) {
     const {
         attributes,
@@ -72,14 +78,27 @@ function SortableTask({
                 onDuplicate={() => onTaskDuplicate?.(task.id)}
                 onArchive={() => onTaskArchive?.(task.id)}
             />
+            {isEditing && (
+                <QuickEditTask
+                    task={{
+                        ...task,
+                        priority: task.priority || 'medium',
+                        dueDate: task.dueDate || undefined,
+                        assignees: task.assignees || []
+                    }}
+                    onUpdate={(data) => onQuickUpdate?.(data)}
+                    onClose={() => onCancelEdit?.()}
+                />
+            )}
         </div>
     )
 }
 
-// Sortable Column Wrapper (was DroppableTaskColumn)
+// Sortable Column Wrapper
 function SortableColumn({
     column,
     tasks,
+    members,
     onAddTask,
     onTaskClick,
     onTaskEdit,
@@ -95,7 +114,8 @@ function SortableColumn({
 }: {
     column: { id: string; title: string; status: any; color?: string }
     tasks: TaskCardProps[]
-    onAddTask?: () => void
+    members?: { id: string; name: string; avatar?: string }[]
+    onAddTask?: (data?: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string }) => void
     onTaskClick?: (id: string) => void
     onTaskEdit?: (id: string) => void
     onTaskDelete?: (id: string) => void
@@ -141,7 +161,8 @@ function SortableColumn({
                 status={column.status}
                 color={column.color}
                 tasks={tasks}
-                onAddTask={() => onAddTask?.()}
+                members={members}
+                onAddTask={(data) => onAddTask?.(data)}
                 onTaskClick={onTaskClick}
                 onTaskEdit={onTaskEdit}
                 onTaskDelete={onTaskDelete}
@@ -167,22 +188,25 @@ interface KanbanBoardProps {
         color?: string
         tasks: TaskCardProps[]
     }[]
+    members?: { id: string; name: string; avatar?: string }[]
     onTaskMove?: (taskId: string, fromColumn: string, toColumn: string) => void
     onTaskReorder?: (columnId: string, oldIndex: number, newIndex: number) => void
     onColumnReorder?: (oldIndex: number, newIndex: number) => void
     onTaskClick?: (taskId: string) => void
     onTaskEdit?: (taskId: string) => void
     onTaskDelete?: (taskId: string) => void
-    onAddTask?: (columnId: string) => void
+    onAddTask?: (columnId: string, data?: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string }) => void
     onAddColumn?: (title: string, color: string) => void
     onRenameColumn?: (columnId: string, newName: string) => void
     onChangeColumnColor?: (columnId: string, color: string) => void
     onDeleteColumn?: (columnId: string) => void
     onMoveAllCards?: (columnId: string) => void
+    onQuickUpdate?: (data: { id: string; title: string; priority: string }) => void
 }
 
 export function KanbanBoard({
     columns,
+    members,
     onTaskMove,
     onTaskReorder,
     onColumnReorder,
@@ -195,9 +219,11 @@ export function KanbanBoard({
     onChangeColumnColor,
     onDeleteColumn,
     onMoveAllCards,
+    onQuickUpdate,
 }: KanbanBoardProps) {
     const [activeColumn, setActiveColumn] = useState<any | null>(null)
     const [activeTask, setActiveTask] = useState<TaskCardProps | null>(null)
+    const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
 
     // Memoize column IDs for SortableContext
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns])
@@ -253,10 +279,7 @@ export function KanbanBoard({
             if (!activeColumn || !overColumn) return
 
             if (activeColumn.id !== overColumn.id) {
-                // Trigger move immediately for UI feedback if needed, 
-                // but typically we wait for DragEnd for functional update.
-                // However, for "live" feel we often invoke arrayMove here locally?
-                // For now, let's leave simple logic for DragEnd.
+                // Trigger move immediately
             }
         }
 
@@ -305,10 +328,6 @@ export function KanbanBoard({
             const oldIndex = activeColumn.tasks.findIndex((t) => t.id === activeId)
             const newIndex = activeColumn.tasks.findIndex((t) => t.id === overId)
 
-            // If dropping over the column container itself, might need different logic,
-            // but assumes dropping over a task usually.
-            // If updated to useSortable for column, dropping on column might return index -1 or last?
-
             if (oldIndex !== newIndex && newIndex !== -1) {
                 onTaskReorder?.(activeColumn.id, oldIndex, newIndex)
             }
@@ -336,23 +355,24 @@ export function KanbanBoard({
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
         >
-            <div className="flex gap-6 overflow-x-auto pb-4 items-start h-full">
+            <div className="flex gap-6 overflow-x-auto pb-4 h-full">
                 <SortableContext items={columnsId} strategy={horizontalListSortingStrategy}>
                     {columns.map(column => (
                         <SortableColumn
                             key={column.id}
                             column={column}
                             tasks={column.tasks}
-                            onAddTask={() => onAddTask?.(column.id)}
+                            members={members}
+                            onAddTask={(data) => onAddTask?.(column.id, data)}
                             onTaskClick={onTaskClick}
                             onTaskEdit={onTaskEdit}
                             onTaskDelete={onTaskDelete}
-                            onTaskArchive={undefined} // Assuming simpler interface
+                            onTaskArchive={undefined}
                             onRenameColumn={(newName) => onRenameColumn?.(column.id, newName)}
                             onChangeColumnColor={(color) => onChangeColumnColor?.(column.id, color)}
                             onDeleteColumn={() => onDeleteColumn?.(column.id)}
                             onMoveAllCards={() => onMoveAllCards?.(column.id)}
-                            isOver={false} // Simplification
+                            isOver={false}
                         >
                             <SortableContext
                                 items={column.tasks.map(t => t.id)}
@@ -363,8 +383,14 @@ export function KanbanBoard({
                                         key={task.id}
                                         task={task}
                                         onTaskClick={onTaskClick}
-                                        onTaskEdit={onTaskEdit}
+                                        onTaskEdit={() => setEditingTaskId(task.id)}
                                         onTaskDelete={onTaskDelete}
+                                        isEditing={editingTaskId === task.id}
+                                        onQuickUpdate={(data) => {
+                                            onQuickUpdate?.(data)
+                                            setEditingTaskId(null)
+                                        }}
+                                        onCancelEdit={() => setEditingTaskId(null)}
                                     />
                                 ))}
                             </SortableContext>
@@ -386,9 +412,8 @@ export function KanbanBoard({
                             status={activeColumn.status}
                             color={activeColumn.color}
                             tasks={activeColumn.tasks}
-                            // Minimal props for visual
+                            members={members}
                             onAddTask={() => { }}
-                        // ... pass minimal props
                         />
                     </div>
                 )}

@@ -1,5 +1,5 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { pgTable, uuid, varchar, text, timestamp, boolean, jsonb, pgPolicy } from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm'
 import { users } from './users'
 import { teams } from './teams'
 import { tasks } from './tasks'
@@ -20,7 +20,24 @@ export const calendarEvents = pgTable('calendar_events', {
     teamId: uuid('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
     createdBy: uuid('created_by').notNull().references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Team members can view events", {
+        for: "select",
+        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+    pgPolicy("Team members can create events", {
+        for: "insert",
+        withCheck: sql`created_by = auth.uid()::text AND team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+    pgPolicy("Creator can update events", {
+        for: "update",
+        using: sql`created_by = auth.uid()::text`,
+    }),
+    pgPolicy("Creator can delete events", {
+        for: "delete",
+        using: sql`created_by = auth.uid()::text`,
+    }),
+])
 
 // =============================================================================
 // RELATIONS

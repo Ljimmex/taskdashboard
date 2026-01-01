@@ -364,14 +364,14 @@ export function TeamTable({ team, onInvite, onEditMember, onViewMember, onEditTe
                                             <td className="p-3 text-sm text-gray-300">{member.role}</td>
                                             <td className="p-3">
                                                 <div className="flex items-center gap-2">
-                                                    {member.projects.map((proj: string, i: number) => (
-                                                        <span key={i} className="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                                    {member.projects.slice(0, 1).map((proj: string, i: number) => (
+                                                        <span key={i} className="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 max-w-[120px] truncate">
                                                             {proj}
                                                         </span>
                                                     ))}
-                                                    {member.projectCount > 0 && (
+                                                    {member.projects.length > 1 && (
                                                         <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                                                            +{member.projectCount}
+                                                            +{member.projects.length - 1}
                                                         </span>
                                                     )}
                                                 </div>

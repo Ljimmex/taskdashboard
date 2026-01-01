@@ -42,9 +42,10 @@ interface TaskColumnProps {
     title: string
     status: 'todo' | 'in_progress' | 'review' | 'done'
     tasks: TaskCardProps[]
+    members?: { id: string; name: string; avatar?: string }[]
     taskCount?: number
     color?: string
-    onAddTask?: (taskData: { title: string; priority: string; status: string }) => void
+    onAddTask?: (taskData: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string }) => void
     onTaskClick?: (taskId: string) => void
     onTaskEdit?: (taskId: string) => void
     onTaskDelete?: (taskId: string) => void
@@ -73,16 +74,22 @@ const statusConfig = {
 // Quick Add Task Popup Component
 function QuickAddTask({
     status,
+    members,
     onAdd,
     onClose
 }: {
     status: string
-    onAdd: (data: { title: string; priority: string; status: string }) => void
+    members?: { id: string; name: string; avatar?: string }[]
+    onAdd: (data: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string }) => void
     onClose: () => void
 }) {
     const [title, setTitle] = useState('')
     const [priority, setPriority] = useState('medium')
     const [showPriority, setShowPriority] = useState(false)
+    const [showAssignee, setShowAssignee] = useState(false)
+    const [showDate, setShowDate] = useState(false)
+    const [assigneeId, setAssigneeId] = useState<string | null>(null)
+    const [dueDate, setDueDate] = useState<string | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -97,7 +104,13 @@ function QuickAddTask({
 
     const handleSubmit = () => {
         if (title.trim()) {
-            onAdd({ title: title.trim(), priority, status })
+            onAdd({
+                title: title.trim(),
+                priority,
+                status,
+                assigneeId: assigneeId || undefined,
+                dueDate: dueDate || undefined
+            })
             onClose()
         }
     }
@@ -167,15 +180,91 @@ function QuickAddTask({
 
             {/* Bottom actions - no attachment button */}
             <div className="flex items-center justify-between pt-2 border-t border-gray-800">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 relative">
                     {/* Assignee */}
-                    <button className="w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center text-gray-500 hover:text-white transition-colors">
-                        <UserIcon />
-                    </button>
+                    <div>
+                        <button
+                            onClick={() => { setShowAssignee(!showAssignee); setShowDate(false); setShowPriority(false) }}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${assigneeId ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500 hover:text-white'}`}
+                        >
+                            {assigneeId && members?.find(m => m.id === assigneeId)?.avatar ? (
+                                <img src={members.find(m => m.id === assigneeId)?.avatar} alt="Assignee" className="w-full h-full rounded-full object-cover" />
+                            ) : (
+                                <UserIcon />
+                            )}
+                        </button>
+                        {showAssignee && members && (
+                            <div className="absolute top-full left-0 mt-2 w-48 bg-[#1a1a24] rounded-lg shadow-xl border border-gray-800 py-1 z-30 max-h-60 overflow-y-auto">
+                                <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Przpisz do</div>
+                                {members.map(member => (
+                                    <button
+                                        key={member.id}
+                                        onClick={() => { setAssigneeId(member.id); setShowAssignee(false) }}
+                                        className={`w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors ${assigneeId === member.id ? 'text-amber-400 bg-amber-500/10' : 'text-gray-300'}`}
+                                    >
+                                        <div className="w-5 h-5 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
+                                            {member.avatar ? (
+                                                <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-400">
+                                                    {member.name.substring(0, 2).toUpperCase()}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="truncate">{member.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Date */}
-                    <button className="w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center text-gray-500 hover:text-white transition-colors">
-                        <CalendarSmallIcon />
-                    </button>
+                    <div>
+                        <button
+                            onClick={() => { setShowDate(!showDate); setShowAssignee(false); setShowPriority(false) }}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dueDate ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500 hover:text-white'}`}
+                        >
+                            <CalendarSmallIcon />
+                        </button>
+                        {showDate && (
+                            <div className="absolute top-full left-0 mt-2 w-48 bg-[#1a1a24] rounded-lg shadow-xl border border-gray-800 py-2 z-30">
+                                <button
+                                    onClick={() => {
+                                        const d = new Date();
+                                        setDueDate(d.toISOString());
+                                        setShowDate(false);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-amber-400"
+                                >
+                                    Dzisiaj
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const d = new Date();
+                                        d.setDate(d.getDate() + 1);
+                                        setDueDate(d.toISOString());
+                                        setShowDate(false);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-amber-400"
+                                >
+                                    Jutro
+                                </button>
+                                <div className="border-t border-gray-800 my-1"></div>
+                                <div className="px-4 py-1">
+                                    <input
+                                        type="date"
+                                        className="w-full bg-[#12121a] border border-gray-700 rounded px-2 py-1 text-xs text-white outline-none focus:border-amber-500"
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                setDueDate(new Date(e.target.value).toISOString());
+                                                setShowDate(false);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 {/* Submit */}
                 <button
@@ -494,7 +583,8 @@ export function TaskColumn({
     color,
     children,
     dragHandleProps,
-}: TaskColumnProps & { children?: React.ReactNode }) {
+    members
+}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[] }) {
     const [showQuickAdd, setShowQuickAdd] = useState(false)
     const [showColumnMenu, setShowColumnMenu] = useState(false)
     const [isRenaming, setIsRenaming] = useState(false)
@@ -507,7 +597,7 @@ export function TaskColumn({
         textColor: 'text-gray-400'
     }
 
-    const handleQuickAdd = (data: { title: string; priority: string; status: string }) => {
+    const handleQuickAdd = (data: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string }) => {
         onAddTask?.(data)
     }
 
@@ -546,7 +636,13 @@ export function TaskColumn({
                         <h3 className="font-semibold text-white text-sm">{title || config.label}</h3>
                     )}
                     {!isRenaming && (
-                        <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${config.bgColor} ${config.textColor}`}>
+                        <span
+                            className="px-2 py-0.5 rounded-md text-xs font-medium"
+                            style={{
+                                backgroundColor: `${color || '#6366f1'}20`,
+                                color: color || '#6366f1'
+                            }}
+                        >
                             {tasks.length}
                         </span>
                     )}
@@ -601,6 +697,7 @@ export function TaskColumn({
             {showQuickAdd && (
                 <QuickAddTask
                     status={status}
+                    members={members}
                     onAdd={handleQuickAdd}
                     onClose={() => setShowQuickAdd(false)}
                 />

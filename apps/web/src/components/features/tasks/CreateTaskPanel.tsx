@@ -3,6 +3,7 @@ import { usePanelStore } from '../../../lib/panelStore'
 import { LabelPicker } from '../labels/LabelPicker'
 import type { Label } from '../labels/LabelBadge'
 import { PrioritySelector } from './PrioritySelector'
+import { StatusSelector, type ProjectStage } from './StatusBadge'
 import { DueDatePicker } from './DueDatePicker'
 import { AssigneePicker, type Assignee } from './AssigneePicker'
 import {
@@ -11,6 +12,12 @@ import {
     ChevronDoubleRightIcon,
 } from './TaskIcons'
 
+interface Project {
+    id: string
+    name: string
+    stages?: ProjectStage[]
+}
+
 // Types
 interface CreateTaskPanelProps {
     isOpen: boolean
@@ -18,7 +25,10 @@ interface CreateTaskPanelProps {
     onCreate: (task: NewTaskData) => void
     defaultStatus?: string
     defaultProject?: string
-    projects?: { id: string; name: string }[]
+    defaultType?: 'task' | 'meeting'
+    defaultDueDate?: string
+    workspaceSlug?: string  // Used to fetch labels from workspace
+    projects?: Project[]
     columns?: { id: string; title: string; color?: string }[]
     teamMembers?: { id: string; name: string; avatar?: string }[]
 }
@@ -26,10 +36,13 @@ interface CreateTaskPanelProps {
 interface NewTaskData {
     title: string
     description: string
+    type: 'task' | 'meeting'
     status: string
     priority: 'urgent' | 'high' | 'medium' | 'low'
     assignees: string[]
     dueDate?: string
+    startDate?: string
+    meetingLink?: string
     labels: string[]
     projectId?: string
     subtasks: { title: string; description: string; status: string; priority: string }[]
@@ -52,29 +65,6 @@ const MOCK_PROJECTS = [
     { id: 'development', name: 'Development' },
     { id: 'design', name: 'Design System' },
 ]
-
-// Property Chip Button
-const PropertyChip = ({
-    icon,
-    label,
-    value,
-    onClick,
-    className = ''
-}: {
-    icon: React.ReactNode
-    label: string
-    value?: string
-    onClick: () => void
-    className?: string
-}) => (
-    <button
-        onClick={onClick}
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 text-gray-400 hover:text-white text-xs font-medium transition-colors ${className}`}
-    >
-        {icon}
-        <span>{value || label}</span>
-    </button>
-)
 
 // Dropdown Component
 const Dropdown = ({
@@ -121,17 +111,21 @@ export function CreateTaskPanel({
     onCreate,
     defaultStatus = 'todo',
     defaultProject,
+    defaultType = 'task',
+    defaultDueDate,
+    workspaceSlug,
     projects = MOCK_PROJECTS,
-    columns = [],
     availableLabels: propAvailableLabels,
     onCreateLabel: propOnCreateLabel,
+    teamMembers = [],
 }: CreateTaskPanelProps & { availableLabels?: Label[]; onCreateLabel?: (name: string, color: string) => Label }) {
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [status, setStatus] = useState(defaultStatus)
     const [priority, setPriority] = useState<'urgent' | 'high' | 'medium' | 'low'>('medium')
     const [assignees, setAssignees] = useState<Assignee[]>([])
-    const [dueDate, setDueDate] = useState('')
+    const [dueDate, setDueDate] = useState(defaultDueDate || '')
+    const [startDate, setStartDate] = useState('')
     const [labels, setLabels] = useState<Label[]>([])
     const [projectId, setProjectId] = useState(defaultProject || projects[0]?.id || '')
     const [subtasks, setSubtasks] = useState<{ title: string; description: string; status: string; priority: string }[]>([])
@@ -140,15 +134,38 @@ export function CreateTaskPanel({
     const [attachments, setAttachments] = useState<{ name: string; size: number; type: string }[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const [createMore, setCreateMore] = useState(false)
+    const [currentStages, setCurrentStages] = useState<any[]>([])
     const [showMore, setShowMore] = useState(false)
+
+    // Meeting type support
+    const [itemType, setItemType] = useState<'task' | 'meeting'>(defaultType)
+    const [meetingLink, setMeetingLink] = useState('')
+
+    // Sync itemType when defaultType changes
+    useEffect(() => {
+        setItemType(defaultType)
+    }, [defaultType])
 
     // Use props if provided, otherwise fall back to local state
     const [localAvailableLabels, setLocalAvailableLabels] = useState<Label[]>(DEFAULT_LABELS)
     const availableLabels = propAvailableLabels || localAvailableLabels
 
+    // Fetch labels from workspace when panel opens
+    useEffect(() => {
+        if (isOpen && workspaceSlug && !propAvailableLabels) {
+            fetch(`/api/labels?workspaceSlug=${workspaceSlug}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        setLocalAvailableLabels(data.data)
+                    }
+                })
+                .catch(err => console.error('Failed to fetch labels:', err))
+        }
+    }, [isOpen, workspaceSlug, propAvailableLabels])
+
     // Dropdown states
     const [showProjectDropdown, setShowProjectDropdown] = useState(false)
-    const [showStatusDropdown, setShowStatusDropdown] = useState(false)
 
     const titleInputRef = useRef<HTMLInputElement>(null)
     const descriptionRef = useRef<HTMLTextAreaElement>(null)
@@ -159,7 +176,40 @@ export function CreateTaskPanel({
     // Sync isOpen with global panel store
     useEffect(() => {
         setIsPanelOpen(isOpen)
-    }, [isOpen, setIsPanelOpen])
+        if (isOpen && defaultProject) {
+            setProjectId(defaultProject)
+        }
+        if (isOpen && defaultDueDate) {
+            setDueDate(defaultDueDate)
+        } else if (isOpen && !defaultDueDate) {
+            setDueDate('')
+        }
+    }, [isOpen, defaultProject, defaultDueDate, setIsPanelOpen])
+
+    // Fetch stages when project changes
+    useEffect(() => {
+        if (projectId) {
+            const projectData = projects.find(p => p.id === projectId)
+            if (projectData?.stages) {
+                setCurrentStages(projectData.stages)
+                if (projectData.stages.length > 0 && !status) {
+                    setStatus(projectData.stages[0].id)
+                }
+            } else {
+                fetch(`/api/projects/${projectId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.data?.stages) {
+                            setCurrentStages(data.data.stages)
+                            if (data.data.stages.length > 0 && !status) {
+                                setStatus(data.data.stages[0].id)
+                            }
+                        }
+                    })
+                    .catch(console.error)
+            }
+        }
+    }, [projectId, projects, status])
 
     // Autofocus on title
     useEffect(() => {
@@ -188,12 +238,15 @@ export function CreateTaskPanel({
         setPriority('medium')
         setAssignees([])
         setDueDate('')
+        setStartDate('')
         setLabels([])
         setSubtasks([])
         setNewSubtask('')
         setShowMore(false)
         setAttachments([])
         setEditingSubtaskIndex(null)
+        setItemType('task')
+        setMeetingLink('')
     }
 
     // Handle create
@@ -203,13 +256,16 @@ export function CreateTaskPanel({
         onCreate({
             title: title.trim(),
             description: description.trim(),
-            status,
+            type: itemType,
+            status: itemType === 'meeting' ? 'scheduled' : status,
             priority,
             assignees: assignees.map(a => a.id),
             dueDate: dueDate || undefined,
-            labels: labels as any, // Label[] compatible with TaskLabel[]
+            startDate: startDate || undefined,
+            meetingLink: itemType === 'meeting' && meetingLink ? meetingLink : undefined,
+            labels: labels as any,
             projectId: projectId || undefined,
-            subtasks: subtasks.filter(s => s.title.trim()),
+            subtasks: itemType === 'task' ? subtasks.filter(s => s.title.trim()) : [],
         })
 
         if (createMore) {
@@ -266,11 +322,33 @@ export function CreateTaskPanel({
         if (editingSubtaskIndex === index) setEditingSubtaskIndex(null)
     }
 
-    // Handle label creation
+    // Handle label creation - creates via API when workspaceSlug is available
     const handleCreateLabel = async (name: string, color: string): Promise<Label> => {
+        // Use prop callback if provided
         if (propOnCreateLabel) {
             return propOnCreateLabel(name, color)
         }
+
+        // Try to create via API if we have a workspace
+        if (workspaceSlug) {
+            try {
+                const response = await fetch('/api/labels', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ workspaceSlug, name, color }),
+                })
+                const data = await response.json()
+                if (data.success && data.data) {
+                    const newLabel = data.data as Label
+                    setLocalAvailableLabels(prev => [...prev, newLabel])
+                    return newLabel
+                }
+            } catch (err) {
+                console.error('Failed to create label via API:', err)
+            }
+        }
+
+        // Fallback to local creation
         const newLabel: Label = {
             id: `label_${Date.now()}`,
             name,
@@ -280,17 +358,7 @@ export function CreateTaskPanel({
         return newLabel
     }
 
-    // Get status columns
-    const statusOptions = columns.length > 0
-        ? columns.map(c => ({ id: c.id, name: c.title, color: c.color }))
-        : [
-            { id: 'todo', name: 'Do zrobienia', color: '#6366f1' },
-            { id: 'in_progress', name: 'W trakcie', color: '#f59e0b' },
-            { id: 'done', name: 'Zrobione', color: '#10b981' },
-        ]
-
     const selectedProject = projects.find(p => p.id === projectId)
-    const selectedStatus = statusOptions.find(s => s.id === status)
 
     return (
         <>
@@ -320,39 +388,80 @@ export function CreateTaskPanel({
                         </button>
 
                         {/* Project Selector - in same row */}
-                        <div className="relative">
+                        {!defaultProject && (
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowProjectDropdown(!showProjectDropdown)}
+                                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 text-sm text-gray-300 transition-colors"
+                                >
+                                    <span className="text-lg">📁</span>
+                                    <span>{selectedProject?.name || 'Wybierz projekt'}</span>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M6 9L12 15L18 9" />
+                                    </svg>
+                                </button>
+                                <Dropdown
+                                    isOpen={showProjectDropdown}
+                                    onClose={() => setShowProjectDropdown(false)}
+                                    className="w-48"
+                                >
+                                    {projects.map(project => (
+                                        <button
+                                            key={project.id}
+                                            onClick={() => {
+                                                setProjectId(project.id)
+                                                setShowProjectDropdown(false)
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors ${projectId === project.id ? 'text-amber-400' : 'text-gray-300'
+                                                }`}
+                                        >
+                                            {project.name}
+                                        </button>
+                                    ))}
+                                </Dropdown>
+                            </div>
+                        )}
+
+                        {/* Type Toggle - Task / Meeting */}
+                        <div className="flex bg-[#1a1a24] p-1 rounded-full">
                             <button
-                                onClick={() => setShowProjectDropdown(!showProjectDropdown)}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 text-sm text-gray-300 transition-colors"
+                                type="button"
+                                onClick={() => setItemType('task')}
+                                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs transition-all ${itemType === 'task'
+                                    ? 'bg-[#F2CE88] text-[#0a0a0f] font-bold shadow-lg shadow-amber-500/10'
+                                    : 'text-gray-500 hover:text-white font-medium'
+                                    }`}
                             >
-                                <span className="text-lg">📁</span>
-                                <span>{selectedProject?.name || 'Wybierz projekt'}</span>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M6 9L12 15L18 9" />
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+                                    <path d="M8 6C8 4.89543 8.89543 4 10 4H18L24 10V26C24 27.1046 23.1046 28 22 28H10C8.89543 28 8 27.1046 8 26V6Z" fill={itemType === 'task' ? '#0a0a0f' : '#9E9E9E'} />
+                                    <path d="M18 4V8C18 9.10457 18.8954 10 20 10H24" fill={itemType === 'task' ? '#545454' : '#545454'} />
+                                    <path d="M12 14H20" stroke={itemType === 'task' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
+                                    <path d="M12 18H20" stroke={itemType === 'task' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
+                                    <path d="M12 22H16" stroke={itemType === 'task' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
                                 </svg>
+                                Zadanie
                             </button>
-                            <Dropdown
-                                isOpen={showProjectDropdown}
-                                onClose={() => setShowProjectDropdown(false)}
-                                className="w-48"
+                            <button
+                                type="button"
+                                onClick={() => setItemType('meeting')}
+                                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs transition-all ${itemType === 'meeting'
+                                    ? 'bg-[#F2CE88] text-[#0a0a0f] font-bold shadow-lg shadow-amber-500/10'
+                                    : 'text-gray-500 hover:text-white font-medium'
+                                    }`}
                             >
-                                {projects.map(project => (
-                                    <button
-                                        key={project.id}
-                                        onClick={() => {
-                                            setProjectId(project.id)
-                                            setShowProjectDropdown(false)
-                                        }}
-                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors ${projectId === project.id ? 'text-amber-400' : 'text-gray-300'
-                                            }`}
-                                    >
-                                        {project.name}
-                                    </button>
-                                ))}
-                            </Dropdown>
+                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+                                    <path d="M6 10C6 7.79 7.79 6 10 6H22C24.21 6 26 7.79 26 10V24C26 26.21 24.21 28 22 28H10C7.79 28 6 26.21 6 24V10Z" fill={itemType === 'meeting' ? '#0a0a0f' : '#9E9E9E'} />
+                                    <path d="M6 12H26" stroke={itemType === 'meeting' ? '#545454' : '#545454'} strokeWidth="2" />
+                                    <path d="M11 4V8" stroke={itemType === 'meeting' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
+                                    <path d="M21 4V8" stroke={itemType === 'meeting' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                                Spotkanie
+                            </button>
                         </div>
 
-                        <h2 className="text-lg font-semibold text-white flex-1">Nowe zadanie</h2>
+                        <h2 className="text-lg font-semibold text-white flex-1">
+                            {itemType === 'task' ? 'Nowe zadanie' : 'Nowe spotkanie'}
+                        </h2>
                     </div>
                 </div>
 
@@ -387,38 +496,16 @@ export function CreateTaskPanel({
                         </p>
                     </div>
 
-                    {/* Properties Bar */}
-                    <div className="flex flex-wrap gap-2 mb-6 pb-6 border-b border-gray-800">
-                        {/* Status */}
-                        <div className="relative">
-                            <PropertyChip
-                                icon={<div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedStatus?.color || '#6366f1' }} />}
-                                label="Status"
-                                value={selectedStatus?.name}
-                                onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                    {/* Properties Bar - single row layout */}
+                    <div className="flex flex-wrap items-center gap-3 mb-6 pb-6 border-b border-gray-800">
+                        {/* Status - only for tasks */}
+                        {itemType === 'task' && (
+                            <StatusSelector
+                                value={status}
+                                stages={currentStages}
+                                onChange={(newStatus) => setStatus(newStatus)}
                             />
-                            <Dropdown
-                                isOpen={showStatusDropdown}
-                                onClose={() => setShowStatusDropdown(false)}
-                                className="w-40"
-                            >
-                                {statusOptions.map(s => (
-                                    <button
-                                        key={s.id}
-                                        onClick={() => {
-                                            setStatus(s.id)
-                                            setShowStatusDropdown(false)
-                                        }}
-                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors flex items-center gap-2 ${status === s.id ? 'text-amber-400' : 'text-gray-300'
-                                            }`}
-                                    >
-                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                                        {s.name}
-                                    </button>
-                                ))}
-                            </Dropdown>
-                        </div>
-
+                        )}
 
                         {/* Priority */}
                         <PrioritySelector
@@ -428,21 +515,55 @@ export function CreateTaskPanel({
                         />
 
                         {/* Assignee */}
-                        <div className="flex-1 min-w-[180px]">
+                        <div className="min-w-[160px]">
                             <AssigneePicker
                                 selectedAssignees={assignees}
+                                availableAssignees={teamMembers as any}
                                 onSelect={setAssignees}
                                 maxVisible={2}
-                                placeholder="Przypisz osobę..."
+                                placeholder={itemType === 'meeting' ? 'Zaproś osoby...' : 'Przypisz osobę...'}
                             />
                         </div>
 
-                        {/* Due Date */}
-                        <DueDatePicker
-                            value={dueDate}
-                            onChange={(date) => setDueDate(date || '')}
-                        />
+                        {/* Spacer */}
+                        <div className="flex-1" />
+
+                        {/* Dates - aligned right */}
+                        <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase">Start</span>
+                                <DueDatePicker
+                                    value={startDate}
+                                    onChange={(date) => setStartDate(date || '')}
+                                    placeholder="Start"
+                                    showTime={itemType === 'meeting'}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase">Koniec</span>
+                                <DueDatePicker
+                                    value={dueDate}
+                                    onChange={(date) => setDueDate(date || '')}
+                                    placeholder="Termin"
+                                    showTime={itemType === 'meeting'}
+                                />
+                            </div>
+                        </div>
                     </div>
+
+                    {/* Meeting Link - only for meetings, separate section */}
+                    {itemType === 'meeting' && (
+                        <div className="mb-6">
+                            <label className="text-[10px] text-gray-500 font-bold uppercase block mb-2">Link do spotkania</label>
+                            <input
+                                type="url"
+                                value={meetingLink}
+                                onChange={(e) => setMeetingLink(e.target.value)}
+                                placeholder="https://meet.google.com/... lub https://zoom.us/..."
+                                className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:ring-1 focus:ring-amber-500/50 transition-colors"
+                            />
+                        </div>
+                    )}
 
                     {/* Labels Section - Full Width Below */}
                     <div className="mb-4">
@@ -476,129 +597,131 @@ export function CreateTaskPanel({
                     {/* Extended Options */}
                     {showMore && (
                         <div className="space-y-4 pt-4 ">
-                            {/* Subtasks */}
-                            <div>
-                                <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
-                                    <SubtaskCheckboxIcon />
-                                    Zadania podrzędne
-                                </label>
-                                <div className="space-y-3">
-                                    {subtasks.map((subtask, index) => (
-                                        <div
-                                            key={index}
-                                            className="bg-gray-800/50 rounded-xl overflow-hidden"
-                                        >
-                                            <div className="flex items-center gap-3 px-4 py-3">
-                                                <div className="w-5 h-5 rounded-md flex-shrink-0" />
-                                                <span className="text-sm text-white flex-1 font-medium">{subtask.title}</span>
-                                                <div className="flex items-center gap-2">
-                                                    {/* Status Badge */}
-                                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium capitalize ${subtask.status === 'todo' ? 'bg-indigo-500/10 text-indigo-400' :
-                                                        subtask.status === 'in_progress' ? 'bg-amber-500/10 text-amber-400' :
-                                                            subtask.status === 'review' ? 'bg-purple-500/10 text-purple-400' :
-                                                                'bg-emerald-500/10 text-emerald-400'
-                                                        }`}>
-                                                        {subtask.status === 'todo' ? 'To Do' :
-                                                            subtask.status === 'in_progress' ? 'In Progress' :
-                                                                subtask.status === 'review' ? 'Review' : 'Done'}
-                                                    </span>
-                                                    {/* Priority Badge */}
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${subtask.priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                                                        subtask.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                                                            subtask.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
-                                                                'bg-green-500/20 text-green-400'
-                                                        }`}>
-                                                        {subtask.priority}
-                                                    </span>
+                            {/* Subtasks - only for tasks */}
+                            {itemType === 'task' && (
+                                <div>
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
+                                        <SubtaskCheckboxIcon />
+                                        Zadania podrzędne
+                                    </label>
+                                    <div className="space-y-3">
+                                        {subtasks.map((subtask, index) => (
+                                            <div
+                                                key={index}
+                                                className="bg-gray-800/50 rounded-xl overflow-hidden"
+                                            >
+                                                <div className="flex items-center gap-3 px-4 py-3">
+                                                    <div className="w-5 h-5 rounded-md flex-shrink-0" />
+                                                    <span className="text-sm text-white flex-1 font-medium">{subtask.title}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        {/* Status Badge */}
+                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium capitalize ${subtask.status === 'todo' ? 'bg-indigo-500/10 text-indigo-400' :
+                                                            subtask.status === 'in_progress' ? 'bg-amber-500/10 text-amber-400' :
+                                                                subtask.status === 'review' ? 'bg-purple-500/10 text-purple-400' :
+                                                                    'bg-emerald-500/10 text-emerald-400'
+                                                            }`}>
+                                                            {subtask.status === 'todo' ? 'To Do' :
+                                                                subtask.status === 'in_progress' ? 'In Progress' :
+                                                                    subtask.status === 'review' ? 'Review' : 'Done'}
+                                                        </span>
+                                                        {/* Priority Badge */}
+                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${subtask.priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
+                                                            subtask.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                                                                subtask.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
+                                                                    'bg-green-500/20 text-green-400'
+                                                            }`}>
+                                                            {subtask.priority}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setEditingSubtaskIndex(editingSubtaskIndex === index ? null : index)}
+                                                        className="p-1 text-gray-500 hover:text-amber-400 transition-colors"
+                                                        title="Edytuj szczegóły"
+                                                    >
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d={editingSubtaskIndex === index ? "M18 15L12 9L6 15" : "M6 9L12 15L18 9"} />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => removeSubtask(index)}
+                                                        className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                                                    >
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M18 6L6 18M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    onClick={() => setEditingSubtaskIndex(editingSubtaskIndex === index ? null : index)}
-                                                    className="p-1 text-gray-500 hover:text-amber-400 transition-colors"
-                                                    title="Edytuj szczegóły"
-                                                >
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <path d={editingSubtaskIndex === index ? "M18 15L12 9L6 15" : "M6 9L12 15L18 9"} />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    onClick={() => removeSubtask(index)}
-                                                    className="p-1 text-gray-500 hover:text-red-400 transition-colors"
-                                                >
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <path d="M18 6L6 18M6 6l12 12" />
-                                                    </svg>
-                                                </button>
+                                                {editingSubtaskIndex === index && (
+                                                    <div className="px-4 pb-3 pt-0 space-y-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex-1">
+                                                                <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Status</label>
+                                                                <select
+                                                                    value={subtask.status}
+                                                                    onChange={(e) => updateSubtask(index, { status: e.target.value })}
+                                                                    className="w-full bg-gray-900 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
+                                                                >
+                                                                    <option value="todo">To-Do</option>
+                                                                    <option value="in_progress">W trakcie</option>
+                                                                    <option value="review">Recenzja</option>
+                                                                    <option value="done">Gotowe</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Priorytet</label>
+                                                                <select
+                                                                    value={subtask.priority}
+                                                                    onChange={(e) => updateSubtask(index, { priority: e.target.value as any })}
+                                                                    className="w-full bg-gray-900 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
+                                                                >
+                                                                    <option value="low">Niski</option>
+                                                                    <option value="medium">Średni</option>
+                                                                    <option value="high">Wysoki</option>
+                                                                    <option value="urgent">Pilne</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Opis</label>
+                                                            <textarea
+                                                                value={subtask.description}
+                                                                onChange={(e) => updateSubtask(index, { description: e.target.value })}
+                                                                placeholder="Dodaj opis tego zadania..."
+                                                                rows={2}
+                                                                className="w-full text-xs text-gray-400 bg-gray-900/50 rounded-lg p-3 placeholder-gray-600 outline-none resize-none focus:border-amber-500/50 transition-colors"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {subtask.description && editingSubtaskIndex !== index && (
+                                                    <div className="px-4 pb-3 pt-0">
+                                                        <p className="text-xs text-gray-500 leading-relaxed pl-8">
+                                                            {subtask.description}
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
-                                            {editingSubtaskIndex === index && (
-                                                <div className="px-4 pb-3 pt-0 space-y-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex-1">
-                                                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Status</label>
-                                                            <select
-                                                                value={subtask.status}
-                                                                onChange={(e) => updateSubtask(index, { status: e.target.value })}
-                                                                className="w-full bg-gray-900 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
-                                                            >
-                                                                <option value="todo">To-Do</option>
-                                                                <option value="in_progress">W trakcie</option>
-                                                                <option value="review">Recenzja</option>
-                                                                <option value="done">Gotowe</option>
-                                                            </select>
-                                                        </div>
-                                                        <div className="flex-1">
-                                                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Priorytet</label>
-                                                            <select
-                                                                value={subtask.priority}
-                                                                onChange={(e) => updateSubtask(index, { priority: e.target.value as any })}
-                                                                className="w-full bg-gray-900 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
-                                                            >
-                                                                <option value="low">Niski</option>
-                                                                <option value="medium">Średni</option>
-                                                                <option value="high">Wysoki</option>
-                                                                <option value="urgent">Pilne</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Opis</label>
-                                                        <textarea
-                                                            value={subtask.description}
-                                                            onChange={(e) => updateSubtask(index, { description: e.target.value })}
-                                                            placeholder="Dodaj opis tego zadania..."
-                                                            rows={2}
-                                                            className="w-full text-xs text-gray-400 bg-gray-900/50 rounded-lg p-3 placeholder-gray-600 outline-none resize-none focus:border-amber-500/50 transition-colors"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {subtask.description && editingSubtaskIndex !== index && (
-                                                <div className="px-4 pb-3 pt-0">
-                                                    <p className="text-xs text-gray-500 leading-relaxed pl-8">
-                                                        {subtask.description}
-                                                    </p>
-                                                </div>
-                                            )}
+                                        ))}
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={newSubtask}
+                                                onChange={(e) => setNewSubtask(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && addSubtask()}
+                                                placeholder="Dodaj zadanie podrzędne..."
+                                                className="flex-1 px-4 py-3 bg-gray-800/50 rounded-xl text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500/50 transition-colors"
+                                            />
+                                            <button
+                                                onClick={addSubtask}
+                                                disabled={!newSubtask.trim()}
+                                                className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${newSubtask.trim() ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'text-gray-600 cursor-not-allowed'}`}
+                                            >
+                                                + Dodaj
+                                            </button>
                                         </div>
-                                    ))}
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            value={newSubtask}
-                                            onChange={(e) => setNewSubtask(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && addSubtask()}
-                                            placeholder="Dodaj zadanie podrzędne..."
-                                            className="flex-1 px-4 py-3 bg-gray-800/50 rounded-xl text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500/50 transition-colors"
-                                        />
-                                        <button
-                                            onClick={addSubtask}
-                                            disabled={!newSubtask.trim()}
-                                            className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${newSubtask.trim() ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'text-gray-600 cursor-not-allowed'}`}
-                                        >
-                                            + Dodaj
-                                        </button>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Attachments */}
                             <div>
@@ -706,13 +829,15 @@ export function CreateTaskPanel({
                 <div className="flex-none p-6 bg-[#0f0f14] rounded-b-2xl">
                     <div className="flex items-center justify-between">
                         {/* Left side - Create more toggle */}
-                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                        <label
+                            className="flex items-center gap-3 cursor-pointer select-none"
+                            onClick={() => setCreateMore(!createMore)}
+                        >
                             <div
-                                className={`w-5 h-5 border border-gray-800 rounded-md flex items-center justify-center transition-all cursor-pointer ${createMore
+                                className={`w-5 h-5 border border-gray-800 rounded-md flex items-center justify-center transition-all ${createMore
                                     ? 'bg-amber-500'
                                     : 'hover:bg-gray-800/30'
                                     }`}
-                                onClick={() => setCreateMore(!createMore)}
                             >
                                 {createMore && (
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3">
@@ -720,7 +845,7 @@ export function CreateTaskPanel({
                                     </svg>
                                 )}
                             </div>
-                            <span className="text-sm text-gray-400">Stwórz kolejne</span>
+                            <span className="text-sm text-gray-400 font-medium">Stwórz kolejne</span>
                         </label>
 
                         {/* Right side - Actions */}
@@ -734,8 +859,8 @@ export function CreateTaskPanel({
                             <button
                                 onClick={handleCreate}
                                 disabled={!title.trim()}
-                                className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${title.trim()
-                                    ? 'bg-indigo-500 hover:bg-indigo-400 text-white'
+                                className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${title.trim()
+                                    ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20'
                                     : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                                     }`}
                             >

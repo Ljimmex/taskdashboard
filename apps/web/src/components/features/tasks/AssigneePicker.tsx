@@ -17,16 +17,6 @@ interface AssigneePickerProps {
     placeholder?: string
 }
 
-// Mock assignees for demo
-const MOCK_ASSIGNEES: Assignee[] = [
-    { id: '1', name: 'Jan Kowalski', email: 'jan.kowalski@example.com', role: 'Developer' },
-    { id: '2', name: 'Anna Nowak', email: 'anna.nowak@example.com', role: 'Designer' },
-    { id: '3', name: 'Piotr Wiśniewski', email: 'piotr.wisniewski@example.com', role: 'Manager' },
-    { id: '4', name: 'Maria Zielińska', email: 'maria.zielinska@example.com', role: 'Developer' },
-    { id: '5', name: 'Tomasz Wójcik', email: 'tomasz.wojcik@example.com', role: 'QA Engineer' },
-    { id: '6', name: 'Katarzyna Kamińska', email: 'katarzyna.kaminska@example.com', role: 'Product Owner' },
-]
-
 // Avatar component
 const Avatar = ({ name, avatar, size = 'md' }: { name: string; avatar?: string; size?: 'sm' | 'md' | 'lg' }) => {
     const sizeClasses = {
@@ -62,7 +52,7 @@ const Avatar = ({ name, avatar, size = 'md' }: { name: string; avatar?: string; 
 
 export function AssigneePicker({
     selectedAssignees,
-    availableAssignees = MOCK_ASSIGNEES,
+    availableAssignees = [],
     onSelect,
     maxVisible = 3,
     placeholder = 'Przypisz osobę...',
@@ -110,14 +100,25 @@ export function AssigneePicker({
     return (
         <div className="relative" ref={containerRef}>
             {/* Selected Assignees Display */}
-            <button
+            <div
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                     setIsOpen(!isOpen)
                     if (!isOpen) {
                         setTimeout(() => inputRef.current?.focus(), 100)
                     }
                 }}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-transparent hover:bg-gray-800/50 transition-colors w-full min-h-[32px]"
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setIsOpen(!isOpen)
+                        if (!isOpen) {
+                            setTimeout(() => inputRef.current?.focus(), 100)
+                        }
+                    }
+                }}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-transparent hover:bg-gray-800/50 transition-colors w-full min-h-[32px] cursor-pointer outline-none focus:ring-2 focus:ring-amber-500/50"
             >
                 {selectedAssignees.length === 0 ? (
                     <span className="text-sm text-gray-500">{placeholder}</span>
@@ -160,7 +161,7 @@ export function AssigneePicker({
                     <path d="M20 21C20 16.5817 16.4183 13 12 13C7.58172 13 4 16.5817 4 21" />
                     <path d="M20 8V14M23 11H17" />
                 </svg>
-            </button>
+            </div>
 
             {/* Dropdown */}
             {isOpen && (

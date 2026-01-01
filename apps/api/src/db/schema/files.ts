@@ -1,5 +1,5 @@
-import { pgTable, uuid, varchar, text, timestamp, integer } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { pgTable, uuid, varchar, text, timestamp, integer, pgPolicy } from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm'
 import { users } from './users'
 import { teams } from './teams'
 import { tasks } from './tasks'
@@ -18,7 +18,20 @@ export const files = pgTable('files', {
     teamId: uuid('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
     taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Team members can view files", {
+        for: "select",
+        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+    pgPolicy("Team members can upload files", {
+        for: "insert",
+        withCheck: sql`uploaded_by = auth.uid()::text AND team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+    pgPolicy("Uploader can delete files", {
+        for: "delete",
+        using: sql`uploaded_by = auth.uid()::text`,
+    }),
+])
 
 // =============================================================================
 // RELATIONS

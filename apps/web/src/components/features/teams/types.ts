@@ -27,4 +27,5 @@ export interface Team {
     name: string
     color: string
     members: TeamMember[]
+    projects?: { id: string; name: string }[]
 }

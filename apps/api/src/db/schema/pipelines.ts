@@ -1,5 +1,5 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import { pgTable, uuid, varchar, text, timestamp, integer, boolean, pgPolicy } from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm'
 
 // =============================================================================
 // INDUSTRY TEMPLATES TABLE (System templates)
@@ -14,7 +14,12 @@ export const industryTemplates = pgTable('industry_templates', {
     icon: varchar('icon', { length: 10 }), // emoji
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Anyone can view templates", {
+        for: "select",
+        using: sql`true`,
+    }),
+])
 
 // =============================================================================
 // INDUSTRY TEMPLATE STAGES (Predefined stages per template)
@@ -29,7 +34,12 @@ export const industryTemplateStages = pgTable('industry_template_stages', {
     position: integer('position').notNull(),
     isFinal: boolean('is_final').default(false).notNull(), // marks "done" stages
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Anyone can view template stages", {
+        for: "select",
+        using: sql`true`,
+    }),
+])
 
 // =============================================================================
 // PROJECT STAGES (Custom stages per project) - projectId added via relation
@@ -43,7 +53,32 @@ export const projectStages = pgTable('project_stages', {
     position: integer('position').notNull(),
     isFinal: boolean('is_final').default(false).notNull(), // marks completion stage
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Team members can view project stages", {
+        for: "select",
+        using: sql`project_id IN (
+            SELECT id FROM projects WHERE team_id IN (
+                SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
+            )
+        )`,
+    }),
+    pgPolicy("Team members can create project stages", {
+        for: "insert",
+        withCheck: sql`project_id IN (
+            SELECT id FROM projects WHERE team_id IN (
+                SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
+            )
+        )`,
+    }),
+    pgPolicy("Team members can update project stages", {
+        for: "update",
+        using: sql`project_id IN (
+            SELECT id FROM projects WHERE team_id IN (
+                SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
+            )
+        )`,
+    }),
+])
 
 // =============================================================================
 // RELATIONS

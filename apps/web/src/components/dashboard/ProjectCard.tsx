@@ -57,7 +57,7 @@ export function ProjectCard({
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div className="flex -space-x-2">
-                        {assignees.slice(0, 3).map((assignee, i) => (
+                        {assignees.slice(0, 5).map((assignee, i) => (
                             <div
                                 key={assignee.id}
                                 className="w-6 h-6 rounded-full border-2 border-[#1a1a24] bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black text-[10px] font-bold"
@@ -71,8 +71,16 @@ export function ProjectCard({
                                 )}
                             </div>
                         ))}
+                        {assignees.length > 5 && (
+                            <div className="w-6 h-6 rounded-full border-2 border-[#1a1a24] bg-gray-800 flex items-center justify-center text-white text-[10px] z-0">
+                                +{assignees.length - 5}
+                            </div>
+                        )}
                     </div>
-                    <span className="text-xs text-gray-500">T: {assignees[0]?.name.split(' ')[0] || 'Unassigned'}</span>
+                    <span className="text-xs text-gray-500">
+                        T: {assignees[0]?.name.split(' ')[0] || 'Unassigned'}
+                        {assignees.length > 1 && ` +${assignees.length - 1}`}
+                    </span>
                 </div>
 
                 <button

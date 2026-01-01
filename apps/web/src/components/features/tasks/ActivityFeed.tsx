@@ -1,4 +1,5 @@
 import React from 'react'
+import { cn } from '../../../lib/utils'
 
 export interface Activity {
     id: string
@@ -7,7 +8,7 @@ export interface Activity {
         name: string
         avatar?: string
     }
-    type: 'status_change' | 'assignment' | 'label_added' | 'task_created' | 'file_added' | 'comment_added'
+    type: 'status_change' | 'assignment' | 'label_added' | 'task_created' | 'file_added' | 'comment_added' | 'subtask_created' | 'subtask_updated' | 'subtask_deleted'
     details: string
     timestamp: string
     metadata?: Record<string, any>
@@ -115,6 +116,31 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
                                     <Avatar name={activity.user.name} />
                                     <span className="text-sm font-semibold text-white group-hover:text-amber-400 transition-colors">
                                         {activity.user.name}
+                                    </span>
+                                    {/* Activity Type Badge */}
+                                    <span className={cn(
+                                        "text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider",
+                                        activity.type === 'status_change' ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
+                                            activity.type === 'assignment' ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" :
+                                                activity.type === 'label_added' ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
+                                                    activity.type === 'file_added' ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
+                                                        activity.type === 'comment_added' ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" :
+                                                            "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+                                    )}>
+                                        {(() => {
+                                            switch (activity.type) {
+                                                case 'status_change': return 'Status'
+                                                case 'assignment': return 'Przypisanie'
+                                                case 'label_added': return 'Etykieta'
+                                                case 'file_added': return 'Plik'
+                                                case 'comment_added': return 'Komentarz'
+                                                case 'task_created': return 'Utworzono'
+                                                case 'subtask_created': return 'Podzadanie'
+                                                case 'subtask_updated': return 'Podzadanie'
+                                                case 'subtask_deleted': return 'Podzadanie'
+                                                default: return activity.type
+                                            }
+                                        })()}
                                     </span>
                                 </div>
                                 <span className="text-[11px] text-gray-500">{activity.timestamp}</span>

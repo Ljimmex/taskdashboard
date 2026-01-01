@@ -1,138 +1,143 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
-import { labels, type NewLabel } from '../../db/schema/tasks'
-import { projects } from '../../db/schema/projects'
+import { workspaces } from '../../db/schema/workspaces'
 import { eq } from 'drizzle-orm'
-import {
-    canCreateLabels,
-    canUpdateLabels,
-    canDeleteLabels,
-    type TeamLevel
-} from '../../lib/permissions'
 
 export const labelsRoutes = new Hono()
 
-// Helper: Get user's team level for a project's team
-async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
-    const member = await db.query.teamMembers.findFirst({
-        where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId))
+// Helper: Get workspace by slug
+async function getWorkspaceBySlug(slug: string) {
+    return await db.query.workspaces.findFirst({
+        where: (w, { eq }) => eq(w.slug, slug)
     })
-    return (member?.teamLevel as TeamLevel) || null
 }
 
-// Helper: Get teamId from projectId
-async function getTeamIdFromProject(projectId: string): Promise<string | null> {
-    const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, projectId)).limit(1)
-    return project?.teamId || null
-}
-
-// GET /api/labels - List labels for a project (anyone with project access can view)
+// GET /api/labels - List labels for a workspace
 labelsRoutes.get('/', async (c) => {
     try {
-        const projectId = c.req.query('projectId')
-        if (!projectId) return c.json({ success: false, error: 'projectId is required' }, 400)
-        const result = await db.select().from(labels).where(eq(labels.projectId, projectId)).orderBy(labels.name)
-        return c.json({ success: true, data: result })
+        const workspaceSlug = c.req.query('workspaceSlug')
+        if (!workspaceSlug) return c.json({ success: false, error: 'workspaceSlug is required' }, 400)
+
+        const workspace = await getWorkspaceBySlug(workspaceSlug)
+        if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
+
+        // Return labels from workspace JSONB
+        const labels = workspace.labels || []
+        return c.json({ success: true, data: labels })
     } catch (error) {
         console.error('Error fetching labels:', error)
         return c.json({ success: false, error: 'Failed to fetch labels' }, 500)
     }
 })
 
-// POST /api/labels - Create label (requires labels.create permission)
+// POST /api/labels - Add label to workspace
 labelsRoutes.post('/', async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
         const body = await c.req.json()
+        const { workspaceSlug, name, color } = body
 
-        // Get teamId from project
-        const teamId = await getTeamIdFromProject(body.projectId)
-        if (!teamId) {
-            return c.json({ success: false, error: 'Project not found' }, 404)
+        if (!workspaceSlug || !name) {
+            return c.json({ success: false, error: 'workspaceSlug and name are required' }, 400)
         }
 
-        // Get permissions
-        const teamLevel = await getUserTeamLevel(userId, teamId)
+        const workspace = await getWorkspaceBySlug(workspaceSlug)
+        if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
 
-        if (!canCreateLabels(null, teamLevel)) {
-            return c.json({ success: false, error: 'Unauthorized to create labels' }, 403)
+        // Generate unique ID for the new label
+        const newLabel = {
+            id: `label-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name,
+            color: color || '#6B7280',
         }
 
-        const newLabel: NewLabel = {
-            projectId: body.projectId,
-            name: body.name,
-            color: body.color || '#6B7280',
-        }
-        const [created] = await db.insert(labels).values(newLabel).returning()
-        return c.json({ success: true, data: created }, 201)
+        // Add to existing labels array
+        const currentLabels = workspace.labels || []
+        const updatedLabels = [...currentLabels, newLabel]
+
+        // Update workspace with new labels
+        await db.update(workspaces)
+            .set({ labels: updatedLabels, updatedAt: new Date() })
+            .where(eq(workspaces.id, workspace.id))
+
+        return c.json({ success: true, data: newLabel }, 201)
     } catch (error) {
         console.error('Error creating label:', error)
         return c.json({ success: false, error: 'Failed to create label' }, 500)
     }
 })
 
-// PATCH /api/labels/:id - Update label (requires labels.update permission)
+// PATCH /api/labels/:id - Update label in workspace
 labelsRoutes.patch('/:id', async (c) => {
     try {
-        const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const labelId = c.req.param('id')
         const body = await c.req.json()
+        const { workspaceSlug, name, color } = body
 
-        // Get label to find projectId
-        const [label] = await db.select().from(labels).where(eq(labels.id, id)).limit(1)
-        if (!label) return c.json({ success: false, error: 'Label not found' }, 404)
-
-        // Get teamId from project
-        const teamId = await getTeamIdFromProject(label.projectId)
-        if (!teamId) {
-            return c.json({ success: false, error: 'Project not found' }, 404)
+        if (!workspaceSlug) {
+            return c.json({ success: false, error: 'workspaceSlug is required' }, 400)
         }
 
-        // Get permissions
-        const teamLevel = await getUserTeamLevel(userId, teamId)
+        const workspace = await getWorkspaceBySlug(workspaceSlug)
+        if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
 
-        if (!canUpdateLabels(null, teamLevel)) {
-            return c.json({ success: false, error: 'Unauthorized to update labels' }, 403)
+        // Find and update the label
+        const currentLabels = workspace.labels || []
+        const labelIndex = currentLabels.findIndex((l: any) => l.id === labelId)
+
+        if (labelIndex === -1) {
+            return c.json({ success: false, error: 'Label not found' }, 404)
         }
 
-        const updateData: Partial<NewLabel> = {}
-        if (body.name !== undefined) updateData.name = body.name
-        if (body.color !== undefined) updateData.color = body.color
-        const [updated] = await db.update(labels).set(updateData).where(eq(labels.id, id)).returning()
-        if (!updated) return c.json({ success: false, error: 'Label not found' }, 404)
-        return c.json({ success: true, data: updated })
+        // Update label properties
+        const updatedLabel = {
+            ...currentLabels[labelIndex],
+            ...(name !== undefined && { name }),
+            ...(color !== undefined && { color }),
+        }
+        currentLabels[labelIndex] = updatedLabel
+
+        // Update workspace with modified labels
+        await db.update(workspaces)
+            .set({ labels: currentLabels, updatedAt: new Date() })
+            .where(eq(workspaces.id, workspace.id))
+
+        return c.json({ success: true, data: updatedLabel })
     } catch (error) {
         console.error('Error updating label:', error)
         return c.json({ success: false, error: 'Failed to update label' }, 500)
     }
 })
 
-// DELETE /api/labels/:id - Delete label (requires labels.delete permission)
+// DELETE /api/labels/:id - Remove label from workspace
 labelsRoutes.delete('/:id', async (c) => {
     try {
-        const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const labelId = c.req.param('id')
+        const workspaceSlug = c.req.query('workspaceSlug')
 
-        // Get label to find projectId
-        const [label] = await db.select().from(labels).where(eq(labels.id, id)).limit(1)
-        if (!label) return c.json({ success: false, error: 'Label not found' }, 404)
-
-        // Get teamId from project
-        const teamId = await getTeamIdFromProject(label.projectId)
-        if (!teamId) {
-            return c.json({ success: false, error: 'Project not found' }, 404)
+        if (!workspaceSlug) {
+            return c.json({ success: false, error: 'workspaceSlug is required' }, 400)
         }
 
-        // Get permissions
-        const teamLevel = await getUserTeamLevel(userId, teamId)
+        const workspace = await getWorkspaceBySlug(workspaceSlug)
+        if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
 
-        if (!canDeleteLabels(null, teamLevel)) {
-            return c.json({ success: false, error: 'Unauthorized to delete labels' }, 403)
+        // Find and remove the label
+        const currentLabels = workspace.labels || []
+        const labelIndex = currentLabels.findIndex((l: any) => l.id === labelId)
+
+        if (labelIndex === -1) {
+            return c.json({ success: false, error: 'Label not found' }, 404)
         }
 
-        const [deleted] = await db.delete(labels).where(eq(labels.id, id)).returning()
-        if (!deleted) return c.json({ success: false, error: 'Label not found' }, 404)
-        return c.json({ success: true, message: `Label "${deleted.name}" deleted` })
+        const deletedLabel = currentLabels[labelIndex]
+        const updatedLabels = currentLabels.filter((l: any) => l.id !== labelId)
+
+        // Update workspace with filtered labels
+        await db.update(workspaces)
+            .set({ labels: updatedLabels, updatedAt: new Date() })
+            .where(eq(workspaces.id, workspace.id))
+
+        return c.json({ success: true, message: `Label "${deletedLabel.name}" deleted` })
     } catch (error) {
         console.error('Error deleting label:', error)
         return c.json({ success: false, error: 'Failed to delete label' }, 500)

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { useSession, signOut } from '@/lib/auth'
 import { DropdownArrowUp, DropdownArrowDown } from './icons'
+import { NotificationPanel } from '@/components/features/notifications/NotificationPanel'
 
 export function Header() {
     const { data: session } = useSession()
@@ -94,25 +95,7 @@ export function Header() {
                         <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full" />
                     </button>
                     {showNotifications && (
-                        <div className="absolute right-0 top-12 w-72 bg-[#12121a] rounded-xl shadow-2xl p-4 z-50">
-                            <h3 className="font-medium text-white mb-3">Notifications</h3>
-                            <div className="space-y-3">
-                                <div className="flex gap-3 p-2 rounded-lg hover:bg-gray-800/50">
-                                    <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400">📋</div>
-                                    <div>
-                                        <p className="text-sm text-white">New task assigned</p>
-                                        <p className="text-xs text-gray-500">2 min ago</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-3 p-2 rounded-lg hover:bg-gray-800/50">
-                                    <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">✓</div>
-                                    <div>
-                                        <p className="text-sm text-white">Project completed</p>
-                                        <p className="text-xs text-gray-500">1 hour ago</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <NotificationPanel onClose={() => setShowNotifications(false)} />
                     )}
                 </div>
 

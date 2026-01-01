@@ -19,6 +19,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceSlugIndexRouteImport } from './routes/$workspaceSlug/index'
 import { Route as InviteInviteIdRouteImport } from './routes/invite/$inviteId'
 import { Route as WorkspaceSlugTeamIndexRouteImport } from './routes/$workspaceSlug/team/index'
+import { Route as WorkspaceSlugProjectsIndexRouteImport } from './routes/$workspaceSlug/projects/index'
+import { Route as WorkspaceSlugProjectsProjectIdIndexRouteImport } from './routes/$workspaceSlug/projects/$projectId/index'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -70,6 +72,18 @@ const WorkspaceSlugTeamIndexRoute = WorkspaceSlugTeamIndexRouteImport.update({
   path: '/team/',
   getParentRoute: () => WorkspaceSlugRoute,
 } as any)
+const WorkspaceSlugProjectsIndexRoute =
+  WorkspaceSlugProjectsIndexRouteImport.update({
+    id: '/projects/',
+    path: '/projects/',
+    getParentRoute: () => WorkspaceSlugRoute,
+  } as any)
+const WorkspaceSlugProjectsProjectIdIndexRoute =
+  WorkspaceSlugProjectsProjectIdIndexRouteImport.update({
+    id: '/projects/$projectId/',
+    path: '/projects/$projectId/',
+    getParentRoute: () => WorkspaceSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,7 +95,9 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
+  '/$workspaceSlug/projects': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
+  '/$workspaceSlug/projects/$projectId': typeof WorkspaceSlugProjectsProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -92,7 +108,9 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug': typeof WorkspaceSlugIndexRoute
+  '/$workspaceSlug/projects': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
+  '/$workspaceSlug/projects/$projectId': typeof WorkspaceSlugProjectsProjectIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -105,7 +123,9 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
+  '/$workspaceSlug/projects/': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/team/': typeof WorkspaceSlugTeamIndexRoute
+  '/$workspaceSlug/projects/$projectId/': typeof WorkspaceSlugProjectsProjectIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -119,7 +139,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
+    | '/$workspaceSlug/projects'
     | '/$workspaceSlug/team'
+    | '/$workspaceSlug/projects/$projectId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -130,7 +152,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/invite/$inviteId'
     | '/$workspaceSlug'
+    | '/$workspaceSlug/projects'
     | '/$workspaceSlug/team'
+    | '/$workspaceSlug/projects/$projectId'
   id:
     | '__root__'
     | '/'
@@ -142,7 +166,9 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
+    | '/$workspaceSlug/projects/'
     | '/$workspaceSlug/team/'
+    | '/$workspaceSlug/projects/$projectId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -228,17 +254,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSlugTeamIndexRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
+    '/$workspaceSlug/projects/': {
+      id: '/$workspaceSlug/projects/'
+      path: '/projects'
+      fullPath: '/$workspaceSlug/projects'
+      preLoaderRoute: typeof WorkspaceSlugProjectsIndexRouteImport
+      parentRoute: typeof WorkspaceSlugRoute
+    }
+    '/$workspaceSlug/projects/$projectId/': {
+      id: '/$workspaceSlug/projects/$projectId/'
+      path: '/projects/$projectId'
+      fullPath: '/$workspaceSlug/projects/$projectId'
+      preLoaderRoute: typeof WorkspaceSlugProjectsProjectIdIndexRouteImport
+      parentRoute: typeof WorkspaceSlugRoute
+    }
   }
 }
 
 interface WorkspaceSlugRouteChildren {
   WorkspaceSlugIndexRoute: typeof WorkspaceSlugIndexRoute
+  WorkspaceSlugProjectsIndexRoute: typeof WorkspaceSlugProjectsIndexRoute
   WorkspaceSlugTeamIndexRoute: typeof WorkspaceSlugTeamIndexRoute
+  WorkspaceSlugProjectsProjectIdIndexRoute: typeof WorkspaceSlugProjectsProjectIdIndexRoute
 }
 
 const WorkspaceSlugRouteChildren: WorkspaceSlugRouteChildren = {
   WorkspaceSlugIndexRoute: WorkspaceSlugIndexRoute,
+  WorkspaceSlugProjectsIndexRoute: WorkspaceSlugProjectsIndexRoute,
   WorkspaceSlugTeamIndexRoute: WorkspaceSlugTeamIndexRoute,
+  WorkspaceSlugProjectsProjectIdIndexRoute:
+    WorkspaceSlugProjectsProjectIdIndexRoute,
 }
 
 const WorkspaceSlugRouteWithChildren = WorkspaceSlugRoute._addFileChildren(

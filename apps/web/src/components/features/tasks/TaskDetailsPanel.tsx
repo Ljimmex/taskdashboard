@@ -36,75 +36,24 @@ interface TaskDetailsPanelProps {
     task: TaskCardProps | null
     isOpen: boolean
     onClose: () => void
-    subitems?: Subtask[]
+    subtasks?: Subtask[]
     comments?: Comment[]
     sharedFiles?: SharedFile[]
     onSubtaskToggle?: (subtaskId: string) => void
     onSubtasksChange?: (subtasks: Subtask[]) => void
-    onAddComment?: (content: string) => void
-    onAddSubtask?: (title: string) => void
+    onAddComment?: (content: string, parentId?: string | null) => void
+    onLikeComment?: (commentId: string) => void
+    onAddSubtask?: (title: string, subtask?: Subtask) => void
+    onEdit?: (subtaskId: string, updates: Partial<Subtask>) => void
+    onDelete?: (subtaskId: string) => void
+    onAssigneesChange?: (assignees: Assignee[]) => void
+    onLabelsChange?: (labels: Label[]) => void
     activities?: Activity[]
     availableLabels?: Label[]
-    onCreateLabel?: (name: string, color: string) => Label
+    onCreateLabel?: (name: string, color: string) => Promise<Label | undefined>
+    stages?: { id: string; name: string; color: string }[]
+    teamMembers?: { id: string; name: string; avatar?: string }[]
 }
-
-// Mock Data for demo
-const MOCK_SUBTASKS: Subtask[] = [
-    { id: '1', title: 'Set deadlines for each milestone', description: 'When setting deadlines, consider the complexity of each milestone and how much time it may realistically take to complete.', status: 'todo', priority: 'high' },
-    { id: '2', title: 'Identify key milestones for Q4 roadmap', status: 'in_progress', priority: 'medium' },
-    { id: '3', title: 'Define task dependencies', status: 'done', priority: 'low' },
-    { id: '4', title: 'Allocate team responsibilities for each task', status: 'todo', priority: 'medium' },
-    { id: '5', title: 'Review timeline with stakeholders', description: 'Before finalizing the deadlines, consult with the respective team leads.', status: 'done', priority: 'high' },
-]
-
-const MOCK_COMMENTS: Comment[] = [
-    { id: '1', author: { id: '1', name: 'Marcia Cross' }, content: "Hi @Agatha Mayer, I've gathered the necessary input from the design and development departments. I'll be adding the key milestones for Q4 based on our discussions. Once the timeline is ready, I'll share it for review. Let me know if there's anything specific that should be prioritized.", createdAt: '2h ago', likes: ['user-1', 'user-2'], parentId: null },
-    { id: '2', author: { id: '2', name: 'Agatha Mayer' }, content: "Just finished outlining the task dependencies and team responsibilities for the timeline. The next step is setting realistic deadlines, considering the current workload. I'll start working on it today and aim to have the first draft by tomorrow.", createdAt: '1h ago', likes: ['user-1'], parentId: null },
-    { id: '3', author: { id: '2', name: 'Agatha Mayer' }, content: "I've completed the milestone definition for the marketing department. We've outlined the key campaigns for Q4 and their dependencies.", createdAt: '26m ago', likes: [], parentId: null },
-    { id: '4', author: { id: '1', name: 'Marcia Cross' }, content: 'Great progress so far!', createdAt: '3m ago', likes: [], parentId: null },
-    { id: '5', author: { id: '1', name: 'Marcia Cross' }, content: 'Thanks! Glad we are aligned.', createdAt: '30m ago', likes: ['user-1'], parentId: '2', replies: [] }, // Reply to comment 2
-]
-
-const MOCK_FILES: SharedFile[] = [
-    { id: '1', name: 'Spirit Estimate Name.doc', type: 'doc', dateShared: 'Jul 11, 2025', sharedBy: { id: '1', name: 'Marcia Cross' } },
-    { id: '2', name: 'Project Estimate.pdf', type: 'pdf', dateShared: 'Jun 3, 2025', sharedBy: { id: '2', name: 'Agatha Mayer' } },
-    { id: '3', name: 'Document_1.docx', type: 'doc', dateShared: 'Jun 2, 2025', sharedBy: { id: '1', name: 'Marcia Cross' } },
-    { id: '4', name: 'Wiseless founder.png', type: 'image', dateShared: 'May 29, 2025', sharedBy: { id: '2', name: 'Agatha Mayer' } },
-    { id: '5', name: 'Screenshot Sep 13,2024.png', type: 'image', dateShared: 'May 27, 2025', sharedBy: { id: '2', name: 'Agatha Mayer' } },
-]
-
-const MOCK_ACTIVITIES: Activity[] = [
-    {
-        id: '1',
-        user: { id: '1', name: 'Marcia Cross' },
-        type: 'status_change',
-        details: 'zmieniła status zadania',
-        timestamp: '2 godziny temu',
-        metadata: { from: 'To do', to: 'In Progress' }
-    },
-    {
-        id: '2',
-        user: { id: '2', name: 'Agatha Mayer' },
-        type: 'comment_added',
-        details: 'dodała nowy komentarz do zadania',
-        timestamp: '1 godzinę temu'
-    },
-    {
-        id: '3',
-        user: { id: '1', name: 'Marcia Cross' },
-        type: 'label_added',
-        details: 'dodała etykietę do zadania',
-        timestamp: '45 minut temu',
-        metadata: { labelName: 'Priority', labelColor: '#ef4444' }
-    },
-    {
-        id: '4',
-        user: { id: '2', name: 'Agatha Mayer' },
-        type: 'assignment',
-        details: 'przypisała zadanie do Marcia Cross',
-        timestamp: '15 minut temu'
-    }
-]
 
 // File type icons
 const FileTypeIcon = ({ type }: { type: string }) => {
@@ -189,17 +138,25 @@ export function TaskDetailsPanel({
     task,
     isOpen,
     onClose,
-    subitems = MOCK_SUBTASKS,
-    comments: propComments = MOCK_COMMENTS,
-    sharedFiles = MOCK_FILES,
-    activities: propActivities = MOCK_ACTIVITIES,
+    subtasks = [],
+    comments: propComments = [],
+    sharedFiles = [],
+    activities: propActivities = [],
     onSubtaskToggle,
     onSubtasksChange,
     onAddComment,
+    onLikeComment,
+    onAddSubtask,
+    onEdit,
+    onDelete,
+    onAssigneesChange,
+    onLabelsChange,
     availableLabels: propAvailableLabels,
     onCreateLabel: propOnCreateLabel,
+    stages = [],
+    teamMembers = [],
 }: TaskDetailsPanelProps) {
-    const [activeTab, setActiveTab] = useState<'subtasks' | 'comments' | 'shared' | 'activity'>('subtasks')
+    const [activeTab, setActiveTab] = useState<'subtasks' | 'comments' | 'shared' | 'activity'>(task?.type === 'meeting' ? 'comments' : 'subtasks')
     const panelRef = useRef<HTMLDivElement>(null)
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
 
@@ -208,30 +165,18 @@ export function TaskDetailsPanel({
         setIsPanelOpen(isOpen)
     }, [isOpen, setIsPanelOpen])
 
-    // Subtasks state for interactive demo
-    const [localSubtasks, setLocalSubtasks] = useState<Subtask[]>(subitems)
-
-    // Sync subtasks changes with parent component
+    // Specific logic for meetings: switch to comments tab when opened
     useEffect(() => {
-        onSubtasksChange?.(localSubtasks)
-    }, [localSubtasks, onSubtasksChange])
+        if (isOpen && task?.type === 'meeting' && activeTab === 'subtasks') {
+            setActiveTab('comments')
+        }
+    }, [isOpen, task?.type])
 
-    // Labels state - use props if provided, otherwise fall back to defaults
-    const [taskLabels, setTaskLabels] = useState<Label[]>(task?.labels || [])
+    // Use props directly - no local state syncing needed
+    // Parent component is responsible for data and refetching after mutations
 
-    // Assignees state for interactive demo
-    const [localAssignees, setLocalAssignees] = useState<Assignee[]>(
-        task?.assignees?.map(a => ({ id: a.id, name: a.name, avatar: a.avatar })) || []
-    )
-
-
-    // Comments state for interactive demo
-    const [localComments, setLocalComments] = useState<Comment[]>(propComments)
-
-    // Activities state for interactive demo
-    const [localActivities, setLocalActivities] = useState<Activity[]>(propActivities)
-
-    const defaultLabels: Label[] = [
+    // Labels (from task props - resolve IDs to objects)
+    const availableLabels = propAvailableLabels || [
         { id: 'bug', name: 'Bug', color: '#ef4444' },
         { id: 'feature', name: 'Feature', color: '#10b981' },
         { id: 'frontend', name: 'Frontend', color: '#3b82f6' },
@@ -239,9 +184,24 @@ export function TaskDetailsPanel({
         { id: 'design', name: 'Design', color: '#ec4899' },
         { id: 'docs', name: 'Dokumentacja', color: '#6b7280' },
     ]
-    const availableLabels = propAvailableLabels || defaultLabels
 
-    const handleCreateLabel = async (name: string, color: string): Promise<Label> => {
+    const taskLabelIds = (task?.labels as unknown as string[]) || []
+    const taskLabels = taskLabelIds
+        .map(id => availableLabels.find(l => l.id === id))
+        .filter((l): l is Label => !!l)
+
+    // Assignees (from task props)
+    const assignees = task?.assignees?.map(a => ({ id: a.id, name: a.name, avatar: a.avatar })) || []
+
+    // Comments (from props)
+    const comments = propComments
+
+    // Activities (from props)
+    const activities = propActivities
+
+
+
+    const handleCreateLabel = async (name: string, color: string): Promise<Label | undefined> => {
         if (propOnCreateLabel) {
             return propOnCreateLabel(name, color)
         }
@@ -249,54 +209,17 @@ export function TaskDetailsPanel({
         return newLabel
     }
 
-    // Reply state
+    // Reply state (this one is fine as local UI state)
     const [replyingTo, setReplyingTo] = useState<{ id: string; author: string } | null>(null)
 
     const handleSubtaskToggle = (subtaskId: string) => {
+        // Just call the callback - parent handles API and refetch
         onSubtaskToggle?.(subtaskId)
-
-        // Find the subtask to get its title
-        const subtask = subitems.find(s => s.id === subtaskId)
-        if (subtask) {
-            const isNowDone = !(subtask.status === 'done' || subtask.completed)
-            const newActivity: Activity = {
-                id: `activity_${Date.now()}`,
-                user: { id: 'user-1', name: 'Ja (Ty)' },
-                type: 'status_change',
-                details: `${isNowDone ? 'ukończył(a)' : 'przywrócił(a)'} podzadanie: ${subtask.title}`,
-                timestamp: 'Przed chwilą'
-            }
-            setLocalActivities(prev => [newActivity, ...prev])
-        }
     }
 
     const handleLikeComment = (commentId: string) => {
-        setLocalComments(prev => prev.map(comment => {
-            if (comment.id === commentId) {
-                const currentLikes = comment.likes || []
-                const isLiked = currentLikes.includes('user-1')
-
-                // Optional: Log like activity (commented out to avoid clutter, but could be added)
-                /*
-                const newActivity: Activity = {
-                    id: `activity_${Date.now()}_like`,
-                    user: { id: 'user-1', name: 'Ja (Ty)' },
-                    type: 'comment_added',
-                    details: `${isLiked ? 'przestał(a) lubić' : 'polubił(a)'} komentarz ${comment.author.name}`,
-                    timestamp: 'Przed chwilą'
-                }
-                setLocalActivities(prev => [newActivity, ...prev])
-                */
-
-                return {
-                    ...comment,
-                    likes: isLiked
-                        ? currentLikes.filter(id => id !== 'user-1')
-                        : [...currentLikes, 'user-1']
-                }
-            }
-            return comment
-        }))
+        // Just call the callback - parent handles API and refetch
+        onLikeComment?.(commentId)
     }
 
     const handleReplyToComment = (commentId: string, authorName: string) => {
@@ -304,50 +227,14 @@ export function TaskDetailsPanel({
     }
 
     const handleSendComment = (content: string) => {
-        const newCommentObj: Comment = {
-            id: `comment_${Date.now()}`,
-            author: { id: 'user-1', name: 'Ja (Ty)' },
-            content,
-            createdAt: 'Przed chwilą',
-            likes: [],
-            parentId: replyingTo?.id || null,
-            replies: []
-        }
-
-        setLocalComments(prev => [...prev, newCommentObj])
-
-        // Log activity
-        const newActivity: Activity = {
-            id: `activity_${Date.now()}`,
-            user: { id: 'user-1', name: 'Ja (Ty)' },
-            type: 'comment_added',
-            details: replyingTo ? `odpowiedział(a) na komentarz ${replyingTo.author}` : 'dodał(a) nowy komentarz',
-            timestamp: 'Przed chwilą'
-        }
-        setLocalActivities(prev => [newActivity, ...prev])
-
-        onAddComment?.(content)
+        if (!content.trim()) return
+        // Just call the callback - parent handles API and refetch
+        onAddComment?.(content, replyingTo?.id)
         setReplyingTo(null)
     }
 
     const handleLabelChange = (labels: Label[]) => {
-        setTaskLabels(labels)
-
-        // Simple logic to detect if it's an add or remove for logging
-        if (labels.length > taskLabels.length) {
-            const addedLabel = labels.find(l => !taskLabels.some(tl => tl.id === l.id))
-            if (addedLabel) {
-                const newActivity: Activity = {
-                    id: `activity_${Date.now()}`,
-                    user: { id: 'user-1', name: 'Ja (Ty)' },
-                    type: 'label_added',
-                    details: 'dodał(a) etykietę',
-                    timestamp: 'Przed chwilą',
-                    metadata: { labelName: addedLabel.name, labelColor: addedLabel.color }
-                }
-                setLocalActivities(prev => [newActivity, ...prev])
-            }
-        }
+        onLabelsChange?.(labels)
     }
 
     // Close on escape
@@ -445,8 +332,11 @@ export function TaskDetailsPanel({
                             <span className="text-sm text-gray-500 w-20 pt-2">Assignee</span>
                             <div className="flex-1">
                                 <AssigneePicker
-                                    selectedAssignees={localAssignees}
-                                    onSelect={setLocalAssignees}
+                                    selectedAssignees={assignees}
+                                    availableAssignees={teamMembers}
+                                    onSelect={(updatedAssignees) => {
+                                        onAssigneesChange?.(updatedAssignees)
+                                    }}
                                     maxVisible={2}
                                 />
                             </div>
@@ -455,14 +345,20 @@ export function TaskDetailsPanel({
                         {/* Status */}
                         <div className="flex items-center gap-4">
                             <span className="text-sm text-gray-500 w-20">Status</span>
-                            <StatusBadge status={task.status} />
+                            <StatusBadge status={task.status} stages={stages} />
                         </div>
 
                         {/* Due Date */}
                         {task.dueDate && (
                             <div className="flex items-center gap-4">
                                 <span className="text-sm text-gray-500 w-20">End Date</span>
-                                <span className="text-sm text-white">{task.dueDate}</span>
+                                <span className="text-sm text-white">
+                                    {new Date(task.dueDate).toLocaleDateString('pl-PL', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric',
+                                    })}
+                                </span>
                             </div>
                         )}
 
@@ -498,13 +394,15 @@ export function TaskDetailsPanel({
                 {/* Tabs */}
                 <div className="flex-none border-b border-gray-800">
                     <div className="flex gap-2 px-6">
-                        <TabButton
-                            active={activeTab === 'subtasks'}
-                            onClick={() => setActiveTab('subtasks')}
-                            icon={<DocumentIcon />}
-                            activeIcon={<DocumentIconGold />}
-                            label="Subtasks"
-                        />
+                        {task?.type !== 'meeting' && (
+                            <TabButton
+                                active={activeTab === 'subtasks'}
+                                onClick={() => setActiveTab('subtasks')}
+                                icon={<DocumentIcon />}
+                                activeIcon={<DocumentIconGold />}
+                                label="Subtasks"
+                            />
+                        )}
                         <TabButton
                             active={activeTab === 'comments'}
                             onClick={() => setActiveTab('comments')}
@@ -536,50 +434,33 @@ export function TaskDetailsPanel({
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-semibold text-white">Podzadania</h3>
-                                <span className="text-xs text-gray-500">{localSubtasks.filter(s => s.status === 'done' || s.completed).length}/{localSubtasks.length}</span>
+                                <span className="text-xs text-gray-500">{subtasks.filter(s => s.status === 'done' || s.isCompleted).length}/{subtasks.length}</span>
                             </div>
                             <SubtaskList
-                                subtasks={localSubtasks}
+                                subtasks={subtasks}
                                 onToggle={(subtaskId) => {
-                                    setLocalSubtasks(prev => prev.map(s =>
-                                        s.id === subtaskId
-                                            ? { ...s, status: s.status === 'done' ? 'todo' : 'done', completed: s.status !== 'done' }
-                                            : s
-                                    ))
                                     handleSubtaskToggle(subtaskId)
                                 }}
-                                onReorder={(newOrder) => setLocalSubtasks(newOrder)}
+                                onReorder={(newOrder) => {
+                                    onSubtasksChange?.(newOrder)
+                                }}
                                 onEdit={(id, updates) => {
-                                    setLocalSubtasks(prev => prev.map(s =>
-                                        s.id === id ? { ...s, ...updates } : s
-                                    ))
+                                    onEdit?.(id, updates)
                                 }}
                                 onDelete={(id) => {
-                                    setLocalSubtasks(prev => prev.filter(s => s.id !== id))
+                                    onDelete?.(id)
                                 }}
-                                onAdd={(title, afterId) => {
+                                onAdd={(title, _afterId) => {
                                     if (title.trim()) {
                                         const newSubtask: Subtask = {
                                             id: `subtask_${Date.now()}`,
                                             title: title.trim(),
                                             status: 'todo',
                                             priority: 'medium',
+                                            isCompleted: false,
                                         }
-                                        if (afterId) {
-                                            // Insert after the specified subtask
-                                            setLocalSubtasks(prev => {
-                                                const index = prev.findIndex(s => s.id === afterId)
-                                                if (index !== -1) {
-                                                    const newList = [...prev]
-                                                    newList.splice(index + 1, 0, newSubtask)
-                                                    return newList
-                                                }
-                                                return [...prev, newSubtask]
-                                            })
-                                        } else {
-                                            // Add at the end
-                                            setLocalSubtasks(prev => [...prev, newSubtask])
-                                        }
+                                        // Call parent handler
+                                        onAddSubtask?.(title, newSubtask)
                                     }
                                 }}
                             />
@@ -592,10 +473,10 @@ export function TaskDetailsPanel({
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                                 <div className="flex items-center justify-between mb-8">
                                     <h3 className="text-sm font-semibold text-white">Dyskusja</h3>
-                                    <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full">{localComments.length}</span>
+                                    <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full">{comments.length}</span>
                                 </div>
                                 <CommentList
-                                    comments={localComments}
+                                    comments={comments}
                                     currentUserId="user-1"
                                     onLike={handleLikeComment}
                                     onReply={handleReplyToComment}
@@ -667,9 +548,9 @@ export function TaskDetailsPanel({
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-sm font-semibold text-white">Aktywność</h3>
-                                <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full">{localActivities.length}</span>
+                                <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full">{activities.length}</span>
                             </div>
-                            <ActivityFeed activities={localActivities} />
+                            <ActivityFeed activities={activities} />
                         </div>
                     )}
                 </div>

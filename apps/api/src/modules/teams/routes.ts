@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { db } from '../../db'
 import { teams, teamMembers } from '../../db/schema/teams'
+import { projects, projectMembers } from '../../db/schema/projects'
 import { users } from '../../db/schema/users'
 import {
     canManageTeamMembers,
@@ -44,7 +45,8 @@ teamsRoutes.get('/', async (c) => {
                         with: {
                             user: true
                         }
-                    }
+                    },
+                    projects: true
                 }
             })
         } else {
@@ -68,6 +70,31 @@ teamsRoutes.get('/', async (c) => {
                     }
                 })
             }
+        }
+
+        // Fetch users' project memberships for these teams
+        const allMembers = result.flatMap(t => t.members || [])
+        if (allMembers.length > 0) {
+            const userIds = allMembers.map((m: any) => m.userId)
+            // Get all projects for these users (scoped to these teams ideally, but global is fine for display)
+            const userProjects = await db.select({
+                userId: projectMembers.userId,
+                projectName: projects.name
+            })
+                .from(projectMembers)
+                .innerJoin(projects, eq(projectMembers.projectId, projects.id))
+                .where(inArray(projectMembers.userId, userIds))
+
+            // Attach to members
+            result.forEach(team => {
+                team.members?.forEach((member: any) => {
+                    if (member.user) {
+                        member.user.projects = userProjects
+                            .filter(up => up.userId === member.userId)
+                            .map(up => up.projectName)
+                    }
+                })
+            })
         }
 
         return c.json({ data: result })
@@ -320,7 +347,7 @@ teamsRoutes.patch('/:id/members/:memberId', async (c) => {
     const teamId = c.req.param('id')
     const memberId = c.req.param('memberId')
     const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const { firstName, lastName, position, city, country, teamLevel: newTeamLevel } = await c.req.json()
+    const { firstName, lastName, position, city, country, teamLevel: newTeamLevel, projects: projectNames } = await c.req.json()
 
     console.log('PATCH member', { teamId, memberId, firstName, lastName, position, city, country, newTeamLevel })
 
@@ -379,6 +406,40 @@ teamsRoutes.patch('/:id/members/:memberId', async (c) => {
             await db.update(users)
                 .set(updates)
                 .where(eq(users.id, memberId))
+        }
+
+        // Update Projects
+        if (projectNames && Array.isArray(projectNames)) {
+            console.log('Updating user projects', projectNames)
+
+            // 1. Get all projects belonging to this team
+            const teamProjects = await db.select().from(projects).where(eq(projects.teamId, teamId))
+            const teamProjectIds = teamProjects.map(p => p.id)
+
+            if (teamProjectIds.length > 0) {
+                // 2. Resolve requested names to IDs (must belong to this team)
+                const targetProjectIds = teamProjects
+                    .filter(p => projectNames.includes(p.name))
+                    .map(p => p.id)
+
+                // 3. Remove user from ALL team projects first
+                // (Safest way to ensure "sync" behavior without complex diffs)
+                await db.delete(projectMembers)
+                    .where(and(
+                        eq(projectMembers.userId, memberId),
+                        inArray(projectMembers.projectId, teamProjectIds)
+                    ))
+
+                // 4. Insert new memberships
+                if (targetProjectIds.length > 0) {
+                    await db.insert(projectMembers).values(
+                        targetProjectIds.map(pid => ({
+                            projectId: pid,
+                            userId: memberId
+                        }))
+                    )
+                }
+            }
         }
 
         return c.json({ message: 'Member updated' })

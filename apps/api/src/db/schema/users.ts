@@ -1,4 +1,5 @@
-import { pgTable, varchar, text, timestamp, boolean, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, varchar, text, timestamp, boolean, pgEnum, pgPolicy } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 // =============================================================================
 // ENUMS
@@ -30,7 +31,16 @@ export const users = pgTable('users', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
     lastActiveAt: timestamp('last_active_at'),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Users can view own profile", {
+        for: "select",
+        using: sql`auth.uid()::text = id`,
+    }),
+    pgPolicy("Users can update own profile", {
+        for: "update",
+        using: sql`auth.uid()::text = id`,
+    }),
+])
 
 // =============================================================================
 // TYPES

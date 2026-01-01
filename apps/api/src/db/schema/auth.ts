@@ -1,4 +1,5 @@
-import { pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, varchar, text, timestamp, pgPolicy } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 // =============================================================================
 // BETTER AUTH TABLES
@@ -16,7 +17,16 @@ export const sessions = pgTable('sessions', {
     userAgent: text('user_agent'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Users can view own sessions", {
+        for: "select",
+        using: sql`user_id = auth.uid()::text`,
+    }),
+    pgPolicy("Users can delete own sessions", {
+        for: "delete",
+        using: sql`user_id = auth.uid()::text`,
+    }),
+])
 
 /**
  * Accounts table - stores OAuth provider connections
@@ -35,7 +45,16 @@ export const accounts = pgTable('accounts', {
     password: text('password'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Users can view own accounts", {
+        for: "select",
+        using: sql`user_id = auth.uid()::text`,
+    }),
+    pgPolicy("Users can delete own accounts", {
+        for: "delete",
+        using: sql`user_id = auth.uid()::text`,
+    }),
+])
 
 /**
  * Verifications table - email verification, password reset tokens
@@ -47,7 +66,12 @@ export const verifications = pgTable('verifications', {
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (_table) => [
+    pgPolicy("Backend can manage verifications", {
+        for: "all",
+        using: sql`true`,
+    }),
+])
 
 // =============================================================================
 // TYPES

@@ -14,7 +14,7 @@ import {
 } from './TaskIcons'
 
 interface TaskListViewProps {
-    tasks: TaskCardProps[]
+    tasks: (TaskCardProps & { startDate?: string | null; endDate?: string | null })[]
     onTaskClick?: (taskId: string) => void
     onTaskSelect?: (taskId: string, selected: boolean) => void
     onSelectAll?: (selected: boolean) => void
@@ -184,7 +184,7 @@ const RowMenu = ({
                 </svg>
             </button>
             {open && (
-                <div className="absolute right-0 top-8 z-10 w-36 bg-[#1a1a24] rounded-xl shadow-2xl overflow-hidden p-2 space-y-1">
+                <div className="absolute right-0 top-8 z-50 w-36 bg-[#1a1a24] rounded-xl shadow-2xl p-2 space-y-1">
                     {/* Edit */}
                     <button
                         onClick={(e) => { e.stopPropagation(); onEdit?.(); setOpen(false) }}
@@ -301,8 +301,8 @@ export function TaskListView({
     }
 
     return (
-        <div className="rounded-2xl bg-[#12121a] overflow-hidden">
-            <div className="overflow-x-auto">
+        <div className="rounded-2xl bg-[#12121a]">
+            <div className="overflow-x-auto overflow-y-visible">
                 <table className="w-full">
                     <thead>
                         <tr className="border-b border-gray-800">
@@ -314,9 +314,6 @@ export function TaskListView({
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>
                                 <div className="flex items-center gap-2">Task Name <SortIcon direction={getSortDirection('name')} /></div>
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('project')}>
-                                <div className="flex items-center gap-2">Project Name <SortIcon direction={getSortDirection('project')} /></div>
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('subtasks')}>
                                 <div className="flex items-center gap-2">Subtasks <SortIcon direction={getSortDirection('subtasks')} /></div>
@@ -352,9 +349,6 @@ export function TaskListView({
                                     <span className="text-sm text-white font-medium hover:text-amber-400 transition-colors">{task.title}</span>
                                 </td>
                                 <td className="px-4 py-3">
-                                    <span className="text-sm text-gray-400">{task.projectName || '-'}</span>
-                                </td>
-                                <td className="px-4 py-3">
                                     <div className="flex items-center gap-2 text-sm text-gray-400 group/subtasks">
                                         <div className="group-hover/subtasks:hidden"><DocumentIcon /></div>
                                         <div className="hidden group-hover/subtasks:block"><DocumentIconGold /></div>
@@ -363,8 +357,8 @@ export function TaskListView({
                                 </td>
                                 <td className="px-4 py-3 text-center"><StatusBadge status={task.status} columns={columns} /></td>
                                 <td className="px-4 py-3"><div className="flex justify-center"><PriorityBadge priority={task.priority} /></div></td>
-                                <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate(task.dueDate)}</span></td>
-                                <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate(task.dueDate)}</span></td>
+                                <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate((task as any).startDate)}</span></td>
+                                <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate((task as any).endDate || task.dueDate)}</span></td>
                                 <td className="px-4 py-3"><AssigneeAvatars assignees={task.assignees || []} /></td>
                                 <td className="w-12 p-4">
                                     <RowMenu

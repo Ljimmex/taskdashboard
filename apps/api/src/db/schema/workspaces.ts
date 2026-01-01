@@ -98,6 +98,20 @@ export const workspaces = pgTable('workspaces', {
         }
     }),
 
+    // Labels (workspace-level, stored as JSONB array)
+    labels: jsonb('labels').$type<{
+        id: string
+        name: string
+        color: string
+    }[]>().default([
+        { id: 'bug', name: 'Bug', color: '#ef4444' },
+        { id: 'feature', name: 'Feature', color: '#10b981' },
+        { id: 'frontend', name: 'Frontend', color: '#3b82f6' },
+        { id: 'backend', name: 'Backend', color: '#8b5cf6' },
+        { id: 'urgent', name: 'Pilne', color: '#f97316' },
+        { id: 'docs', name: 'Dokumentacja', color: '#6b7280' },
+    ]),
+
     // Metadata
     isActive: boolean('is_active').default(true).notNull(),
 

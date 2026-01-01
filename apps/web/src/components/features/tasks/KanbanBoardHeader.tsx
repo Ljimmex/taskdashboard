@@ -1,21 +1,17 @@
 import { useState, useRef, useEffect } from 'react'
-import { FilterIcon, ScheduleIcon, SearchIconDefault, SearchIconActive } from '@/components/dashboard/icons'
+import { FilterIcon, SearchIconDefault, SearchIconActive } from '@/components/dashboard/icons'
 import {
     FlagIcon,
     UserIcon,
     CalendarSmallIcon,
     FireIcon,
     ClockIcon,
-    KanbanIconGold,
-    KanbanIconGrey,
     SortIconGold,
     SortIconGrey
 } from './TaskIcons'
 
 
 interface KanbanBoardHeaderProps {
-    viewMode: 'kanban' | 'list'
-    onViewModeChange: (mode: 'kanban' | 'list') => void
     searchQuery: string
     onSearchChange: (query: string) => void
     onNewTask: () => void
@@ -321,8 +317,6 @@ function FiltersDropdown({
 }
 
 export function KanbanBoardHeader({
-    viewMode,
-    onViewModeChange,
     searchQuery,
     onSearchChange,
     onNewTask,
@@ -335,32 +329,8 @@ export function KanbanBoardHeader({
     const [showFiltersDropdown, setShowFiltersDropdown] = useState(false)
 
     return (
-        <div className="flex items-center justify-between mb-6">
-            {/* Left side - View Toggle */}
-            <div className="flex bg-[#1a1a24] p-1 rounded-full">
-                <button
-                    onClick={() => onViewModeChange('kanban')}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === 'kanban'
-                        ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                        : 'text-gray-500 hover:text-white'
-                        }`}
-                >
-                    {viewMode === 'kanban' ? <KanbanIconGold /> : <KanbanIconGrey />}
-                    Kanban
-                </button>
-                <button
-                    onClick={() => onViewModeChange('list')}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium transition-all ${viewMode === 'list'
-                        ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                        : 'text-gray-500 hover:text-white'
-                        }`}
-                >
-                    <ScheduleIcon isHovered={viewMode === 'list'} />
-                    List
-                </button>
-            </div>
-
-            {/* Right side - Search, Filters, Sort, New Task */}
+        <div className="flex items-center justify-end">
+            {/* Search, Filters, Sort, New Task */}
             <div className="flex items-center gap-3">
                 {/* Search - using existing SearchIcon */}
                 <div className="relative group">
