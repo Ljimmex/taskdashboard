@@ -4,12 +4,12 @@ import { usePanelStore } from '../../../lib/panelStore'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { TeamMember } from './types'
-import { ProgressBar } from '../tasks/ProgressBar'
+import { ProgressBar } from '@/components/common/ProgressBar'
 import {
     SubtaskCheckboxIcon,
     SendIcon,
     KanbanIconGrey
-} from '../tasks/TaskIcons'
+} from '../tasks/components/TaskIcons'
 
 interface ViewMemberPanelProps {
     isOpen: boolean
@@ -229,10 +229,10 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                     Team Level
                                 </span>
                                 <span className={`font-medium px-2 py-0.5 rounded text-[10px] ${member.teamLevel === 'team_lead' ? 'bg-amber-500/20 text-amber-400' :
-                                        member.teamLevel === 'senior' ? 'bg-blue-500/20 text-blue-400' :
-                                            member.teamLevel === 'mid' ? 'bg-green-500/20 text-green-400' :
-                                                member.teamLevel === 'junior' ? 'bg-purple-500/20 text-purple-400' :
-                                                    'bg-gray-500/20 text-gray-400'
+                                    member.teamLevel === 'senior' ? 'bg-blue-500/20 text-blue-400' :
+                                        member.teamLevel === 'mid' ? 'bg-green-500/20 text-green-400' :
+                                            member.teamLevel === 'junior' ? 'bg-purple-500/20 text-purple-400' :
+                                                'bg-gray-500/20 text-gray-400'
                                     }`}>
                                     {member.teamLevel === 'team_lead' ? 'Team Lead' :
                                         member.teamLevel === 'senior' ? 'Senior' :

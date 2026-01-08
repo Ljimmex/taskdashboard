@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Team, TeamMember } from './types'
-import { PencilIcon, PencilIconGold, TrashIcon, TrashRedIcon } from '../tasks/TaskIcons'
+import { PencilIcon, PencilIconGold, TrashIcon, TrashRedIcon } from '../tasks/components/TaskIcons'
 
 // Sort indicator icon helper
 const SortIcon = ({ direction }: { direction: 'asc' | 'desc' | null }) => (

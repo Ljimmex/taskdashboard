@@ -1,10 +1,9 @@
 // Dashboard Components Export
-export { DashboardLayout } from './DashboardLayout'
 export { Sidebar } from './Sidebar'
 export { Header } from './Header'
-export { TaskCard, AddNewTaskCard } from './TaskCard'
 export { ProjectCard } from './ProjectCard'
 export { OverallProgress } from './OverallProgress'
 export { ChatSection } from './ChatSection'
 export { TeamActivity } from './TeamActivity'
 export { CalendarSection } from './CalendarSection'
+

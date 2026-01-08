@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePanelStore } from '../../../lib/panelStore'
-import { ChevronDoubleRightIcon } from '../tasks/TaskIcons'
+import { ChevronDoubleRightIcon } from '../tasks/components/TaskIcons'
 import { useSession } from '@/lib/auth'
 
 interface InviteMemberPanelProps {

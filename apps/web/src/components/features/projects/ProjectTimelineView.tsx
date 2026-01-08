@@ -37,6 +37,14 @@ function isSameDay(d1: Date, d2: Date) {
         d1.getFullYear() === d2.getFullYear()
 }
 
+// Format date to YYYY-MM-DD in local timezone (avoids UTC shift from toISOString)
+function formatLocalDate(date: Date): string {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
 function getWeekDays(date: Date): Date[] {
     const start = new Date(date)
     const day = start.getDay()
@@ -282,7 +290,7 @@ export function ProjectTimelineView({
 
                             {/* Task Lanes */}
                             {(() => {
-                                const dateKey = currentDate.toISOString().split('T')[0]
+                                const dateKey = formatLocalDate(currentDate)
                                 const dayTasks = tasksByDate.get(dateKey) || []
 
                                 if (dayTasks.length === 0) {
@@ -343,7 +351,7 @@ export function ProjectTimelineView({
                             />
                         )}
                         {viewDays.map((day, idx) => {
-                            const dateKey = day.toISOString().split('T')[0]
+                            const dateKey = formatLocalDate(day)
                             const dayTasks = tasksByDate.get(dateKey) || []
                             const isToday = isSameDay(day, today)
 
@@ -417,7 +425,7 @@ export function ProjectTimelineView({
                                 style={{ backgroundColor: `${projectColor}20` }}
                             />
                             {viewDays.map((day, idx) => {
-                                const dateKey = day.toISOString().split('T')[0]
+                                const dateKey = formatLocalDate(day)
                                 const dayTasks = tasksByDate.get(dateKey) || []
 
                                 return (

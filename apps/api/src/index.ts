@@ -20,6 +20,10 @@ import { timeRoutes } from './modules/time/routes'
 import { industryTemplatesRoutes } from './modules/pipelines/routes'
 import { projectStagesRoutes } from './modules/stages/routes'
 import { workspacesRoutes } from './modules/workspaces/routes'
+import { filtersRoutes } from './modules/filters/routes'
+import { templatesRoutes } from './modules/templates/routes'
+import filesRoutes from './modules/files/routes'
+import foldersRoutes from './modules/folders/routes'
 
 
 // Create Hono app (using regular Hono instead of OpenAPIHono for compatibility)
@@ -86,6 +90,8 @@ app.get('/', (c) => {
             time: '/api/time/*',
             industryTemplates: '/api/industry-templates/*',
             projectStages: '/api/projects/:id/stages/*',
+            filters: '/api/filters/*',
+            templates: '/api/templates/*',
         },
     })
 })
@@ -101,9 +107,13 @@ app.route('/api/teams', teamsRoutes)
 app.route('/api/projects', projectsRoutes)
 app.route('/api/labels', labelsRoutes)
 app.route('/api/comments', commentsRoutes)
+app.route('/api/files', filesRoutes)
+app.route('/api/folders', foldersRoutes)
 app.route('/api/time', timeRoutes)
 app.route('/api/industry-templates', industryTemplatesRoutes)
 app.route('/api/projects', projectStagesRoutes)  // Adds stages endpoints under /api/projects/:id/stages
+app.route('/api/filters', filtersRoutes)
+app.route('/api/templates', templatesRoutes)
 
 
 // =============================================================================

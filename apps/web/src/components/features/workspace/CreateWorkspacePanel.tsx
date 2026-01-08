@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef } from 'react'
 import { usePanelStore } from '../../../lib/panelStore'
-import { ChevronDoubleRightIcon } from '../tasks/TaskIcons'
+import { ChevronDoubleRightIcon } from '../tasks/components/TaskIcons'
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

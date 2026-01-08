@@ -95,13 +95,30 @@ export interface TaskComment {
 export interface FileRecord {
     id: string
     name: string
-    path: string
-    size: number
-    mimeType: string
-    uploadedBy: string
-    teamId: string
+    path: string // Keeping path for backward compatibility or R2 key
+    r2Key?: string | null
+    size: number | null
+    mimeType: string | null
+    fileType?: string | null
+    thumbnailUrl?: string | null
+    isArchived: boolean
+    workspaceId?: string | null
+    folderId?: string | null
+    uploadedBy: string | null
+    teamId: string | null
     taskId: string | null
     createdAt: Date
+    updatedAt: Date
+}
+
+export interface Folder {
+    id: string
+    name: string
+    workspaceId: string
+    parentId: string | null
+    createdAt: Date
+    updatedAt: Date
+    createdById: string | null
 }
 
 // =============================================================================

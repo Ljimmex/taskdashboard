@@ -256,19 +256,7 @@ CREATE TABLE "time_entries" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "files" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(255) NOT NULL,
-	"path" text NOT NULL,
-	"size" integer NOT NULL,
-	"mime_type" varchar(127) NOT NULL,
-	"uploaded_by" uuid NOT NULL,
-	"team_id" uuid NOT NULL,
-	"task_id" uuid,
-	"created_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-ALTER TABLE "files" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+
 CREATE TABLE "conversations" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"team_id" uuid NOT NULL,
@@ -326,9 +314,7 @@ ALTER TABLE "tasks" ADD CONSTRAINT "tasks_assignee_id_users_id_fk" FOREIGN KEY (
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_reporter_id_users_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "files" ADD CONSTRAINT "files_uploaded_by_users_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "files" ADD CONSTRAINT "files_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "files" ADD CONSTRAINT "files_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "messages" ADD CONSTRAINT "messages_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "messages" ADD CONSTRAINT "messages_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -400,9 +386,7 @@ CREATE POLICY "Team members can update tasks" ON "tasks" AS PERMISSIVE FOR UPDAT
             )
         ));--> statement-breakpoint
 CREATE POLICY "Assignee or reporter can delete tasks" ON "tasks" AS PERMISSIVE FOR DELETE TO public USING (assignee_id = auth.uid()::text OR reporter_id = auth.uid()::text);--> statement-breakpoint
-CREATE POLICY "Team members can view files" ON "files" AS PERMISSIVE FOR SELECT TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
-CREATE POLICY "Team members can upload files" ON "files" AS PERMISSIVE FOR INSERT TO public WITH CHECK (uploaded_by = auth.uid()::text AND team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
-CREATE POLICY "Uploader can delete files" ON "files" AS PERMISSIVE FOR DELETE TO public USING (uploaded_by = auth.uid()::text);--> statement-breakpoint
+
 CREATE POLICY "Team members can view conversations" ON "conversations" AS PERMISSIVE FOR SELECT TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
 CREATE POLICY "Team members can create conversations" ON "conversations" AS PERMISSIVE FOR INSERT TO public WITH CHECK (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
 CREATE POLICY "Team members can view messages" ON "messages" AS PERMISSIVE FOR SELECT TO public USING (conversation_id IN (

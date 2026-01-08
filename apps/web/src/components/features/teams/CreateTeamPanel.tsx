@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronDoubleRightIcon } from '../tasks/TaskIcons'
+import { ChevronDoubleRightIcon } from '../tasks/components/TaskIcons'
 import { usePanelStore } from '../../../lib/panelStore'
 
 interface TeamMemberInvite {

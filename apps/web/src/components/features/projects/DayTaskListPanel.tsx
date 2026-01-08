@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { TaskCard } from '../../dashboard/TaskCard'
+import { TaskCard } from '../tasks/components/TaskCard'
 import { Task } from './types'
 import { usePanelStore } from '../../../lib/panelStore'
 
@@ -112,13 +112,13 @@ export function DayTaskListPanel({
                                     title={task.title}
                                     description={task.description || ''}
                                     priority={(task.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low'}
+                                    status={task.status || 'todo'}
                                     assignees={task.assignee ? [{
                                         id: task.assignee.id || 'unknown',
                                         name: task.assignee.name,
                                         avatar: task.assignee.image
                                     }] : []}
-                                    type={task.type === 'meeting' ? 'call' : 'task'}
-                                    compact
+                                    type={task.type === 'meeting' ? 'meeting' : 'task'}
                                 />
                             </div>
                         ))

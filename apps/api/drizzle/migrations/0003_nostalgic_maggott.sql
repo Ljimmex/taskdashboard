@@ -1,0 +1,1 @@
+-- Empty migration because 0002 covers everything now

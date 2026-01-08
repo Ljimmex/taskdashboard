@@ -20,6 +20,7 @@ import { Route as WorkspaceSlugIndexRouteImport } from './routes/$workspaceSlug/
 import { Route as InviteInviteIdRouteImport } from './routes/invite/$inviteId'
 import { Route as WorkspaceSlugTeamIndexRouteImport } from './routes/$workspaceSlug/team/index'
 import { Route as WorkspaceSlugProjectsIndexRouteImport } from './routes/$workspaceSlug/projects/index'
+import { Route as WorkspaceSlugFilesIndexRouteImport } from './routes/$workspaceSlug/files/index'
 import { Route as WorkspaceSlugProjectsProjectIdIndexRouteImport } from './routes/$workspaceSlug/projects/$projectId/index'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -78,6 +79,11 @@ const WorkspaceSlugProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => WorkspaceSlugRoute,
   } as any)
+const WorkspaceSlugFilesIndexRoute = WorkspaceSlugFilesIndexRouteImport.update({
+  id: '/files/',
+  path: '/files/',
+  getParentRoute: () => WorkspaceSlugRoute,
+} as any)
 const WorkspaceSlugProjectsProjectIdIndexRoute =
   WorkspaceSlugProjectsProjectIdIndexRouteImport.update({
     id: '/projects/$projectId/',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
+  '/$workspaceSlug/files': typeof WorkspaceSlugFilesIndexRoute
   '/$workspaceSlug/projects': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
   '/$workspaceSlug/projects/$projectId': typeof WorkspaceSlugProjectsProjectIdIndexRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug': typeof WorkspaceSlugIndexRoute
+  '/$workspaceSlug/files': typeof WorkspaceSlugFilesIndexRoute
   '/$workspaceSlug/projects': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
   '/$workspaceSlug/projects/$projectId': typeof WorkspaceSlugProjectsProjectIdIndexRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
+  '/$workspaceSlug/files/': typeof WorkspaceSlugFilesIndexRoute
   '/$workspaceSlug/projects/': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/team/': typeof WorkspaceSlugTeamIndexRoute
   '/$workspaceSlug/projects/$projectId/': typeof WorkspaceSlugProjectsProjectIdIndexRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
+    | '/$workspaceSlug/files'
     | '/$workspaceSlug/projects'
     | '/$workspaceSlug/team'
     | '/$workspaceSlug/projects/$projectId'
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/invite/$inviteId'
     | '/$workspaceSlug'
+    | '/$workspaceSlug/files'
     | '/$workspaceSlug/projects'
     | '/$workspaceSlug/team'
     | '/$workspaceSlug/projects/$projectId'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
+    | '/$workspaceSlug/files/'
     | '/$workspaceSlug/projects/'
     | '/$workspaceSlug/team/'
     | '/$workspaceSlug/projects/$projectId/'
@@ -261,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSlugProjectsIndexRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
+    '/$workspaceSlug/files/': {
+      id: '/$workspaceSlug/files/'
+      path: '/files'
+      fullPath: '/$workspaceSlug/files'
+      preLoaderRoute: typeof WorkspaceSlugFilesIndexRouteImport
+      parentRoute: typeof WorkspaceSlugRoute
+    }
     '/$workspaceSlug/projects/$projectId/': {
       id: '/$workspaceSlug/projects/$projectId/'
       path: '/projects/$projectId'
@@ -273,6 +292,7 @@ declare module '@tanstack/react-router' {
 
 interface WorkspaceSlugRouteChildren {
   WorkspaceSlugIndexRoute: typeof WorkspaceSlugIndexRoute
+  WorkspaceSlugFilesIndexRoute: typeof WorkspaceSlugFilesIndexRoute
   WorkspaceSlugProjectsIndexRoute: typeof WorkspaceSlugProjectsIndexRoute
   WorkspaceSlugTeamIndexRoute: typeof WorkspaceSlugTeamIndexRoute
   WorkspaceSlugProjectsProjectIdIndexRoute: typeof WorkspaceSlugProjectsProjectIdIndexRoute
@@ -280,6 +300,7 @@ interface WorkspaceSlugRouteChildren {
 
 const WorkspaceSlugRouteChildren: WorkspaceSlugRouteChildren = {
   WorkspaceSlugIndexRoute: WorkspaceSlugIndexRoute,
+  WorkspaceSlugFilesIndexRoute: WorkspaceSlugFilesIndexRoute,
   WorkspaceSlugProjectsIndexRoute: WorkspaceSlugProjectsIndexRoute,
   WorkspaceSlugTeamIndexRoute: WorkspaceSlugTeamIndexRoute,
   WorkspaceSlugProjectsProjectIdIndexRoute:

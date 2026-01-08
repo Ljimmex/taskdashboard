@@ -13,4 +13,7 @@ export * from './tasks'
 export * from './files'
 export * from './messages'
 export * from './calendar'
+export * from './filters'
+export * from './templates'
+export * from './folders'
 

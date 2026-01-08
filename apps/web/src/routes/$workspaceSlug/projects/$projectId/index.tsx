@@ -1,16 +1,19 @@
 import { createFileRoute, useParams, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, LayoutGrid, List, Calendar, GitBranch } from 'lucide-react'
 import { useSession } from '@/lib/auth'
-import { KanbanBoard } from '@/components/features/tasks/KanbanBoard'
-import { KanbanBoardHeader } from '@/components/features/tasks/KanbanBoardHeader'
-import { TaskListView } from '@/components/features/tasks/TaskListView'
+import { KanbanBoard } from '@/components/features/tasks/views/KanbanBoard'
+import { KanbanBoardHeader, type FilterState } from '@/components/features/tasks/views/KanbanBoardHeader'
+import { TaskListView } from '@/components/features/tasks/views/TaskListView'
 import { ProjectCalendarView } from '@/components/features/projects/ProjectCalendarView'
 import { ProjectTimelineView } from '@/components/features/projects/ProjectTimelineView'
-import { CreateTaskPanel } from '@/components/features/tasks/CreateTaskPanel'
-import { TaskDetailsPanel } from '@/components/features/tasks/TaskDetailsPanel'
-import { BulkActions } from '@/components/features/tasks/BulkActions'
+import { CreateTaskPanel } from '@/components/features/tasks/panels/CreateTaskPanel'
+import { TaskDetailsPanel } from '@/components/features/tasks/panels/TaskDetailsPanel'
+import { EditTaskPanel } from '@/components/features/tasks/panels/EditTaskPanel'
+import { ConfirmDeleteModal } from '@/components/common/ConfirmDeleteModal'
+import { BulkActions } from '@/components/features/tasks/components/BulkActions'
+
 
 export const Route = createFileRoute('/$workspaceSlug/projects/$projectId/')({
   component: ProjectDetailPage,
@@ -59,8 +62,28 @@ function ProjectDetailPage() {
   const [selectedTask, setSelectedTask] = useState<any | null>(null)
   const [showTaskDetails, setShowTaskDetails] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  // Filters
+  const [filters, setFilters] = useState<FilterState>({
+    assignedToMe: false,
+    overdue: false,
+    priorities: [],
+    statuses: [],
+    labels: [],
+    assigneeIds: [],
+    dueDateRange: 'all'
+  })
+  // Sorting
+  const [sortBy, setSortBy] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTasks, setSelectedTasks] = useState<string[]>([])
+  // Edit panel state
+  const [editingTask, setEditingTask] = useState<any | null>(null)
+  const [editingTaskSubtasks, setEditingTaskSubtasks] = useState<any[]>([])
+  const [showEditTaskPanel, setShowEditTaskPanel] = useState(false)
+  // Delete confirmation state
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
 
   // Bulk selection handlers
   const handleTaskSelect = (taskId: string, selected: boolean) => {
@@ -82,7 +105,7 @@ function ProjectDetailPage() {
   // Bulk action handlers with API
   const handleBulkDelete = async () => {
     if (selectedTasks.length === 0) return
-    if (!confirm(`Are you sure you want to delete ${selectedTasks.length} task(s)?`)) return
+    if (!confirm(`Are you sure you want to delete ${selectedTasks.length} task(s) ? `)) return
 
     try {
       await fetch('/api/tasks/bulk/delete', {
@@ -141,13 +164,31 @@ function ProjectDetailPage() {
     enabled: !!currentWorkspace?.id
   })
 
-  const teamMembers = teamsData?.flatMap((team: any) =>
-    team.members?.map((m: any) => ({
-      id: m.userId || m.user?.id,
-      name: m.user?.name || 'Unknown',
-      avatar: m.user?.image
-    })) || []
-  ) || []
+  // Fetch workspace labels
+  const { data: workspaceLabels = [] } = useQuery({
+    queryKey: ['labels', workspaceSlug],
+    queryFn: async () => {
+      const res = await fetch(`/api/labels?workspaceSlug=${workspaceSlug}`, {
+        headers: { 'x-user-id': session?.user?.id || '' }
+      })
+      const data = await res.json()
+      return data.success ? data.data : []
+    },
+    enabled: !!workspaceSlug
+  })
+
+  const teamMembers = useMemo(() => {
+    const allMembers = teamsData?.flatMap((team: any) =>
+      team.members?.map((m: any) => ({
+        id: m.userId || m.user?.id,
+        name: m.user?.name || 'Unknown',
+        avatar: m.user?.image
+      })) || []
+    ) || []
+
+    // Deduplicate members by ID
+    return Array.from(new Map(allMembers.map((m: any) => [m.id, m])).values()) as { id: string; name: string; avatar?: string }[]
+  }, [teamsData])
 
   // Fetch project and tasks
   useEffect(() => {
@@ -162,7 +203,11 @@ function ProjectDetailPage() {
         const tasksData = await tasksRes.json()
 
         if (projectData.success) setProject(projectData.data)
-        if (tasksData.success) setTasks(tasksData.data || [])
+        if (tasksData.success) {
+          // Deduplicate tasks by ID
+          const uniqueTasks = Array.from(new Map((tasksData.data || []).map((t: any) => [t.id, t])).values()) as Task[]
+          setTasks(uniqueTasks)
+        }
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -176,7 +221,11 @@ function ProjectDetailPage() {
   const refetchTasks = useCallback(async () => {
     const res = await fetch(`/api/tasks?projectId=${projectId}`)
     const data = await res.json()
-    if (data.success) setTasks(data.data || [])
+    if (data.success) {
+      // Deduplicate tasks by ID
+      const uniqueTasks = Array.from(new Map((data.data || []).map((t: any) => [t.id, t])).values()) as Task[]
+      setTasks(uniqueTasks)
+    }
   }, [projectId])
 
   const refetchTaskDetails = useCallback(async (taskId: string) => {
@@ -216,7 +265,7 @@ function ProjectDetailPage() {
   // Handle task move (for Kanban)
   const handleTaskMove = async (taskId: string, _fromColumn: string, toColumn: string) => {
     try {
-      await fetch(`/api/tasks/${taskId}`, {
+      await fetch(`/ api / tasks / ${taskId} `, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({ status: toColumn })
@@ -231,7 +280,6 @@ function ProjectDetailPage() {
   const handleAddTask = (date?: Date | string, status?: string) => {
     if (date instanceof Date) setDefaultDueDate(date.toISOString())
     if (typeof date === 'string') setDefaultStatus(date) // Calendar might pass string? No, usually Date.
-    // Logic for Kanban passing string as first arg?
     // Let's keep this simple and create separate handlers
     if (date instanceof Date) setDefaultDueDate(date.toISOString())
     if (status) setDefaultStatus(status)
@@ -249,7 +297,7 @@ function ProjectDetailPage() {
 
   const handleQuickUpdateTask = async (data: { id: string; title: string; priority: string }) => {
     try {
-      const res = await fetch(`/api/tasks/${data.id}`, {
+      const res = await fetch(`/ api / tasks / ${data.id} `, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify(data)
@@ -263,58 +311,303 @@ function ProjectDetailPage() {
     }
   }
 
+  // Handle task deletion - triggers confirmation modal
+  const handleDeleteTask = (taskId: string) => {
+    setTaskToDelete(taskId)
+  }
+
+  // Confirm delete task
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return
+    try {
+      const res = await fetch(`/api/tasks/${taskToDelete}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': session?.user?.id || '' }
+      })
+      if (res.ok) {
+        refetchTasks()
+        if (selectedTask?.id === taskToDelete) {
+          setShowTaskDetails(false)
+          setSelectedTask(null)
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error)
+    }
+    setTaskToDelete(null)
+  }
+
+  // Handle full edit task (3-dot menu Edit)
+  const handleFullEditTask = async (taskId: string) => {
+    try {
+      // Fetch task details (includes subtasks in response)
+      const res = await fetch(`/api/tasks/${taskId}`)
+      const data = await res.json()
+
+      if (data.success) {
+        const taskData = data.data
+        setEditingTask(taskData)
+        // Use subtasks from task response (already included in API)
+        setEditingTaskSubtasks(taskData.subtasks || [])
+        setShowEditTaskPanel(true)
+      }
+    } catch (error) {
+      console.error('Error fetching task for edit:', error)
+    }
+  }
+
+  // Handle save from EditTaskPanel
+  const handleSaveTaskEdit = async (data: {
+    id: string
+    title: string
+    description?: string
+    priority: string
+    status: string
+    dueDate?: string
+    assigneeIds?: string[]
+    labelIds?: string[]
+  }) => {
+    try {
+      // Transform data to match API expectations
+      const apiPayload = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        status: data.status,
+        dueDate: data.dueDate,
+        assigneeId: data.assigneeIds?.[0] || null, // API expects single assigneeId
+        labels: data.labelIds || [], // API expects 'labels' not 'labelIds'
+      }
+
+      const res = await fetch(`/api/tasks/${data.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify(apiPayload)
+      })
+      if (res.ok) {
+        refetchTasks()
+        if (selectedTask?.id === data.id) refetchTaskDetails(data.id)
+        // Close panel after successful save
+        setShowEditTaskPanel(false)
+        setEditingTask(null)
+        setEditingTaskSubtasks([])
+      }
+    } catch (error) {
+      console.error('Error saving task:', error)
+    }
+  }
+
+  // Handle creating new label
+  const handleCreateLabel = async (name: string, color: string) => {
+    try {
+      const res = await fetch('/api/labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ name, color, workspaceSlug })
+      })
+      const data = await res.json()
+      if (data.success) {
+        return data.data as { id: string; name: string; color: string }
+      }
+      console.error('Error creating label:', data.error)
+    } catch (error) {
+      console.error('Error creating label:', error)
+    }
+    // Fallback: create local label
+    return { id: `label_${Date.now()} `, name, color }
+  }
+
+  // Handle task duplication
+  const handleDuplicateTask = async (taskId: string) => {
+    try {
+      const taskRes = await fetch(`/api/tasks/${taskId}`)
+      const taskData = await taskRes.json()
+      if (!taskData.success) return
+
+      const task = taskData.data
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({
+          title: `${task.title} (kopia)`,
+          description: task.description,
+          status: task.status,
+          priority: task.priority,
+          projectId: task.projectId,
+          dueDate: task.dueDate,
+          startDate: task.startDate,
+        })
+      })
+      if (res.ok) {
+        refetchTasks()
+      }
+    } catch (error) {
+      console.error('Error duplicating task:', error)
+    }
+  }
+
+  // Handle task archiving
+  const handleArchiveTask = async (taskId: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ isArchived: true })
+      })
+      if (res.ok) {
+        refetchTasks()
+      }
+    } catch (error) {
+      console.error('Error archiving task:', error)
+    }
+  }
+
   // Get stage name by ID for status display
   const getStageTitle = (stageId: string) => {
     const stage = project?.stages?.find(s => s.id === stageId)
     return stage?.name || stageId
   }
 
-  // Filter tasks by search query
-  const filteredTasks = tasks.filter(t =>
-    t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+  // Filter tasks by search query and filters
+  const filteredTasks = useMemo(() => {
+    let result = tasks.filter(t => {
+      // 1. Text Search
+      const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      if (!matchesSearch) return false
+
+      // 2. Assigned to Me / Specific Assignees
+      if (filters.assignedToMe && t.assigneeId !== session?.user?.id) return false
+      if (filters.assigneeIds.length > 0 && (!t.assigneeId || !filters.assigneeIds.includes(t.assigneeId))) return false
+
+      // 3. Priorities
+      if (filters.priorities.length > 0 && !filters.priorities.includes(t.priority)) return false
+
+      // 4. Statuses
+      if (filters.statuses.length > 0 && !filters.statuses.includes(t.status)) return false
+
+      // 5. Labels
+      if (filters.labels.length > 0) {
+        // Task has array of {id, name, color} or just IDs?
+        // API returns labels as array of objects usually, let's check TaskCard props
+        const taskLabelIds = t.labels?.map((l: any) => l.id) || []
+        const hasMatchingLabel = filters.labels.some(id => taskLabelIds.includes(id))
+        if (!hasMatchingLabel) return false
+      }
+
+      // 6. Overdue / Date Ranges
+      if (filters.overdue) {
+        if (!t.dueDate || new Date(t.dueDate) >= new Date()) return false
+      }
+
+      if (filters.dueDateRange !== 'all') {
+        if (filters.dueDateRange === 'no_date') {
+          if (t.dueDate) return false
+        } else if (t.dueDate) {
+          const d = new Date(t.dueDate)
+          const now = new Date()
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          const tomorrow = new Date(today)
+          tomorrow.setDate(tomorrow.getDate() + 1)
+          const nextWeek = new Date(today)
+          nextWeek.setDate(nextWeek.getDate() + 7)
+
+          if (filters.dueDateRange === 'overdue' && d >= now) return false
+          if (filters.dueDateRange === 'today') {
+            const tDate = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+            if (tDate.getTime() !== today.getTime()) return false
+          }
+          if (filters.dueDateRange === 'tomorrow') {
+            const tDate = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+            if (tDate.getTime() !== tomorrow.getTime()) return false
+          }
+          if (filters.dueDateRange === 'this_week') {
+            if (d < today || d > nextWeek) return false
+          }
+        } else {
+          // If range is selected but task has no date, usually exclude it (except no_date)
+          if (filters.dueDateRange !== 'overdue') return false // Overdue could imply "should have been done" but if no date, technically not overdue?
+        }
+      }
+
+      return true
+    })
+
+    // Sort tasks if sortBy is set
+    if (sortBy) {
+      result.sort((a, b) => {
+        let valA: any = a[sortBy as keyof Task]
+        let valB: any = b[sortBy as keyof Task]
+
+        // Handling Priority (custom order)
+        if (sortBy === 'priority') {
+          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 }
+          valA = priorityOrder[a.priority as keyof typeof priorityOrder] || 0
+          valB = priorityOrder[b.priority as keyof typeof priorityOrder] || 0
+        }
+
+        // Handling Dates
+        if (sortBy === 'dueDate' || sortBy === 'createdAt' || sortBy === 'updatedAt') {
+          valA = valA ? new Date(valA).getTime() : 0
+          valB = valB ? new Date(valB).getTime() : 0
+        }
+
+        if (valA < valB) return sortDirection === 'asc' ? -1 : 1
+        if (valA > valB) return sortDirection === 'asc' ? 1 : -1
+        return 0
+      })
+    }
+
+    return result
+  }, [tasks, searchQuery, filters, session?.user?.id, sortBy, sortDirection])
 
   // Build Kanban columns from stages with FULL task data
-  const kanbanColumns = (project?.stages || []).map(stage => ({
-    id: stage.id,
-    title: stage.name,
-    status: 'todo' as const, // Required by KanbanBoard type
-    color: stage.color,
-    tasks: filteredTasks.filter(t => t.status === stage.id).map(t => ({
+  const kanbanColumns = useMemo(() => {
+    return (project?.stages || []).map(stage => ({
+      id: stage.id,
+      title: stage.name,
+      status: 'todo' as const, // Required by KanbanBoard type but overridden by tasks? derived from stage
+      color: stage.color,
+      tasks: filteredTasks.filter(t => t.status === stage.id).map(t => ({
+        id: t.id,
+        title: t.title,
+        description: t.description || '',
+        priority: (t.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low',
+        assignees: t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.avatar || t.assignee.image }] : [],
+        type: 'task' as const,
+        status: t.status,
+        dueDate: t.dueDate,
+        startDate: t.startDate,
+        endDate: t.endDate,
+        subtaskCount: t.subtasksCount || 0,
+        subtaskCompleted: t.subtasksCompleted || 0,
+        commentCount: t.commentsCount || 0,
+        labels: t.labels || [],
+      }))
+    }))
+  }, [project?.stages, filteredTasks])
+
+  // List view tasks with FULL data
+  const listViewTasks = useMemo(() => {
+    return filteredTasks.map(t => ({
       id: t.id,
       title: t.title,
       description: t.description || '',
       priority: (t.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low',
       assignees: t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.avatar || t.assignee.image }] : [],
-      type: 'task' as const,
       status: t.status,
+      statusLabel: getStageTitle(t.status),
       dueDate: t.dueDate,
+      startDate: t.startDate,
+      endDate: t.endDate,
       subtaskCount: t.subtasksCount || 0,
       subtaskCompleted: t.subtasksCompleted || 0,
       commentCount: t.commentsCount || 0,
       labels: t.labels || [],
+      type: 'task' as const,
     }))
-  }))
-
-  // List view tasks with FULL data
-  const listViewTasks = filteredTasks.map(t => ({
-    id: t.id,
-    title: t.title,
-    description: t.description || '',
-    priority: (t.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low',
-    assignees: t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.avatar || t.assignee.image }] : [],
-    status: t.status,
-    statusLabel: getStageTitle(t.status),
-    dueDate: t.dueDate,
-    startDate: t.startDate,
-    endDate: t.endDate,
-    subtaskCount: t.subtasksCount || 0,
-    subtaskCompleted: t.subtasksCompleted || 0,
-    commentCount: t.commentsCount || 0,
-    labels: t.labels || [],
-    type: 'task' as const,
-  }))
+  }, [filteredTasks, project?.stages])
 
   const VIEW_TABS: { id: ViewMode; label: string; Icon: any }[] = [
     { id: 'kanban', label: 'Kanban', Icon: LayoutGrid },
@@ -350,16 +643,16 @@ function ProjectDetailPage() {
             className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-[#1a1a24] transition-colors"
           >
             <ChevronLeft size={18} />
-          </button>
+          </button >
           <div
             className="w-3 h-3 rounded-full"
             style={{ backgroundColor: project.color || '#6366f1' }}
           />
           <h1 className="text-lg font-semibold text-white">{project.name}</h1>
-        </div>
+        </div >
 
         {/* View Switcher + KanbanBoardHeader - same row */}
-        <div className="flex items-center justify-between">
+        < div className="flex items-center justify-between" >
           <div className="flex bg-[#1a1a24] p-1 rounded-full w-fit">
             {VIEW_TABS.map(tab => (
               <button
@@ -377,18 +670,31 @@ function ProjectDetailPage() {
           </div>
 
           {/* KanbanBoardHeader - only for kanban and list views */}
-          {(viewMode === 'kanban' || viewMode === 'list') && (
-            <KanbanBoardHeader
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onNewTask={() => setShowCreateTaskPanel(true)}
-            />
-          )}
-        </div>
-      </div>
+          {
+            (viewMode === 'kanban' || viewMode === 'list') && (
+              <KanbanBoardHeader
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onNewTask={() => setShowCreateTaskPanel(true)}
+                onFilterChange={setFilters}
+                currentFilters={filters}
+                workspaceSlug={workspaceSlug}
+                userId={session?.user?.id}
+                onSort={(field, dir) => {
+                  setSortBy(field)
+                  setSortDirection(dir)
+                }}
+                members={teamMembers}
+                availableLabels={workspaceLabels}
+                availableStatuses={project?.stages?.map(s => ({ value: s.id, label: s.name })) || []}
+              />
+            )
+          }
+        </div >
+      </div >
 
       {/* Content - Full width for Kanban */}
-      <div className="flex-1 overflow-auto">
+      < div className="flex-1 min-h-0 overflow-auto" >
         {viewMode === 'kanban' && (
           <div className="h-full px-6 pb-6">
             <KanbanBoard
@@ -396,54 +702,67 @@ function ProjectDetailPage() {
               members={teamMembers}
               onTaskMove={handleTaskMove}
               onTaskClick={handleTaskClick}
+              onTaskFullEdit={handleFullEditTask}
+              onTaskDelete={handleDeleteTask}
+              onTaskDuplicate={handleDuplicateTask}
               onAddTask={handleKanbanAddTask}
               onQuickUpdate={handleQuickUpdateTask}
             />
           </div>
         )}
 
-        {viewMode === 'list' && (
-          <div className="px-6 pb-6">
-            <TaskListView
-              tasks={listViewTasks as any}
-              columns={(project.stages || []).map(s => ({ id: s.id, title: s.name, color: s.color || '' })) as any}
-              onTaskClick={handleTaskClick}
-              selectedTasks={selectedTasks}
-              onTaskSelect={handleTaskSelect}
-              onSelectAll={handleSelectAll}
-            />
-          </div>
-        )}
+        {
+          viewMode === 'list' && (
+            <div className="px-6 pb-6">
+              <TaskListView
+                tasks={listViewTasks as any}
+                columns={(project.stages || []).map(s => ({ id: s.id, title: s.name, color: s.color || '' })) as any}
+                onTaskClick={handleTaskClick}
+                selectedTasks={selectedTasks}
+                onTaskSelect={handleTaskSelect}
+                onSelectAll={handleSelectAll}
+                onTaskEdit={handleFullEditTask}
+                onTaskDelete={handleDeleteTask}
+                onTaskDuplicate={handleDuplicateTask}
+                onTaskArchive={handleArchiveTask}
+              />
+            </div>
+          )
+        }
 
-        {viewMode === 'calendar' && (
-          <div className="px-6 pb-6">
-            <ProjectCalendarView
-              tasks={tasks}
-              projectColor={project.color || '#6366f1'}
-              currentMonth={currentMonth}
-              onMonthChange={setCurrentMonth}
-              onTaskClick={handleTaskClick}
-              onAddTask={handleAddTask}
-            />
-          </div>
-        )}
+        {
+          viewMode === 'calendar' && (
+            <div className="px-6 pb-6">
+              <ProjectCalendarView
+                tasks={tasks}
+                projectColor={project.color || '#6366f1'}
+                currentMonth={currentMonth}
+                onMonthChange={setCurrentMonth}
+                onTaskClick={handleTaskClick}
+                onAddTask={handleAddTask}
+              />
+            </div>
+          )
+        }
 
-        {viewMode === 'timeline' && (
-          <div className="h-full px-6 pb-6">
-            <ProjectTimelineView
-              tasks={tasks}
-              projectColor={project.color || '#6366f1'}
-              currentMonth={currentMonth}
-              onMonthChange={setCurrentMonth}
-              onTaskClick={handleTaskClick}
-              onAddTask={handleAddTask}
-            />
-          </div>
-        )}
-      </div>
+        {
+          viewMode === 'timeline' && (
+            <div className="h-full px-6 pb-6">
+              <ProjectTimelineView
+                tasks={tasks}
+                projectColor={project.color || '#6366f1'}
+                currentMonth={currentMonth}
+                onMonthChange={setCurrentMonth}
+                onTaskClick={handleTaskClick}
+                onAddTask={handleAddTask}
+              />
+            </div>
+          )
+        }
+      </div >
 
       {/* Create Task Panel */}
-      <CreateTaskPanel
+      < CreateTaskPanel
         isOpen={showCreateTaskPanel}
         onClose={() => {
           setShowCreateTaskPanel(false)
@@ -457,15 +776,17 @@ function ProjectDetailPage() {
         projects={project ? [project] as any : []}
         teamMembers={teamMembers}
         workspaceSlug={workspaceSlug}
+        userId={session?.user?.id}
       />
 
       {/* Task Details Panel */}
-      <TaskDetailsPanel
+      < TaskDetailsPanel
         task={selectedTask}
         isOpen={showTaskDetails}
         onClose={() => { setShowTaskDetails(false); setSelectedTask(null) }}
         subtasks={selectedTask?.subtasks}
         comments={selectedTask?.comments}
+        availableLabels={workspaceLabels}
         onSubtaskToggle={async (subtaskId) => {
           if (!selectedTask) return
           const subtask = selectedTask.subtasks?.find((s: any) => s.id === subtaskId)
@@ -484,7 +805,7 @@ function ProjectDetailPage() {
       />
 
       {/* Bulk Actions Toolbar - fixed at bottom */}
-      <BulkActions
+      < BulkActions
         selectedCount={selectedTasks.length}
         columns={(project?.stages || []).map(s => ({ id: s.id, title: s.name, color: s.color || '' }))}
         assignees={teamMembers}
@@ -492,6 +813,26 @@ function ProjectDetailPage() {
         onMove={handleBulkMove}
         onClearSelection={() => setSelectedTasks([])}
       />
-    </div>
+
+      {/* Edit Task Panel */}
+      <EditTaskPanel
+        task={editingTask}
+        isOpen={showEditTaskPanel}
+        onClose={() => { setShowEditTaskPanel(false); setEditingTask(null); setEditingTaskSubtasks([]) }}
+        onSave={handleSaveTaskEdit}
+        subtasks={editingTaskSubtasks}
+        stages={(project?.stages || []).map(s => ({ id: s.id, name: s.name, color: s.color || '#6366f1' }))}
+        teamMembers={teamMembers}
+        availableLabels={workspaceLabels}
+        onCreateLabel={handleCreateLabel}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={taskToDelete !== null}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={confirmDeleteTask}
+      />
+    </div >
   )
 }

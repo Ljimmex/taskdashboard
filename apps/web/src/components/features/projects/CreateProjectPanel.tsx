@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { X, Palette, Users, FolderOpen } from 'lucide-react'
-import { DueDatePicker } from '../tasks/DueDatePicker'
+import { DueDatePicker } from '../tasks/components/DueDatePicker'
 import { useSession } from '@/lib/auth'
 import { usePanelStore } from '@/lib/panelStore'
 

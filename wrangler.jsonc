@@ -3,7 +3,13 @@
     "compatibility_date": "2024-12-20",
     "assets": {
         "directory": "./apps/web/dist",
-        "binding": "ASSETS"
+        "binding": "APP_ASSETS"
     },
-    "pages_build_output_dir": "./apps/web/dist"
+    "pages_build_output_dir": "./apps/web/dist",
+    "r2_buckets": [
+        {
+            "binding": "FILES_BUCKET",
+            "bucket_name": "zadano-files"
+        }
+    ]
 }

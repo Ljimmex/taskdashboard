@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { StatusBadge } from '../tasks/StatusBadge'
+import { StatusBadge } from '../tasks/components/StatusBadge'
 import { getDaysInMonth, isSameDay, formatShortDate } from './utils'
 import { Task } from './types'
 

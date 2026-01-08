@@ -5,9 +5,9 @@ import { OverallProgress } from '@/components/dashboard/OverallProgress'
 import { TeamActivity } from '@/components/dashboard/TeamActivity'
 import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { CalendarSection } from '@/components/dashboard/CalendarSection'
-import { TaskCard, AddNewTaskCard } from '@/components/dashboard/TaskCard'
+import { TaskCard, AddTaskCard } from '@/components/features/tasks/components/TaskCard'
 import { ChatSection } from '@/components/dashboard/ChatSection'
-import { CreateTaskPanel } from '@/components/features/tasks/CreateTaskPanel'
+import { CreateTaskPanel } from '@/components/features/tasks/panels/CreateTaskPanel'
 
 
 export const Route = createFileRoute('/$workspaceSlug/')({
@@ -112,13 +112,13 @@ function DashboardHome() {
                   title={meeting.title}
                   description={meeting.description || 'Brak opisu spotkania.'}
                   priority={meeting.priority || 'medium'}
+                  status={meeting.status || 'scheduled'}
                   assignees={meeting.assignee ? [meeting.assignee] : []}
-                  type="call"
+                  type="meeting"
                 />
               ))}
               {meetings.length < 4 && (
-                <AddNewTaskCard
-                  label="Add New Meeting"
+                <AddTaskCard
                   onClick={() => setShowMeetingPanel(true)}
                 />
               )}
@@ -128,8 +128,7 @@ function DashboardHome() {
               <div className="h-[140px] rounded-2xl bg-[#12121a] flex items-center justify-center border-2 border-dashed border-gray-800">
                 <p className="text-gray-500 text-sm">Brak nadchodzących spotkań</p>
               </div>
-              <AddNewTaskCard
-                label="Add New Meeting"
+              <AddTaskCard
                 onClick={() => setShowMeetingPanel(true)}
               />
             </>
@@ -181,7 +180,7 @@ function DashboardHome() {
                     name: m.user.name,
                     avatar: m.user.image || undefined
                   })) || []}
-                  onViewProject={() => navigate({ to: `/${workspaceSlug}/projects` })}
+                  onViewProject={() => navigate({ to: `/${workspaceSlug}/projects/${p.id}` })}
                 />
               ))
             ) : (

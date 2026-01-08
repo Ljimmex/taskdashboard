@@ -51,6 +51,42 @@ workspacesRoutes.get('/', async (c) => {
     }
 })
 
+// GET /api/workspaces/slug/:slug - Get workspace by slug
+workspacesRoutes.get('/slug/:slug', async (c) => {
+    const slug = c.req.param('slug')
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+
+    if (!session?.user) {
+        return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    try {
+        const workspace = await db.query.workspaces.findFirst({
+            where: (ws, { eq }) => eq(ws.slug, slug)
+        })
+
+        if (!workspace) {
+            return c.json({ error: 'Workspace not found' }, 404)
+        }
+
+        // Check if user is a member
+        const member = await db.query.workspaceMembers.findFirst({
+            where: (wm, { eq, and }) => and(
+                eq(wm.userId, session.user.id),
+                eq(wm.workspaceId, workspace.id)
+            )
+        })
+
+        if (!member) {
+            return c.json({ error: 'Access denied' }, 403)
+        }
+
+        return c.json(workspace)
+    } catch (error) {
+        return c.json({ error: 'Failed to fetch workspace', details: String(error) }, 500)
+    }
+})
+
 // POST /api/workspaces - Create new workspace
 workspacesRoutes.post('/', async (c) => {
     // Get Session using Better Auth
