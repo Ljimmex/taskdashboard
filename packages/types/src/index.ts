@@ -89,6 +89,9 @@ export interface FileRecord {
     uploadedBy: string
     workspaceId: string
     folderId: string | null
+    thumbnailUrl?: string | null
+    fileType?: string | null
+    teamId?: string | null
     createdAt: Date | string
     updatedAt?: Date | string
 }
@@ -99,6 +102,7 @@ export interface Folder {
     parentId: string | null
     workspaceId: string
     createdAt: Date | string
+    updatedAt?: Date | string
 }
 
 // =============================================================================

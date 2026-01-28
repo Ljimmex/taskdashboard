@@ -1,5 +1,4 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { useEncryption } from './useEncryption'
 import { importPublicKey, importPrivateKey, encryptHybrid, decryptHybrid } from '@/lib/crypto'
 import { keyStorage } from '@/lib/keyStorage'
 import type { Conversation, ConversationMessage } from '@taskdashboard/types'
@@ -13,8 +12,6 @@ interface KeyRotationData {
 }
 
 export function useKeyRotation(workspaceId: string) {
-    const { keys } = useEncryption(workspaceId)
-
     // Check if keys are expired
     const isExpired = useQuery({
         queryKey: ['keyExpiration', workspaceId],

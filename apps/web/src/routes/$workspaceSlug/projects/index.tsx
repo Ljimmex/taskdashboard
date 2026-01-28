@@ -163,7 +163,7 @@ function ProjectsPage() {
         }
     }, [])
 
-    const handleCreateTask = async (taskData: any) => {
+    const handleCreateTask = async (taskData: any): Promise<{ id: string } | null> => {
         try {
             const res = await fetch('/api/tasks', {
                 method: 'POST',
@@ -180,9 +180,12 @@ function ProjectsPage() {
             if (data.success) {
                 refetchTasks()
                 setShowCreateTaskPanel(false)
+                return { id: data.data.id }
             }
+            return null
         } catch (error) {
             console.error('Error creating task:', error)
+            return null
         }
     }
 

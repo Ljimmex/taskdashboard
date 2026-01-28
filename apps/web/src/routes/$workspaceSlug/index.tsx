@@ -85,9 +85,10 @@ function DashboardHome() {
   const filteredProjects = projects.filter((p: any) => p.status === projectFilter)
 
   // Handle meeting creation callback
-  const handleMeetingCreated = () => {
-    queryClient.invalidateQueries({ queryKey: ['meetings', workspaceSlug] })
+  const handleMeetingCreated = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['meetings', workspaceSlug] })
     setShowMeetingPanel(false)
+    return null // CreateTaskPanel will handle the actual creation
   }
 
   return (
