@@ -8,12 +8,12 @@ import { files, NewFileRecord } from '../../db/schema/files'
 import { getUploadUrl, getDownloadUrl, deleteFile } from '../../lib/r2'
 import { authMiddleware } from '@/middleware/auth'
 
-import { auth } from '../../lib/auth'
+import { type Auth } from '../../lib/auth'
 
 type Env = {
     Variables: {
-        user: typeof auth.$Infer.Session.user
-        session: typeof auth.$Infer.Session.session
+        user: Auth['$Infer']['Session']['user']
+        session: Auth['$Infer']['Session']['session']
     }
 }
 
