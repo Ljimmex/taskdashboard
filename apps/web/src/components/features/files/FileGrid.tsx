@@ -202,7 +202,7 @@ export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileD
                 {/* Size and Date */}
                 <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>{formatSize((folder as any).size)}</span>
-                    <span>{format(new Date(folder.updatedAt), 'dd.MM.yyyy')}</span>
+                    <span>{format(new Date(folder.updatedAt || folder.createdAt), 'dd.MM.yyyy')}</span>
                 </div>
 
                 {/* Menu Button */}

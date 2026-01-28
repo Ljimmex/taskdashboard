@@ -162,7 +162,7 @@ export function FileList({
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500">{formatSize((folder as any).size)}</td>
                             <td className="px-4 py-3 text-sm text-gray-500">Folder</td>
-                            <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(folder.updatedAt), 'MMM d, yyyy')}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(folder.updatedAt || folder.createdAt), 'MMM d, yyyy')}</td>
                             <td className="px-4 py-3" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
