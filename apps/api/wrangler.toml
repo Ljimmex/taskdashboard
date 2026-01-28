@@ -6,18 +6,6 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "production"
 BETTER_AUTH_URL = "https://taskdashboard-api.zadanoio.workers.dev"
-# Public configuration (Secrets are excluded)
-GITHUB_CLIENT_ID = "Ov23lik5Lq" # Value form .env example, likely overridden by Secret/Env var
-GOOGLE_CLIENT_ID = "1065856182930-8mm" # Start of ID for reference
-R2_BUCKET_NAME = "zadano-files"
-R2_ACCOUNT_ID = "dd34a986d26a43c6a9b0fdcce233fe85"
-# Mailtrap (non-secrets)
-MAILTRAP_HOST = "sandbox.smtp.mailtrap.io"
-MAILTRAP_PORT = "2525"
-MAILTRAP_USER = "078d72e0e25160"
-FROM_EMAIL = "noreply@flowboard.app"
-# Supabase (non-secrets)
-SUPABASE_URL = "https://opwnyaxsxutn" # incomplete for safety, or full if public
 
 # R2 Buckets binding
 [[r2_buckets]]
