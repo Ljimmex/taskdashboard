@@ -35,6 +35,7 @@ interface Task {
   subtasksCount?: number
   subtasksCompleted?: number
   commentsCount?: number
+  attachmentCount?: number
   status: string
   labels?: any[]
 }
@@ -256,10 +257,13 @@ function ProjectDetailPage() {
       if (data.success) {
         refetchTasks()
         setShowCreateTaskPanel(false)
+        // Return the created task so CreateTaskPanel can upload files
+        return data.data
       }
     } catch (error) {
       console.error('Error creating task:', error)
     }
+    return null
   }
 
   // Handle task move (for Kanban)
@@ -295,9 +299,9 @@ function ProjectDetailPage() {
     }
   }
 
-  const handleQuickUpdateTask = async (data: { id: string; title: string; priority: string }) => {
+  const handleQuickUpdateTask = async (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string }) => {
     try {
-      const res = await fetch(`/ api / tasks / ${data.id} `, {
+      const res = await fetch(`/api/tasks/${data.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify(data)
@@ -366,6 +370,7 @@ function ProjectDetailPage() {
     dueDate?: string
     assigneeIds?: string[]
     labelIds?: string[]
+    links?: any[]
   }) => {
     try {
       // Transform data to match API expectations
@@ -376,8 +381,9 @@ function ProjectDetailPage() {
         priority: data.priority,
         status: data.status,
         dueDate: data.dueDate,
-        assigneeId: data.assigneeIds?.[0] || null, // API expects single assigneeId
-        labels: data.labelIds || [], // API expects 'labels' not 'labelIds'
+        assigneeId: data.assigneeIds?.[0] || null,
+        labels: data.labelIds || [],
+        links: data.links || [],
       }
 
       const res = await fetch(`/api/tasks/${data.id}`, {
@@ -416,6 +422,123 @@ function ProjectDetailPage() {
     }
     // Fallback: create local label
     return { id: `label_${Date.now()} `, name, color }
+  }
+
+  // Handle adding subtask in EditTaskPanel
+  const handleAddEditSubtask = async (title: string) => {
+    if (!editingTask?.id) return
+    try {
+      const res = await fetch(`/api/tasks/${editingTask.id}/subtasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ title, status: 'todo', priority: 'medium' })
+      })
+      if (res.ok) {
+        // Refetch task to get updated subtasks
+        const taskRes = await fetch(`/api/tasks/${editingTask.id}`)
+        const taskData = await taskRes.json()
+        if (taskData.success) {
+          setEditingTaskSubtasks(taskData.data.subtasks || [])
+        }
+      }
+    } catch (error) {
+      console.error('Error adding subtask:', error)
+    }
+  }
+
+  // Handle toggling subtask in EditTaskPanel
+  const handleToggleEditSubtask = async (subtaskId: string) => {
+    if (!editingTask?.id) return
+    const subtask = editingTaskSubtasks.find(s => s.id === subtaskId)
+    if (!subtask) return
+
+    try {
+      const res = await fetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ isCompleted: !subtask.isCompleted })
+      })
+      if (res.ok) {
+        // Update local state
+        setEditingTaskSubtasks(prev => prev.map(s =>
+          s.id === subtaskId ? { ...s, isCompleted: !s.isCompleted } : s
+        ))
+      }
+    } catch (error) {
+      console.error('Error toggling subtask:', error)
+    }
+  }
+
+  // Handle updating subtask in EditTaskPanel
+  const handleUpdateEditSubtask = async (subtaskId: string, updates: any) => {
+    if (!editingTask?.id) return
+    try {
+      const res = await fetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify(updates)
+      })
+      if (res.ok) {
+        // Update local state
+        setEditingTaskSubtasks(prev => prev.map(s =>
+          s.id === subtaskId ? { ...s, ...updates } : s
+        ))
+      }
+    } catch (error) {
+      console.error('Error updating subtask:', error)
+    }
+  }
+
+  // Handle deleting subtask in EditTaskPanel
+  const handleDeleteEditSubtask = async (subtaskId: string) => {
+    if (!editingTask?.id) return
+    try {
+      const res = await fetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': session?.user?.id || '' }
+      })
+      if (res.ok) {
+        // Update local state
+        setEditingTaskSubtasks(prev => prev.filter(s => s.id !== subtaskId))
+      }
+    } catch (error) {
+      console.error('Error deleting subtask:', error)
+    }
+  }
+
+  // Handle adding comment in TaskDetailsPanel
+  const handleAddComment = async (content: string, parentId?: string | null) => {
+    if (!selectedTask?.id) return
+    try {
+      const res = await fetch(`/api/tasks/${selectedTask.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ content, parentId })
+      })
+      if (res.ok) {
+        // Refetch task to get updated comments
+        refetchTaskDetails(selectedTask.id)
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error)
+    }
+  }
+
+  // Handle liking comment in TaskDetailsPanel
+  const handleLikeComment = async (commentId: string) => {
+    if (!selectedTask?.id) return
+    try {
+      const res = await fetch(`/api/tasks/${selectedTask.id}/comments/${commentId}/like`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' }
+      })
+      if (res.ok) {
+        // Refetch task to get updated comments
+        refetchTaskDetails(selectedTask.id)
+      }
+    } catch (error) {
+      console.error('Error liking comment:', error)
+    }
   }
 
   // Handle task duplication
@@ -583,6 +706,7 @@ function ProjectDetailPage() {
         subtaskCount: t.subtasksCount || 0,
         subtaskCompleted: t.subtasksCompleted || 0,
         commentCount: t.commentsCount || 0,
+        attachmentCount: t.attachmentCount || 0,
         labels: t.labels || [],
       }))
     }))
@@ -604,6 +728,7 @@ function ProjectDetailPage() {
       subtaskCount: t.subtasksCount || 0,
       subtaskCompleted: t.subtasksCompleted || 0,
       commentCount: t.commentsCount || 0,
+      attachmentCount: t.attachmentCount || 0,
       labels: t.labels || [],
       type: 'task' as const,
     }))
@@ -799,6 +924,8 @@ function ProjectDetailPage() {
           refetchTaskDetails(selectedTask.id)
           refetchTasks()
         }}
+        onAddComment={handleAddComment}
+        onLikeComment={handleLikeComment}
         stages={(project?.stages || []).map(s => ({ id: s.id, name: s.name, color: s.color || '#6366f1' }))}
         teamMembers={teamMembers}
         activities={selectedTask?.activities}
@@ -821,10 +948,16 @@ function ProjectDetailPage() {
         onClose={() => { setShowEditTaskPanel(false); setEditingTask(null); setEditingTaskSubtasks([]) }}
         onSave={handleSaveTaskEdit}
         subtasks={editingTaskSubtasks}
+        onAddSubtask={handleAddEditSubtask}
+        onSubtaskToggle={handleToggleEditSubtask}
+        onEditSubtask={handleUpdateEditSubtask}
+        onDeleteSubtask={handleDeleteEditSubtask}
         stages={(project?.stages || []).map(s => ({ id: s.id, name: s.name, color: s.color || '#6366f1' }))}
         teamMembers={teamMembers}
         availableLabels={workspaceLabels}
         onCreateLabel={handleCreateLabel}
+        workspaceSlug={workspaceSlug}
+        userId={session?.user?.id}
       />
 
       {/* Delete Confirmation Modal */}

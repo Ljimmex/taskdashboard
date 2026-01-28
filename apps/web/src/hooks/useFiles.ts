@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileRecord, Folder } from '@taskdashboard/types'
+import { useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 
 async function getWorkspaceId(workspaceSlug: string): Promise<string> {
     const res = await fetch(`/api/workspaces/slug/${workspaceSlug}`)
@@ -8,11 +10,20 @@ async function getWorkspaceId(workspaceSlug: string): Promise<string> {
     return data.id
 }
 
-// Fetch files from API
-const fetchFiles = async (workspaceSlug: string, folderId: string | null): Promise<FileRecord[]> => {
+// Fetch files from API (with optional recursive fetch from all folders)
+const fetchFiles = async (workspaceSlug: string, folderId: string | null, recursive = false): Promise<FileRecord[]> => {
     const workspaceId = await getWorkspaceId(workspaceSlug)
-    const folderParam = folderId ? `&folderId=${folderId}` : '&folderId=root'
-    const res = await fetch(`/api/files?workspaceId=${workspaceId}${folderParam}`)
+    const params = new URLSearchParams()
+    params.append('workspaceId', workspaceId)
+
+    if (recursive) {
+        params.append('recursive', 'true')
+    } else {
+        const folderParam = folderId || 'root'
+        params.append('folderId', folderParam)
+    }
+
+    const res = await fetch(`/api/files?${params}`)
     if (!res.ok) throw new Error('Failed to fetch files')
     const data = await res.json()
     return data.data || []
@@ -28,20 +39,82 @@ const fetchFolders = async (workspaceSlug: string, parentId: string | null): Pro
     return data.data || []
 }
 
-export function useFiles(workspaceSlug: string, folderId: string | null = null) {
-    return useQuery({
-        queryKey: ['files', workspaceSlug, folderId],
-        queryFn: () => fetchFiles(workspaceSlug, folderId),
+export function useFiles(workspaceSlug: string, folderId: string | null = null, recursive = false) {
+    const queryClient = useQueryClient()
+    const queryKey = ['files', workspaceSlug, folderId, recursive]
+
+    const query = useQuery({
+        queryKey,
+        queryFn: () => fetchFiles(workspaceSlug, folderId, recursive),
         staleTime: 30000,
     })
+
+    // Realtime subscription for file changes
+    useEffect(() => {
+        if (!workspaceSlug) return
+
+        const channel = supabase
+            .channel(`files-${workspaceSlug}-${folderId || 'root'}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'files'
+                },
+                (payload) => {
+                    console.log('File change detected:', payload)
+                    // Invalidate query to refetch
+                    queryClient.invalidateQueries({ queryKey })
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [workspaceSlug, folderId, queryClient])
+
+    return query
 }
 
 export function useFolders(workspaceSlug: string, parentId: string | null = null) {
-    return useQuery({
-        queryKey: ['folders', workspaceSlug, parentId],
+    const queryClient = useQueryClient()
+    const queryKey = ['folders', workspaceSlug, parentId]
+
+    const query = useQuery({
+        queryKey,
         queryFn: () => fetchFolders(workspaceSlug, parentId),
         staleTime: 30000,
     })
+
+    // Realtime subscription for folder changes  
+    useEffect(() => {
+        if (!workspaceSlug) return
+
+        const channel = supabase
+            .channel(`folders-${workspaceSlug}-${parentId || 'root'}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'folders'
+                },
+                (payload) => {
+                    console.log('Folder change detected:', payload)
+                    // Invalidate query to refetch
+                    queryClient.invalidateQueries({ queryKey })
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [workspaceSlug, parentId, queryClient])
+
+    return query
 }
 
 export function useCreateFolder() {
@@ -107,7 +180,8 @@ export function useUploadFile() {
             onProgress?.(30)
 
             // 3. Upload file to R2 using presigned URL
-            const uploadToR2 = await fetch(uploadUrl, {
+            const finalUploadUrl = uploadUrl.startsWith('http') ? uploadUrl : `https://${uploadUrl}`
+            const uploadToR2 = await fetch(finalUploadUrl, {
                 method: 'PUT',
                 body: file,
                 headers: {
@@ -179,6 +253,40 @@ export function useMoveFile() {
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
+        }
+    })
+}
+
+export function useRenameFolder() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async ({ folderId, name, workspaceSlug: _workspaceSlug }: { folderId: string, name: string, workspaceSlug: string }) => {
+            const res = await fetch(`/api/folders/${folderId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            })
+            if (!res.ok) throw new Error('Failed to rename folder')
+            return res.json()
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug] })
+        }
+    })
+}
+
+export function useDeleteFolder() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async ({ folderId, workspaceSlug: _workspaceSlug }: { folderId: string, workspaceSlug: string }) => {
+            const res = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error('Failed to delete folder')
+            return res.json()
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug] })
         }
     })
 }

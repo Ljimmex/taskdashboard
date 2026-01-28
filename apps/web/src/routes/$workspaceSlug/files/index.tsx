@@ -14,6 +14,9 @@ function FilesPage() {
     const [startDate, setStartDate] = useState<Date | null>(null)
     const [endDate, setEndDate] = useState<Date | null>(null)
 
+    const [sortBy, setSortBy] = useState<'name' | 'size' | 'date' | 'type'>('date')
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
     // Upload panel state
     const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false)
     const [droppedFiles, setDroppedFiles] = useState<File[]>([])
@@ -22,6 +25,15 @@ function FilesPage() {
     const handleDateRangeChange = (start: Date | null, end: Date | null) => {
         setStartDate(start)
         setEndDate(end)
+    }
+
+    const handleSortChange = (field: 'name' | 'size' | 'date' | 'type') => {
+        if (sortBy === field) {
+            setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
+        } else {
+            setSortBy(field)
+            setSortOrder('desc')
+        }
     }
 
     const handleOpenUploadPanel = () => {
@@ -117,6 +129,9 @@ function FilesPage() {
                 endDate={endDate}
                 onDateRangeChange={handleDateRangeChange}
                 onUploadClick={handleOpenUploadPanel}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortChange={handleSortChange}
             />
 
             {/* Content */}
@@ -126,6 +141,9 @@ function FilesPage() {
                     fileTypeFilter={fileTypeFilter}
                     startDate={startDate}
                     endDate={endDate}
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                    onSort={handleSortChange}
                 />
             </div>
 

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, pgEnum, boolean, pgPolicy } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, text, timestamp, integer, pgEnum, boolean, pgPolicy, jsonb } from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
 import { projects } from './projects'
 import { users } from './users'
@@ -39,6 +39,8 @@ export const tasks = pgTable('tasks', {
     isArchived: boolean('is_archived').default(false).notNull(),
     // Labels stored as JSONB array of label IDs (references workspace.labels)
     labels: text('labels').array().default([]),
+    // Links stored as JSONB array of link objects
+    links: jsonb('links').default([]).$type<TaskLink[]>(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (_table) => [
@@ -215,4 +217,14 @@ export interface Label {
     id: string
     name: string
     color: string
+}
+
+// TaskLink type (for tasks.links JSONB structure)
+export interface TaskLink {
+    id: string
+    url: string
+    title?: string
+    description?: string
+    addedBy: string
+    addedAt: string
 }

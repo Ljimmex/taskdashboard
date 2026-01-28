@@ -94,19 +94,30 @@ app.get('/', async (c) => {
         // Let's implement: if valid UUID provided -> exact match. If 'root' -> isNull.
     }
 
-    // Actually, let's construct conditions array
     const conditions = [
         eq(files.workspaceId, workspaceId),
         eq(files.isArchived, false)
     ]
 
+    // Folder filtering logic:
+    // - If folderId is provided and is 'root': show files WHERE folderId IS NULL OR taskId IS NOT NULL
+    // - If folderId is a specific UUID: show files in that folder (folderId = UUID) OR task files (taskId NOT NULL)
+    // - If no folderId: show all files (including task attachments)
+    // This ensures task attachments appear in Files page
     if (folderId) {
         if (folderId === 'root') {
-            conditions.push(sql`${files.folderId} IS NULL`)
+            // Root: files with no folder assignment OR files attached to tasks
+            conditions.push(
+                sql`(${files.folderId} IS NULL OR ${files.taskId} IS NOT NULL)`
+            )
         } else {
-            conditions.push(eq(files.folderId, folderId))
+            // Specific folder: files in this folder OR task files
+            conditions.push(
+                sql`(${files.folderId} = ${folderId} OR ${files.taskId} IS NOT NULL)`
+            )
         }
     }
+    // If no folderId specified, show ALL files (no additional filter)
 
     if (search) {
         conditions.push(ilike(files.name, `%${search}%`))
@@ -143,7 +154,7 @@ app.get('/:id/download', async (c) => {
         return c.json({ error: 'File not found' }, 404)
     }
 
-    const downloadUrl = await getDownloadUrl(file.r2Key)
+    const downloadUrl = await getDownloadUrl(file.r2Key, file.name)
 
     return c.json({ downloadUrl })
 })
@@ -190,7 +201,9 @@ app.patch('/:id/archive', async (c) => {
 // -----------------------------------------------------------------------------
 app.post('/:id/duplicate', async (c) => {
     const id = c.req.param('id')
-    // const user = c.get('user')
+    const user = c.get('user')
+
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const originalFile = await db.query.files.findFirst({
         where: eq(files.id, id)
@@ -200,15 +213,35 @@ app.post('/:id/duplicate', async (c) => {
         return c.json({ error: 'Original file not found' }, 404)
     }
 
-    // Since R2/S3 CopyObject isn't exposed in our simple utility yet, 
-    // we might need to add it or do a download/upload flow (inefficient for large files).
-    // For now, let's assume we'll implement a 'copyFile' in r2.ts or just create a DB entry 
-    // pointing to the same R2 key (but that deletes are dangerous then).
-    // BEST PRACTICE: Copy the object in S3. 
+    // Generate new R2 key for the copy
+    const fileExt = originalFile.name.split('.').pop() || ''
+    const newR2Key = `${originalFile.workspaceId}/${crypto.randomUUID()}.${fileExt}`
 
-    // For this MVP step, let's pretend we have copy capability or add it to r2.ts.
-    // Let's defer actual R2 copy and just return error for now until r2.ts is updated.
-    return c.json({ error: 'Not implemented' }, 501)
+    try {
+        // Copy the file in R2
+        const { copyFile } = await import('../../lib/r2')
+        await copyFile(originalFile.r2Key, newR2Key)
+
+        // Create new database record
+        const [newFile] = await db.insert(files).values({
+            name: `${originalFile.name.replace(`.${fileExt}`, '')} (copy).${fileExt}`,
+            path: newR2Key,
+            r2Key: newR2Key,
+            size: originalFile.size,
+            mimeType: originalFile.mimeType,
+            fileType: originalFile.fileType,
+            workspaceId: originalFile.workspaceId,
+            folderId: originalFile.folderId,
+            teamId: originalFile.teamId,
+            taskId: originalFile.taskId,
+            uploadedBy: user.id,
+        } as NewFileRecord).returning()
+
+        return c.json(newFile)
+    } catch (error) {
+        console.error('Failed to duplicate file:', error)
+        return c.json({ error: 'Failed to duplicate file' }, 500)
+    }
 })
 
 

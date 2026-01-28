@@ -4,7 +4,7 @@ import { usePanelStore } from '../../../lib/panelStore'
 import { ChevronDoubleRightIcon } from '../tasks/components/TaskIcons'
 import { Upload, Trash2 } from 'lucide-react'
 import { useParams } from '@tanstack/react-router'
-import { useUploadFile } from '@/hooks/useFiles'
+import { useUploadFile, useCreateFolder } from '@/hooks/useFiles'
 
 interface FileUploadPanelProps {
     isOpen: boolean
@@ -17,9 +17,30 @@ interface FileUploadPanelProps {
 interface QueuedFile {
     id: string
     file: File
+    relativePath: string
     progress: number
     status: 'pending' | 'uploading' | 'done' | 'error'
     error?: string
+}
+
+// Type definitions for File System API
+interface FileSystemEntry {
+    isFile: boolean
+    isDirectory: boolean
+    name: string
+    fullPath: string
+}
+
+interface FileSystemFileEntry extends FileSystemEntry {
+    file: (callback: (file: File) => void) => void
+}
+
+interface FileSystemDirectoryEntry extends FileSystemEntry {
+    createReader: () => FileSystemDirectoryReader
+}
+
+interface FileSystemDirectoryReader {
+    readEntries: (callback: (entries: FileSystemEntry[]) => void) => void
 }
 
 function formatFileSize(bytes: number): string {
@@ -35,6 +56,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
     const panelRef = useRef<HTMLDivElement>(null)
     const dropZoneRef = useRef<HTMLDivElement>(null)
     const uploadMutation = useUploadFile()
+    const createFolderMutation = useCreateFolder()
 
     const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([])
     const [isDragOver, setIsDragOver] = useState(false)
@@ -46,12 +68,52 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
         return () => setIsPanelOpen(false)
     }, [isOpen, setIsPanelOpen])
 
+    // Helper to read all entries from a directory reader
+    const readAllEntries = async (reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> => {
+        const entries: FileSystemEntry[] = []
+        let readEntries = await new Promise<FileSystemEntry[]>((resolve) => reader.readEntries(resolve))
+
+        while (readEntries.length > 0) {
+            entries.push(...readEntries)
+            readEntries = await new Promise<FileSystemEntry[]>((resolve) => reader.readEntries(resolve))
+        }
+
+        return entries
+    }
+
+    // Recursive directory traversal
+    const traverseDirectory = async (entry: FileSystemEntry, path = ''): Promise<{ file: File, path: string }[]> => {
+        if (entry.isFile) {
+            const fileEntry = entry as FileSystemFileEntry
+            return new Promise((resolve) => {
+                fileEntry.file((file) => {
+                    resolve([{ file, path: path + file.name }])
+                })
+            })
+        } else if (entry.isDirectory) {
+            const dirEntry = entry as FileSystemDirectoryEntry
+            const reader = dirEntry.createReader()
+            const entries = await readAllEntries(reader)
+
+            const results: { file: File, path: string }[] = []
+            for (const childEntry of entries) {
+                const children = await traverseDirectory(childEntry, path + entry.name + '/')
+                results.push(...children)
+            }
+            return results
+        }
+        return []
+    }
+
     // Handle initial files (from external drag)
     useEffect(() => {
         if (initialFiles && initialFiles.length > 0) {
-            const newFiles: QueuedFile[] = initialFiles.map(file => ({
+            // Filter out 0-byte folder entries
+            const validFiles = initialFiles.filter(file => !(file.size === 0 && file.type === ''))
+            const newFiles: QueuedFile[] = validFiles.map(file => ({
                 id: crypto.randomUUID(),
                 file,
+                relativePath: file.name,
                 progress: 0,
                 status: 'pending'
             }))
@@ -82,22 +144,67 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
         setIsDragOver(false)
     }, [])
 
-    const handleDrop = useCallback((e: React.DragEvent) => {
+    const handleDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault()
         e.stopPropagation()
         setIsDragOver(false)
 
-        const files = Array.from(e.dataTransfer.files)
-        if (files.length > 0) {
-            const newFiles: QueuedFile[] = files.map(file => ({
-                id: crypto.randomUUID(),
-                file,
-                progress: 0,
-                status: 'pending'
-            }))
-            setQueuedFiles(prev => [...prev, ...newFiles])
+        const items = Array.from(e.dataTransfer.items)
+        const queue: QueuedFile[] = []
+
+        for (const item of items) {
+            // WebkitGetAsEntry is the key API for folders
+            const entry = item.webkitGetAsEntry?.() || null
+
+            if (entry) {
+                if (entry.isFile) {
+                    const file = item.getAsFile()
+                    if (file) {
+                        queue.push({
+                            id: crypto.randomUUID(),
+                            file,
+                            relativePath: file.name,
+                            progress: 0,
+                            status: 'pending'
+                        })
+                    }
+                } else if (entry.isDirectory) {
+                    // Recursive folder traversal
+                    const files = await traverseDirectory(entry as FileSystemEntry)
+                    files.forEach(({ file, path }) => {
+                        queue.push({
+                            id: crypto.randomUUID(),
+                            file,
+                            relativePath: path,
+                            progress: 0,
+                            status: 'pending'
+                        })
+                    })
+                }
+            } else {
+                // Fallback for non-webkit browsers
+                const file = item.getAsFile()
+                if (file) {
+                    // Skip likely folders (0 bytes, empty type) that failed webkit entry check
+                    if (file.size === 0 && file.type === '') {
+                        console.warn('Skipping potential folder or empty file:', file.name)
+                        continue
+                    }
+                    queue.push({
+                        id: crypto.randomUUID(),
+                        file,
+                        relativePath: file.name,
+                        progress: 0,
+                        status: 'pending'
+                    })
+                }
+            }
         }
-    }, [])
+
+        if (queue.length > 0) {
+            setQueuedFiles(prev => [...prev, ...queue])
+        }
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleBrowseClick = () => {
         document.getElementById('upload-panel-file-input')?.click()
@@ -109,6 +216,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
             const newFiles: QueuedFile[] = files.map(file => ({
                 id: crypto.randomUUID(),
                 file,
+                relativePath: file.name,
                 progress: 0,
                 status: 'pending'
             }))
@@ -121,14 +229,80 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
         setQueuedFiles(prev => prev.filter(f => f.id !== id))
     }
 
+    // Create folder hierarchy for files with relative paths
+    const createFolderHierarchy = async (files: QueuedFile[]): Promise<Map<string, string>> => {
+        // Collect all unique folder paths
+        const folderPaths = new Set<string>()
+        files.forEach(item => {
+            const parts = item.relativePath.split('/')
+            if (parts.length > 1) {
+                // Generate all parent paths: "A/B/C/file.txt" -> "A", "A/B", "A/B/C"
+                let currentPath = ''
+                for (let i = 0; i < parts.length - 1; i++) {
+                    currentPath += (currentPath ? '/' : '') + parts[i]
+                    folderPaths.add(currentPath)
+                }
+            }
+        })
+
+        // Sort by depth (shortest first) so we create parents before children
+        const sortedPaths = Array.from(folderPaths).sort((a, b) => a.split('/').length - b.split('/').length)
+
+        // Map path -> folderId
+        const folderIdMap = new Map<string, string>()
+
+        for (const path of sortedPaths) {
+            const parts = path.split('/')
+            const folderName = parts[parts.length - 1]
+            const parentPath = parts.slice(0, -1).join('/')
+
+            // Determine parent ID: either from our map (created subfolder) or the prop (current root)
+            const parentId = parentPath ? folderIdMap.get(parentPath) : folderId
+
+            try {
+                // Check if we already created it (in this map) - redundant but safe
+                if (folderIdMap.has(path)) continue
+
+                // Create folder
+                const newFolder = await createFolderMutation.mutateAsync({
+                    workspaceSlug,
+                    name: folderName,
+                    parentId: parentId || null
+                })
+
+                if (newFolder?.id) {
+                    folderIdMap.set(path, newFolder.id)
+                }
+            } catch (err) {
+                console.error(`Failed to create folder ${path}`, err)
+                // Continue - files will go to parent folder if this fails
+            }
+        }
+
+        return folderIdMap
+    }
+
     const handleUpload = async () => {
         if (queuedFiles.length === 0 || !workspaceSlug) return
 
         setIsUploading(true)
 
+        // First, create folder structure if any files have relative paths with folders
+        const folderMap = await createFolderHierarchy(queuedFiles)
+
         for (const qFile of queuedFiles) {
             // Skip already processed
             if (qFile.status === 'done' || qFile.status === 'error') continue
+
+            // Determine target folder ID based on relative path
+            let targetFolderId = folderId || null
+            const parts = qFile.relativePath.split('/')
+            if (parts.length > 1) {
+                const parentPath = parts.slice(0, -1).join('/')
+                if (folderMap.has(parentPath)) {
+                    targetFolderId = folderMap.get(parentPath) || null
+                }
+            }
 
             // Mark as uploading
             setQueuedFiles(prev => prev.map(f =>
@@ -139,7 +313,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                 await uploadMutation.mutateAsync({
                     workspaceSlug,
                     file: qFile.file,
-                    folderId: folderId || null,
+                    folderId: targetFolderId,
                     onProgress: (progress) => {
                         setQueuedFiles(prev => prev.map(f =>
                             f.id === qFile.id ? { ...f, progress } : f
@@ -261,7 +435,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
 
                                     {/* File Info */}
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-white truncate">{qFile.file.name}</p>
+                                        <p className="text-sm font-medium text-white truncate" title={qFile.relativePath}>{qFile.relativePath}</p>
                                         <p className="text-xs text-gray-500">{formatFileSize(qFile.file.size)}</p>
 
                                         {/* Progress Bar */}

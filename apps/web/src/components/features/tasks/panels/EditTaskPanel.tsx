@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { usePanelStore } from '../../../../lib/panelStore'
-// Note: StatusBadge import removed - using inline StatusSelector component
 import type { Label } from '../../labels/LabelBadge'
 import { LabelPicker } from '../../labels/LabelPicker'
+import { FilePicker } from '../../files/FilePicker'
+import { useTaskFiles, useAttachFile, useRemoveFileFromTask } from '../../../../hooks/useTaskFiles'
 import {
     DocumentIcon,
     DocumentIconGold,
@@ -13,6 +14,9 @@ import type { TaskCardProps } from '../components/TaskCard'
 import { SubtaskList, type Subtask } from '../subtasks/SubtaskList'
 import { AssigneePicker, type Assignee } from '../components/AssigneePicker'
 import { DueDatePicker } from '../components/DueDatePicker'
+import { LinkInput } from '../links/LinkInput'
+import { LinksList } from '../links/LinksList'
+import type { TaskLink } from '@taskdashboard/types'
 
 interface EditTaskPanelProps {
     task: TaskCardProps | null
@@ -27,6 +31,7 @@ interface EditTaskPanelProps {
         dueDate?: string
         assigneeIds?: string[]
         labelIds?: string[]
+        links?: TaskLink[]
     }) => void
     subtasks?: Subtask[]
     onSubtaskToggle?: (subtaskId: string) => void
@@ -35,9 +40,13 @@ interface EditTaskPanelProps {
     onEditSubtask?: (subtaskId: string, updates: Partial<Subtask>) => void
     onDeleteSubtask?: (subtaskId: string) => void
     stages?: { id: string; name: string; color: string }[]
-    teamMembers?: { id: string; name: string; avatar?: string }[]
+    teamMembers?: {
+        id: string; name: string; avatar?: string
+    }[]
     availableLabels?: Label[]
     onCreateLabel?: (name: string, color: string) => Promise<Label | undefined>
+    workspaceSlug?: string
+    userId?: string
 }
 
 // Tab Button
@@ -50,8 +59,8 @@ const TabButton = ({
 }: {
     active: boolean
     onClick: () => void
-    icon: React.ReactNode
-    activeIcon: React.ReactNode
+    icon?: React.ReactNode
+    activeIcon?: React.ReactNode
     label: string
 }) => (
     <button
@@ -168,8 +177,12 @@ export function EditTaskPanel({
     teamMembers = [],
     availableLabels: propAvailableLabels = [],
     onCreateLabel: propOnCreateLabel,
+    workspaceSlug,
+    userId,
 }: EditTaskPanelProps) {
-    const [activeTab, setActiveTab] = useState<'subtasks' | 'shared'>('subtasks')
+    const [activeTab, setActiveTab] = useState<'subtasks' | 'shared' | 'links'>('subtasks')
+    const [links, setLinks] = useState<TaskLink[]>([])
+    const [showLinkInput, setShowLinkInput] = useState(false)
     const panelRef = useRef<HTMLDivElement>(null)
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
 
@@ -183,6 +196,12 @@ export function EditTaskPanel({
     const [selectedLabels, setSelectedLabels] = useState<Label[]>([])
     const [isEditingTitle, setIsEditingTitle] = useState(false)
     const [isEditingDescription, setIsEditingDescription] = useState(false)
+    const [showFilePicker, setShowFilePicker] = useState(false)
+
+    // File management
+    const { data: taskFiles } = useTaskFiles(task?.id)
+    const attachFile = useAttachFile()
+    const removeFile = useRemoveFileFromTask()
 
     // Labels - use useMemo to prevent recreation on every render
     const defaultLabels: Label[] = [
@@ -206,8 +225,10 @@ export function EditTaskPanel({
             setTitle(task.title || '')
             setDescription(task.description || '')
             setPriority(task.priority || 'medium')
-            setStatus(task.status || '')
-            setDueDate(task.dueDate || undefined)
+            setStatus(task.status || stages[0]?.id || '')
+            setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : undefined)
+            setLinks((task as any).links || [])
+            setActiveTab('subtasks')
             // Deduplicate assignees by ID
             const rawAssignees = task.assignees?.map(a => ({ id: a.id, name: a.name, avatar: a.avatar })) || []
             const uniqueAssignees = Array.from(new Map(rawAssignees.map(a => [a.id, a])).values())
@@ -257,6 +278,7 @@ export function EditTaskPanel({
             dueDate: dueDate || undefined,
             assigneeIds: selectedAssignees.map(a => a.id),
             labelIds: selectedLabels.map(l => l.id),
+            links: links,
         })
         onClose()
     }
@@ -392,7 +414,7 @@ export function EditTaskPanel({
                         <p
                             onClick={() => setIsEditingDescription(true)}
                             className="text-sm text-gray-400 leading-relaxed break-words cursor-pointer hover:text-gray-300 transition-colors min-h-[40px]"
-                            title="Kliknij aby edytować"
+                            title="Kliknij aby dodać opis...'"
                         >
                             {description || 'Kliknij aby dodać opis...'}
                         </p>
@@ -415,6 +437,11 @@ export function EditTaskPanel({
                             icon={<PaperclipIcon />}
                             activeIcon={<PaperclipIconGold />}
                             label="Files"
+                        />
+                        <TabButton
+                            active={activeTab === 'links'}
+                            onClick={() => setActiveTab('links')}
+                            label="Linki"
                         />
                     </div>
                 </div>
@@ -463,18 +490,98 @@ export function EditTaskPanel({
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-semibold text-white">Pliki</h3>
-                                <button className="px-3 py-1.5 text-xs font-medium text-amber-400 bg-amber-500/10 rounded-lg hover:bg-amber-500/20 transition-colors">
+                                <button
+                                    onClick={() => setShowFilePicker(true)}
+                                    className="px-3 py-1.5 text-xs font-medium text-amber-400 bg-amber-500/10 rounded-lg hover:bg-amber-500/20 transition-colors"
+                                >
                                     + Dodaj plik
                                 </button>
                             </div>
-                            <div className="text-center py-8 text-gray-500">
-                                <PaperclipIcon />
-                                <p className="text-sm mt-2">Brak załączników</p>
-                                <p className="text-xs text-gray-600 mt-1">Przeciągnij i upuść pliki lub kliknij przycisk powyżej</p>
+                            {taskFiles && taskFiles.length > 0 ? (
+                                <div className="space-y-2">
+                                    {taskFiles.map((file) => (
+                                        <div key={file.id} className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
+                                            <PaperclipIcon />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm text-white font-medium truncate">{file.name}</p>
+                                                <p className="text-xs text-gray-500">
+                                                    {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Unknown size'}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => task?.id && file.id && removeFile.mutate({ taskId: task.id, fileId: file.id })}
+                                                className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M18 6L6 18M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                    <PaperclipIcon />
+                                    <p className="text-sm mt-2">Brak załączników</p>
+                                    <p className="text-xs text-gray-600 mt-1">Kliknij przycisk powyżej aby dodać pliki</p>
+                                </div>
+                            )}
+
+                            {/* FilePicker Modal */}
+                            {workspaceSlug && (
+                                <FilePicker
+                                    open={showFilePicker}
+                                    onClose={() => setShowFilePicker(false)}
+                                    onSelectFiles={(files) => {
+                                        if (task?.id && files.length > 0) {
+                                            files.forEach(file => {
+                                                attachFile.mutate({ taskId: task.id, fileId: file.id })
+                                            })
+                                        }
+                                        setShowFilePicker(false)
+                                    }}
+                                    workspaceSlug={workspaceSlug}
+                                />
+                            )}
+                        </div>
+                    )}
+
+                    {/* Links Tab */}
+                    {activeTab === 'links' && (
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-sm font-semibold text-white">Linki</h3>
+                                <button
+                                    onClick={() => setShowLinkInput(true)}
+                                    className="px-3 py-1.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors"
+                                >
+                                    + Dodaj link
+                                </button>
                             </div>
+                            <LinksList
+                                links={links}
+                                onDelete={(linkId) => setLinks(prev => prev.filter(l => l.id !== linkId))}
+                            />
                         </div>
                     )}
                 </div>
+
+                {/* LinkInput Modal */}
+                <LinkInput
+                    open={showLinkInput}
+                    onClose={() => setShowLinkInput(false)}
+                    onAdd={(link) => {
+                        const newLink: TaskLink = {
+                            id: crypto.randomUUID(),
+                            url: link.url,
+                            title: link.title,
+                            addedBy: userId || 'unknown',
+                            addedAt: new Date().toISOString()
+                        }
+                        setLinks(prev => [...prev, newLink])
+                        setShowLinkInput(false)
+                    }}
+                />
 
                 {/* Footer with Save Button */}
                 <div className="flex-none p-6 border-t border-gray-800 flex gap-3">

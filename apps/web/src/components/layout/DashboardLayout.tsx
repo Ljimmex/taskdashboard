@@ -15,12 +15,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
 
             {/* Main Content Area */}
-            <div className={`transition-all ${sidebarOpen ? 'ml-56' : 'ml-0'}`}>
+            <div className={`transition-all flex flex-col h-screen ${sidebarOpen ? 'ml-56' : 'ml-0'}`}>
                 {/* Header */}
                 <Header />
 
                 {/* Page Content */}
-                <main className="p-6">
+                <main className="flex-1 overflow-auto p-6">
                     {children}
                 </main>
             </div>

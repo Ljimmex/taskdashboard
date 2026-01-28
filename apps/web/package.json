@@ -9,7 +9,8 @@
         "preview": "vite preview",
         "lint": "eslint .",
         "typecheck": "tsc --noEmit",
-        "clean": "rm -rf dist .turbo node_modules/.vite"
+        "clean": "rm -rf dist .turbo node_modules/.vite",
+        "deploy": "wrangler pages deploy dist"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",

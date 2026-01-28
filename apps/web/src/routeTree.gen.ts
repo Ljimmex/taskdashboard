@@ -20,6 +20,7 @@ import { Route as WorkspaceSlugIndexRouteImport } from './routes/$workspaceSlug/
 import { Route as InviteInviteIdRouteImport } from './routes/invite/$inviteId'
 import { Route as WorkspaceSlugTeamIndexRouteImport } from './routes/$workspaceSlug/team/index'
 import { Route as WorkspaceSlugProjectsIndexRouteImport } from './routes/$workspaceSlug/projects/index'
+import { Route as WorkspaceSlugMessagesIndexRouteImport } from './routes/$workspaceSlug/messages/index'
 import { Route as WorkspaceSlugFilesIndexRouteImport } from './routes/$workspaceSlug/files/index'
 import { Route as WorkspaceSlugProjectsProjectIdIndexRouteImport } from './routes/$workspaceSlug/projects/$projectId/index'
 
@@ -79,6 +80,12 @@ const WorkspaceSlugProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => WorkspaceSlugRoute,
   } as any)
+const WorkspaceSlugMessagesIndexRoute =
+  WorkspaceSlugMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => WorkspaceSlugRoute,
+  } as any)
 const WorkspaceSlugFilesIndexRoute = WorkspaceSlugFilesIndexRouteImport.update({
   id: '/files/',
   path: '/files/',
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
   '/$workspaceSlug/files': typeof WorkspaceSlugFilesIndexRoute
+  '/$workspaceSlug/messages': typeof WorkspaceSlugMessagesIndexRoute
   '/$workspaceSlug/projects': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
   '/$workspaceSlug/projects/$projectId': typeof WorkspaceSlugProjectsProjectIdIndexRoute
@@ -116,6 +124,7 @@ export interface FileRoutesByTo {
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug': typeof WorkspaceSlugIndexRoute
   '/$workspaceSlug/files': typeof WorkspaceSlugFilesIndexRoute
+  '/$workspaceSlug/messages': typeof WorkspaceSlugMessagesIndexRoute
   '/$workspaceSlug/projects': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
   '/$workspaceSlug/projects/$projectId': typeof WorkspaceSlugProjectsProjectIdIndexRoute
@@ -132,6 +141,7 @@ export interface FileRoutesById {
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
   '/$workspaceSlug/files/': typeof WorkspaceSlugFilesIndexRoute
+  '/$workspaceSlug/messages/': typeof WorkspaceSlugMessagesIndexRoute
   '/$workspaceSlug/projects/': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/team/': typeof WorkspaceSlugTeamIndexRoute
   '/$workspaceSlug/projects/$projectId/': typeof WorkspaceSlugProjectsProjectIdIndexRoute
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
     | '/$workspaceSlug/files'
+    | '/$workspaceSlug/messages'
     | '/$workspaceSlug/projects'
     | '/$workspaceSlug/team'
     | '/$workspaceSlug/projects/$projectId'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/invite/$inviteId'
     | '/$workspaceSlug'
     | '/$workspaceSlug/files'
+    | '/$workspaceSlug/messages'
     | '/$workspaceSlug/projects'
     | '/$workspaceSlug/team'
     | '/$workspaceSlug/projects/$projectId'
@@ -178,6 +190,7 @@ export interface FileRouteTypes {
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
     | '/$workspaceSlug/files/'
+    | '/$workspaceSlug/messages/'
     | '/$workspaceSlug/projects/'
     | '/$workspaceSlug/team/'
     | '/$workspaceSlug/projects/$projectId/'
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSlugProjectsIndexRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
+    '/$workspaceSlug/messages/': {
+      id: '/$workspaceSlug/messages/'
+      path: '/messages'
+      fullPath: '/$workspaceSlug/messages'
+      preLoaderRoute: typeof WorkspaceSlugMessagesIndexRouteImport
+      parentRoute: typeof WorkspaceSlugRoute
+    }
     '/$workspaceSlug/files/': {
       id: '/$workspaceSlug/files/'
       path: '/files'
@@ -293,6 +313,7 @@ declare module '@tanstack/react-router' {
 interface WorkspaceSlugRouteChildren {
   WorkspaceSlugIndexRoute: typeof WorkspaceSlugIndexRoute
   WorkspaceSlugFilesIndexRoute: typeof WorkspaceSlugFilesIndexRoute
+  WorkspaceSlugMessagesIndexRoute: typeof WorkspaceSlugMessagesIndexRoute
   WorkspaceSlugProjectsIndexRoute: typeof WorkspaceSlugProjectsIndexRoute
   WorkspaceSlugTeamIndexRoute: typeof WorkspaceSlugTeamIndexRoute
   WorkspaceSlugProjectsProjectIdIndexRoute: typeof WorkspaceSlugProjectsProjectIdIndexRoute
@@ -301,6 +322,7 @@ interface WorkspaceSlugRouteChildren {
 const WorkspaceSlugRouteChildren: WorkspaceSlugRouteChildren = {
   WorkspaceSlugIndexRoute: WorkspaceSlugIndexRoute,
   WorkspaceSlugFilesIndexRoute: WorkspaceSlugFilesIndexRoute,
+  WorkspaceSlugMessagesIndexRoute: WorkspaceSlugMessagesIndexRoute,
   WorkspaceSlugProjectsIndexRoute: WorkspaceSlugProjectsIndexRoute,
   WorkspaceSlugTeamIndexRoute: WorkspaceSlugTeamIndexRoute,
   WorkspaceSlugProjectsProjectIdIndexRoute:

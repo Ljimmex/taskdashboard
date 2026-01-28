@@ -23,7 +23,7 @@ interface Project {
 interface CreateTaskPanelProps {
     isOpen: boolean
     onClose: () => void
-    onCreate: (task: NewTaskData) => void
+    onCreate: (task: NewTaskData) => Promise<{ id: string } | null>
     defaultStatus?: string
     defaultProject?: string
     defaultType?: 'task' | 'meeting'
@@ -134,7 +134,7 @@ export function CreateTaskPanel({
     const [subtasks, setSubtasks] = useState<{ title: string; description: string; status: string; priority: string }[]>([])
     const [newSubtask, setNewSubtask] = useState('')
     const [editingSubtaskIndex, setEditingSubtaskIndex] = useState<number | null>(null)
-    const [attachments, setAttachments] = useState<{ name: string; size: number; type: string }[]>([])
+    const [attachments, setAttachments] = useState<File[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const [createMore, setCreateMore] = useState(false)
     const [currentStages, setCurrentStages] = useState<any[]>([])
@@ -253,10 +253,10 @@ export function CreateTaskPanel({
     }
 
     // Handle create
-    const handleCreate = () => {
+    const handleCreate = async () => {
         if (!title.trim()) return
 
-        onCreate({
+        const newTask = await onCreate({
             title: title.trim(),
             description: description.trim(),
             type: itemType,
@@ -271,6 +271,42 @@ export function CreateTaskPanel({
             subtasks: itemType === 'task' ? subtasks.filter(s => s.title.trim()) : [],
         })
 
+        // Upload files if task was created successfully
+        if (newTask?.id && attachments.length > 0) {
+            console.log(`Uploading ${attachments.length} files to task ${newTask.id}`)
+            try {
+                // Wait for all uploads to complete before closing panel
+                const uploadPromises = attachments.map(async (file, index) => {
+                    console.log(`Starting upload ${index + 1}/${attachments.length}: ${file.name}`)
+                    const formData = new FormData()
+                    formData.append('file', file)
+
+                    const response = await fetch(`/api/tasks/${newTask.id}/upload`, {
+                        method: 'POST',
+                        headers: {
+                            'x-user-id': userId || ''
+                        },
+                        body: formData
+                    })
+
+                    if (!response.ok) {
+                        console.error(`Upload failed for ${file.name}:`, await response.text())
+                        throw new Error(`Upload failed: ${response.statusText}`)
+                    }
+
+                    console.log(`Upload ${index + 1}/${attachments.length} complete: ${file.name}`)
+                    return response
+                })
+
+                await Promise.all(uploadPromises)
+                console.log('All uploads completed successfully')
+            } catch (error) {
+                console.error('Error uploading files:', error)
+                alert('Nie udało się zauploadować niektórych plików. Sprawdź konsolę.')
+            }
+        }
+
+        // Only reset and close AFTER uploads complete
         if (createMore) {
             resetForm()
             setTimeout(() => titleInputRef.current?.focus(), 100)
@@ -780,11 +816,17 @@ export function CreateTaskPanel({
                                     className="hidden"
                                     onChange={(e) => {
                                         if (e.target.files) {
-                                            const newFiles = Array.from(e.target.files).map(f => ({
-                                                name: f.name,
-                                                size: f.size,
-                                                type: f.type
-                                            }))
+                                            const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+                                            const newFiles = Array.from(e.target.files)
+
+                                            // Validate file sizes
+                                            const oversizedFiles = newFiles.filter(f => f.size > MAX_FILE_SIZE)
+                                            if (oversizedFiles.length > 0) {
+                                                alert(`Następujące pliki są za duże (max 100MB):\n${oversizedFiles.map(f => `${f.name} (${(f.size / 1024 / 1024).toFixed(1)}MB)`).join('\n')}`)
+                                                e.target.value = ''
+                                                return
+                                            }
+
                                             setAttachments(prev => [...prev, ...newFiles])
                                         }
                                         e.target.value = ''
@@ -838,11 +880,16 @@ export function CreateTaskPanel({
                                         e.preventDefault()
                                         setIsDragging(false)
                                         if (e.dataTransfer.files) {
-                                            const newFiles = Array.from(e.dataTransfer.files).map(f => ({
-                                                name: f.name,
-                                                size: f.size,
-                                                type: f.type
-                                            }))
+                                            const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
+                                            const newFiles = Array.from(e.dataTransfer.files)
+
+                                            // Validate file sizes
+                                            const oversizedFiles = newFiles.filter(f => f.size > MAX_FILE_SIZE)
+                                            if (oversizedFiles.length > 0) {
+                                                alert(`Następujące pliki są za duże (max 100MB):\n${oversizedFiles.map(f => `${f.name} (${(f.size / 1024 / 1024).toFixed(1)}MB)`).join('\n')}`)
+                                                return
+                                            }
+
                                             setAttachments(prev => [...prev, ...newFiles])
                                         }
                                     }}
@@ -859,7 +906,7 @@ export function CreateTaskPanel({
                                         <p className={`text-sm transition-colors ${isDragging ? 'text-amber-400' : 'text-gray-500'}`}>
                                             {isDragging ? 'Upuść pliki tutaj...' : 'Przeciągnij pliki lub kliknij aby dodać'}
                                         </p>
-                                        <p className="text-xs text-gray-600">PNG, JPG, PDF do 10MB</p>
+                                        <p className="text-xs text-gray-600">PNG, JPG, PDF, DOCX do 100MB</p>
                                     </div>
                                 </div>
                             </div>

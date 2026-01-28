@@ -46,7 +46,21 @@ app.get('/', async (c) => {
         .where(and(...conditions))
         .orderBy(desc(folders.createdAt))
 
-    return c.json({ data: results })
+    // Calculate folder sizes by summing file sizes
+    const { files } = await import('../../db/schema/files')
+    const foldersWithSizes = await Promise.all(results.map(async (folder) => {
+        const sizeResult = await db
+            .select({ totalSize: sql<number>`COALESCE(SUM(${files.size}), 0)` })
+            .from(files)
+            .where(eq(files.folderId, folder.id))
+
+        return {
+            ...folder,
+            size: Number(sizeResult[0]?.totalSize || 0)
+        }
+    }))
+
+    return c.json({ data: foldersWithSizes })
 })
 
 // -----------------------------------------------------------------------------

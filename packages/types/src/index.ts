@@ -62,7 +62,6 @@ export type ProjectStatus = 'active' | 'archived' | 'completed'
 export interface Task {
     id: string
     projectId: string
-    parentId: string | null
     title: string
     description: string | null
     status: TaskStatus
@@ -70,23 +69,12 @@ export interface Task {
     assigneeId: string | null
     reporterId: string
     dueDate: Date | null
-    estimatedHours: number | null
-    progress: number
-    position: number
     createdAt: Date
     updatedAt: Date
 }
 
-export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done'
+export type TaskStatus = 'todo' | 'inProgress' | 'done'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
-
-export interface TaskComment {
-    id: string
-    taskId: string
-    userId: string
-    content: string
-    createdAt: Date
-}
 
 // =============================================================================
 // FILE TYPES
@@ -95,53 +83,47 @@ export interface TaskComment {
 export interface FileRecord {
     id: string
     name: string
-    path: string // Keeping path for backward compatibility or R2 key
-    r2Key?: string | null
+    path: string
     size: number | null
     mimeType: string | null
-    fileType?: string | null
-    thumbnailUrl?: string | null
-    isArchived: boolean
-    workspaceId?: string | null
-    folderId?: string | null
-    uploadedBy: string | null
-    teamId: string | null
-    taskId: string | null
-    createdAt: Date
-    updatedAt: Date
+    uploadedBy: string
+    workspaceId: string
+    folderId: string | null
+    createdAt: Date | string
+    updatedAt?: Date | string
 }
 
 export interface Folder {
     id: string
     name: string
-    workspaceId: string
     parentId: string | null
-    createdAt: Date
-    updatedAt: Date
-    createdById: string | null
+    workspaceId: string
+    createdAt: Date | string
 }
 
 // =============================================================================
-// MESSAGE TYPES
+// WORKSPACE TYPES
 // =============================================================================
 
-export interface Conversation {
+export interface Workspace {
     id: string
-    teamId: string
-    name: string | null
-    type: ConversationType
+    name: string
+    slug: string
+    description?: string
     createdAt: Date
 }
 
-export type ConversationType = 'direct' | 'group' | 'channel'
+// =============================================================================
+// TASK LINK TYPES
+// =============================================================================
 
-export interface Message {
+export interface TaskLink {
     id: string
-    conversationId: string
-    senderId: string
-    content: string
-    readAt: Date | null
-    createdAt: Date
+    url: string
+    title?: string
+    description?: string
+    addedBy: string
+    addedAt: string
 }
 
 // =============================================================================
@@ -151,14 +133,13 @@ export interface Message {
 export interface CalendarEvent {
     id: string
     title: string
-    description: string | null
-    startAt: Date
-    endAt: Date
-    allDay: boolean
-    recurrence: RecurrenceRule | null
-    taskId: string | null
-    teamId: string
-    createdBy: string
+    description?: string
+    startDate: Date
+    endDate?: Date
+    allDay?: boolean
+    location?: string
+    attendees?: string[]
+    recurrence?: RecurrenceRule
     createdAt: Date
 }
 
@@ -167,6 +148,60 @@ export interface RecurrenceRule {
     interval: number
     endDate?: Date
     count?: number
+}
+
+// =============================================================================
+// CONVERSATION & MESSAGE TYPES
+// =============================================================================
+
+export interface Conversation {
+    id: string
+    teamId: string
+    workspaceId?: string
+    name?: string
+    description?: string
+    type: 'direct' | 'group' | 'channel'
+    isPrivate: boolean
+    messages: ConversationMessage[]
+    participants: string[]
+    createdBy: string
+    createdAt: string
+    updatedAt: string
+    lastMessageAt?: string
+}
+
+export interface ConversationMessage {
+    id: string
+    senderId: string
+    content: string
+    timestamp: string
+    edited: boolean
+    editedAt?: string
+    reactions: MessageReaction[]
+    attachments: MessageAttachment[]
+}
+
+export interface MessageReaction {
+    emoji: string
+    userId: string
+}
+
+export interface MessageAttachment {
+    id: string
+    url: string
+    name: string
+    size?: number
+    mimeType?: string
+}
+
+export interface EncryptionKey {
+    id: string
+    workspaceId: string
+    publicKey: string
+    encryptedPrivateKey: string
+    createdAt: string
+    rotatedAt?: string
+    expiresAt?: string
 }
 
 // =============================================================================

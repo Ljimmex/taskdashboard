@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, pgEnum, pgPolicy } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, text, timestamp, pgEnum, pgPolicy, jsonb, boolean } from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
 import { users } from './users'
 import { teams } from './teams'
@@ -10,53 +10,52 @@ import { teams } from './teams'
 export const conversationTypeEnum = pgEnum('conversation_type', ['direct', 'group', 'channel'])
 
 // =============================================================================
-// CONVERSATIONS TABLE
+// CONVERSATIONS TABLE (with JSONB messages)
 // =============================================================================
 
 export const conversations = pgTable('conversations', {
     id: uuid('id').primaryKey().defaultRandom(),
-    teamId: uuid('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    teamId: uuid('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+    workspaceId: text('workspace_id'), // For workspace-level conversations
     name: varchar('name', { length: 100 }),
+    description: text('description'),
     type: conversationTypeEnum('type').default('direct').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Team members can view conversations", {
-        for: "select",
-        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
-    }),
-    pgPolicy("Team members can create conversations", {
-        for: "insert",
-        withCheck: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
-    }),
-])
+    isPrivate: boolean('is_private').default(false).notNull(),
 
-// =============================================================================
-// MESSAGES TABLE
-// =============================================================================
+    // JSONB array of message objects
+    messages: jsonb('messages').default([]).$type<Array<{
+        id: string
+        senderId: string
+        content: string
+        timestamp: string
+        edited: boolean
+        editedAt?: string
+        reactions: Array<{ emoji: string; userId: string }>
+        attachments: Array<{ id: string; url: string; name: string; size?: number; mimeType?: string }>
+    }>>(),
 
-export const messages = pgTable('messages', {
-    id: uuid('id').primaryKey().defaultRandom(),
-    conversationId: uuid('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
-    senderId: uuid('sender_id').notNull().references(() => users.id),
-    content: text('content').notNull(),
-    readAt: timestamp('read_at'),
+    // JSONB array of participant user IDs
+    participants: jsonb('participants').default([]).$type<string[]>(),
+
+    createdBy: uuid('created_by').notNull().references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    lastMessageAt: timestamp('last_message_at'),
 }, (_table) => [
-    pgPolicy("Team members can view messages", {
+    // RLS Policy: Members can view conversations they're part of
+    pgPolicy("Members can view their conversations", {
         for: "select",
-        using: sql`conversation_id IN (
-            SELECT id FROM conversations WHERE team_id IN (
-                SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
-            )
-        )`,
+        using: sql`auth.uid()::text = ANY(SELECT jsonb_array_elements_text(participants)) OR created_by = auth.uid()::text`,
     }),
-    pgPolicy("Team members can send messages", {
+    // RLS Policy: Members can update (add messages to) their conversations
+    pgPolicy("Members can add messages to their conversations", {
+        for: "update",
+        using: sql`auth.uid()::text = ANY(SELECT jsonb_array_elements_text(participants)) OR created_by = auth.uid()::text`,
+    }),
+    // RLS Policy: Workspace members can create conversations
+    pgPolicy("Workspace members can create conversations", {
         for: "insert",
-        withCheck: sql`sender_id = auth.uid()::text`,
-    }),
-    pgPolicy("Sender can delete own messages", {
-        for: "delete",
-        using: sql`sender_id = auth.uid()::text`,
+        withCheck: sql`EXISTS (SELECT 1 FROM workspace_members WHERE workspace_id = conversations.workspace_id AND user_id = auth.uid()::text)`,
     }),
 ])
 
@@ -64,14 +63,9 @@ export const messages = pgTable('messages', {
 // RELATIONS
 // =============================================================================
 
-export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+export const conversationsRelations = relations(conversations, ({ one }) => ({
     team: one(teams, { fields: [conversations.teamId], references: [teams.id] }),
-    messages: many(messages),
-}))
-
-export const messagesRelations = relations(messages, ({ one }) => ({
-    conversation: one(conversations, { fields: [messages.conversationId], references: [conversations.id] }),
-    sender: one(users, { fields: [messages.senderId], references: [users.id] }),
+    createdByUser: one(users, { fields: [conversations.createdBy], references: [users.id] }),
 }))
 
 // =============================================================================
@@ -80,5 +74,21 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 
 export type Conversation = typeof conversations.$inferSelect
 export type NewConversation = typeof conversations.$inferInsert
-export type Message = typeof messages.$inferSelect
-export type NewMessage = typeof messages.$inferInsert
+
+// JSONB Message Type
+export interface ConversationMessage {
+    id: string
+    senderId: string
+    content: string
+    timestamp: string
+    edited: boolean
+    editedAt?: string
+    reactions: Array<{ emoji: string; userId: string }>
+    attachments: Array<{
+        id: string
+        url: string
+        name: string
+        size?: number
+        mimeType?: string
+    }>
+}

@@ -9,6 +9,8 @@ import {
     canDeleteWorkspace,
     type WorkspaceRole
 } from '../../lib/permissions'
+import { encryptionKeys } from '../../db/schema/encryption'
+import { decryptPrivateKey } from '../../lib/server-encryption'
 
 export const workspacesRoutes = new Hono()
 
@@ -251,5 +253,141 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
         return c.json({ message: 'Member removed from workspace' })
     } catch (error) {
         return c.json({ error: 'Failed to remove member', details: String(error) }, 500)
+    }
+})
+
+// GET /api/workspaces/:id/keys - Get encryption keys (member access)
+workspacesRoutes.get('/:id/keys', async (c) => {
+    const workspaceId = c.req.param('id')
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+
+    if (!session?.user) {
+        return c.json({ error: 'Unauthorized' }, 401)
+    }
+    const userId = session.user.id
+
+    try {
+        // Check if user is a member
+        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+        if (!workspaceRole) {
+            return c.json({ error: 'Access denied' }, 403)
+        }
+
+        // Fetch keys from DB
+        const keys = await db.select()
+            .from(encryptionKeys)
+            .where(eq(encryptionKeys.workspaceId, workspaceId))
+            .limit(1)
+
+        if (keys.length === 0) {
+            return c.json({ error: 'Encryption keys not found for this workspace' }, 404)
+        }
+
+        const keyRecord = keys[0]
+
+        // Decrypt the private key
+        let decryptedPrivateKey: string
+        try {
+            decryptedPrivateKey = decryptPrivateKey(keyRecord.encryptedPrivateKey)
+        } catch (decError) {
+            console.error('Failed to decrypt private key for workspace', workspaceId, decError)
+            return c.json({ error: 'Server error: keys corrupted' }, 500)
+        }
+
+        return c.json({
+            data: {
+                workspaceId: workspaceId,
+                publicKey: keyRecord.publicKey,
+                privateKey: decryptedPrivateKey,
+                expiresAt: keyRecord.expiresAt
+            }
+        })
+    } catch (error) {
+        return c.json({ error: 'Failed to fetch encryption keys', details: String(error) }, 500)
+    }
+})
+
+// POST /api/workspaces/:id/rotate-keys - Rotate workspace encryption keys (owner only)
+workspacesRoutes.post('/:id/rotate-keys', async (c) => {
+    const workspaceId = c.req.param('id')
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+
+    if (!session?.user) {
+        return c.json({ error: 'Unauthorized' }, 401)
+    }
+    const userId = session.user.id
+
+    try {
+        // Only workspace owner can rotate keys
+        const workspace = await db.query.workspaces.findFirst({
+            where: (ws, { eq }) => eq(ws.id, workspaceId)
+        })
+
+        if (!workspace || workspace.ownerId !== userId) {
+            return c.json({ error: 'Only workspace owner can rotate keys' }, 403)
+        }
+
+        // Get old keys
+        const oldKeys = await db.select()
+            .from(encryptionKeys)
+            .where(eq(encryptionKeys.workspaceId, workspaceId))
+            .limit(1)
+
+        if (oldKeys.length === 0) {
+            return c.json({ error: 'No existing keys to rotate' }, 404)
+        }
+
+        const oldKeyRecord = oldKeys[0]
+        const oldPrivateKey = decryptPrivateKey(oldKeyRecord.encryptedPrivateKey)
+
+        // Generate new RSA key pair
+        const { generateKeyPairSync, randomBytes, createCipheriv, scryptSync } = await import('node:crypto')
+
+        const { publicKey: newPublicKey, privateKey: newPrivateKey } = generateKeyPairSync('rsa', {
+            modulusLength: 2048,
+            publicKeyEncoding: { type: 'spki', format: 'pem' },
+            privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+        })
+
+        // Encrypt new private key
+        const SECRET = process.env.BETTER_AUTH_SECRET || 'default-secret'
+        const masterKey = scryptSync(SECRET, 'salt', 32)
+        const iv = randomBytes(16)
+        const cipher = createCipheriv('aes-256-gcm', masterKey, iv)
+
+        let encrypted = cipher.update(newPrivateKey, 'utf8', 'hex')
+        encrypted += cipher.final('hex')
+        const authTag = cipher.getAuthTag().toString('hex')
+        const encryptedNewPrivateKey = `${iv.toString('hex')}:${authTag}:${encrypted}`
+
+        // Calculate new expiration (90 days from now)
+        const newExpiresAt = new Date()
+        newExpiresAt.setDate(newExpiresAt.getDate() + 90)
+
+        // Update encryption_keys table
+        await db.update(encryptionKeys)
+            .set({
+                publicKey: newPublicKey,
+                encryptedPrivateKey: encryptedNewPrivateKey,
+                rotatedAt: new Date(),
+                expiresAt: newExpiresAt
+            })
+            .where(eq(encryptionKeys.id, oldKeyRecord.id))
+
+        console.log(`✅ Keys rotated for workspace ${workspaceId}`)
+
+        // Return old private key (for re-encryption) + new keys
+        return c.json({
+            data: {
+                oldPrivateKey: oldPrivateKey,
+                oldPublicKey: oldKeyRecord.publicKey,
+                newPublicKey: newPublicKey,
+                newPrivateKey: newPrivateKey, // Frontend needs this to save to IndexedDB
+                expiresAt: newExpiresAt
+            }
+        })
+    } catch (error) {
+        console.error('Key rotation error:', error)
+        return c.json({ error: 'Failed to rotate keys', details: String(error) }, 500)
     }
 })

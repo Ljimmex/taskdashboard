@@ -2,16 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { usePanelStore } from '../../../../lib/panelStore'
 import { StatusBadge } from '../components/StatusBadge'
 import type { Label } from '../../labels/LabelBadge'
-import {
-    DocumentIcon,
-    DocumentIconGold,
-    CommentIcon,
-    CommentIconGold,
-    PaperclipIcon,
-    PaperclipIconGold,
-    HistoryIcon,
-    HistoryIconGold,
-} from '../components/TaskIcons'
+import { DocumentIcon, DocumentIconGold, CommentIcon, CommentIconGold, PaperclipIcon, PaperclipIconGold, HistoryIcon, HistoryIconGold } from '../components/TaskIcons'
+import { LinksList } from '../links/LinksList'
+import type { TaskLink } from '@taskdashboard/types'
 import { CommentList } from '../../comments/CommentList'
 import { CommentInput } from '../../comments/CommentInput'
 import { ActivityFeed, type Activity } from '@/components/common/ActivityFeed'
@@ -19,6 +12,7 @@ import type { Comment } from '../../comments/CommentList'
 import type { TaskCardProps } from '../components/TaskCard'
 import { SubtaskList, type Subtask } from '../subtasks/SubtaskList'
 import type { Assignee } from '../components/AssigneePicker'
+import { useTaskFiles } from '../../../../hooks/useTaskFiles'
 
 // Subtask type is imported from SubtaskList
 
@@ -37,7 +31,6 @@ interface TaskDetailsPanelProps {
     onClose: () => void
     subtasks?: Subtask[]
     comments?: Comment[]
-    sharedFiles?: SharedFile[]
     onSubtaskToggle?: (subtaskId: string) => void
     onSubtasksChange?: (subtasks: Subtask[]) => void
     onAddComment?: (content: string, parentId?: string | null) => void
@@ -103,13 +96,13 @@ const TabButton = ({
 }) => (
     <button
         onClick={onClick}
-        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 ${active
-            ? 'text-[#F2CE88] border-[#F2CE88]'
-            : 'text-gray-400 border-transparent hover:text-gray-300'
+        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${active
+            ? 'bg-amber-500/10 text-amber-500'
+            : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
             }`}
     >
         {active ? activeIcon : icon}
-        {label}
+        <span>{label}</span>
     </button>
 )
 
@@ -140,7 +133,6 @@ export function TaskDetailsPanel({
     onClose,
     subtasks = [],
     comments: propComments = [],
-    sharedFiles = [],
     activities: propActivities = [],
     onSubtaskToggle,
     onAddComment,
@@ -151,8 +143,40 @@ export function TaskDetailsPanel({
     stages = [],
 }: TaskDetailsPanelProps) {
     const [activeTab, setActiveTab] = useState<'subtasks' | 'comments' | 'shared' | 'activity'>(task?.type === 'meeting' ? 'comments' : 'subtasks')
+    const [sharedView, setSharedView] = useState<'files' | 'links'>('files')
     const panelRef = useRef<HTMLDivElement>(null)
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
+
+    // Fetch task files
+    const { data: taskFiles = [] } = useTaskFiles(task?.id)
+
+    // Extract links from task
+    const taskLinks = (task as any)?.links as TaskLink[] || []
+
+    // Map task files to SharedFile format
+    const mappedFiles: SharedFile[] = taskFiles.map(f => {
+        // Determine file type from mime type
+        let fileType: 'doc' | 'pdf' | 'image' | 'other' = 'other'
+        if (f.mimeType?.includes('pdf')) fileType = 'pdf'
+        else if (f.mimeType?.startsWith('image/')) fileType = 'image'
+        else if (f.mimeType?.includes('document') || f.mimeType?.includes('word')) fileType = 'doc'
+
+        return {
+            id: f.id,
+            name: f.name,
+            type: fileType,
+            dateShared: new Date(f.createdAt).toLocaleDateString('pl-PL', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            }),
+            sharedBy: {
+                id: f.uploader?.id || 'unknown',
+                name: f.uploader?.name || 'Unknown',
+                avatar: f.uploader?.image || undefined
+            }
+        }
+    })
 
     // Sync isOpen with global panel store
     useEffect(() => {
@@ -487,52 +511,78 @@ export function TaskDetailsPanel({
                     {/* Shared Tab */}
                     {activeTab === 'shared' && (
                         <div className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-sm font-semibold text-white">Shared</h3>
-                                <div className="flex items-center gap-2">
-                                    <button className="px-3 py-1 text-xs font-medium text-white bg-gray-800 rounded-full">Files</button>
-                                    <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors">Links</button>
-                                </div>
+                            {/* Files/Links Toggle */}
+                            <div className="flex items-center gap-4 mb-4 border-b border-gray-800">
+                                <button
+                                    onClick={() => setSharedView('files')}
+                                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${sharedView === 'files'
+                                            ? 'text-amber-500 border-amber-500'
+                                            : 'text-gray-400 border-transparent hover:text-gray-300'
+                                        }`}
+                                >
+                                    Files
+                                </button>
+                                <button
+                                    onClick={() => setSharedView('links')}
+                                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${sharedView === 'links'
+                                            ? 'text-amber-500 border-amber-500'
+                                            : 'text-gray-400 border-transparent hover:text-gray-300'
+                                        }`}
+                                >
+                                    Links
+                                </button>
                             </div>
 
-                            {/* Files Table */}
-                            <div className="rounded-xl overflow-hidden">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="text-left bg-gray-800/50 rounded-xl">
-                                            <th className="px-4 py-3 text-xs font-medium text-gray-400 first:rounded-l-xl">Name</th>
-                                            <th className="px-4 py-3 text-xs font-medium text-gray-400">Date Shared</th>
-                                            <th className="px-4 py-3 text-xs font-medium text-gray-400">Shared By</th>
-                                            <th className="px-4 py-3 w-10 last:rounded-r-xl"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {sharedFiles.map(file => (
-                                            <tr key={file.id} className="hover:bg-gray-800/30 transition-colors">
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <FileTypeIcon type={file.type} />
-                                                        <span className="text-sm text-white">{file.name}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 text-sm text-gray-400">{file.dateShared}</td>
-                                                <td className="px-4 py-3">
-                                                    <Avatar name={file.sharedBy.name} />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <button className="p-1 text-gray-500 hover:text-amber-400 transition-colors">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <path d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15" />
-                                                            <path d="M7 10L12 15L17 10" />
-                                                            <path d="M12 15V3" />
-                                                        </svg>
-                                                    </button>
-                                                </td>
+                            {/* Files View */}
+                            {sharedView === 'files' && (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="text-left text-xs text-gray-500 border-b border-gray-800">
+                                                <th className="pb-3 font-medium">Name</th>
+                                                <th className="pb-3 font-medium">Shared by</th>
+                                                <th className="pb-3 font-medium">Date</th>
+                                                <th className="pb-3 font-medium w-12"></th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody>
+                                            {mappedFiles.map((file) => (
+                                                <tr key={file.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                                    <td className="py-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <FileTypeIcon type={file.type} />
+                                                            <span className="text-sm text-white font-medium">{file.name}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <Avatar name={file.sharedBy.name} size="sm" />
+                                                            <span className="text-sm text-gray-400">{file.sharedBy.name}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <span className="text-sm text-gray-500">{file.dateShared}</span>
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
+                                                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15" />
+                                                                <path d="M7 10L12 15L17 10" />
+                                                                <path d="M12 15V3" />
+                                                            </svg>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {/* Links View */}
+                            {sharedView === 'links' && (
+                                <LinksList links={taskLinks} readOnly={true} />
+                            )}
                         </div>
                     )}
 

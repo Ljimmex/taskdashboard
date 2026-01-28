@@ -24,6 +24,7 @@ import { filtersRoutes } from './modules/filters/routes'
 import { templatesRoutes } from './modules/templates/routes'
 import filesRoutes from './modules/files/routes'
 import foldersRoutes from './modules/folders/routes'
+import conversationsRoutes from './modules/conversations/routes'
 
 
 // Create Hono app (using regular Hono instead of OpenAPIHono for compatibility)
@@ -114,6 +115,7 @@ app.route('/api/industry-templates', industryTemplatesRoutes)
 app.route('/api/projects', projectStagesRoutes)  // Adds stages endpoints under /api/projects/:id/stages
 app.route('/api/filters', filtersRoutes)
 app.route('/api/templates', templatesRoutes)
+app.route('/api/conversations', conversationsRoutes)
 
 
 // =============================================================================

@@ -11,11 +11,16 @@ interface FilesHeaderProps {
     fileTypeFilter: string
     onFileTypeFilterChange: (value: string) => void
     // Date Range
+    // Date Range
     startDate: Date | null
     endDate: Date | null
     onDateRangeChange: (start: Date | null, end: Date | null) => void
     // Upload
     onUploadClick: () => void
+    // Sort
+    sortBy: 'name' | 'size' | 'date' | 'type'
+    sortOrder: 'asc' | 'desc'
+    onSortChange: (field: 'name' | 'size' | 'date' | 'type') => void
 }
 
 const FILE_TYPES = [
@@ -25,6 +30,13 @@ const FILE_TYPES = [
     { value: 'spreadsheet', label: 'XLS' },
     { value: 'image', label: 'Images' },
     { value: 'video', label: 'Videos' },
+]
+
+const SORT_OPTIONS = [
+    { value: 'date', label: 'Date' },
+    { value: 'name', label: 'Name' },
+    { value: 'size', label: 'Size' },
+    { value: 'type', label: 'Type' },
 ]
 
 const DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
@@ -42,6 +54,9 @@ export function FilesHeader({
     endDate,
     onDateRangeChange,
     onUploadClick,
+    sortBy,
+    sortOrder,
+    onSortChange,
 }: FilesHeaderProps) {
     // Date Range Picker state
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
@@ -55,6 +70,12 @@ export function FilesHeader({
     const typeButtonRef = useRef<HTMLButtonElement>(null)
     const typeDropdownRef = useRef<HTMLDivElement>(null)
     const [typePosition, setTypePosition] = useState({ top: 0, left: 0 })
+
+    // Sort dropdown state
+    const [isSortOpen, setIsSortOpen] = useState(false)
+    const sortButtonRef = useRef<HTMLButtonElement>(null)
+    const sortDropdownRef = useRef<HTMLDivElement>(null)
+    const [sortPosition, setSortPosition] = useState({ top: 0, left: 0 })
 
     const formatDate = (date: Date | null) => {
         if (!date) return '--.--.--'
@@ -77,6 +98,14 @@ export function FilesHeader({
         }
     }, [isTypeOpen])
 
+    // Sort dropdown position
+    useEffect(() => {
+        if (isSortOpen && sortButtonRef.current) {
+            const rect = sortButtonRef.current.getBoundingClientRect()
+            setSortPosition({ top: rect.bottom + 8, left: rect.left })
+        }
+    }, [isSortOpen])
+
     // Close dropdowns on click outside
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -88,6 +117,10 @@ export function FilesHeader({
             if (typeButtonRef.current && !typeButtonRef.current.contains(target) &&
                 typeDropdownRef.current && !typeDropdownRef.current.contains(target)) {
                 setIsTypeOpen(false)
+            }
+            if (sortButtonRef.current && !sortButtonRef.current.contains(target) &&
+                sortDropdownRef.current && !sortDropdownRef.current.contains(target)) {
+                setIsSortOpen(false)
             }
         }
         document.addEventListener('mousedown', handleClickOutside)
@@ -188,6 +221,7 @@ export function FilesHeader({
     }
 
     const selectedTypeLabel = FILE_TYPES.find(t => t.value === fileTypeFilter)?.label || 'All type'
+    const selectedSortLabel = SORT_OPTIONS.find(s => s.value === sortBy)?.label || 'Date'
 
     return (
         <div className="flex items-center justify-between px-6 py-4">
@@ -211,6 +245,16 @@ export function FilesHeader({
                 >
                     <span>{selectedTypeLabel}</span>
                     <ChevronDown size={14} />
+                </button>
+
+                {/* Sort Dropdown */}
+                <button
+                    ref={sortButtonRef}
+                    onClick={() => setIsSortOpen(!isSortOpen)}
+                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[#1a1a24] text-gray-400 hover:text-white transition-colors"
+                >
+                    <span>Sort by: {selectedSortLabel}</span>
+                    <ChevronDown size={14} className={`transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
                 </button>
             </div>
 
@@ -303,6 +347,38 @@ export function FilesHeader({
                                 }`}
                         >
                             {type.label}
+                        </button>
+                    ))}
+                </div>,
+                document.body
+            )}
+
+            {/* Sort Dropdown */}
+            {isSortOpen && createPortal(
+                <div
+                    ref={sortDropdownRef}
+                    className="fixed bg-[#16161f] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[9999] py-2 min-w-32 animate-in fade-in zoom-in duration-200"
+                    style={{ top: `${sortPosition.top}px`, left: `${sortPosition.left}px` }}
+                >
+                    {SORT_OPTIONS.map(option => (
+                        <button
+                            key={option.value}
+                            onClick={() => {
+                                onSortChange(option.value as any)
+                                setIsSortOpen(false)
+                            }}
+                            className={`w-full px-4 py-2 text-left text-sm transition-colors flex items-center justify-between group ${sortBy === option.value
+                                ? 'text-[#F2CE88] bg-amber-500/10'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                                }`}
+                        >
+                            <span>{option.label}</span>
+                            {sortBy === option.value && (
+                                <ChevronDown
+                                    size={14}
+                                    className={`transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`}
+                                />
+                            )}
                         </button>
                     ))}
                 </div>,

@@ -96,12 +96,21 @@ tasksRoutes.get('/', async (c) => {
         })
 
         // Map data to include counts for frontend
-        const dataWithCounts = result.map(task => ({
-            ...task,
-            subtasksCount: task.subtasks?.length || 0,
-            subtasksCompleted: task.subtasks?.filter(c => c.isCompleted || c.status === 'done').length || 0,
-            commentsCount: task.comments?.length || 0,
-            assignee: task.assignee || null
+        const dataWithCounts = await Promise.all(result.map(async task => {
+            // Count files attached to this task
+            const fileCount = await db.query.files.findMany({
+                where: (f, { eq }) => eq(f.taskId, task.id),
+                columns: { id: true }
+            })
+
+            return {
+                ...task,
+                subtasksCount: task.subtasks?.length || 0,
+                subtasksCompleted: task.subtasks?.filter(c => c.isCompleted || c.status === 'done').length || 0,
+                commentsCount: task.comments?.length || 0,
+                attachmentCount: fileCount.length,
+                assignee: task.assignee || null
+            }
         }))
 
         return c.json({ success: true, data: dataWithCounts })
@@ -267,6 +276,7 @@ tasksRoutes.post('/', async (c) => {
             startDate: body.startDate ? new Date(body.startDate) : null,
             meetingLink: body.meetingLink || null,
             estimatedHours: body.estimatedHours || null,
+            links: body.links || [],
         }
 
         const [created] = await db.insert(tasks).values(newTask).returning()
@@ -364,6 +374,7 @@ tasksRoutes.patch('/:id', async (c) => {
         if (body.dueDate !== undefined) updateData.dueDate = body.dueDate ? new Date(body.dueDate) : null
         if (body.startDate !== undefined) updateData.startDate = body.startDate ? new Date(body.startDate) : null
         if (body.meetingLink !== undefined) updateData.meetingLink = body.meetingLink
+        if (body.links !== undefined) updateData.links = body.links
         if (body.type !== undefined) updateData.type = body.type
         if (body.estimatedHours !== undefined) updateData.estimatedHours = body.estimatedHours
         if (body.progress !== undefined) updateData.progress = body.progress
@@ -890,5 +901,275 @@ tasksRoutes.post('/bulk/archive', async (c) => {
     } catch (error) {
         console.error('Error bulk archiving tasks:', error)
         return c.json({ success: false, error: 'Failed to archive tasks' }, 500)
+    }
+})
+// Add at the end of apps/api/src/modules/tasks/routes.ts, before the export
+
+// =============================================================================
+// TASK FILES (5.33)
+// =============================================================================
+
+// GET /api/tasks/:id/files - Get all files attached to task
+tasksRoutes.get('/:id/files', async (c) => {
+    try {
+        const id = c.req.param('id')
+
+        // Query files where task_id = id
+        const taskFiles = await db.query.files.findMany({
+            where: (f, { eq }) => eq(f.taskId, id),
+            with: {
+                uploader: {
+                    columns: { id: true, name: true, image: true }
+                }
+            },
+            orderBy: (f, { desc }) => [desc(f.createdAt)]
+        })
+
+        return c.json({ success: true, data: taskFiles })
+    } catch (error) {
+        console.error('Error fetching task files:', error)
+        return c.json({ success: false, error: 'Failed to fetch task files' }, 500)
+    }
+})
+
+// POST /api/tasks/:id/files/:fileId - Attach existing file to task
+tasksRoutes.post('/:id/files/:fileId', async (c) => {
+    try {
+        const taskId = c.req.param('id')
+        const fileId = c.req.param('fileId')
+
+        // Verify task exists
+        const task = await db.query.tasks.findFirst({
+            where: (t, { eq }) => eq(t.id, taskId)
+        })
+        if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // Verify file exists
+        const { files } = await import('../../db/schema/files')
+        const file = await db.query.files.findFirst({
+            where: (f, { eq }) => eq(f.id, fileId)
+        })
+        if (!file) return c.json({ success: false, error: 'File not found' }, 404)
+
+        // Update file's task_id
+        const [updated] = await db.update(files)
+            .set({ taskId: taskId })
+            .where(eq(files.id, fileId))
+            .returning()
+
+        return c.json({ success: true, data: updated })
+    } catch (error) {
+        console.error('Error attaching file to task:', error)
+        return c.json({ success: false, error: 'Failed to attach file' }, 500)
+    }
+})
+
+// POST /api/tasks/:id/upload - Upload new file and attach to task
+tasksRoutes.post('/:id/upload', async (c) => {
+    try {
+        const taskId = c.req.param('id')
+
+        // Verify task exists
+        const task = await db.query.tasks.findFirst({
+            where: (t, { eq }) => eq(t.id, taskId),
+            with: {
+                project: {
+                    with: {
+                        team: {
+                            columns: { workspaceId: true }
+                        }
+                    }
+                }
+            }
+        })
+        if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // Get workspace ID from task's project's team
+        const workspaceId = task.project.team?.workspaceId
+        if (!workspaceId) return c.json({ success: false, error: 'Workspace not found' }, 404)
+
+        // Parse multipart form data
+        const formData = await c.req.formData()
+        const file = formData.get('file') as File
+        if (!file) return c.json({ success: false, error: 'No file provided' }, 400)
+
+        // Upload to R2
+        const { getUploadUrl } = await import('../../lib/r2')
+        const fileExt = file.name.split('.').pop() || ''
+        const r2Key = `${workspaceId}/${crypto.randomUUID()}.${fileExt}`
+        const uploadUrl = await getUploadUrl(r2Key, file.type)
+
+        // Upload file to R2
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: {
+                'Content-Type': file.type || 'application/octet-stream'
+            }
+        })
+
+        if (!uploadResponse.ok) {
+            throw new Error('Failed to upload to R2')
+        }
+
+        // Create file record in database with taskId
+        const { files } = await import('../../db/schema/files')
+        const userId = c.req.header('x-user-id')
+        const teamId = task.project.teamId
+
+        const [created] = await db.insert(files).values({
+            name: file.name,
+            path: r2Key,
+            r2Key: r2Key,
+            size: file.size,
+            mimeType: file.type || 'application/octet-stream',
+            fileType: fileExt.toLowerCase(),
+            workspaceId: workspaceId,
+            teamId: teamId, // Team ID from project
+            taskId: taskId, // Attach to task
+            uploadedBy: userId || null // null if no user ID provided
+        }).returning()
+
+        return c.json({ success: true, data: created }, 201)
+    } catch (error) {
+        console.error('Error uploading file to task:', error)
+        return c.json({ success: false, error: 'Failed to upload file' }, 500)
+    }
+})
+
+// DELETE /api/tasks/:id/files/:fileId - Remove file from task
+tasksRoutes.delete('/:id/files/:fileId', async (c) => {
+    try {
+        const fileId = c.req.param('fileId')
+
+        // Set task_id to null (keeps file in workspace)
+        const { files } = await import('../../db/schema/files')
+        const [updated] = await db.update(files)
+            .set({ taskId: null })
+            .where(eq(files.id, fileId))
+            .returning()
+
+        if (!updated) return c.json({ success: false, error: 'File not found' }, 404)
+
+        return c.json({ success: true, message: 'File removed from task' })
+    } catch (error) {
+        console.error('Error removing file from task:', error)
+        return c.json({ success: false, error: 'Failed to remove file' }, 500)
+    }
+})
+
+// =============================================================================
+// TASK LINKS (5.34)
+// =============================================================================
+
+// POST /api/tasks/:id/links - Add link to task
+tasksRoutes.post('/:id/links', async (c) => {
+    try {
+        const taskId = c.req.param('id')
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const body = await c.req.json()
+
+        if (!body.url) return c.json({ success: false, error: 'URL is required' }, 400)
+
+        // Verify task exists
+        const task = await db.query.tasks.findFirst({
+            where: (t, { eq }) => eq(t.id, taskId)
+        })
+        if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // Create new link object
+        const newLink = {
+            id: crypto.randomUUID(),
+            url: body.url,
+            title: body.title,
+            description: body.description,
+            addedBy: userId || 'unknown',
+            addedAt: new Date().toISOString()
+        }
+
+        // Get current links
+        const currentLinks = (task.links as any[]) || []
+
+        // Add new link to array
+        await db.update(tasks)
+            .set({ links: [...currentLinks, newLink] as any })
+            .where(eq(tasks.id, taskId))
+
+        return c.json({ success: true, data: newLink }, 201)
+    } catch (error) {
+        console.error('Error adding link to task:', error)
+        return c.json({ success: false, error: 'Failed to add link' }, 500)
+    }
+})
+
+// PATCH /api/tasks/:id/links/:linkId - Update link
+tasksRoutes.patch('/:id/links/:linkId', async (c) => {
+    try {
+        const taskId = c.req.param('id')
+        const linkId = c.req.param('linkId')
+        const body = await c.req.json()
+
+        // Get task with links
+        const task = await db.query.tasks.findFirst({
+            where: (t, { eq }) => eq(t.id, taskId)
+        })
+        if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // Get current links
+        const currentLinks = (task.links as any[]) || []
+
+        // Find and update the link
+        const linkIndex = currentLinks.findIndex(l => l.id === linkId)
+        if (linkIndex === -1) return c.json({ success: false, error: 'Link not found' }, 404)
+
+        const updatedLink = {
+            ...currentLinks[linkIndex],
+            ...body,
+            id: linkId, // Ensure ID doesn't change
+            addedBy: currentLinks[linkIndex].addedBy, // Preserve original adder
+            addedAt: currentLinks[linkIndex].addedAt // Preserve original timestamp
+        }
+
+        currentLinks[linkIndex] = updatedLink
+
+        // Update task
+        await db.update(tasks)
+            .set({ links: currentLinks as any })
+            .where(eq(tasks.id, taskId))
+
+        return c.json({ success: true, data: updatedLink })
+    } catch (error) {
+        console.error('Error updating link:', error)
+        return c.json({ success: false, error: 'Failed to update link' }, 500)
+    }
+})
+
+// DELETE /api/tasks/:id/links/:linkId - Remove link
+tasksRoutes.delete('/:id/links/:linkId', async (c) => {
+    try {
+        const taskId = c.req.param('id')
+        const linkId = c.req.param('linkId')
+
+        // Get task with links
+        const task = await db.query.tasks.findFirst({
+            where: (t, { eq }) => eq(t.id, taskId)
+        })
+        if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // Get current links
+        const currentLinks = (task.links as any[]) || []
+
+        // Filter out the link
+        const newLinks = currentLinks.filter(l => l.id !== linkId)
+
+        // Update task
+        await db.update(tasks)
+            .set({ links: newLinks as any })
+            .where(eq(tasks.id, taskId))
+
+        return c.json({ success: true, message: 'Link removed from task' })
+    } catch (error) {
+        console.error('Error removing link:', error)
+        return c.json({ success: false, error: 'Failed to remove link' }, 500)
     }
 })

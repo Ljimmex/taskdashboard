@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // These envs will be available in the Cloudflare Worker context
@@ -19,6 +19,7 @@ export const r2Client = new S3Client({
         accessKeyId: R2_ACCESS_KEY_ID || '',
         secretAccessKey: R2_SECRET_ACCESS_KEY || '',
     },
+    forcePathStyle: true,
 })
 
 export const getUploadUrl = async (key: string, contentType: string) => {
@@ -30,10 +31,11 @@ export const getUploadUrl = async (key: string, contentType: string) => {
     return await getSignedUrl(r2Client, command, { expiresIn: 3600 })
 }
 
-export const getDownloadUrl = async (key: string) => {
+export const getDownloadUrl = async (key: string, filename?: string) => {
     const command = new GetObjectCommand({
         Bucket: R2_BUCKET_NAME,
         Key: key,
+        ...(filename && { ResponseContentDisposition: `attachment; filename="${encodeURIComponent(filename)}"` })
     })
     return await getSignedUrl(r2Client, command, { expiresIn: 3600 })
 }
@@ -42,6 +44,15 @@ export const deleteFile = async (key: string) => {
     const command = new DeleteObjectCommand({
         Bucket: R2_BUCKET_NAME,
         Key: key,
+    })
+    return await r2Client.send(command)
+}
+
+export const copyFile = async (sourceKey: string, destinationKey: string) => {
+    const command = new CopyObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        CopySource: `${R2_BUCKET_NAME}/${sourceKey}`,
+        Key: destinationKey,
     })
     return await r2Client.send(command)
 }
