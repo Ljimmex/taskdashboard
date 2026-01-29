@@ -40,7 +40,6 @@ services:
     runtime: static
     buildCommand: cd apps/web && bun install && bun run build
     staticPublishPath: ./apps/web/dist
-    region: frankfurt
     plan: free
     headers:
       - path: /*
