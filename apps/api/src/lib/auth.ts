@@ -70,6 +70,7 @@ export const auth = betterAuth({
         'http://localhost:3000',
         'https://taskdashboard.pages.dev',
         'https://taskdashboard-al61.onrender.com',
+        'https://taskdashboard-1-3a55.onrender.com',
     ],
 
     // Plugins
