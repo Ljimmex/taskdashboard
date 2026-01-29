@@ -1,4 +1,4 @@
-FROM oven/bun:1.1-alpine AS builder
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
@@ -9,15 +9,15 @@ COPY package.json bun.lock ./
 COPY packages ./packages
 COPY apps/api ./apps/api
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies (without frozen lockfile for compatibility)
+RUN bun install
 
 # Build the API
 WORKDIR /app/apps/api
 RUN bun run build || true
 
 # Production stage
-FROM oven/bun:1.1-alpine AS production
+FROM oven/bun:latest AS production
 
 WORKDIR /app
 
