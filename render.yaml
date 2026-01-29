@@ -1,4 +1,5 @@
 services:
+  # API Backend
   - type: web
     name: taskdashboard-api
     runtime: docker
@@ -25,6 +26,30 @@ services:
         sync: false
       - key: GITHUB_CLIENT_SECRET
         sync: false
+      - key: SLACK_CLIENT_ID
+        sync: false
+      - key: SLACK_CLIENT_SECRET
+        sync: false
       - key: RESEND_API_KEY
         sync: false
     healthCheckPath: /
+
+  # Frontend Static Site
+  - type: web
+    name: taskdashboard-web
+    runtime: static
+    buildCommand: cd apps/web && bun install && bun run build
+    staticPublishPath: ./apps/web/dist
+    region: frankfurt
+    plan: free
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://taskdashboard-al61.onrender.com
