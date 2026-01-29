@@ -69,7 +69,7 @@ export const auth = betterAuth({
         'http://localhost:5173',
         'http://localhost:3000',
         'https://taskdashboard.pages.dev',
-        'https://taskdashboard-api.zadanoio.workers.dev',
+        'https://taskdashboard-al61.onrender.com',
     ],
 
     // Plugins
