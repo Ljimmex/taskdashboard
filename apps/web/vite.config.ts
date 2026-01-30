@@ -18,8 +18,9 @@ export default defineConfig({
         port: 5173,
         proxy: {
             '/api': {
-                target: 'http://localhost:3000',
+                target: 'https://taskdashboard-api.onrender.com', // User is using Render API
                 changeOrigin: true,
+                secure: false, // Handle SSL if needed
             },
         },
     },
