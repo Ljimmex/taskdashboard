@@ -38,17 +38,22 @@ teamsRoutes.get('/', async (c) => {
         let result: any[] = []
         let workspaceId = workspaceIdQuery
 
+        // Message for debugging if needed, but logic proceeds
+        // console.log("Reachable check passed");
+
         // If slug provided, find workspaceId
         if (!workspaceId && workspaceSlugQuery) {
+            const slug = workspaceSlugQuery as string
             const ws = await db.query.workspaces.findFirst({
-                where: (ws, { eq }) => eq(ws.slug, workspaceSlugQuery)
+                where: (table, { eq }) => eq(table.slug, slug)
             })
+
             if (ws) {
                 workspaceId = ws.id
             } else {
                 return c.json({
                     success: false,
-                    error: `Workspace with slug '${workspaceSlugQuery}' not found`,
+                    error: `Workspace with slug '${slug}' not found`,
                     debug: { workspaceSlugQuery, userId }
                 }, 404)
             }
