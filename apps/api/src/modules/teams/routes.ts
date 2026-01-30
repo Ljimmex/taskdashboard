@@ -57,16 +57,17 @@ teamsRoutes.get('/', async (c) => {
         if (workspaceId) {
             console.log(`🔍 Fetching teams for workspaceId: ${workspaceId}`)
             // Fetch all teams in the workspace with members
+            // Fetch basic team info first to rule out relation crashes
             result = await db.query.teams.findMany({
                 where: (table, { eq }) => eq(table.workspaceId, workspaceId as string),
-                with: {
-                    members: {
-                        with: {
-                            user: true
-                        }
-                    },
-                    projects: true
-                }
+                // with: {
+                //     members: {
+                //         with: {
+                //             user: true
+                //         }
+                //     },
+                //     projects: true
+                // }
             })
             console.log(`✅ Found ${result.length} teams`)
         } else if (!workspaceIdQuery && !workspaceSlugQuery) {
