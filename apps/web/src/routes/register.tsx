@@ -23,7 +23,6 @@ function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [confirmPassword, setConfirmPassword] = useState('')
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-    const [rememberMe, setRememberMe] = useState(false)
 
     // Step 2 data
     const [firstName, setFirstName] = useState('')
@@ -227,7 +226,7 @@ function RegisterPage() {
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="border-0 border-b border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 pb-3"
+                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
                                         placeholder="twoj@email.com"
                                         required
                                     />
@@ -243,7 +242,7 @@ function RegisterPage() {
                                         type={showPassword ? "text" : "password"}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="border-0 border-b border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 pb-3"
+                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
                                         placeholder="8+ znaków"
                                         required
                                         minLength={8}
@@ -275,7 +274,7 @@ function RegisterPage() {
                                         type={showConfirmPassword ? "text" : "password"}
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="border-0 border-b border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 pb-3"
+                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
                                         placeholder="8+ znaków"
                                         required
                                         minLength={8}
@@ -299,29 +298,6 @@ function RegisterPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between">
-                                <label className="flex items-center gap-3 text-sm text-gray-400 cursor-pointer group">
-                                    <div className="relative">
-                                        <input
-                                            type="checkbox"
-                                            checked={rememberMe}
-                                            onChange={(e) => setRememberMe(e.target.checked)}
-                                            className="sr-only peer"
-                                        />
-                                        <div className="w-5 h-5 border-2 border-gray-600 rounded bg-gray-800 peer-checked:bg-amber-500 peer-checked:border-amber-500 transition-all flex items-center justify-center">
-                                            {rememberMe && (
-                                                <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            )}
-                                        </div>
-                                    </div>
-                                    Zapamiętaj mnie na 30 dni
-                                </label>
-                                <Link to="/forgot-password" className="text-sm text-amber-500 hover:underline">
-                                    Zapomniałeś hasła?
-                                </Link>
-                            </div>
 
                             <Button
                                 type="submit"
@@ -383,7 +359,7 @@ function RegisterPage() {
                                     type="text"
                                     value={firstName}
                                     onChange={(e) => setFirstName(e.target.value)}
-                                    className="border-0 border-b border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 pb-3"
+                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
                                     placeholder="Jan"
                                     required
                                 />
@@ -396,7 +372,7 @@ function RegisterPage() {
                                     type="text"
                                     value={lastName}
                                     onChange={(e) => setLastName(e.target.value)}
-                                    className="border-0 border-b border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 pb-3"
+                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
                                     placeholder="Kowalski"
                                     required
                                 />
@@ -409,7 +385,7 @@ function RegisterPage() {
                                     <select
                                         value={birthDay}
                                         onChange={(e) => setBirthDay(e.target.value)}
-                                        className="bg-gray-800/50 border-0 text-white rounded-lg px-3 py-3 focus:outline-none focus:ring-0 focus:bg-gray-800 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                        className="bg-gray-800/50 text-white rounded-xl px-3 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                         required
                                     >
                                         <option value="">Dzień</option>
@@ -420,7 +396,7 @@ function RegisterPage() {
                                     <select
                                         value={birthMonth}
                                         onChange={(e) => setBirthMonth(e.target.value)}
-                                        className="bg-gray-800/50 border-0 text-white rounded-lg px-3 py-3 focus:outline-none focus:ring-0 focus:bg-gray-800 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                        className="bg-gray-800/50 text-white rounded-xl px-3 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                         required
                                     >
                                         <option value="">Miesiąc</option>
@@ -431,7 +407,7 @@ function RegisterPage() {
                                     <select
                                         value={birthYear}
                                         onChange={(e) => setBirthYear(e.target.value)}
-                                        className="bg-gray-800/50 border-0 text-white rounded-lg px-3 py-3 focus:outline-none focus:ring-0 focus:bg-gray-800 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                        className="bg-gray-800/50 text-white rounded-xl px-3 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                         required
                                     >
                                         <option value="">Rok</option>
@@ -450,7 +426,7 @@ function RegisterPage() {
                                     id="gender"
                                     value={gender}
                                     onChange={(e) => setGender(e.target.value)}
-                                    className="w-full bg-gray-800/50 border-0 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-800 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                    className="w-full bg-gray-800/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                     required
                                 >
                                     <option value="">Wybierz płeć</option>
@@ -468,7 +444,7 @@ function RegisterPage() {
                                     id="position"
                                     value={position}
                                     onChange={(e) => setPosition(e.target.value)}
-                                    className="w-full bg-gray-800/50 border-0 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-800 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                    className="w-full bg-gray-800/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                     required
                                 >
                                     <option value="">Wybierz stanowisko</option>
@@ -477,6 +453,16 @@ function RegisterPage() {
                                     <option value="Project Manager">Project Manager</option>
                                     <option value="Marketing Specialist">Marketing Specialist</option>
                                     <option value="CEO / Founder">CEO / Founder</option>
+                                    <option value="Game Designer">Game Designer</option>
+                                    <option value="Game Developer">Game Developer</option>
+                                    <option value="3D Artist">3D Artist</option>
+                                    <option value="2D Artist">2D Artist / Concept Artist</option>
+                                    <option value="Animator">Animator</option>
+                                    <option value="Level Designer">Level Designer</option>
+                                    <option value="Sound Designer">Sound Designer</option>
+                                    <option value="QA Tester">QA Tester</option>
+                                    <option value="Technical Artist">Technical Artist</option>
+                                    <option value="Producer">Producer</option>
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
@@ -515,7 +501,7 @@ function RegisterPage() {
                                     type="text"
                                     value={workspaceName}
                                     onChange={(e) => setWorkspaceName(e.target.value)}
-                                    className="border-0 border-b border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 pb-3"
+                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
                                     placeholder="Moja Firma"
                                     required
                                 />
@@ -527,7 +513,7 @@ function RegisterPage() {
                                     id="teamSize"
                                     value={teamSize}
                                     onChange={(e) => setTeamSize(e.target.value)}
-                                    className="w-full bg-gray-800/50 border-0 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-800 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                    className="w-full bg-gray-800/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                     required
                                 >
                                     <option value="1-10">1-10 osób</option>
@@ -543,10 +529,11 @@ function RegisterPage() {
                                     id="industry"
                                     value={industry}
                                     onChange={(e) => setIndustry(e.target.value)}
-                                    className="w-full bg-gray-800/50 border-0 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-800 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                    className="w-full bg-gray-800/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                     required
                                 >
                                     <option value="Technology">Technologia / IT</option>
+                                    <option value="Gamedev">Gamedev / Gry</option>
                                     <option value="Marketing">Marketing / Agencja</option>
                                     <option value="Finance">Finanse</option>
                                     <option value="Education">Edukacja</option>

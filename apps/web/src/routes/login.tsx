@@ -101,7 +101,7 @@ function LoginPage() {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="border-0 border-b border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 pb-3"
+                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
                                     placeholder="twoj@email.com"
                                     required
                                 />
@@ -117,7 +117,7 @@ function LoginPage() {
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="border-0 border-b border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 pb-3"
+                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
                                     placeholder="••••••••"
                                     required
                                 />
