@@ -36,7 +36,7 @@ export default function TeamPage() {
     const [filters, setFilters] = useState<FilterOption>({})
 
     // 2. Fetch Teams for this Workspace
-    const { data: teamsData, isLoading: isLoadingTeams } = useQuery({
+    const { data: teamsData, isLoading: isLoadingTeams, error: teamsError, isError: hasTeamsError } = useQuery({
         queryKey: ['teams', workspaceSlug, session?.user?.id],
         queryFn: async () => {
             if (!workspaceSlug) return []
@@ -336,6 +336,21 @@ export default function TeamPage() {
 
     if (isLoadingTeams) {
         return <div className="p-8 text-center text-gray-500">Loading teams...</div>
+    }
+
+    if (hasTeamsError) {
+        return (
+            <div className="p-8 text-center">
+                <div className="text-red-500 mb-4 font-semibold">Failed to load teams</div>
+                <div className="text-gray-400 text-sm">{String(teamsError)}</div>
+                <button
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['teams'] })}
+                    className="mt-6 px-4 py-2 bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        )
     }
 
     return (

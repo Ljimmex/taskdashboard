@@ -45,13 +45,20 @@ teamsRoutes.get('/', async (c) => {
             })
             if (ws) {
                 workspaceId = ws.id
+            } else {
+                return c.json({
+                    success: false,
+                    error: `Workspace with slug '${workspaceSlugQuery}' not found`,
+                    debug: { workspaceSlugQuery, userId }
+                }, 404)
             }
         }
 
         if (workspaceId) {
+            console.log(`🔍 Fetching teams for workspaceId: ${workspaceId}`)
             // Fetch all teams in the workspace with members
             result = await db.query.teams.findMany({
-                where: (teams, { eq }) => eq(teams.workspaceId, workspaceId),
+                where: (table, { eq }) => eq(table.workspaceId, workspaceId as string),
                 with: {
                     members: {
                         with: {
@@ -61,6 +68,7 @@ teamsRoutes.get('/', async (c) => {
                     projects: true
                 }
             })
+            console.log(`✅ Found ${result.length} teams`)
         } else if (!workspaceIdQuery && !workspaceSlugQuery) {
             // Fetch only teams the user is part of
             const memberships = await db.query.teamMembers.findMany({
@@ -109,7 +117,16 @@ teamsRoutes.get('/', async (c) => {
             })
         }
 
-        return c.json({ success: true, data: result })
+        return c.json({
+            success: true,
+            data: result,
+            debug: {
+                workspaceId,
+                workspaceSlugQuery,
+                userId,
+                resultCount: result.length
+            }
+        })
     } catch (error) {
         return c.json({ success: false, error: 'Failed to fetch teams', details: String(error) }, 500)
     }
