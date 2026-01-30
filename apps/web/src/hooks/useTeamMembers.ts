@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useSession } from '@/lib/auth'
+import { apiFetchJson } from '@/lib/api'
 
 export interface TeamMember {
     id: string
@@ -18,13 +19,11 @@ export function useTeamMembers(workspaceSlug: string) {
     const { data: workspaces } = useQuery({
         queryKey: ['workspaces', session?.user?.id],
         queryFn: async () => {
-            const res = await fetch('/api/workspaces', {
+            const json = await apiFetchJson<any>('/api/workspaces', {
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
-            if (!res.ok) throw new Error('Failed to fetch workspaces')
-            const json = await res.json()
             return json.data
         },
         enabled: !!session?.user?.id
@@ -37,13 +36,11 @@ export function useTeamMembers(workspaceSlug: string) {
         queryKey: ['teams', currentWorkspace?.id, session?.user?.id],
         queryFn: async () => {
             if (!currentWorkspace?.id) return []
-            const res = await fetch(`/api/teams?workspaceId=${currentWorkspace.id}`, {
+            const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace.id}`, {
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
-            if (!res.ok) throw new Error('Failed to fetch teams')
-            const json = await res.json()
             return json.data
         },
         enabled: !!currentWorkspace?.id && !!session?.user?.id

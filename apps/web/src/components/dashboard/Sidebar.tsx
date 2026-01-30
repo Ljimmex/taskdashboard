@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLocation, useParams } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { signOut, useSession } from '@/lib/auth'
+import { apiFetchJson } from '@/lib/api'
 import { sidebarIcons as icons } from './icons'
 import { WorkspaceSwitcher } from '../features/workspace/WorkspaceSwitcher'
 
@@ -22,11 +23,10 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
     const { data: workspaces } = useQuery({
         queryKey: ['workspaces', session?.user?.id],
         queryFn: async () => {
-            const res = await fetch('/api/workspaces', {
+            const json = await apiFetchJson<any>('/api/workspaces', {
                 headers: { 'x-user-id': session?.user?.id || '' }
             })
-            const data = await res.json()
-            return data.data
+            return json.data
         },
         enabled: !!session?.user?.id,
         staleTime: 1000 * 60 * 5 // Cache for 5 mins
@@ -38,11 +38,10 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
     const { data: teams } = useQuery({
         queryKey: ['teams', currentWorkspace?.id],
         queryFn: async () => {
-            const res = await fetch(`/api/teams?workspaceId=${currentWorkspace.id}`, {
+            const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace.id}`, {
                 headers: { 'x-user-id': session?.user?.id || '' }
             })
-            const data = await res.json()
-            return data.data
+            return json.data
         },
         enabled: !!currentWorkspace?.id
     })

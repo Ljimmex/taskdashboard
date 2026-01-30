@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, LayoutGrid, List, Calendar, GitBranch } from 'lucide-react'
 import { useSession } from '@/lib/auth'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 import { KanbanBoard } from '@/components/features/tasks/views/KanbanBoard'
 import { KanbanBoardHeader, type FilterState } from '@/components/features/tasks/views/KanbanBoardHeader'
 import { TaskListView } from '@/components/features/tasks/views/TaskListView'
@@ -109,7 +110,7 @@ function ProjectDetailPage() {
     if (!confirm(`Are you sure you want to delete ${selectedTasks.length} task(s) ? `)) return
 
     try {
-      await fetch('/api/tasks/bulk/delete', {
+      await apiFetch('/api/tasks/bulk/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskIds: selectedTasks })
@@ -125,7 +126,7 @@ function ProjectDetailPage() {
     if (selectedTasks.length === 0) return
 
     try {
-      await fetch('/api/tasks/bulk/move', {
+      await apiFetch('/api/tasks/bulk/move', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ taskIds: selectedTasks, status: stageId })
@@ -142,10 +143,10 @@ function ProjectDetailPage() {
   const { data: workspaces } = useQuery({
     queryKey: ['workspaces', session?.user?.id],
     queryFn: async () => {
-      const res = await fetch('/api/workspaces', {
+      const json = await apiFetchJson<any>('/api/workspaces', {
         headers: { 'x-user-id': session?.user?.id || '' }
       })
-      return res.json().then(r => r.data)
+      return json.data
     },
     enabled: !!session?.user?.id
   })
@@ -156,11 +157,10 @@ function ProjectDetailPage() {
   const { data: teamsData } = useQuery({
     queryKey: ['teams', currentWorkspace?.id],
     queryFn: async () => {
-      const res = await fetch(`/api/teams?workspaceId=${currentWorkspace?.id}`, {
+      const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace?.id}`, {
         headers: { 'x-user-id': session?.user?.id || '' }
       })
-      const data = await res.json()
-      return data.data || []
+      return json.data || []
     },
     enabled: !!currentWorkspace?.id
   })
@@ -169,11 +169,10 @@ function ProjectDetailPage() {
   const { data: workspaceLabels = [] } = useQuery({
     queryKey: ['labels', workspaceSlug],
     queryFn: async () => {
-      const res = await fetch(`/api/labels?workspaceSlug=${workspaceSlug}`, {
+      const json = await apiFetchJson<any>(`/api/labels?workspaceSlug=${workspaceSlug}`, {
         headers: { 'x-user-id': session?.user?.id || '' }
       })
-      const data = await res.json()
-      return data.success ? data.data : []
+      return json.success ? json.data : []
     },
     enabled: !!workspaceSlug
   })
@@ -196,12 +195,10 @@ function ProjectDetailPage() {
     async function fetchData() {
       try {
         setLoading(true)
-        const [projectRes, tasksRes] = await Promise.all([
-          fetch(`/api/projects/${projectId}`),
-          fetch(`/api/tasks?projectId=${projectId}`),
+        const [projectData, tasksData] = await Promise.all([
+          apiFetchJson<any>(`/api/projects/${projectId}`),
+          apiFetchJson<any>(`/api/tasks?projectId=${projectId}`),
         ])
-        const projectData = await projectRes.json()
-        const tasksData = await tasksRes.json()
 
         if (projectData.success) setProject(projectData.data)
         if (tasksData.success) {
@@ -220,8 +217,7 @@ function ProjectDetailPage() {
   }, [projectId])
 
   const refetchTasks = useCallback(async () => {
-    const res = await fetch(`/api/tasks?projectId=${projectId}`)
-    const data = await res.json()
+    const data = await apiFetchJson<any>(`/api/tasks?projectId=${projectId}`)
     if (data.success) {
       // Deduplicate tasks by ID
       const uniqueTasks = Array.from(new Map((data.data || []).map((t: any) => [t.id, t])).values()) as Task[]
@@ -230,15 +226,13 @@ function ProjectDetailPage() {
   }, [projectId])
 
   const refetchTaskDetails = useCallback(async (taskId: string) => {
-    const res = await fetch(`/api/tasks/${taskId}`)
-    const data = await res.json()
+    const data = await apiFetchJson<any>(`/api/tasks/${taskId}`)
     if (data.success) setSelectedTask(data.data)
   }, [])
 
   // Handle task click
   const handleTaskClick = async (taskId: string) => {
-    const res = await fetch(`/api/tasks/${taskId}`)
-    const data = await res.json()
+    const data = await apiFetchJson<any>(`/api/tasks/${taskId}`)
     if (data.success) {
       setSelectedTask(data.data)
       setShowTaskDetails(true)
@@ -248,9 +242,9 @@ function ProjectDetailPage() {
   // Handle task creation
   const handleCreateTask = async (taskData: any) => {
     try {
-      const res = await fetch('/api/tasks', {
+      const res = await apiFetch('/api/tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({ ...taskData, projectId })
       })
       const data = await res.json()
@@ -269,9 +263,9 @@ function ProjectDetailPage() {
   // Handle task move (for Kanban)
   const handleTaskMove = async (taskId: string, _fromColumn: string, toColumn: string) => {
     try {
-      await fetch(`/ api / tasks / ${taskId} `, {
+      await apiFetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({ status: toColumn })
       })
       refetchTasks()
@@ -301,9 +295,9 @@ function ProjectDetailPage() {
 
   const handleQuickUpdateTask = async (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string }) => {
     try {
-      const res = await fetch(`/api/tasks/${data.id}`, {
+      const res = await apiFetch(`/api/tasks/${data.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify(data)
       })
       if (res.ok) {
@@ -324,7 +318,7 @@ function ProjectDetailPage() {
   const confirmDeleteTask = async () => {
     if (!taskToDelete) return
     try {
-      const res = await fetch(`/api/tasks/${taskToDelete}`, {
+      const res = await apiFetch(`/api/tasks/${taskToDelete}`, {
         method: 'DELETE',
         headers: { 'x-user-id': session?.user?.id || '' }
       })
@@ -407,9 +401,9 @@ function ProjectDetailPage() {
   // Handle creating new label
   const handleCreateLabel = async (name: string, color: string) => {
     try {
-      const res = await fetch('/api/labels', {
+      const res = await apiFetch('/api/labels', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({ name, color, workspaceSlug })
       })
       const data = await res.json()
@@ -428,15 +422,14 @@ function ProjectDetailPage() {
   const handleAddEditSubtask = async (title: string) => {
     if (!editingTask?.id) return
     try {
-      const res = await fetch(`/api/tasks/${editingTask.id}/subtasks`, {
+      const res = await apiFetch(`/api/tasks/${editingTask.id}/subtasks`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({ title, status: 'todo', priority: 'medium' })
       })
       if (res.ok) {
         // Refetch task to get updated subtasks
-        const taskRes = await fetch(`/api/tasks/${editingTask.id}`)
-        const taskData = await taskRes.json()
+        const taskData = await apiFetchJson<any>(`/api/tasks/${editingTask.id}`)
         if (taskData.success) {
           setEditingTaskSubtasks(taskData.data.subtasks || [])
         }
@@ -453,9 +446,9 @@ function ProjectDetailPage() {
     if (!subtask) return
 
     try {
-      const res = await fetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
+      const res = await apiFetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({ isCompleted: !subtask.isCompleted })
       })
       if (res.ok) {
@@ -473,9 +466,9 @@ function ProjectDetailPage() {
   const handleUpdateEditSubtask = async (subtaskId: string, updates: any) => {
     if (!editingTask?.id) return
     try {
-      const res = await fetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
+      const res = await apiFetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify(updates)
       })
       if (res.ok) {
@@ -493,7 +486,7 @@ function ProjectDetailPage() {
   const handleDeleteEditSubtask = async (subtaskId: string) => {
     if (!editingTask?.id) return
     try {
-      const res = await fetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
+      const res = await apiFetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
         method: 'DELETE',
         headers: { 'x-user-id': session?.user?.id || '' }
       })
@@ -510,9 +503,9 @@ function ProjectDetailPage() {
   const handleAddComment = async (content: string, parentId?: string | null) => {
     if (!selectedTask?.id) return
     try {
-      const res = await fetch(`/api/tasks/${selectedTask.id}/comments`, {
+      const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({ content, parentId })
       })
       if (res.ok) {
@@ -528,9 +521,9 @@ function ProjectDetailPage() {
   const handleLikeComment = async (commentId: string) => {
     if (!selectedTask?.id) return
     try {
-      const res = await fetch(`/api/tasks/${selectedTask.id}/comments/${commentId}/like`, {
+      const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments/${commentId}/like`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' }
+        headers: { 'x-user-id': session?.user?.id || '' }
       })
       if (res.ok) {
         // Refetch task to get updated comments
@@ -544,14 +537,13 @@ function ProjectDetailPage() {
   // Handle task duplication
   const handleDuplicateTask = async (taskId: string) => {
     try {
-      const taskRes = await fetch(`/api/tasks/${taskId}`)
-      const taskData = await taskRes.json()
+      const taskData = await apiFetchJson<any>(`/api/tasks/${taskId}`)
       if (!taskData.success) return
 
       const task = taskData.data
-      const res = await fetch('/api/tasks', {
+      const res = await apiFetch('/api/tasks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({
           title: `${task.title} (kopia)`,
           description: task.description,
@@ -573,9 +565,9 @@ function ProjectDetailPage() {
   // Handle task archiving
   const handleArchiveTask = async (taskId: string) => {
     try {
-      const res = await fetch(`/api/tasks/${taskId}`, {
+      const res = await apiFetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({ isArchived: true })
       })
       if (res.ok) {

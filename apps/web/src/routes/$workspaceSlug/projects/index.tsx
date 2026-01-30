@@ -9,6 +9,7 @@ import { TaskDetailsPanel } from '@/components/features/tasks/panels/TaskDetails
 import { DayTaskListPanel } from '@/components/features/projects/DayTaskListPanel'
 
 import { useSession } from '@/lib/auth'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 
 export const Route = createFileRoute('/$workspaceSlug/projects/')({
     component: ProjectsPage,
@@ -66,10 +67,10 @@ function ProjectsPage() {
     const { data: workspaces } = useQuery({
         queryKey: ['workspaces', session?.user?.id],
         queryFn: async () => {
-            const res = await fetch('/api/workspaces', {
+            const json = await apiFetchJson<any>('/api/workspaces', {
                 headers: { 'x-user-id': session?.user?.id || '' }
             })
-            return res.json().then(r => r.data)
+            return json.data
         },
         enabled: !!session?.user?.id
     })
@@ -80,11 +81,10 @@ function ProjectsPage() {
     const { data: teamsData } = useQuery({
         queryKey: ['teams', currentWorkspace?.id],
         queryFn: async () => {
-            const res = await fetch(`/api/teams?workspaceId=${currentWorkspace?.id}`, {
+            const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace?.id}`, {
                 headers: { 'x-user-id': session?.user?.id || '' }
             })
-            const data = await res.json()
-            return data.data || []
+            return json.data || []
         },
         enabled: !!currentWorkspace?.id
     })
@@ -94,12 +94,10 @@ function ProjectsPage() {
         async function fetchData() {
             try {
                 setLoading(true)
-                const [projectsRes, tasksRes] = await Promise.all([
-                    fetch('/api/projects'),
-                    fetch('/api/tasks'),
+                const [projectsData, tasksData] = await Promise.all([
+                    apiFetchJson<any>('/api/projects'),
+                    apiFetchJson<any>('/api/tasks'),
                 ])
-                const projectsData = await projectsRes.json()
-                const tasksData = await tasksRes.json()
 
                 if (projectsData.success) setProjects(projectsData.data || [])
                 if (tasksData.success) {
@@ -144,14 +142,12 @@ function ProjectsPage() {
     }
 
     const refetchProjects = useCallback(async () => {
-        const res = await fetch('/api/projects')
-        const data = await res.json()
+        const data = await apiFetchJson<any>('/api/projects')
         if (data.success) setProjects(data.data || [])
     }, [])
 
     const refetchTasks = useCallback(async () => {
-        const res = await fetch('/api/tasks')
-        const data = await res.json()
+        const data = await apiFetchJson<any>('/api/tasks')
         if (data.success) {
             const mappedTasks = (data.data || []).map((t: any) => ({
                 ...t,
@@ -165,10 +161,9 @@ function ProjectsPage() {
 
     const handleCreateTask = async (taskData: any): Promise<{ id: string } | null> => {
         try {
-            const res = await fetch('/api/tasks', {
+            const res = await apiFetch('/api/tasks', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'x-user-id': session?.user?.id || ''
                 },
                 body: JSON.stringify({
@@ -190,8 +185,7 @@ function ProjectsPage() {
     }
 
     const refetchTaskDetails = async (taskId: string) => {
-        const res = await fetch(`/api/tasks/${taskId}`)
-        const data = await res.json()
+        const data = await apiFetchJson<any>(`/api/tasks/${taskId}`)
         if (data.success) {
             setSelectedTask(data.data)
         }
@@ -203,9 +197,9 @@ function ProjectsPage() {
         if (!subtask) return
 
         try {
-            await fetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
+            await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+                headers: { 'x-user-id': session?.user?.id || '' },
                 body: JSON.stringify({ isCompleted: !subtask.isCompleted })
             })
             refetchTaskDetails(selectedTask.id)
@@ -218,9 +212,9 @@ function ProjectsPage() {
     const handleSubtaskEdit = async (subtaskId: string, updates: any) => {
         if (!selectedTask) return
         try {
-            await fetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
+            await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+                headers: { 'x-user-id': session?.user?.id || '' },
                 body: JSON.stringify(updates)
             })
             refetchTaskDetails(selectedTask.id)
@@ -233,7 +227,7 @@ function ProjectsPage() {
     const handleSubtaskDelete = async (subtaskId: string) => {
         if (!selectedTask) return
         try {
-            await fetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
+            await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
                 method: 'DELETE',
                 headers: { 'x-user-id': session?.user?.id || '' }
             })
@@ -247,9 +241,9 @@ function ProjectsPage() {
     const handleSubtaskAdd = async (title: string) => {
         if (!selectedTask) return
         try {
-            await fetch(`/api/tasks/${selectedTask.id}/subtasks`, {
+            await apiFetch(`/api/tasks/${selectedTask.id}/subtasks`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+                headers: { 'x-user-id': session?.user?.id || '' },
                 body: JSON.stringify({ title, status: 'todo', priority: 'medium' })
             })
             refetchTaskDetails(selectedTask.id)
@@ -264,9 +258,9 @@ function ProjectsPage() {
         try {
             // Frontend supports multiple, backend singular for now
             const assigneeId = assignees[0]?.id || null
-            const res = await fetch(`/api/tasks/${selectedTask.id}`, {
+            const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+                headers: { 'x-user-id': session?.user?.id || '' },
                 body: JSON.stringify({ assigneeId })
             })
             const data = await res.json()
@@ -283,9 +277,9 @@ function ProjectsPage() {
         if (!selectedTask) return
         try {
             const labelIds = labels.map(l => l.id)
-            const res = await fetch(`/api/tasks/${selectedTask.id}`, {
+            const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+                headers: { 'x-user-id': session?.user?.id || '' },
                 body: JSON.stringify({ labels: labelIds })
             })
             const data = await res.json()
@@ -301,9 +295,9 @@ function ProjectsPage() {
     const handleAddComment = async (content: string, parentId?: string | null) => {
         if (!selectedTask) return
         try {
-            const res = await fetch(`/api/tasks/${selectedTask.id}/comments`, {
+            const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+                headers: { 'x-user-id': session?.user?.id || '' },
                 body: JSON.stringify({ content, parentId })
             })
             const data = await res.json()
@@ -318,7 +312,7 @@ function ProjectsPage() {
     const handleLikeComment = async (commentId: string) => {
         if (!selectedTask) return
         try {
-            const res = await fetch(`/api/tasks/${selectedTask.id}/comments/${commentId}/like`, {
+            const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments/${commentId}/like`, {
                 method: 'PATCH',
                 headers: { 'x-user-id': session?.user?.id || '' }
             })
@@ -334,8 +328,7 @@ function ProjectsPage() {
 
     const handleTaskClick = async (task: any) => {
         try {
-            const res = await fetch(`/api/tasks/${task.id}`)
-            const data = await res.json()
+            const data = await apiFetchJson<any>(`/api/tasks/${task.id}`)
             if (data.success) {
                 setSelectedTask(data.data)
                 setShowTaskDetails(true)
@@ -362,8 +355,7 @@ function ProjectsPage() {
     const refetchLabels = useCallback(async () => {
         if (!workspaceSlug) return
         try {
-            const res = await fetch(`/api/labels?workspaceSlug=${workspaceSlug}`)
-            const data = await res.json()
+            const data = await apiFetchJson<any>(`/api/labels?workspaceSlug=${workspaceSlug}`)
             if (data.success) {
                 setAvailableLabels(data.data)
             }
@@ -379,9 +371,8 @@ function ProjectsPage() {
     const handleCreateNewLabel = async (name: string, color: string) => {
         if (!workspaceSlug) return undefined
         try {
-            const res = await fetch('/api/labels', {
+            const res = await apiFetch('/api/labels', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ workspaceSlug, name, color })
             })
             const data = await res.json()

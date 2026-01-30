@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { CreateWorkspacePanel } from './CreateWorkspacePanel'
+import { apiFetchJson } from '@/lib/api'
 
 interface Workspace {
     id: string
@@ -20,11 +21,8 @@ export function WorkspaceSwitcher() {
     // Fetch workspaces
     const fetchWorkspaces = useCallback(async () => {
         try {
-            const res = await fetch('/api/workspaces')
-            if (res.ok) {
-                const json = await res.json()
-                setWorkspaces(json.data)
-            }
+            const json = await apiFetchJson<any>('/api/workspaces')
+            setWorkspaces(json.data)
         } catch (error) {
             console.error('Failed to load workspaces', error)
         }

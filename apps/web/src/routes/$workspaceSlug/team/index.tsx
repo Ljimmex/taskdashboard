@@ -9,6 +9,7 @@ import { EditMemberPanel } from '@/components/features/teams/EditMemberPanel'
 import { ViewMemberPanel } from '@/components/features/teams/ViewMemberPanel'
 import { Team, TeamMember } from '@/components/features/teams/types'
 import { useSession } from '@/lib/auth'
+import { apiFetchJson } from '@/lib/api'
 
 export const Route = createFileRoute('/$workspaceSlug/team/')({
     component: TeamPage,
@@ -38,13 +39,11 @@ export default function TeamPage() {
     const { data: workspaces } = useQuery({
         queryKey: ['workspaces', session?.user?.id],
         queryFn: async () => {
-            const res = await fetch('/api/workspaces', {
+            const json = await apiFetchJson<any>('/api/workspaces', {
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
-            if (!res.ok) throw new Error('Failed to fetch workspaces')
-            const json = await res.json()
             return json.data
         },
         enabled: !!session?.user?.id
@@ -57,13 +56,11 @@ export default function TeamPage() {
         queryKey: ['teams', currentWorkspace?.id, session?.user?.id],
         queryFn: async () => {
             if (!currentWorkspace?.id) return []
-            const res = await fetch(`/api/teams?workspaceId=${currentWorkspace.id}`, {
+            const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace.id}`, {
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
-            if (!res.ok) throw new Error('Failed to fetch teams')
-            const json = await res.json()
             return json.data
         },
         enabled: !!currentWorkspace?.id && !!session?.user?.id
@@ -212,10 +209,9 @@ export default function TeamPage() {
     // 6. Mutations
     const createTeamMutation = useMutation({
         mutationFn: async (newTeam: { name: string; description?: string; color: string; members: any[] }) => {
-            const res = await fetch('/api/teams', {
+            return apiFetchJson<any>('/api/teams', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'x-user-id': session?.user?.id || ''
                 },
                 body: JSON.stringify({
@@ -223,8 +219,6 @@ export default function TeamPage() {
                     workspaceId: currentWorkspace.id
                 })
             })
-            if (!res.ok) throw new Error('Failed to create team')
-            return res.json()
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['teams'] })
@@ -234,16 +228,13 @@ export default function TeamPage() {
 
     const inviteMemberMutation = useMutation({
         mutationFn: async (data: { teamId: string; email?: string; userId?: string; role: string }) => {
-            const res = await fetch(`/api/teams/${data.teamId}/members`, {
+            return apiFetchJson<any>(`/api/teams/${data.teamId}/members`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'x-user-id': session?.user?.id || ''
                 },
                 body: JSON.stringify(data)
             })
-            if (!res.ok) throw new Error('Failed to add member')
-            return res.json()
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['teams'] })
@@ -253,14 +244,12 @@ export default function TeamPage() {
 
     const deleteMemberMutation = useMutation({
         mutationFn: async (data: { teamId: string; userId: string }) => {
-            const res = await fetch(`/api/teams/${data.teamId}/members/${data.userId}`, {
+            return apiFetchJson<any>(`/api/teams/${data.teamId}/members/${data.userId}`, {
                 method: 'DELETE',
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
-            if (!res.ok) throw new Error('Failed to delete member')
-            return res.json()
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['teams'] })
@@ -270,16 +259,13 @@ export default function TeamPage() {
 
     const updateMemberMutation = useMutation({
         mutationFn: async (data: { teamId: string; userId: string; updates: Partial<TeamMember> }) => {
-            const res = await fetch(`/api/teams/${data.teamId}/members/${data.userId}`, {
+            return apiFetchJson<any>(`/api/teams/${data.teamId}/members/${data.userId}`, {
                 method: 'PATCH',
                 headers: {
-                    'Content-Type': 'application/json',
                     'x-user-id': session?.user?.id || ''
                 },
                 body: JSON.stringify(data.updates)
             })
-            if (!res.ok) throw new Error('Failed to update member')
-            return res.json()
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['teams'] })
@@ -289,14 +275,12 @@ export default function TeamPage() {
 
     const deleteTeamMutation = useMutation({
         mutationFn: async (teamId: string) => {
-            const res = await fetch(`/api/teams/${teamId}`, {
+            return apiFetchJson<any>(`/api/teams/${teamId}`, {
                 method: 'DELETE',
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
-            if (!res.ok) throw new Error('Failed to delete team')
-            return res.json()
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['teams'] })

@@ -1,12 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileRecord, Folder } from '@taskdashboard/types'
 import { useEffect } from 'react'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 
 async function getWorkspaceId(workspaceSlug: string): Promise<string> {
-    const res = await fetch(`/api/workspaces/slug/${workspaceSlug}`)
-    if (!res.ok) throw new Error('Failed to get workspace')
-    const data = await res.json()
+    const data = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
     return data.id
 }
 
@@ -23,9 +22,7 @@ const fetchFiles = async (workspaceSlug: string, folderId: string | null, recurs
         params.append('folderId', folderParam)
     }
 
-    const res = await fetch(`/api/files?${params}`)
-    if (!res.ok) throw new Error('Failed to fetch files')
-    const data = await res.json()
+    const data = await apiFetchJson<any>(`/api/files?${params}`)
     return data.data || []
 }
 
@@ -33,9 +30,7 @@ const fetchFiles = async (workspaceSlug: string, folderId: string | null, recurs
 const fetchFolders = async (workspaceSlug: string, parentId: string | null): Promise<Folder[]> => {
     const workspaceId = await getWorkspaceId(workspaceSlug)
     const parentParam = parentId ? `&parentId=${parentId}` : '&parentId=root'
-    const res = await fetch(`/api/folders?workspaceId=${workspaceId}${parentParam}`)
-    if (!res.ok) throw new Error('Failed to fetch folders')
-    const data = await res.json()
+    const data = await apiFetchJson<any>(`/api/folders?workspaceId=${workspaceId}${parentParam}`)
     return data.data || []
 }
 
@@ -123,13 +118,11 @@ export function useCreateFolder() {
     return useMutation({
         mutationFn: async ({ workspaceSlug, name, parentId }: { workspaceSlug: string, name: string, parentId: string | null }) => {
             const workspaceId = await getWorkspaceId(workspaceSlug)
-            const res = await fetch('/api/folders', {
+            const data = await apiFetchJson<any>('/api/folders', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, parentId, workspaceId })
             })
-            if (!res.ok) throw new Error('Failed to create folder')
-            return res.json()
+            return data
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug, variables.parentId] })
@@ -158,9 +151,8 @@ export function useUploadFile() {
             onProgress?.(10)
 
             // 2. Get presigned URL from API
-            const uploadRes = await fetch('/api/files/upload', {
+            const uploadRes = await apiFetch('/api/files/upload', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: file.name,
                     size: file.size,
@@ -209,9 +201,8 @@ export function useDeleteFile() {
 
     return useMutation({
         mutationFn: async ({ fileId, workspaceSlug: _workspaceSlug }: { fileId: string, workspaceSlug: string }) => {
-            const res = await fetch(`/api/files/${fileId}`, { method: 'DELETE' })
-            if (!res.ok) throw new Error('Failed to delete file')
-            return res.json()
+            const data = await apiFetchJson<any>(`/api/files/${fileId}`, { method: 'DELETE' })
+            return data
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
@@ -224,13 +215,11 @@ export function useRenameFile() {
 
     return useMutation({
         mutationFn: async ({ fileId, name, workspaceSlug: _workspaceSlug }: { fileId: string, name: string, workspaceSlug: string }) => {
-            const res = await fetch(`/api/files/${fileId}`, {
+            const data = await apiFetchJson<any>(`/api/files/${fileId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name })
             })
-            if (!res.ok) throw new Error('Failed to rename file')
-            return res.json()
+            return data
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
@@ -243,13 +232,11 @@ export function useMoveFile() {
 
     return useMutation({
         mutationFn: async ({ fileId, folderId, workspaceSlug: _workspaceSlug }: { fileId: string, folderId: string | null, workspaceSlug: string }) => {
-            const res = await fetch(`/api/files/${fileId}`, {
+            const data = await apiFetchJson<any>(`/api/files/${fileId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ folderId })
             })
-            if (!res.ok) throw new Error('Failed to move file')
-            return res.json()
+            return data
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
@@ -262,13 +249,11 @@ export function useRenameFolder() {
 
     return useMutation({
         mutationFn: async ({ folderId, name, workspaceSlug: _workspaceSlug }: { folderId: string, name: string, workspaceSlug: string }) => {
-            const res = await fetch(`/api/folders/${folderId}`, {
+            const data = await apiFetchJson<any>(`/api/folders/${folderId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name })
             })
-            if (!res.ok) throw new Error('Failed to rename folder')
-            return res.json()
+            return data
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug] })
@@ -281,9 +266,8 @@ export function useDeleteFolder() {
 
     return useMutation({
         mutationFn: async ({ folderId, workspaceSlug: _workspaceSlug }: { folderId: string, workspaceSlug: string }) => {
-            const res = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' })
-            if (!res.ok) throw new Error('Failed to delete folder')
-            return res.json()
+            const data = await apiFetchJson<any>(`/api/folders/${folderId}`, { method: 'DELETE' })
+            return data
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug] })

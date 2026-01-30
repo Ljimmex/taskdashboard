@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { signUp, signIn } from '@/lib/auth'
+import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -150,11 +151,8 @@ function RegisterPage() {
             // Headers will be handled by browser cookies from BetterAuth
             const slug = generateSlug(workspaceName) + '-' + Math.random().toString(36).substring(2, 6)
 
-            const wsResponse = await fetch('/api/workspaces', {
+            const wsResponse = await apiFetch('/api/workspaces', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     name: workspaceName,
                     slug: slug,

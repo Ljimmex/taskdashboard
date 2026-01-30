@@ -6,6 +6,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { apiFetch } from '@/lib/api'
 
 interface CreateWorkspacePanelProps {
     isOpen: boolean
@@ -55,11 +56,8 @@ export function CreateWorkspacePanel({ isOpen, onClose, onWorkspaceCreated }: Cr
         try {
             const slug = generateSlug(workspaceName) + '-' + Math.random().toString(36).substring(2, 6)
 
-            const wsResponse = await fetch('/api/workspaces', {
+            const wsResponse = await apiFetch('/api/workspaces', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     name: workspaceName,
                     slug: slug,

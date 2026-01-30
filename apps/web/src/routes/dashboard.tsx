@@ -1,6 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { getSession, signOut } from '@/lib/auth'
 import { useEffect, useState } from 'react'
+import { apiFetchJson } from '@/lib/api'
 
 export const Route = createFileRoute('/dashboard')({
     beforeLoad: async () => {
@@ -42,9 +43,7 @@ function DashboardRedirectLogic() {
 
         async function resolveWorkspace() {
             try {
-                const res = await fetch('/api/workspaces')
-                if (!res.ok) throw new Error('Failed to fetch workspaces')
-                const json = await res.json()
+                const json = await apiFetchJson<any>('/api/workspaces')
                 const workspaces = json.data
 
                 if (!mounted) return
