@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { apiFetchJson } from '@/lib/api'
 
 interface TaskTemplateData {
     titlePrefix?: string
@@ -65,15 +66,13 @@ export function TemplateSelector({ workspaceSlug, userId, onApplyTemplate }: Tem
             if (!workspaceSlug || !userId) return
             setLoading(true)
             try {
-                const res = await fetch(`/api/templates?workspaceSlug=${workspaceSlug}`, {
-                    credentials: 'include',
+                const json = await apiFetchJson<any>(`/api/templates?workspaceSlug=${workspaceSlug}`, {
                     headers: {
                         'x-user-id': userId,
                     }
                 })
-                const data = await res.json()
-                if (data.success) {
-                    setTemplates(data.data)
+                if (json.success) {
+                    setTemplates(json.data)
                 }
             } catch (e) {
                 console.error('Failed to fetch templates:', e)

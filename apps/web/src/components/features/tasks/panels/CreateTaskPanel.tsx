@@ -12,6 +12,7 @@ import {
     SubtaskCheckboxIcon,
     ChevronDoubleRightIcon,
 } from '../components/TaskIcons'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 
 interface Project {
     id: string
@@ -156,8 +157,7 @@ export function CreateTaskPanel({
     // Fetch labels from workspace when panel opens
     useEffect(() => {
         if (isOpen && workspaceSlug && !propAvailableLabels) {
-            fetch(`/api/labels?workspaceSlug=${workspaceSlug}`)
-                .then(res => res.json())
+            apiFetchJson<any>(`/api/labels?workspaceSlug=${workspaceSlug}`)
                 .then(data => {
                     if (data.success && data.data) {
                         setLocalAvailableLabels(data.data)
@@ -199,12 +199,11 @@ export function CreateTaskPanel({
                     setStatus(projectData.stages[0].id)
                 }
             } else {
-                fetch(`/api/projects/${projectId}`)
-                    .then(res => res.json())
+                apiFetchJson<any>(`/api/projects/${projectId}`)
                     .then(data => {
                         if (data.success && data.data?.stages) {
                             setCurrentStages(data.data.stages)
-                            if (data.data.stages.length > 0 && !status) {
+                            if (!status) {
                                 setStatus(data.data.stages[0].id)
                             }
                         }
@@ -281,7 +280,7 @@ export function CreateTaskPanel({
                     const formData = new FormData()
                     formData.append('file', file)
 
-                    const response = await fetch(`/api/tasks/${newTask.id}/upload`, {
+                    const response = await apiFetch(`/api/tasks/${newTask.id}/upload`, {
                         method: 'POST',
                         headers: {
                             'x-user-id': userId || ''
@@ -371,12 +370,11 @@ export function CreateTaskPanel({
         // Try to create via API if we have a workspace
         if (workspaceSlug) {
             try {
-                const response = await fetch('/api/labels', {
+                const data = await apiFetchJson<any>('/api/labels', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ workspaceSlug, name, color }),
                 })
-                const data = await response.json()
                 if (data.success && data.data) {
                     const newLabel = data.data as Label
                     setLocalAvailableLabels(prev => [...prev, newLabel])

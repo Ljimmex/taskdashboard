@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { X, Trash2, Lock } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 interface ChannelSettingsPanelProps {
     conversationId: string
@@ -23,9 +24,8 @@ export function ChannelSettingsPanel({
     const handleSave = async () => {
         setIsSaving(true)
         try {
-            const response = await fetch(`/api/conversations/${conversationId}`, {
+            const response = await apiFetch(`/api/conversations/${conversationId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, description })
             })
 

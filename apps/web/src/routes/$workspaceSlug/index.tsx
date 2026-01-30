@@ -7,6 +7,7 @@ import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { CalendarSection } from '@/components/dashboard/CalendarSection'
 import { TaskCard, AddTaskCard } from '@/components/features/tasks/components/TaskCard'
 import { ChatSection } from '@/components/dashboard/ChatSection'
+import { apiFetchJson } from '@/lib/api'
 import { CreateTaskPanel } from '@/components/features/tasks/panels/CreateTaskPanel'
 
 
@@ -62,9 +63,7 @@ function DashboardHome() {
   const { data: projectsRes, isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects', workspaceSlug],
     queryFn: async () => {
-      const res = await fetch(`/api/projects?workspaceSlug=${workspaceSlug}`)
-      if (!res.ok) throw new Error('Failed to fetch projects')
-      return res.json()
+      return apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`)
     }
   })
 
@@ -72,9 +71,7 @@ function DashboardHome() {
   const { data: meetingsRes, isLoading: isLoadingMeetings } = useQuery({
     queryKey: ['meetings', workspaceSlug],
     queryFn: async () => {
-      const res = await fetch(`/api/tasks?workspaceSlug=${workspaceSlug}&type=meeting`)
-      if (!res.ok) throw new Error('Failed to fetch meetings')
-      return res.json()
+      return apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}&type=meeting`)
     }
   })
 

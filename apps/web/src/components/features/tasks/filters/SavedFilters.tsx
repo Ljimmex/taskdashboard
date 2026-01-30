@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 import type { FilterState } from '../views/KanbanBoardHeader'
 
 interface SavedFilter {
@@ -80,17 +81,15 @@ export function SavedFilters({
         if (!workspaceSlug) return
         setLoading(true)
         try {
-            const res = await fetch(`/api/filters?workspaceSlug=${workspaceSlug}`, {
-                credentials: 'include',
+            const json = await apiFetchJson<any>(`/api/filters?workspaceSlug=${workspaceSlug}`, {
                 headers: {
                     'x-user-id': userId || '',
                 }
             })
-            const data = await res.json()
-            if (data.success) {
-                setSavedFilters(data.data)
+            if (json.success) {
+                setSavedFilters(json.data)
                 // Apply default filter on load
-                const defaultFilter = data.data.find((f: SavedFilter) => f.isDefault)
+                const defaultFilter = json.data.find((f: SavedFilter) => f.isDefault)
                 if (defaultFilter && onFiltersLoaded) {
                     onFiltersLoaded(defaultFilter.filters)
                 }
@@ -133,11 +132,9 @@ export function SavedFilters({
         if (!newFilterName.trim()) return
 
         try {
-            const res = await fetch('/api/filters', {
+            const json = await apiFetchJson<any>('/api/filters', {
                 method: 'POST',
-                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
                     'x-user-id': userId || '',
                 },
                 body: JSON.stringify({
@@ -147,8 +144,7 @@ export function SavedFilters({
                     isShared: saveAsShared,
                 })
             })
-            const data = await res.json()
-            if (data.success) {
+            if (json.success) {
                 await fetchFilters()
                 setNewFilterName('')
                 setSaveAsShared(false)
@@ -161,9 +157,8 @@ export function SavedFilters({
 
     const handleSetDefault = async (id: string) => {
         try {
-            await fetch(`/api/filters/${id}/default`, {
+            await apiFetch(`/api/filters/${id}/default`, {
                 method: 'POST',
-                credentials: 'include',
                 headers: {
                     'x-user-id': userId || '',
                 }
@@ -176,9 +171,8 @@ export function SavedFilters({
 
     const handleDeleteFilter = async (id: string) => {
         try {
-            await fetch(`/api/filters/${id}`, {
+            await apiFetch(`/api/filters/${id}`, {
                 method: 'DELETE',
-                credentials: 'include',
                 headers: {
                     'x-user-id': userId || '',
                 }

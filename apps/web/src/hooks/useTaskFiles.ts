@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileRecord } from '@taskdashboard/types'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 
 
 export interface TaskFile extends FileRecord {
@@ -19,8 +20,7 @@ export const useTaskFiles = (taskId?: string) => {
         queryKey: ['task-files', taskId],
         queryFn: async () => {
             if (!taskId) return []
-            const res = await fetch(`/api/tasks/${taskId}/files`)
-            const json = await res.json()
+            const json = await apiFetchJson<any>(`/api/tasks/${taskId}/files`)
             if (!json.success) throw new Error(json.error)
             return json.data as TaskFile[]
         },
@@ -37,11 +37,9 @@ export const useAttachFile = () => {
 
     return useMutation({
         mutationFn: async ({ taskId, fileId }: { taskId: string; fileId: string }) => {
-            const res = await fetch(`/api/tasks/${taskId}/files/${fileId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+            const json = await apiFetchJson<any>(`/api/tasks/${taskId}/files/${fileId}`, {
+                method: 'POST'
             })
-            const json = await res.json()
             if (!json.success) throw new Error(json.error)
             return json.data
         },
@@ -60,9 +58,10 @@ export const useUploadTaskFile = () => {
             const formData = new FormData()
             formData.append('file', file)
 
-            const res = await fetch(`/api/tasks/${taskId}/upload`, {
+            const res = await apiFetch(`/api/tasks/${taskId}/upload`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {} // Let browser set boundary for FormData
             })
             const json = await res.json()
             if (!json.success) throw new Error(json.error)
@@ -81,10 +80,9 @@ export const useRemoveFileFromTask = () => {
 
     return useMutation({
         mutationFn: async ({ taskId, fileId }: { taskId: string; fileId: string }) => {
-            const res = await fetch(`/api/tasks/${taskId}/files/${fileId}`, {
+            const json = await apiFetchJson<any>(`/api/tasks/${taskId}/files/${fileId}`, {
                 method: 'DELETE'
             })
-            const json = await res.json()
             if (!json.success) throw new Error(json.error)
             return json
         },

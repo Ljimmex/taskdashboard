@@ -4,6 +4,7 @@ import { MessageBubble } from './MessageBubble'
 import { MessageInput } from './MessageInput'
 import { useQuery } from '@tanstack/react-query'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 
 interface ChatWindowProps {
     recipientUserId?: string
@@ -40,13 +41,13 @@ export function ChatWindow({
     const { data: conversation } = useQuery({
         queryKey: ['conversation', currentUserId, recipientUserId],
         queryFn: async () => {
-            const res = await fetch(`/api/conversations/direct?userId1=${currentUserId}&userId2=${recipientUserId}`)
-            if (!res.ok) {
+            try {
+                const json = await apiFetchJson<any>(`/api/conversations/direct?userId1=${currentUserId}&userId2=${recipientUserId}`)
+                return json.conversation
+            } catch (e) {
                 // Conversation doesn't exist yet, will be created on first message
                 return null
             }
-            const data = await res.json()
-            return data.conversation
         },
         enabled: !!recipientUserId
     })
@@ -56,10 +57,8 @@ export function ChatWindow({
         queryKey: ['messages', conversation?.id],
         queryFn: async () => {
             if (!conversation?.id) return []
-            const res = await fetch(`/api/conversations/${conversation.id}/messages`)
-            if (!res.ok) throw new Error('Failed to fetch messages')
-            const data = await res.json()
-            return data.data || []
+            const json = await apiFetchJson<any>(`/api/conversations/${conversation.id}/messages`)
+            return json.data || []
         },
         enabled: !!conversation?.id
     })
@@ -78,24 +77,20 @@ export function ChatWindow({
             let conversationId = conversation?.id
 
             if (!conversationId) {
-                const createRes = await fetch('/api/conversations/direct', {
+                const createData = await apiFetchJson<any>('/api/conversations/direct', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         workspaceId,
                         userId1: currentUserId,
                         userId2: recipientUserId
                     })
                 })
-                if (!createRes.ok) throw new Error('Failed to create conversation')
-                const createData = await createRes.json()
                 conversationId = createData.conversation.id
             }
 
             // Send message
-            const res = await fetch(`/api/conversations/${conversationId}/messages`, {
+            const res = await apiFetch(`/api/conversations/${conversationId}/messages`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content,
                     senderId: currentUserId

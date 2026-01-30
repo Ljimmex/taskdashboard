@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useSession } from '@/lib/auth'
 import { keyStorage } from '@/lib/keyStorage'
 import { importPublicKey, importPrivateKey } from '@/lib/crypto'
+import { apiFetchJson } from '@/lib/api'
 
 
 export interface EncryptionKeys {
@@ -29,18 +30,11 @@ export function useEncryption(workspaceId: string) {
             }
 
             // 2. Fetch from API if not in storage
-            const response = await fetch(`/api/workspaces/${workspaceId}/keys`, {
+            const data = await apiFetchJson<any>(`/api/workspaces/${workspaceId}/keys`, {
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
-
-            if (!response.ok) {
-                console.error('Failed to fetch keys', response.statusText)
-                throw new Error('Failed to fetch encryption keys')
-            }
-
-            const data = await response.json()
 
             if (!data?.data) {
                 throw new Error('Invalid key response from server')

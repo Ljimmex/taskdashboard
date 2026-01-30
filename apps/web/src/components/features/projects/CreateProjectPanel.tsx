@@ -3,6 +3,7 @@ import { X, Palette, Users, FolderOpen } from 'lucide-react'
 import { DueDatePicker } from '../tasks/components/DueDatePicker'
 import { useSession } from '@/lib/auth'
 import { usePanelStore } from '@/lib/panelStore'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 
 interface Team {
     id: string
@@ -73,12 +74,11 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
         if (isOpen) {
             // Fetch teams (need workspaceId)
             const teamsUrl = workspaceId ? `/api/teams?workspaceId=${workspaceId}` : '/api/teams'
-            fetch(teamsUrl, {
+            apiFetchJson<any>(teamsUrl, {
                 headers: { 'x-user-id': session?.user?.id || '' }
             })
-                .then((res) => res.json())
                 .then((data) => {
-                    // API returns { data: [...] } not { success: true, data: [...] }
+                    // API returns { data: [...] }
                     if (data.data && Array.isArray(data.data)) {
                         setTeams(data.data)
                         if (data.data.length > 0 && !teamId) {
@@ -89,10 +89,9 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                 .catch(console.error)
 
             // Fetch industry templates
-            fetch('/api/industry-templates', {
+            apiFetchJson<any>('/api/industry-templates', {
                 headers: { 'x-user-id': session?.user?.id || '' }
             })
-                .then((res) => res.json())
                 .then((data) => {
                     if (data.success && data.data) {
                         setTemplates(data.data)
@@ -110,10 +109,9 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
         setError(null)
 
         try {
-            const response = await fetch('/api/projects', {
+            const response = await apiFetch('/api/projects', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'x-user-id': session?.user?.id || ''
                 },
                 body: JSON.stringify({

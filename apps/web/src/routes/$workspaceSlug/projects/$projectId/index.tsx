@@ -339,11 +339,10 @@ function ProjectDetailPage() {
   const handleFullEditTask = async (taskId: string) => {
     try {
       // Fetch task details (includes subtasks in response)
-      const res = await fetch(`/api/tasks/${taskId}`)
-      const data = await res.json()
+      const json = await apiFetchJson<any>(`/api/tasks/${taskId}`)
 
-      if (data.success) {
-        const taskData = data.data
+      if (json.success) {
+        const taskData = json.data
         setEditingTask(taskData)
         // Use subtasks from task response (already included in API)
         setEditingTaskSubtasks(taskData.subtasks || [])
@@ -380,9 +379,9 @@ function ProjectDetailPage() {
         links: data.links || [],
       }
 
-      const res = await fetch(`/api/tasks/${data.id}`, {
+      const res = await apiFetch(`/api/tasks/${data.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+        headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify(apiPayload)
       })
       if (res.ok) {
@@ -908,9 +907,9 @@ function ProjectDetailPage() {
           if (!selectedTask) return
           const subtask = selectedTask.subtasks?.find((s: any) => s.id === subtaskId)
           if (!subtask) return
-          await fetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
+          await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'x-user-id': session?.user?.id || '' },
+            headers: { 'x-user-id': session?.user?.id || '' },
             body: JSON.stringify({ isCompleted: !subtask.isCompleted })
           })
           refetchTaskDetails(selectedTask.id)

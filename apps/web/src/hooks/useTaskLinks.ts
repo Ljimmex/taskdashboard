@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiFetchJson } from '@/lib/api'
 
 export interface TaskLink {
     id: string
@@ -28,12 +29,10 @@ export const useAddTaskLink = () => {
             title?: string
             description?: string
         }) => {
-            const res = await fetch(`/api/tasks/${taskId}/links`, {
+            const json = await apiFetchJson<any>(`/api/tasks/${taskId}/links`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url, title, description })
             })
-            const json = await res.json()
             if (!json.success) throw new Error(json.error)
             return json.data as TaskLink
         },
@@ -57,12 +56,10 @@ export const useUpdateTaskLink = () => {
             linkId: string
             data: Partial<Pick<TaskLink, 'url' | 'title' | 'description'>>
         }) => {
-            const res = await fetch(`/api/tasks/${taskId}/links/${linkId}`, {
+            const json = await apiFetchJson<any>(`/api/tasks/${taskId}/links/${linkId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            const json = await res.json()
             if (!json.success) throw new Error(json.error)
             return json.data as TaskLink
         },
@@ -78,10 +75,9 @@ export const useDeleteTaskLink = () => {
 
     return useMutation({
         mutationFn: async ({ taskId, linkId }: { taskId: string; linkId: string }) => {
-            const res = await fetch(`/api/tasks/${taskId}/links/${linkId}`, {
+            const json = await apiFetchJson<any>(`/api/tasks/${taskId}/links/${linkId}`, {
                 method: 'DELETE'
             })
-            const json = await res.json()
             if (!json.success) throw new Error(json.error)
             return json
         },

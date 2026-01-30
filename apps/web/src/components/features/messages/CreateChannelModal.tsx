@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 interface CreateChannelModalProps {
     isOpen: boolean
@@ -27,9 +28,8 @@ export function CreateChannelModal({
         setIsCreating(true)
 
         try {
-            const response = await fetch('/api/conversations', {
+            const response = await apiFetch('/api/conversations', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     workspaceId,
                     name,

@@ -4,6 +4,7 @@ import { encryptHybrid, decryptHybrid, type EncryptedMessagePacket } from '@/lib
 import type { Conversation, ConversationMessage } from '@taskdashboard/types'
 import { useEffect } from 'react'
 import { useSession } from '@/lib/auth'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 
 // Helper to parse JSONB content safely
 function parseMessageContent(content: string): EncryptedMessagePacket | string {
@@ -28,14 +29,12 @@ export function useConversations(workspaceId: string) {
     const conversationsQuery = useQuery({
         queryKey: ['conversations', workspaceId, session?.user?.id],
         queryFn: async () => {
-            const response = await fetch(`/api/conversations?workspaceId=${workspaceId}`, {
+            const json = await apiFetchJson<any>(`/api/conversations?workspaceId=${workspaceId}`, {
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
-            if (!response.ok) throw new Error('Failed to fetch conversations')
-            const result = await response.json()
-            return result.data as Conversation[]
+            return json.data as Conversation[]
         },
         enabled: !!workspaceId && !!session?.user?.id
     })
@@ -55,9 +54,8 @@ export function useConversations(workspaceId: string) {
             const encryptedPacket = await encryptHybrid(content, keys.publicKey)
             const encryptedContent = JSON.stringify(encryptedPacket)
 
-            const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+            const response = await apiFetch(`/api/conversations/${conversationId}/messages`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content: encryptedContent, // Sending JSON string as content
                     attachments
@@ -88,9 +86,8 @@ export function useConversations(workspaceId: string) {
             const encryptedPacket = await encryptHybrid(newContent, keys.publicKey)
             const encryptedContent = JSON.stringify(encryptedPacket)
 
-            const response = await fetch(`/api/conversations/${conversationId}/messages/${messageId}`, {
+            const response = await apiFetch(`/api/conversations/${conversationId}/messages/${messageId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content: encryptedContent
                 })
@@ -110,7 +107,7 @@ export function useConversations(workspaceId: string) {
             conversationId: string,
             messageId: string
         }) => {
-            const response = await fetch(`/api/conversations/${conversationId}/messages/${messageId}`, {
+            const response = await apiFetch(`/api/conversations/${conversationId}/messages/${messageId}`, {
                 method: 'DELETE'
             })
 
@@ -141,10 +138,8 @@ export function useConversationMessages(conversationId: string, workspaceId: str
     const messagesQuery = useQuery({
         queryKey: ['conversations', conversationId, 'messages'],
         queryFn: async () => {
-            const response = await fetch(`/api/conversations/${conversationId}`)
-            if (!response.ok) throw new Error('Failed to fetch messages')
-            const result = await response.json()
-            const conversation = result.data as Conversation
+            const json = await apiFetchJson<any>(`/api/conversations/${conversationId}`)
+            const conversation = json.data as Conversation
 
             if (!conversation.messages) return []
 

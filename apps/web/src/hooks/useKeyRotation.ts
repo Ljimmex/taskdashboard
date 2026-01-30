@@ -2,6 +2,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { importPublicKey, importPrivateKey, encryptHybrid, decryptHybrid } from '@/lib/crypto'
 import { keyStorage } from '@/lib/keyStorage'
 import type { Conversation, ConversationMessage } from '@taskdashboard/types'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 
 interface KeyRotationData {
     oldPrivateKey: string
@@ -16,11 +17,8 @@ export function useKeyRotation(workspaceId: string) {
     const isExpired = useQuery({
         queryKey: ['keyExpiration', workspaceId],
         queryFn: async () => {
-            const response = await fetch(`/api/workspaces/${workspaceId}/keys`)
-            if (!response.ok) return false
-
-            const result = await response.json()
-            const expiresAt = result.data?.expiresAt
+            const json = await apiFetchJson<any>(`/api/workspaces/${workspaceId}/keys`)
+            const expiresAt = json.data?.expiresAt
 
             if (!expiresAt) return false
 
@@ -39,16 +37,10 @@ export function useKeyRotation(workspaceId: string) {
             console.log('🔄 Starting key rotation...')
 
             // 1. Call rotation endpoint
-            const rotateResponse = await fetch(`/api/workspaces/${workspaceId}/rotate-keys`, {
+            const json = await apiFetchJson<any>(`/api/workspaces/${workspaceId}/rotate-keys`, {
                 method: 'POST'
             })
-
-            if (!rotateResponse.ok) {
-                throw new Error('Failed to rotate keys on server')
-            }
-
-            const rotateResult = await rotateResponse.json()
-            const rotationData: KeyRotationData = rotateResult.data
+            const rotationData: KeyRotationData = json.data
 
             // 2. Import old and new keys
             console.log('🔐 Importing old and new keys...')
@@ -58,11 +50,8 @@ export function useKeyRotation(workspaceId: string) {
 
             // 3. Fetch ALL conversations in workspace
             console.log('📨 Fetching all conversations...')
-            const conversationsResponse = await fetch(`/api/conversations?workspaceId=${workspaceId}`)
-            if (!conversationsResponse.ok) throw new Error('Failed to fetch conversations')
-
-            const conversationsResult = await conversationsResponse.json()
-            const conversations = conversationsResult.data as Conversation[]
+            const jsonConversations = await apiFetchJson<any>(`/api/conversations?workspaceId=${workspaceId}`)
+            const conversations = jsonConversations.data as Conversation[]
 
             console.log(`📊 Found ${conversations.length} conversations to re-encrypt`)
 
@@ -98,9 +87,8 @@ export function useKeyRotation(workspaceId: string) {
                 )
 
                 // 5. Update conversation with re-encrypted messages
-                const updateResponse = await fetch(`/api/conversations/${conversation.id}`, {
+                const updateResponse = await apiFetch(`/api/conversations/${conversation.id}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         messages: reEncryptedMessages
                     })

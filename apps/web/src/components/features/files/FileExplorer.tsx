@@ -8,6 +8,7 @@ import { MoveToFolderModal } from './MoveToFolderModal'
 import { useFiles, useFolders, useDeleteFile, useDeleteFolder, useMoveFile } from '@/hooks/useFiles'
 import { useParams } from '@tanstack/react-router'
 import { Loader2, FolderPlus } from 'lucide-react'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 import { FileRecord, Folder } from '@taskdashboard/types'
 
 import { FolderBreadcrumb, BreadcrumbItem } from './FolderBreadcrumb'
@@ -161,9 +162,8 @@ export function FileExplorer({
 
     const handleDownload = async (id: string) => {
         try {
-            const res = await fetch(`/api/files/${id}/download`)
-            if (!res.ok) throw new Error('Failed to get download URL')
-            const { downloadUrl } = await res.json()
+            const json = await apiFetchJson<any>(`/api/files/${id}/download`)
+            const { downloadUrl } = json
             window.open(downloadUrl, '_blank')
         } catch (error) {
             console.error('Download failed:', error)
@@ -172,7 +172,7 @@ export function FileExplorer({
 
     const handleArchive = async (id: string) => {
         try {
-            const res = await fetch(`/api/files/${id}/archive`, { method: 'PATCH' })
+            const res = await apiFetch(`/api/files/${id}/archive`, { method: 'PATCH' })
             if (!res.ok) throw new Error('Failed to archive file')
             refetchFiles()
         } catch (error) {
@@ -182,7 +182,7 @@ export function FileExplorer({
 
     const handleDuplicate = async (id: string) => {
         try {
-            const res = await fetch(`/api/files/${id}/duplicate`, { method: 'POST' })
+            const res = await apiFetch(`/api/files/${id}/duplicate`, { method: 'POST' })
             if (!res.ok) {
                 const errorData = await res.json()
                 if (res.status === 501) {
