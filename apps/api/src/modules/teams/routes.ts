@@ -55,21 +55,31 @@ teamsRoutes.get('/', async (c) => {
         }
 
         if (workspaceId) {
-            console.log(`🔍 Fetching teams for workspaceId: ${workspaceId}`)
-            // Fetch all teams in the workspace with members
-            // Fetch basic team info first to rule out relation crashes
-            result = await db.query.teams.findMany({
-                where: (table, { eq }) => eq(table.workspaceId, workspaceId as string),
-                // with: {
-                //     members: {
-                //         with: {
-                //             user: true
-                //         }
-                //     },
-                //     projects: true
-                // }
-            })
-            console.log(`✅ Found ${result.length} teams`)
+            console.log(`[DEBUG] Fetching teams for workspaceId: ${workspaceId}`)
+            console.log('[DEBUG] DB Query Object:', !!db, !!db.query, !!db.query.teams)
+
+            try {
+                // Fetch basic team info first to rule out relation crashes
+                // Explicitly NOT using a where clause first to see if findMany works at all
+                // result = await db.query.teams.findMany({
+                //     where: (table, { eq }) => eq(table.workspaceId, workspaceId as string),
+                // })
+
+                // Let's try raw SQL query via Drizzle just to test connectivity
+                // Or a simple select
+                const start = Date.now()
+                console.log('[DEBUG] Executing db.query.teams.findMany...')
+
+                result = await db.query.teams.findMany({
+                    where: (table, { eq }) => eq(table.workspaceId, workspaceId as string)
+                })
+
+                console.log(`[DEBUG] Query completed in ${Date.now() - start}ms`)
+                console.log(`[DEBUG] Found ${result.length} teams`)
+            } catch (queryError) {
+                console.error('[DEBUG] CRITICAL QUERY ERROR:', queryError)
+                throw queryError // Re-throw to be caught by outer catch
+            }
         } else if (!workspaceIdQuery && !workspaceSlugQuery) {
             // Fetch only teams the user is part of
             const memberships = await db.query.teamMembers.findMany({
