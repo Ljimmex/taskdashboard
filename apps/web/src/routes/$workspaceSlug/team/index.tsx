@@ -35,35 +35,19 @@ export default function TeamPage() {
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
     const [filters, setFilters] = useState<FilterOption>({})
 
-    // 1. Fetch Current Workspace to get ID
-    const { data: workspaces } = useQuery({
-        queryKey: ['workspaces', session?.user?.id],
-        queryFn: async () => {
-            const json = await apiFetchJson<any>('/api/workspaces', {
-                headers: {
-                    'x-user-id': session?.user?.id || ''
-                }
-            })
-            return json.data
-        },
-        enabled: !!session?.user?.id
-    })
-
-    const currentWorkspace = workspaces?.find((w: any) => w.slug === workspaceSlug)
-
     // 2. Fetch Teams for this Workspace
     const { data: teamsData, isLoading: isLoadingTeams } = useQuery({
-        queryKey: ['teams', currentWorkspace?.id, session?.user?.id],
+        queryKey: ['teams', workspaceSlug, session?.user?.id],
         queryFn: async () => {
-            if (!currentWorkspace?.id) return []
-            const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace.id}`, {
+            if (!workspaceSlug) return []
+            const json = await apiFetchJson<any>(`/api/teams?workspaceSlug=${workspaceSlug}`, {
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
             return json.data
         },
-        enabled: !!currentWorkspace?.id && !!session?.user?.id
+        enabled: !!workspaceSlug && !!session?.user?.id
     })
 
     // 3. Map API Data to UI Types
@@ -216,7 +200,7 @@ export default function TeamPage() {
                 },
                 body: JSON.stringify({
                     ...newTeam,
-                    workspaceId: currentWorkspace.id
+                    workspaceSlug: workspaceSlug
                 })
             })
         },

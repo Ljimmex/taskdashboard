@@ -28,13 +28,25 @@ async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLev
     return (member?.teamLevel as TeamLevel) || null
 }
 
-// GET /api/teams - List teams (optionally filtered by workspaceId)
+// GET /api/teams - List teams (optionally filtered by workspaceId or workspaceSlug)
 teamsRoutes.get('/', async (c) => {
-    const workspaceId = c.req.query('workspaceId')
+    const workspaceIdQuery = c.req.query('workspaceId')
+    const workspaceSlugQuery = c.req.query('workspaceSlug')
     const userId = c.req.header('x-user-id') || 'temp-user-id'
 
     try {
         let result: any[] = []
+        let workspaceId = workspaceIdQuery
+
+        // If slug provided, find workspaceId
+        if (!workspaceId && workspaceSlugQuery) {
+            const ws = await db.query.workspaces.findFirst({
+                where: (ws, { eq }) => eq(ws.slug, workspaceSlugQuery)
+            })
+            if (ws) {
+                workspaceId = ws.id
+            }
+        }
 
         if (workspaceId) {
             // Fetch all teams in the workspace with members
@@ -49,7 +61,7 @@ teamsRoutes.get('/', async (c) => {
                     projects: true
                 }
             })
-        } else {
+        } else if (!workspaceIdQuery && !workspaceSlugQuery) {
             // Fetch only teams the user is part of
             const memberships = await db.query.teamMembers.findMany({
                 where: (tm, { eq }) => eq(tm.userId, userId),
@@ -97,9 +109,9 @@ teamsRoutes.get('/', async (c) => {
             })
         }
 
-        return c.json({ data: result })
+        return c.json({ success: true, data: result })
     } catch (error) {
-        return c.json({ error: 'Failed to fetch teams', details: String(error) }, 500)
+        return c.json({ success: false, error: 'Failed to fetch teams', details: String(error) }, 500)
     }
 })
 
@@ -107,13 +119,25 @@ teamsRoutes.get('/', async (c) => {
 teamsRoutes.post('/', async (c) => {
     const userId = c.req.header('x-user-id') || 'temp-user-id'
     const body = await c.req.json()
-    const { name, workspaceId, description, color, members } = body
+    const { name, workspaceId: workspaceIdReq, workspaceSlug, description, color, members } = body
 
-    if (!name || !workspaceId) {
-        return c.json({ error: 'Name and workspaceId are required' }, 400)
+    if (!name || (!workspaceIdReq && !workspaceSlug)) {
+        return c.json({ error: 'Name and workspaceId or workspaceSlug are required' }, 400)
     }
 
     try {
+        let workspaceId = workspaceIdReq
+
+        if (!workspaceId && workspaceSlug) {
+            const ws = await db.query.workspaces.findFirst({
+                where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
+            })
+            if (!ws) return c.json({ error: 'Workspace not found' }, 404)
+            workspaceId = ws.id
+        }
+
+        if (!workspaceId) return c.json({ error: 'Workspace ID resolved to null' }, 400)
+
         // Check if user is member of workspace
         const wsMember = await db.query.workspaceMembers.findFirst({
             where: (m, { eq, and }) => and(eq(m.workspaceId, workspaceId), eq(m.userId, userId))

@@ -224,7 +224,7 @@ function RegisterPage() {
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
+                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
                                         placeholder="twoj@email.com"
                                         required
                                     />
@@ -240,7 +240,7 @@ function RegisterPage() {
                                         type={showPassword ? "text" : "password"}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
+                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
                                         placeholder="8+ znaków"
                                         required
                                         minLength={8}
@@ -272,7 +272,7 @@ function RegisterPage() {
                                         type={showConfirmPassword ? "text" : "password"}
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
+                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
                                         placeholder="8+ znaków"
                                         required
                                         minLength={8}
@@ -357,7 +357,7 @@ function RegisterPage() {
                                     type="text"
                                     value={firstName}
                                     onChange={(e) => setFirstName(e.target.value)}
-                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
+                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
                                     placeholder="Jan"
                                     required
                                 />
@@ -370,7 +370,7 @@ function RegisterPage() {
                                     type="text"
                                     value={lastName}
                                     onChange={(e) => setLastName(e.target.value)}
-                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
+                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
                                     placeholder="Kowalski"
                                     required
                                 />
@@ -383,7 +383,7 @@ function RegisterPage() {
                                     <select
                                         value={birthDay}
                                         onChange={(e) => setBirthDay(e.target.value)}
-                                        className="bg-gray-800/50 text-white rounded-xl px-3 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                        className="bg-transparent text-white px-3 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                         required
                                     >
                                         <option value="">Dzień</option>
@@ -394,7 +394,7 @@ function RegisterPage() {
                                     <select
                                         value={birthMonth}
                                         onChange={(e) => setBirthMonth(e.target.value)}
-                                        className="bg-gray-800/50 text-white rounded-xl px-3 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                        className="bg-transparent text-white px-3 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                         required
                                     >
                                         <option value="">Miesiąc</option>
@@ -405,7 +405,7 @@ function RegisterPage() {
                                     <select
                                         value={birthYear}
                                         onChange={(e) => setBirthYear(e.target.value)}
-                                        className="bg-gray-800/50 text-white rounded-xl px-3 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                        className="bg-transparent text-white px-3 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                         required
                                     >
                                         <option value="">Rok</option>
@@ -424,7 +424,7 @@ function RegisterPage() {
                                     id="gender"
                                     value={gender}
                                     onChange={(e) => setGender(e.target.value)}
-                                    className="w-full bg-gray-800/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                    className="w-full bg-transparent text-white px-4 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                     required
                                 >
                                     <option value="">Wybierz płeć</option>
@@ -442,7 +442,7 @@ function RegisterPage() {
                                     id="position"
                                     value={position}
                                     onChange={(e) => setPosition(e.target.value)}
-                                    className="w-full bg-gray-800/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                    className="w-full bg-transparent text-white px-4 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                     required
                                 >
                                     <option value="">Wybierz stanowisko</option>
@@ -499,7 +499,7 @@ function RegisterPage() {
                                     type="text"
                                     value={workspaceName}
                                     onChange={(e) => setWorkspaceName(e.target.value)}
-                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-b-2 focus:border-amber-500 focus:outline-none focus:ring-0 pb-3 transition-colors"
+                                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
                                     placeholder="Moja Firma"
                                     required
                                 />
@@ -511,7 +511,7 @@ function RegisterPage() {
                                     id="teamSize"
                                     value={teamSize}
                                     onChange={(e) => setTeamSize(e.target.value)}
-                                    className="w-full bg-gray-800/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                    className="w-full bg-transparent text-white px-4 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                     required
                                 >
                                     <option value="1-10">1-10 osób</option>
@@ -527,7 +527,7 @@ function RegisterPage() {
                                     id="industry"
                                     value={industry}
                                     onChange={(e) => setIndustry(e.target.value)}
-                                    className="w-full bg-gray-800/50 text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-0 focus:bg-gray-700 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
+                                    className="w-full bg-transparent text-white px-4 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
                                     required
                                 >
                                     <option value="Technology">Technologia / IT</option>

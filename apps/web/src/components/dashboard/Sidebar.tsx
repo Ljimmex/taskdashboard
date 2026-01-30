@@ -19,31 +19,17 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
 
     const { data: session } = useSession()
 
-    // Fetch workspaces to find current workspace ID
-    const { data: workspaces } = useQuery({
-        queryKey: ['workspaces', session?.user?.id],
-        queryFn: async () => {
-            const json = await apiFetchJson<any>('/api/workspaces', {
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
-            return json.data
-        },
-        enabled: !!session?.user?.id,
-        staleTime: 1000 * 60 * 5 // Cache for 5 mins
-    })
-
-    const currentWorkspace = workspaces?.find((w: any) => w.slug === workspaceSlug)
-
     // Fetch teams count
     const { data: teams } = useQuery({
-        queryKey: ['teams', currentWorkspace?.id],
+        queryKey: ['teams', workspaceSlug],
         queryFn: async () => {
-            const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace.id}`, {
+            if (!workspaceSlug) return []
+            const json = await apiFetchJson<any>(`/api/teams?workspaceSlug=${workspaceSlug}`, {
                 headers: { 'x-user-id': session?.user?.id || '' }
             })
             return json.data
         },
-        enabled: !!currentWorkspace?.id
+        enabled: !!workspaceSlug
     })
 
     // Default to 'dashboard' if no slug (shouldn't happen in workspace route)
