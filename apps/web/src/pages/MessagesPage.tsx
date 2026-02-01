@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useParams } from '@tanstack/react-router'
+import { useSession } from '@/lib/auth'
+import { useQuery } from '@tanstack/react-query'
+import { apiFetchJson } from '@/lib/api'
 import { ConversationList } from '@/components/features/messages/ConversationList'
 import { ChatWindow } from '@/components/features/messages/ChatWindow'
 import { ChannelSettingsPanel } from '@/components/features/messages/ChannelSettingsPanel'
-import { useSession } from '@/lib/auth'
 
 export function MessagesPage() {
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
@@ -11,10 +13,19 @@ export function MessagesPage() {
     const [selectedUserId, setSelectedUserId] = useState<string | undefined>()
     const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false)
 
-    // TODO: Get workspaceId from workspaceSlug (need workspace API query)
-    const workspaceId = workspaceSlug // Temporary - needs proper workspace lookup
+    // Fetch workspace by slug to get the real ID
+    const { data: workspace } = useQuery({
+        queryKey: ['workspace', workspaceSlug],
+        queryFn: async () => {
+            if (!workspaceSlug) return null
+            return apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+        },
+        enabled: !!workspaceSlug
+    })
 
-    if (!workspaceSlug || !session?.user) {
+    const workspaceId = workspace?.id
+
+    if (!workspaceSlug || !session?.user || !workspaceId) {
         return <div className="flex items-center justify-center h-full">Loading...</div>
     }
 
