@@ -25,8 +25,9 @@ conversationsRoutes.get('/direct', async (c) => {
             .where(and(
                 eq(conversations.type, 'direct'),
                 // Check if participants array contains both IDs and has exactly length 2
-                sql`${conversations.participants} @> jsonb_build_array(${userId1})`,
-                sql`${conversations.participants} @> jsonb_build_array(${userId2})`,
+                // Using explicit JSON string concatenation for robust containment check
+                sql`${conversations.participants} @> ${JSON.stringify([userId1])}::jsonb`,
+                sql`${conversations.participants} @> ${JSON.stringify([userId2])}::jsonb`,
                 sql`jsonb_array_length(COALESCE(${conversations.participants}, '[]'::jsonb)) = 2`
             ))
             .limit(1)
@@ -60,8 +61,8 @@ conversationsRoutes.post('/direct', async (c) => {
             .from(conversations)
             .where(and(
                 eq(conversations.type, 'direct'),
-                sql`${conversations.participants} @> jsonb_build_array(${userId1})`,
-                sql`${conversations.participants} @> jsonb_build_array(${userId2})`,
+                sql`${conversations.participants} @> ${JSON.stringify([userId1])}::jsonb`,
+                sql`${conversations.participants} @> ${JSON.stringify([userId2])}::jsonb`,
                 sql`jsonb_array_length(COALESCE(${conversations.participants}, '[]'::jsonb)) = 2`
             ))
             .limit(1)
@@ -125,7 +126,7 @@ conversationsRoutes.get('/', async (c) => {
 
         // Filter for conversations where user is participant
         whereConditions.push(
-            sql`${conversations.participants} @> jsonb_build_array(${userId})`
+            sql`${conversations.participants} @> ${JSON.stringify([userId])}::jsonb`
         )
 
         const result = await db.select().from(conversations).where(and(...whereConditions))

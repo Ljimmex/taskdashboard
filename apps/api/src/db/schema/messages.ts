@@ -37,7 +37,7 @@ export const conversations = pgTable('conversations', {
     // JSONB array of participant user IDs
     participants: jsonb('participants').default([]).$type<string[]>(),
 
-    createdBy: uuid('created_by').notNull().references(() => users.id),
+    createdBy: text('created_by').notNull().references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     lastMessageAt: timestamp('last_message_at'),
