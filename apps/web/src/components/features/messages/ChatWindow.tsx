@@ -114,7 +114,7 @@ export function ChatWindow({
         }
     }
 
-    const handleTyping = (isTyping: boolean) => {
+    const handleTyping = (_isTyping: boolean) => {
         // TODO: Implement typing indicator
     }
 
