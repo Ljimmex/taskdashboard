@@ -1,7 +1,9 @@
 import { Hono } from 'hono'
 import { eq, and, inArray } from 'drizzle-orm'
 import { db } from '../../db'
+import { auth } from '../../lib/auth'
 import { teams, teamMembers } from '../../db/schema/teams'
+import { workspaceMembers } from '../../db/schema/workspaces'
 import { projects, projectMembers } from '../../db/schema/projects'
 import { users } from '../../db/schema/users'
 import {
@@ -76,7 +78,14 @@ teamsRoutes.get('/', async (c) => {
                 console.log('[DEBUG] Executing db.query.teams.findMany...')
 
                 result = await db.query.teams.findMany({
-                    where: (table, { eq }) => eq(table.workspaceId, workspaceId as string)
+                    where: (table, { eq }) => eq(table.workspaceId, workspaceId as string),
+                    with: {
+                        members: {
+                            with: {
+                                user: true
+                            }
+                        }
+                    }
                 })
 
                 console.log(`[DEBUG] Query completed in ${Date.now() - start}ms`)
@@ -145,6 +154,86 @@ teamsRoutes.get('/', async (c) => {
         })
     } catch (error) {
         return c.json({ success: false, error: 'Failed to fetch teams', details: String(error) }, 500)
+    }
+})
+
+// POST /api/teams/join - Join a team and workspace via invite params
+teamsRoutes.post('/join', async (c) => {
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+    const userId = session?.user?.id
+
+    if (!userId) {
+        return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    const { workspaceSlug, teamName, teamSlug } = await c.req.json()
+
+    if (!workspaceSlug || (!teamName && !teamSlug)) {
+        return c.json({ error: 'workspaceSlug and teamName or teamSlug are required' }, 400)
+    }
+
+    try {
+        const result = await db.transaction(async (tx) => {
+            // 1. Resolve workspace
+            const ws = await tx.query.workspaces.findFirst({
+                where: (table, { eq }) => eq(table.slug, workspaceSlug)
+            })
+
+            if (!ws) throw new Error(`Workspace ${workspaceSlug} not found`)
+
+            // 2. Resolve team
+            const resolvedTeamName = teamName || (teamSlug ? teamSlug.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : null)
+
+            if (!resolvedTeamName) throw new Error('Could not resolve team name')
+
+            const team = await tx.query.teams.findFirst({
+                where: (table, { eq, and }) => and(
+                    eq(table.workspaceId, ws.id),
+                    eq(table.name, resolvedTeamName)
+                )
+            })
+
+            if (!team) throw new Error(`Team ${resolvedTeamName} not found in workspace ${workspaceSlug}`)
+
+            // 3. Add to workspace if not already a member
+            const existingWsMember = await tx.query.workspaceMembers.findFirst({
+                where: (wm, { eq, and }) => and(
+                    eq(wm.userId, userId),
+                    eq(wm.workspaceId, ws.id)
+                )
+            })
+
+            if (!existingWsMember) {
+                await tx.insert(workspaceMembers).values({
+                    workspaceId: ws.id,
+                    userId,
+                    role: 'member'
+                })
+            }
+
+            // 4. Add to team if not already a member
+            const existingTeamMember = await tx.query.teamMembers.findFirst({
+                where: (tm, { eq, and }) => and(
+                    eq(tm.teamId, team.id),
+                    eq(tm.userId, userId)
+                )
+            })
+
+            if (!existingTeamMember) {
+                await tx.insert(teamMembers).values({
+                    teamId: team.id,
+                    userId,
+                    teamLevel: 'mid'
+                })
+            }
+
+            return { workspaceId: ws.id, teamId: team.id, workspaceSlug: ws.slug }
+        })
+
+        return c.json({ success: true, data: result })
+    } catch (error) {
+        console.error('Join error:', error)
+        return c.json({ error: 'Failed to join team', details: String(error) }, 500)
     }
 })
 
@@ -352,6 +441,18 @@ teamsRoutes.post('/:id/members', async (c) => {
         }
 
         if (!targetUserId) return c.json({ error: 'userId or email required' }, 400)
+
+        // Verify that the user is a member of the workspace
+        const isWsMember = await db.query.workspaceMembers.findFirst({
+            where: (wm, { eq, and }) => and(
+                eq(wm.workspaceId, team.workspaceId),
+                eq(wm.userId, targetUserId)
+            )
+        })
+
+        if (!isWsMember) {
+            return c.json({ error: 'User must be a member of the workspace to join this team' }, 400)
+        }
 
         // Add to team_members
         const [newMember] = await db.insert(teamMembers).values({

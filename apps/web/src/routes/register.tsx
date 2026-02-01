@@ -68,7 +68,74 @@ function RegisterPage() {
     const handleStep2 = (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
-        setStep(3) // Go to workspace step
+
+        const params = new URLSearchParams(window.location.search)
+        const workspaceSlug = params.get('workspace')
+        const teamSlug = params.get('team')
+
+        if (workspaceSlug && teamSlug) {
+            handleAutoJoin(workspaceSlug, teamSlug)
+        } else {
+            setStep(3)
+        }
+    }
+
+    const handleAutoJoin = async (workspaceSlug: string, teamSlug: string) => {
+        setLoading(true)
+        setError('')
+
+        try {
+            // 1. Register User
+            const birthDateStr = birthYear && birthMonth && birthDay
+                ? `${birthYear}-${birthMonth.toString().padStart(2, '0')}-${birthDay.toString().padStart(2, '0')}`
+                : undefined
+
+            const signUpResult = await signUp.email({
+                email,
+                password,
+                name: `${firstName} ${lastName}`.trim(),
+                position,
+                gender,
+                birthDate: birthDateStr,
+            } as any)
+
+            if (signUpResult.error) {
+                setError(signUpResult.error.message || 'Błąd rejestracji')
+                setLoading(false)
+                return
+            }
+
+            // 2. Login User
+            const signInResult = await signIn.email({ email, password })
+            if (signInResult.error) {
+                setError('Konto utworzone, ale błąd logowania. Spróbuj się zalogować.')
+                navigate({ to: '/login' })
+                setLoading(false)
+                return
+            }
+
+            // 3. Join Team
+            const joinResponse = await apiFetch('/api/teams/join', {
+                method: 'POST',
+                body: JSON.stringify({
+                    workspaceSlug,
+                    teamSlug
+                })
+            })
+
+            if (!joinResponse.ok) {
+                console.error('Auto-join failed', await joinResponse.text())
+                // Still redirect to workspace even if join fails, user can try again
+            }
+
+            navigate({ to: `/${workspaceSlug}` })
+
+        } catch (err) {
+            console.error(err)
+            setError('Wystąpił nieoczekiwany błąd podczas rejestracji')
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleOAuthSignup = async (provider: 'google' | 'github' | 'slack') => {

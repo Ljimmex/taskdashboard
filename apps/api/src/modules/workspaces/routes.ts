@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
-import { eq } from 'drizzle-orm'
+import { eq, or, like, and } from 'drizzle-orm'
 import { db } from '../../db'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
+import { users } from '../../db/schema/users'
 import { auth } from '../../lib/auth'
 import {
     canManageWorkspaceSettings,
@@ -228,6 +229,50 @@ workspacesRoutes.post('/:id/members', async (c) => {
         return c.json({ data: member }, 201)
     } catch (error) {
         return c.json({ error: 'Failed to add member', details: String(error) }, 500)
+    }
+})
+
+// GET /api/workspaces/:id/members - List members of workspace (with search)
+workspacesRoutes.get('/:id/members', async (c) => {
+    const workspaceId = c.req.param('id')
+    const query = c.req.query('q')?.toLowerCase()
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+
+    if (!session?.user) {
+        return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    try {
+        // 1. Verify membership
+        const workspaceRole = await getUserWorkspaceRole(session.user.id, workspaceId)
+        if (!workspaceRole) {
+            return c.json({ error: 'Access denied' }, 403)
+        }
+
+        // 2. Fetch members
+        const members = await db.select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            image: users.image,
+            position: users.position
+        })
+            .from(workspaceMembers)
+            .innerJoin(users, eq(users.id, workspaceMembers.userId))
+            .where(
+                and(
+                    eq(workspaceMembers.workspaceId, workspaceId),
+                    query ? or(
+                        like(users.name, `%${query}%`),
+                        like(users.email, `%${query}%`)
+                    ) : undefined
+                )
+            )
+
+        return c.json({ data: members })
+    } catch (error) {
+        console.error('Fetch members error:', error)
+        return c.json({ error: 'Failed to fetch members', details: String(error) }, 500)
     }
 })
 

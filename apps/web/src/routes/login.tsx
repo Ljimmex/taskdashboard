@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { signIn } from '@/lib/auth'
+import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,6 +33,26 @@ function LoginPage() {
             if (result.error) {
                 setError(result.error.message || 'Błąd logowania')
             } else {
+                const params = new URLSearchParams(window.location.search)
+                const workspaceSlug = params.get('workspace')
+                const teamSlug = params.get('team')
+
+                if (workspaceSlug && teamSlug) {
+                    try {
+                        await apiFetch('/api/teams/join', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                workspaceSlug,
+                                teamSlug
+                            })
+                        })
+                        navigate({ to: `/${workspaceSlug}` })
+                        return
+                    } catch (joinErr) {
+                        console.error('Login auto-join failed', joinErr)
+                    }
+                }
+
                 navigate({ to: '/dashboard' })
             }
         } catch (err) {

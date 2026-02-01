@@ -35,7 +35,24 @@ export default function TeamPage() {
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
     const [filters, setFilters] = useState<FilterOption>({})
 
-    // 2. Fetch Teams for this Workspace
+    // 2. Fetch Workspace Details
+    const { data: workspaceData } = useQuery({
+        queryKey: ['workspace', workspaceSlug, session?.user?.id],
+        queryFn: async () => {
+            if (!workspaceSlug) return null
+            const json = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`, {
+                headers: {
+                    'x-user-id': session?.user?.id || ''
+                }
+            })
+            return json
+        },
+        enabled: !!workspaceSlug && !!session?.user?.id
+    })
+
+    const workspaceId = workspaceData?.id
+
+    // 3. Fetch Teams for this Workspace
     const { data: teamsData, isLoading: isLoadingTeams, error: teamsError, isError: hasTeamsError } = useQuery({
         queryKey: ['teams', workspaceSlug, session?.user?.id],
         queryFn: async () => {
@@ -280,18 +297,28 @@ export default function TeamPage() {
         setInvitePanelState({ isOpen: true, team })
     }
 
-    const handleInviteSubmit = (data: { type: 'email' | 'link'; emails?: string[]; role?: string }) => {
+    const handleInviteSubmit = (data: { type: 'email' | 'link'; emails?: string[]; userIds?: string[]; role?: string }) => {
         const targetTeamId = invitePanelState.team?.id
         if (!targetTeamId) return
 
-        if (data.type === 'email' && data.emails) {
-            data.emails.forEach(email => {
-                inviteMemberMutation.mutate({
-                    teamId: targetTeamId,
-                    email: email,
-                    role: data.role || 'member'
+        if (data.type === 'email') {
+            if (data.userIds) {
+                data.userIds.forEach(userId => {
+                    inviteMemberMutation.mutate({
+                        teamId: targetTeamId,
+                        userId: userId,
+                        role: data.role || 'member'
+                    })
                 })
-            })
+            } else if (data.emails) {
+                data.emails.forEach(email => {
+                    inviteMemberMutation.mutate({
+                        teamId: targetTeamId,
+                        email: email,
+                        role: data.role || 'member'
+                    })
+                })
+            }
         }
     }
 
@@ -396,6 +423,7 @@ export default function TeamPage() {
                 onClose={() => setInvitePanelState(prev => ({ ...prev, isOpen: false }))}
                 teamName={invitePanelState.team?.name || ''}
                 workspaceSlug={workspaceSlug}
+                workspaceId={workspaceId}
                 onInvite={handleInviteSubmit}
             />
 

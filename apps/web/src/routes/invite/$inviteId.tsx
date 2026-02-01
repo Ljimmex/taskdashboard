@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 import { useState } from 'react'
+import { useSession } from '@/lib/auth'
+import { apiFetch } from '@/lib/api'
 
 export const Route = createFileRoute('/invite/$inviteId')({
     component: InvitePage,
@@ -7,10 +9,13 @@ export const Route = createFileRoute('/invite/$inviteId')({
 
 function InvitePage() {
     const { inviteId } = useParams({ from: '/invite/$inviteId' })
+    const { data: session, isPending: sessionLoading } = useSession()
+
     const [isJoining, setIsJoining] = useState(false)
     const [joined, setJoined] = useState(false)
+    const [error, setError] = useState('')
 
-    // Mock data based on the ID (slug)
+    // Reconstruction logic for display
     const teamName = inviteId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 
     // Read query params for mock data
@@ -19,13 +24,39 @@ function InvitePage() {
     const inviterRole = searchParams.get('role') || 'Team Lead'
     const workspaceSlug = searchParams.get('workspace') || 'demo'
 
-    const handleJoin = () => {
+    const handleJoin = async () => {
+        if (!session?.user) {
+            // User not logged in, redirect to login by default as "Existing user" scenario
+            window.location.href = `/login?workspace=${workspaceSlug}&team=${inviteId}`
+            return
+        }
+
         setIsJoining(true)
-        // Simulate API call
-        setTimeout(() => {
-            setIsJoining(false)
+        setError('')
+        try {
+            const response = await apiFetch('/api/teams/join', {
+                method: 'POST',
+                body: JSON.stringify({
+                    workspaceSlug,
+                    teamSlug: inviteId
+                }),
+                headers: {
+                    'x-user-id': session.user.id
+                }
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || 'Failed to join team')
+            }
+
             setJoined(true)
-        }, 1500)
+        } catch (err: any) {
+            console.error(err)
+            setError(err.message || 'Wystąpił błąd podczas dołączania do zespołu')
+        } finally {
+            setIsJoining(false)
+        }
     }
 
     if (joined) {
@@ -42,7 +73,7 @@ function InvitePage() {
                         <p className="text-gray-400">You have successfully joined the team.</p>
                     </div>
                     <Link
-                        to="/$workspaceSlug/team"
+                        to="/$workspaceSlug"
                         params={{ workspaceSlug: workspaceSlug }}
                         className="block w-full py-3 px-4 bg-[#0F4C75] hover:bg-[#0F4C75]/80 text-white font-medium rounded-xl transition-colors"
                     >
@@ -78,23 +109,44 @@ function InvitePage() {
                     </div>
                 </div>
 
-                <button
-                    onClick={handleJoin}
-                    disabled={isJoining}
-                    className="w-full py-3 px-4 bg-[#0F4C75] hover:bg-[#0F4C75]/80 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
-                >
-                    {isJoining ? (
-                        <>
-                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Joining...
-                        </>
-                    ) : (
-                        'Join Team'
+                {error && (
+                    <div className="p-3 rounded-lg bg-red-500/10 text-red-500 text-sm border border-red-500/20">
+                        {error}
+                    </div>
+                )}
+
+                <div className="space-y-3">
+                    <button
+                        onClick={handleJoin}
+                        disabled={isJoining || sessionLoading}
+                        className="w-full py-3 px-4 bg-[#0F4C75] hover:bg-[#0F4C75]/80 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                        {isJoining ? (
+                            <>
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Joining...
+                            </>
+                        ) : (
+                            session?.user ? 'Join Team' : 'Log In & Join'
+                        )}
+                    </button>
+
+                    {!session?.user && !sessionLoading && (
+                        <p className="text-center text-xs text-gray-500">
+                            New to Zadano?{' '}
+                            <Link
+                                to="/register"
+                                search={{ workspace: workspaceSlug, team: inviteId }}
+                                className="text-amber-500 hover:underline"
+                            >
+                                Create an account
+                            </Link>
+                        </p>
                     )}
-                </button>
+                </div>
             </div>
         </div>
     )
