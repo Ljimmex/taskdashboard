@@ -305,6 +305,7 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
 })
 
 // GET /api/workspaces/:id/keys - Get encryption keys (member access)
+// GET /api/workspaces/:id/keys - Get encryption keys (member access)
 workspacesRoutes.get('/:id/keys', async (c) => {
     const workspaceId = c.req.param('id')
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
@@ -321,36 +322,88 @@ workspacesRoutes.get('/:id/keys', async (c) => {
             return c.json({ error: 'Access denied' }, 403)
         }
 
+        // Helper to generate keys
+        const generateAndSaveKeys = async (updateId?: string) => {
+            const { generateKeyPairSync, randomBytes, createCipheriv, scryptSync } = await import('node:crypto')
+            const { publicKey, privateKey } = generateKeyPairSync('rsa', {
+                modulusLength: 2048,
+                publicKeyEncoding: { type: 'spki', format: 'pem' },
+                privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+            })
+
+            const SECRET = process.env.BETTER_AUTH_SECRET || 'default-secret'
+            const masterKey = scryptSync(SECRET, 'salt', 32)
+            const iv = randomBytes(16)
+            const cipher = createCipheriv('aes-256-gcm', masterKey, iv)
+
+            let encrypted = cipher.update(privateKey, 'utf8', 'hex')
+            encrypted += cipher.final('hex')
+            const authTag = cipher.getAuthTag().toString('hex')
+            const encryptedPrivateKey = `${iv.toString('hex')}:${authTag}:${encrypted}`
+
+            const expiresAt = new Date()
+            expiresAt.setDate(expiresAt.getDate() + 90)
+
+            if (updateId) {
+                // Update existing corrupted record
+                await db.update(encryptionKeys)
+                    .set({
+                        publicKey,
+                        encryptedPrivateKey,
+                        expiresAt,
+                        rotatedAt: new Date()
+                    })
+                    .where(eq(encryptionKeys.id, updateId))
+            } else {
+                // Insert new record
+                await db.insert(encryptionKeys).values({
+                    workspaceId,
+                    publicKey,
+                    encryptedPrivateKey,
+                    expiresAt
+                })
+            }
+
+            return { publicKey, privateKey, expiresAt }
+        }
+
         // Fetch keys from DB
         const keys = await db.select()
             .from(encryptionKeys)
             .where(eq(encryptionKeys.workspaceId, workspaceId))
             .limit(1)
 
+        let keyData: { publicKey: string; privateKey: string; expiresAt: Date }
+
         if (keys.length === 0) {
-            return c.json({ error: 'Encryption keys not found for this workspace' }, 404)
-        }
-
-        const keyRecord = keys[0]
-
-        // Decrypt the private key
-        let decryptedPrivateKey: string
-        try {
-            decryptedPrivateKey = decryptPrivateKey(keyRecord.encryptedPrivateKey)
-        } catch (decError) {
-            console.error('Failed to decrypt private key for workspace', workspaceId, decError)
-            return c.json({ error: 'Server error: keys corrupted' }, 500)
+            console.log(`Keys missing for workspace ${workspaceId}, generating new ones...`)
+            keyData = await generateAndSaveKeys()
+        } else {
+            const keyRecord = keys[0]
+            try {
+                const decrypted = decryptPrivateKey(keyRecord.encryptedPrivateKey)
+                keyData = {
+                    publicKey: keyRecord.publicKey,
+                    privateKey: decrypted,
+                    expiresAt: keyRecord.expiresAt
+                }
+            } catch (decError) {
+                console.error('Keys corrupted for workspace', workspaceId, 'regenerating...')
+                // Self-healing: regenerate keys if decryption fails
+                keyData = await generateAndSaveKeys(keyRecord.id)
+            }
         }
 
         return c.json({
             data: {
                 workspaceId: workspaceId,
-                publicKey: keyRecord.publicKey,
-                privateKey: decryptedPrivateKey,
-                expiresAt: keyRecord.expiresAt
+                publicKey: keyData.publicKey,
+                privateKey: keyData.privateKey,
+                expiresAt: keyData.expiresAt
             }
         })
     } catch (error) {
+        console.error('Error fetching/generating keys:', error)
         return c.json({ error: 'Failed to fetch encryption keys', details: String(error) }, 500)
     }
 })
