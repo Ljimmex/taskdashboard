@@ -22,22 +22,11 @@ export function ChatWindow({
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const [isSending, setIsSending] = useState(false)
 
-    // Get recipient info
+    // 1. Get recipient info (Always call hooks at the top)
     const { members } = useTeamMembers(workspaceId)
     const recipient = members.find(m => m.id === recipientUserId)
 
-    // Show placeholder if no user selected
-    if (!recipientUserId) {
-        return (
-            <div className="flex-1 flex flex-col h-full bg-[#12121a]">
-                <div className="flex items-center justify-center h-full">
-                    <p className="text-gray-500">Select a team member to start messaging</p>
-                </div>
-            </div>
-        )
-    }
-
-    // Fetch or create conversation for this user pair
+    // 2. Fetch or create conversation for this user pair
     const { data: conversation } = useQuery({
         queryKey: ['conversation', currentUserId, recipientUserId],
         queryFn: async () => {
@@ -49,10 +38,10 @@ export function ChatWindow({
                 return null
             }
         },
-        enabled: !!recipientUserId
+        enabled: !!recipientUserId && !!currentUserId
     })
 
-    // Fetch messages for the conversation
+    // 3. Fetch messages for the conversation
     const { data: messages, refetch: refetchMessages } = useQuery({
         queryKey: ['messages', conversation?.id],
         queryFn: async () => {
@@ -63,10 +52,23 @@ export function ChatWindow({
         enabled: !!conversation?.id
     })
 
-    // Auto-scroll to bottom
+    // 4. Auto-scroll to bottom
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        if (messages) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
     }, [messages])
+
+    // EARLY UI RETURN (After all hooks)
+    if (!recipientUserId) {
+        return (
+            <div className="flex-1 flex flex-col h-full bg-[#12121a]">
+                <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500">Select a team member to start messaging</p>
+                </div>
+            </div>
+        )
+    }
 
     const handleSendMessage = async (content: string) => {
         if (!content.trim() || isSending) return

@@ -108,6 +108,7 @@ type SortColumn = 'name' | 'email' | 'role' | 'dateAdded' | 'lastActive'
 
 interface TeamTableProps {
     team: Team
+    userRole?: string | null
     onInvite: (team: Team) => void
     onEditMember: (member: TeamMember) => void
     onViewMember: (member: TeamMember) => void
@@ -115,10 +116,16 @@ interface TeamTableProps {
     onDeleteTeam?: (team: Team) => void
 }
 
-export function TeamTable({ team, onInvite, onEditMember, onViewMember, onEditTeam, onDeleteTeam }: TeamTableProps) {
+export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember, onEditTeam, onDeleteTeam }: TeamTableProps) {
     const [isExpanded, setIsExpanded] = useState(true)
     const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+
+    // Permission Check
+    const canManage = useMemo(() => {
+        if (!userRole) return false
+        return ['owner', 'admin', 'hr_manager'].includes(userRole)
+    }, [userRole])
 
     // Selection State
     const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set())
@@ -209,7 +216,7 @@ export function TeamTable({ team, onInvite, onEditMember, onViewMember, onEditTe
             <div className="flex-1 bg-[#12121a] rounded-r-xl overflow-hidden relative">
 
                 {/* Bulk Actions Toolbar Overlay */}
-                {selectedMemberIds.size > 0 && (
+                {canManage && selectedMemberIds.size > 0 && (
                     <div className="absolute inset-x-0 top-0 z-10 h-[52px] bg-[#1a1a24] flex items-center justify-between px-4 border-b border-gray-800 animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="flex items-center gap-4">
                             <Checkbox checked={true} onClick={toggleSelectAll} />
@@ -237,24 +244,28 @@ export function TeamTable({ team, onInvite, onEditMember, onViewMember, onEditTe
                         {isExpanded && (
                             <div className="flex items-center gap-1 text-xs text-gray-500">
                                 {/* Add Member */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onInvite(team)
-                                    }}
-                                    className="p-1.5 hover:text-white hover:bg-gray-700 rounded transition-colors"
-                                    title="Add Member"
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M12 5v14M5 12h14" />
-                                    </svg>
-                                </button>
+                                {canManage && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onInvite(team)
+                                        }}
+                                        className="p-1.5 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                                        title="Add Member"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M12 5v14M5 12h14" />
+                                        </svg>
+                                    </button>
+                                )}
                                 {/* Team Menu (3-dot) */}
-                                <TeamMenu
-                                    team={team}
-                                    onEditTeam={onEditTeam}
-                                    onDeleteTeam={onDeleteTeam}
-                                />
+                                {canManage && (
+                                    <TeamMenu
+                                        team={team}
+                                        onEditTeam={onEditTeam}
+                                        onDeleteTeam={onDeleteTeam}
+                                    />
+                                )}
                                 {/* Expand/Fullscreen */}
                                 <button
                                     onClick={(e) => {
@@ -286,15 +297,17 @@ export function TeamTable({ team, onInvite, onEditMember, onViewMember, onEditTe
                         <table className="w-full">
                             <thead className="bg-[#1a1a24]/50 text-xs text-gray-500 font-medium">
                                 <tr>
-                                    <th className="w-12 p-3 text-left">
-                                        <div className="flex justify-center">
-                                            <Checkbox
-                                                checked={isAllSelected}
-                                                // indeterminate={false} // User requested to not show indeterminate state here
-                                                onClick={toggleSelectAll}
-                                            />
-                                        </div>
-                                    </th>
+                                    {canManage && (
+                                        <th className="w-12 p-3 text-left">
+                                            <div className="flex justify-center">
+                                                <Checkbox
+                                                    checked={isAllSelected}
+                                                    // indeterminate={false} // User requested to not show indeterminate state here
+                                                    onClick={toggleSelectAll}
+                                                />
+                                            </div>
+                                        </th>
+                                    )}
                                     <th
                                         className="p-3 text-left cursor-pointer hover:text-white transition-colors"
                                         onClick={() => handleSort('name')}
@@ -338,16 +351,18 @@ export function TeamTable({ team, onInvite, onEditMember, onViewMember, onEditTe
                                             className={`group transition-colors ${isSelected ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-gray-800/30'}`}
                                             onClick={() => toggleSelectMember(member.id)}
                                         >
-                                            <td className="p-3 relative">
-                                                {/* Selection Line */}
-                                                {isSelected && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-amber-500"></div>}
-                                                <div className="flex justify-center">
-                                                    <Checkbox
-                                                        checked={isSelected}
-                                                        onClick={() => toggleSelectMember(member.id)}
-                                                    />
-                                                </div>
-                                            </td>
+                                            {canManage && (
+                                                <td className="p-3 relative">
+                                                    {/* Selection Line */}
+                                                    {isSelected && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-amber-500"></div>}
+                                                    <div className="flex justify-center">
+                                                        <Checkbox
+                                                            checked={isSelected}
+                                                            onClick={() => toggleSelectMember(member.id)}
+                                                        />
+                                                    </div>
+                                                </td>
+                                            )}
                                             <td className="p-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
@@ -388,21 +403,25 @@ export function TeamTable({ team, onInvite, onEditMember, onViewMember, onEditTe
                                                         <div className="group-hover/btn:hidden"><EyeIcon /></div>
                                                         <div className="hidden group-hover/btn:block"><EyeIconGold /></div>
                                                     </button>
-                                                    <button
-                                                        onClick={() => onEditMember(member)}
-                                                        className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
-                                                        title="Edit Member"
-                                                    >
-                                                        <div className="group-hover/btn:hidden"><PencilIcon /></div>
-                                                        <div className="hidden group-hover/btn:block"><PencilIconGold /></div>
-                                                    </button>
-                                                    <button
-                                                        className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
-                                                        title="Delete Member"
-                                                    >
-                                                        <div className="group-hover/btn:hidden"><TrashIcon /></div>
-                                                        <div className="hidden group-hover/btn:block"><TrashRedIcon /></div>
-                                                    </button>
+                                                    {canManage && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => onEditMember(member)}
+                                                                className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
+                                                                title="Edit Member"
+                                                            >
+                                                                <div className="group-hover/btn:hidden"><PencilIcon /></div>
+                                                                <div className="hidden group-hover/btn:block"><PencilIconGold /></div>
+                                                            </button>
+                                                            <button
+                                                                className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
+                                                                title="Delete Member"
+                                                            >
+                                                                <div className="group-hover/btn:hidden"><TrashIcon /></div>
+                                                                <div className="hidden group-hover/btn:block"><TrashRedIcon /></div>
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

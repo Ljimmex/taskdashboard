@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import {
     FilterIcon,
     SearchIconDefault,
@@ -56,6 +56,7 @@ interface TeamHeaderProps {
     availableRoles: string[]
     availableTeams: string[]
     availableProjects: string[]
+    userRole?: string | null
 }
 
 export function TeamHeader({
@@ -69,7 +70,8 @@ export function TeamHeader({
     onFiltersChange,
     availableRoles,
     availableTeams,
-    availableProjects
+    availableProjects,
+    userRole
 }: TeamHeaderProps) {
     const [searchFocused, setSearchFocused] = useState(false)
     const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -128,6 +130,11 @@ export function TeamHeader({
             : [...current, value]
         onFiltersChange({ ...filters, [key]: updated.length > 0 ? updated : undefined })
     }
+
+    const canAddTeam = useMemo(() => {
+        if (!userRole) return false
+        return ['owner', 'admin'].includes(userRole)
+    }, [userRole])
 
     return (
         <div className="flex items-center justify-between mb-8">
@@ -332,16 +339,18 @@ export function TeamHeader({
                 </div>
 
                 {/* Add Team Button */}
-                <button
-                    onClick={onAddTeam}
-                    className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-sm font-semibold transition-all shadow-lg shadow-amber-500/20"
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    Add Team
-                </button>
+                {canAddTeam && (
+                    <button
+                        onClick={onAddTeam}
+                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-sm font-semibold transition-all shadow-lg shadow-amber-500/20"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Add Team
+                    </button>
+                )}
             </div>
         </div>
     )

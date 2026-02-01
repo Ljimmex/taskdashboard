@@ -396,6 +396,7 @@ export default function TeamPage() {
                 availableRoles={availableRoles}
                 availableTeams={availableTeams}
                 availableProjects={availableProjects}
+                userRole={workspaceData?.userRole}
             />
 
             <div className="space-y-2">
@@ -403,6 +404,7 @@ export default function TeamPage() {
                     <TeamTable
                         key={team.id}
                         team={team}
+                        userRole={workspaceData?.userRole}
                         onInvite={handleInviteClick}
                         onEditMember={(member) => setEditingSession({ member, teamName: team.name })}
                         onViewMember={(member) => setViewingSession({ member, teamName: team.name })}

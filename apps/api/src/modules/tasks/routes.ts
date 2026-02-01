@@ -11,7 +11,8 @@ import {
     canUpdateTasks,
     canDeleteTasks,
     canAssignTasks,
-    type TeamLevel
+    type TeamLevel,
+    type WorkspaceRole
 } from '../../lib/permissions'
 
 export const tasksRoutes = new Hono()
@@ -37,34 +38,70 @@ async function getTeamIdFromProject(projectId: string): Promise<string | null> {
 // GET /api/tasks - List tasks (filtered by project membership)
 tasksRoutes.get('/', async (c) => {
     try {
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
         const { projectId, status, priority, assigneeId, isArchived, type, workspaceSlug } = c.req.query()
 
-        let effectiveProjectId = projectId
-        if (workspaceSlug && !projectId) {
-            // Find projects for this workspace
+        let userWorkspaceRole: WorkspaceRole | null = null
+        let projectIdsUserCanAccess: string[] | null = null
+
+        if (workspaceSlug) {
             const ws = await db.query.workspaces.findFirst({
                 where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
             })
             if (ws) {
+                // Get user role in workspace
+                const member = await db.query.workspaceMembers.findFirst({
+                    where: (wm, { eq, and }) => and(eq(wm.userId, userId), eq(wm.workspaceId, ws.id))
+                })
+                userWorkspaceRole = (member?.role as WorkspaceRole) || null
+
+                const isProjectManagerOrHigher = userWorkspaceRole && ['owner', 'admin', 'project_manager'].includes(userWorkspaceRole)
+
+                // Get projects for this workspace
                 const workspaceTeams = await db.query.teams.findMany({
                     where: (t, { eq }) => eq(t.workspaceId, ws.id)
                 })
                 const teamIds = workspaceTeams.map(t => t.id)
+
                 if (teamIds.length > 0) {
                     const workspaceProjects = await db.query.projects.findMany({
-                        where: (p, { inArray }) => inArray(p.teamId, teamIds)
+                        where: (p, { inArray, and, exists }) => {
+                            const wheres: any[] = [inArray(p.teamId, teamIds)]
+
+                            if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
+                                wheres.push(exists(
+                                    db.select()
+                                        .from(projectMembers)
+                                        .where(and(
+                                            eq(projectMembers.projectId, p.id),
+                                            eq(projectMembers.userId, userId)
+                                        ))
+                                ))
+                            }
+                            return and(...wheres)
+                        }
                     })
-                    const projectIds = workspaceProjects.map(p => p.id)
-                    if (projectIds.length > 0) {
-                        effectiveProjectId = projectIds as any // We'll handle this in the 'where' clause
-                    } else {
-                        return c.json({ success: true, data: [] })
-                    }
+                    projectIdsUserCanAccess = workspaceProjects.map(p => p.id)
+                }
+            }
+        }
+
+        let effectiveProjectId = projectId
+        if (projectIdsUserCanAccess !== null) {
+            if (projectId) {
+                // If specific project requested, check if user has access to it
+                if (projectIdsUserCanAccess.includes(projectId as string)) {
+                    effectiveProjectId = projectId
                 } else {
                     return c.json({ success: true, data: [] })
                 }
             } else {
-                return c.json({ success: true, data: [] })
+                // Show all accessible projects
+                if (projectIdsUserCanAccess.length > 0) {
+                    effectiveProjectId = projectIdsUserCanAccess as any
+                } else {
+                    return c.json({ success: true, data: [] })
+                }
             }
         }
 
@@ -134,8 +171,39 @@ tasksRoutes.get('/:id', async (c) => {
                 }
             }
         })
-
         if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
+
+        // Get teamId from project
+        const teamId = await getTeamIdFromProject(task.projectId)
+
+        let workspaceId: string | null = null
+        if (teamId) {
+            const team = await db.query.teams.findFirst({
+                where: (t, { eq }) => eq(t.id, teamId)
+            })
+            workspaceId = team?.workspaceId || null
+        }
+
+        let workspaceRole: WorkspaceRole | null = null
+        if (workspaceId) {
+            const member = await db.query.workspaceMembers.findFirst({
+                where: (wm, { eq, and }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId))
+            })
+            workspaceRole = (member?.role as WorkspaceRole) || null
+        }
+
+        const isProjectManagerOrHigher = workspaceRole && ['owner', 'admin', 'project_manager'].includes(workspaceRole)
+
+        if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
+            const isMember = await db.query.projectMembers.findFirst({
+                where: (pm, { eq, and }) => and(eq(pm.projectId, task.projectId), eq(pm.userId, userId))
+            })
+            if (!isMember) {
+                return c.json({ success: false, error: 'Access denied' }, 403)
+            }
+        }
 
         // Fetch subitems (from dedicated subtasks table)
         const taskSubitems = await db.select().from(subtasks).where(eq(subtasks.taskId, id)).orderBy(subtasks.position)

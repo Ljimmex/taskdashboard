@@ -32,14 +32,18 @@ async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLev
 projectsRoutes.get('/', async (c) => {
     try {
         const { workspaceSlug } = c.req.query()
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
 
         let workspaceId: string | null = null
+        let userWorkspaceRole: WorkspaceRole | null = null
+
         if (workspaceSlug) {
             const ws = await db.query.workspaces.findFirst({
                 where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
             })
             if (!ws) return c.json({ success: true, data: [] })
             workspaceId = ws.id
+            userWorkspaceRole = await getUserWorkspaceRole(userId, workspaceId)
         }
 
         let teamIds: string[] = []
@@ -51,10 +55,29 @@ projectsRoutes.get('/', async (c) => {
             if (teamIds.length === 0) return c.json({ success: true, data: [] })
         }
 
+        const isProjectManagerOrHigher = userWorkspaceRole && ['owner', 'admin', 'project_manager'].includes(userWorkspaceRole)
+
         const result = await db.query.projects.findMany({
-            where: (p, { inArray }) => {
-                if (teamIds.length > 0) return inArray(p.teamId, teamIds)
-                return undefined
+            where: (p, { inArray, and, exists }) => {
+                const wheres: any[] = []
+
+                if (teamIds.length > 0) {
+                    wheres.push(inArray(p.teamId, teamIds))
+                }
+
+                // If not project manager or higher, only show projects where user is a member
+                if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
+                    wheres.push(exists(
+                        db.select()
+                            .from(projectMembers)
+                            .where(and(
+                                eq(projectMembers.projectId, p.id),
+                                eq(projectMembers.userId, userId)
+                            ))
+                    ))
+                }
+
+                return wheres.length > 0 ? and(...wheres) : undefined
             },
             with: {
                 stages: {
@@ -92,6 +115,8 @@ projectsRoutes.get('/', async (c) => {
 projectsRoutes.get('/:id', async (c) => {
     try {
         const id = c.req.param('id')
+        const userId = c.req.header('x-user-id') || 'temp-user-id'
+
         const project = await db.query.projects.findFirst({
             where: (p, { eq }) => eq(p.id, id),
             with: {
@@ -100,7 +125,30 @@ projectsRoutes.get('/:id', async (c) => {
                 }
             }
         })
+
         if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
+
+        // Check Access
+        const team = await db.query.teams.findFirst({
+            where: (t, { eq }) => eq(t.id, project.teamId)
+        })
+
+        let workspaceRole: WorkspaceRole | null = null
+        if (team) {
+            workspaceRole = await getUserWorkspaceRole(userId, team.workspaceId)
+        }
+
+        const isProjectManagerOrHigher = workspaceRole && ['owner', 'admin', 'project_manager'].includes(workspaceRole)
+
+        if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
+            const isMember = await db.query.projectMembers.findFirst({
+                where: (pm, { eq, and }) => and(eq(pm.projectId, id), eq(pm.userId, userId))
+            })
+            if (!isMember) {
+                return c.json({ success: false, error: 'Access denied' }, 403)
+            }
+        }
+
         return c.json({ success: true, data: project })
     } catch (error) {
         console.error('Error fetching project:', error)

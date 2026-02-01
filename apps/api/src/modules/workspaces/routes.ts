@@ -84,7 +84,10 @@ workspacesRoutes.get('/slug/:slug', async (c) => {
             return c.json({ error: 'Access denied' }, 403)
         }
 
-        return c.json(workspace)
+        return c.json({
+            ...workspace,
+            userRole: member.role
+        })
     } catch (error) {
         return c.json({ error: 'Failed to fetch workspace', details: String(error) }, 500)
     }

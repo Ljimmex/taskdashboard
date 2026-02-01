@@ -95,8 +95,8 @@ function ProjectsPage() {
             try {
                 setLoading(true)
                 const [projectsData, tasksData] = await Promise.all([
-                    apiFetchJson<any>('/api/projects'),
-                    apiFetchJson<any>('/api/tasks'),
+                    apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`),
+                    apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}`),
                 ])
 
                 if (projectsData.success) setProjects(projectsData.data || [])
@@ -142,12 +142,12 @@ function ProjectsPage() {
     }
 
     const refetchProjects = useCallback(async () => {
-        const data = await apiFetchJson<any>('/api/projects')
+        const data = await apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`)
         if (data.success) setProjects(data.data || [])
-    }, [])
+    }, [workspaceSlug])
 
     const refetchTasks = useCallback(async () => {
-        const data = await apiFetchJson<any>('/api/tasks')
+        const data = await apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}`)
         if (data.success) {
             const mappedTasks = (data.data || []).map((t: any) => ({
                 ...t,
@@ -157,7 +157,7 @@ function ProjectsPage() {
             }))
             setTasks(mappedTasks)
         }
-    }, [])
+    }, [workspaceSlug])
 
     const handleCreateTask = async (taskData: any): Promise<{ id: string } | null> => {
         try {
