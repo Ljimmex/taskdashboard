@@ -48,7 +48,7 @@ app.use('*', cors({
         'https://taskdashboard-web.onrender.com',
     ],
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'x-user-id'],
     exposeHeaders: ['Content-Length'],
     maxAge: 86400,
     credentials: true,

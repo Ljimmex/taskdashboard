@@ -9,13 +9,19 @@ export const apiUrl = getApiUrl()
 export async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
     const url = `${apiUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`
 
+    const headers: Record<string, string> = {
+        ...((options.headers as Record<string, string>) || {}),
+    }
+
+    // Automatically set Content-Type to JSON if not already set and body is not FormData
+    if (!headers['Content-Type'] && !(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json'
+    }
+
     return fetch(url, {
         ...options,
         credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
+        headers,
     })
 }
 
