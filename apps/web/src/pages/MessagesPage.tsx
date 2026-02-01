@@ -45,6 +45,7 @@ export function MessagesPage() {
                     recipientUserId={selectedUserId}
                     currentUserId={session.user.id}
                     workspaceId={workspaceId}
+                    workspaceSlug={workspaceSlug}
                     onSettingsClick={() => setIsSettingsPanelOpen(true)}
                 />
             </div>
