@@ -35,7 +35,7 @@ export function MessagesPage() {
             <div className="flex flex-1 overflow-hidden">
                 {/* Team Members List Sidebar */}
                 <ConversationList
-                    workspaceId={workspaceId}
+                    workspaceId={workspaceSlug}
                     selectedConversationId={selectedUserId}
                     onSelectConversation={setSelectedUserId}
                 />
