@@ -24,9 +24,10 @@ conversationsRoutes.get('/direct', async (c) => {
             .from(conversations)
             .where(and(
                 eq(conversations.type, 'direct'),
-                // Check if participants array contains both IDs and has length 2
-                sql`${conversations.participants} @> jsonb_build_array(${userId1}, ${userId2})`,
-                sql`jsonb_array_length(${conversations.participants}) = 2`
+                // Check if participants array contains both IDs and has exactly length 2
+                sql`${conversations.participants} @> jsonb_build_array(${userId1})`,
+                sql`${conversations.participants} @> jsonb_build_array(${userId2})`,
+                sql`jsonb_array_length(COALESCE(${conversations.participants}, '[]'::jsonb)) = 2`
             ))
             .limit(1)
 
@@ -59,8 +60,9 @@ conversationsRoutes.post('/direct', async (c) => {
             .from(conversations)
             .where(and(
                 eq(conversations.type, 'direct'),
-                sql`${conversations.participants} @> jsonb_build_array(${userId1}, ${userId2})`,
-                sql`jsonb_array_length(${conversations.participants}) = 2`
+                sql`${conversations.participants} @> jsonb_build_array(${userId1})`,
+                sql`${conversations.participants} @> jsonb_build_array(${userId2})`,
+                sql`jsonb_array_length(COALESCE(${conversations.participants}, '[]'::jsonb)) = 2`
             ))
             .limit(1)
 
@@ -123,7 +125,7 @@ conversationsRoutes.get('/', async (c) => {
 
         // Filter for conversations where user is participant
         whereConditions.push(
-            sql`${conversations.participants} @> ARRAY[${userId}]::jsonb`
+            sql`${conversations.participants} @> jsonb_build_array(${userId})`
         )
 
         const result = await db.select().from(conversations).where(and(...whereConditions))
@@ -276,8 +278,8 @@ conversationsRoutes.post('/:id/messages', async (c) => {
         }
 
         // Check if user is participant
-        const participants = conversation.participants as string[]
-        if (!participants.includes(userId) && !participants.includes(senderId)) {
+        const participants = (conversation.participants || []) as string[]
+        if (!Array.isArray(participants) || (!participants.includes(userId) && !participants.includes(senderId))) {
             return c.json({ success: false, error: 'Access denied' }, 403)
         }
 

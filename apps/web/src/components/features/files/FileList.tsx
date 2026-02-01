@@ -177,10 +177,12 @@ export function FileList({
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
-                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                            <Pencil className="h-4 w-4 text-amber-500" />
-                                            <span>Edit</span>
-                                        </DropdownMenuItem>
+                                        {canManageFolder && (
+                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                <Pencil className="h-4 w-4 text-amber-500" />
+                                                <span>Edit</span>
+                                            </DropdownMenuItem>
+                                        )}
                                         {canManageFolder && (
                                             <>
                                                 <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
@@ -239,10 +241,12 @@ export function FileList({
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                <Pencil className="h-4 w-4 text-amber-500" />
-                                                <span>Edit</span>
-                                            </DropdownMenuItem>
+                                            {canManageFile && (
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                    <Pencil className="h-4 w-4 text-amber-500" />
+                                                    <span>Edit</span>
+                                                </DropdownMenuItem>
+                                            )}
                                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDownload(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                 <Download className="h-4 w-4 text-gray-400" />
                                                 <span>Download</span>

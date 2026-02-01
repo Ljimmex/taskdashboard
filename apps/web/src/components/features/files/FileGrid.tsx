@@ -99,10 +99,12 @@ export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDown
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                    <Pencil className="h-4 w-4 text-amber-500" />
-                                    <span>Edit</span>
-                                </DropdownMenuItem>
+                                {userRole !== 'member' && (
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                        <Pencil className="h-4 w-4 text-amber-500" />
+                                        <span>Edit</span>
+                                    </DropdownMenuItem>
+                                )}
                                 {userRole !== 'member' && (
                                     <>
                                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
@@ -227,10 +229,12 @@ export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileD
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
-                            <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                <Pencil className="h-4 w-4 text-amber-500" />
-                                <span>Edit</span>
-                            </DropdownMenuItem>
+                            {userRole !== 'member' && (
+                                <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                    <Pencil className="h-4 w-4 text-amber-500" />
+                                    <span>Edit</span>
+                                </DropdownMenuItem>
+                            )}
                             {userRole !== 'member' && (
                                 <>
                                     <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">

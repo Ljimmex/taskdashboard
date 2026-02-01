@@ -241,13 +241,15 @@ export function FileExplorer({
                         onFileDrop={handleFileDrop}
                         userRole={userRole}
                     />
-                    <button
-                        onClick={() => setIsCreateFolderOpen(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white bg-[#1a1a24] hover:bg-gray-800 rounded-lg transition-colors"
-                    >
-                        <FolderPlus size={16} />
-                        New Folder
-                    </button>
+                    {userRole !== 'member' && (
+                        <button
+                            onClick={() => setIsCreateFolderOpen(true)}
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white bg-[#1a1a24] hover:bg-gray-800 rounded-lg transition-colors"
+                        >
+                            <FolderPlus size={16} />
+                            New Folder
+                        </button>
+                    )}
                 </div>
 
                 {viewMode === 'list' ? (
