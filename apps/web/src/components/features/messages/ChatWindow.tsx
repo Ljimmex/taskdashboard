@@ -5,6 +5,8 @@ import { MessageInput } from './MessageInput'
 import { useQuery } from '@tanstack/react-query'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { apiFetch, apiFetchJson } from '@/lib/api'
+import { useEncryption } from '@/hooks/useEncryption'
+import { encryptHybrid } from '@/lib/crypto'
 
 interface ChatWindowProps {
     recipientUserId?: string
@@ -26,6 +28,9 @@ export function ChatWindow({
     const { members } = useTeamMembers(workspaceId)
     const recipient = members.find(m => m.id === recipientUserId)
 
+    // 2a. Get Encryption Keys
+    const { keys } = useEncryption(workspaceId)
+
     // 2. Fetch or create conversation for this user pair
     const { data: conversation } = useQuery({
         queryKey: ['conversation', currentUserId, recipientUserId],
@@ -46,8 +51,8 @@ export function ChatWindow({
         queryKey: ['messages', conversation?.id],
         queryFn: async () => {
             if (!conversation?.id) return []
-            const json = await apiFetchJson<any>(`/api/conversations/${conversation.id}/messages`)
-            return json.data || []
+            const json = await apiFetchJson<any>(`/api/conversations/${conversation.id}`)
+            return json.data?.messages || []
         },
         enabled: !!conversation?.id
     })
@@ -90,6 +95,22 @@ export function ChatWindow({
                 conversationId = createData.conversation.id
             }
 
+            // Encrypt message if public key is available
+            let finalContent = content
+            if (keys?.publicKey) {
+                try {
+                    const packet = await encryptHybrid(content, keys.publicKey)
+                    finalContent = JSON.stringify(packet)
+                } catch (err) {
+                    console.error('Encryption failed:', err)
+                    // Fallback to plain text or abort? 
+                    // For now, let's abort to be safe
+                    alert('Failed to encrypt message. Security check failed.')
+                    setIsSending(false)
+                    return
+                }
+            }
+
             // Send message
             const res = await apiFetch(`/api/conversations/${conversationId}/messages`, {
                 method: 'POST',
@@ -97,7 +118,7 @@ export function ChatWindow({
                     'x-user-id': currentUserId
                 },
                 body: JSON.stringify({
-                    content,
+                    content: finalContent,
                     senderId: currentUserId
                 })
             })
@@ -173,6 +194,7 @@ export function ChatWindow({
                                 key={msg.id}
                                 message={msg}
                                 currentUserId={currentUserId}
+                                privateKey={keys?.privateKey}
                             />
                         ))}
                         <div ref={messagesEndRef} />
