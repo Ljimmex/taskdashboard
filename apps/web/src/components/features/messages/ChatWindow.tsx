@@ -109,7 +109,7 @@ export function ChatWindow({
                         userId2: recipientUserId
                     })
                 })
-                conversationId = createRes.data.id
+                conversationId = createRes.conversation.id
             }
 
             // Encrypt message if public key is available
