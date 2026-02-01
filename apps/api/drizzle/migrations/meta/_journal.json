@@ -36,6 +36,13 @@
       "when": 1768910483501,
       "tag": "0004_certain_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769951673448,
+      "tag": "0005_careful_agent_zero",
+      "breakpoints": true
     }
   ]
 }

@@ -93,6 +93,9 @@ export function ChatWindow({
             // Send message
             const res = await apiFetch(`/api/conversations/${conversationId}/messages`, {
                 method: 'POST',
+                headers: {
+                    'x-user-id': currentUserId
+                },
                 body: JSON.stringify({
                     content,
                     senderId: currentUserId
@@ -113,7 +116,6 @@ export function ChatWindow({
 
     const handleTyping = (isTyping: boolean) => {
         // TODO: Implement typing indicator
-        console.log('Typing:', isTyping)
     }
 
     return (
