@@ -152,7 +152,7 @@ export function EmojiPicker({ onEmojiSelect, className = '' }: EmojiPickerProps)
 
     const handleEmojiClick = (emoji: string) => {
         onEmojiSelect(emoji)
-        setIsOpen(false)
+        // Removed setIsOpen(false) to allow multiple selections
     }
 
     return (
@@ -177,9 +177,9 @@ export function EmojiPicker({ onEmojiSelect, className = '' }: EmojiPickerProps)
                     />
 
                     {/* Emoji Picker */}
-                    <div className="absolute bottom-full mb-2 left-0 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-2xl z-20 w-80">
+                    <div className="absolute bottom-full mb-2 right-0 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-2xl z-20 w-72 md:w-80">
                         {/* Category Tabs */}
-                        <div className="flex gap-1 p-2 border-b border-gray-800 overflow-x-auto">
+                        <div className="flex gap-1 p-2 border-b border-gray-800 overflow-x-auto scrollbar-hide">
                             {(Object.keys(EMOJI_CATEGORIES) as Array<keyof typeof EMOJI_CATEGORIES>).map((category) => (
                                 <button
                                     key={category}
@@ -197,7 +197,7 @@ export function EmojiPicker({ onEmojiSelect, className = '' }: EmojiPickerProps)
 
                         {/* Emoji Grid */}
                         <div className="p-3 max-h-64 overflow-y-auto">
-                            <div className="grid grid-cols-8 gap-1">
+                            <div className="grid grid-cols-7 gap-1">
                                 {EMOJI_CATEGORIES[activeCategory].map((emoji, index) => (
                                     <button
                                         key={`${emoji}-${index}`}

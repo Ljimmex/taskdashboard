@@ -1,6 +1,5 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { getSession } from '@/lib/auth'
-import { FloatingTimer } from '@/components/features/time/FloatingTimer'
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 
@@ -36,7 +35,6 @@ function WorkspaceAuthLayout() {
     return (
         <DashboardLayout>
             <Outlet />
-            <FloatingTimer />
         </DashboardLayout>
     )
 }

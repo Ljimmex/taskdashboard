@@ -23,6 +23,7 @@ interface FileExplorerProps {
     sortBy: 'name' | 'size' | 'date' | 'type'
     sortOrder: 'asc' | 'desc'
     onSort: (field: 'name' | 'size' | 'date' | 'type') => void
+    userRole?: string | null
 }
 
 export function FileExplorer({
@@ -34,7 +35,8 @@ export function FileExplorer({
     endDate,
     sortBy,
     sortOrder,
-    onSort
+    onSort,
+    userRole
 }: FileExplorerProps) {
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId || null)
@@ -57,6 +59,7 @@ export function FileExplorer({
 
     // Handle drag-drop file to folder
     const handleFileDrop = async (fileId: string, folderId: string | null) => {
+        if (userRole === 'member') return
         try {
             await moveFile.mutateAsync({
                 fileId,
@@ -236,6 +239,7 @@ export function FileExplorer({
                         breadcrumbs={breadcrumbs}
                         onNavigate={handleBreadcrumbClick}
                         onFileDrop={handleFileDrop}
+                        userRole={userRole}
                     />
                     <button
                         onClick={() => setIsCreateFolderOpen(true)}
@@ -261,6 +265,7 @@ export function FileExplorer({
                         sortBy={sortBy}
                         sortOrder={sortOrder}
                         onSort={onSort}
+                        userRole={userRole}
                     />
                 ) : (
                     <div className="space-y-8">
@@ -277,6 +282,7 @@ export function FileExplorer({
                                             onRename={handleRename}
                                             onDelete={handleDelete}
                                             onFileDrop={handleFileDrop}
+                                            userRole={userRole}
                                         />
                                     ))}
                                 </div>
@@ -300,6 +306,7 @@ export function FileExplorer({
                                             onInfo={handleInfo}
                                             onArchive={handleArchive}
                                             onDuplicate={handleDuplicate}
+                                            userRole={userRole}
                                         />
                                     ))}
                                 </div>

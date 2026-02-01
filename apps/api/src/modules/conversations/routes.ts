@@ -19,16 +19,16 @@ conversationsRoutes.get('/direct', async (c) => {
             return c.json({ success: false, error: 'userId1 and userId2 required' }, 400)
         }
 
-        // Find conversation where both users are participants (and only these 2)
-        const allConversations = await db.select().from(conversations)
-
-        const directConversation = allConversations.find(conv => {
-            const participants = conv.participants as string[]
-            return conv.type === 'direct' &&
-                participants.length === 2 &&
-                participants.includes(userId1) &&
-                participants.includes(userId2)
-        })
+        // Use SQL to find direct conversation with exactly these participants
+        const [directConversation] = await db.select()
+            .from(conversations)
+            .where(and(
+                eq(conversations.type, 'direct'),
+                // Check if participants array contains both IDs and has length 2
+                sql`${conversations.participants} @> jsonb_build_array(${userId1}, ${userId2})`,
+                sql`jsonb_array_length(${conversations.participants}) = 2`
+            ))
+            .limit(1)
 
         if (!directConversation) {
             return c.json({ success: false, error: 'Conversation not found' }, 404)
@@ -55,14 +55,14 @@ conversationsRoutes.post('/direct', async (c) => {
         }
 
         // Check if conversation already exists
-        const allConversations = await db.select().from(conversations)
-        const existing = allConversations.find(conv => {
-            const participants = conv.participants as string[]
-            return conv.type === 'direct' &&
-                participants.length === 2 &&
-                participants.includes(userId1) &&
-                participants.includes(userId2)
-        })
+        const [existing] = await db.select()
+            .from(conversations)
+            .where(and(
+                eq(conversations.type, 'direct'),
+                sql`${conversations.participants} @> jsonb_build_array(${userId1}, ${userId2})`,
+                sql`jsonb_array_length(${conversations.participants}) = 2`
+            ))
+            .limit(1)
 
         if (existing) {
             return c.json({ success: true, conversation: existing })

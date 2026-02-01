@@ -17,18 +17,20 @@ function DroppableBreadcrumb({
     index,
     isLast,
     onNavigate,
-    onFileDrop
+    onFileDrop,
+    userRole
 }: {
     crumb: BreadcrumbItem
     index: number
     isLast: boolean
     onNavigate: () => void
     onFileDrop: (fileId: string, folderId: string | null) => void
+    userRole?: string | null
 }) {
     const [isDragOver, setIsDragOver] = useState(false)
 
     const handleDragOver = (e: React.DragEvent) => {
-        if (isLast) return
+        if (isLast || userRole === 'member') return
         e.preventDefault()
         e.dataTransfer.dropEffect = 'move'
         setIsDragOver(true)
@@ -41,7 +43,7 @@ function DroppableBreadcrumb({
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault()
         setIsDragOver(false)
-        if (isLast) return
+        if (isLast || userRole === 'member') return
         const fileId = e.dataTransfer.getData('fileId')
         if (fileId) {
             onFileDrop(fileId, crumb.id)
@@ -75,8 +77,9 @@ function DroppableBreadcrumb({
 export function FolderBreadcrumb({
     breadcrumbs,
     onNavigate,
-    onFileDrop
-}: FolderBreadcrumbProps) {
+    onFileDrop,
+    userRole
+}: FolderBreadcrumbProps & { userRole?: string | null }) {
     if (breadcrumbs.length <= 1) return null
 
     return (
@@ -89,6 +92,7 @@ export function FolderBreadcrumb({
                     isLast={index === breadcrumbs.length - 1}
                     onNavigate={() => onNavigate(index)}
                     onFileDrop={onFileDrop}
+                    userRole={userRole}
                 />
             ))}
         </div>

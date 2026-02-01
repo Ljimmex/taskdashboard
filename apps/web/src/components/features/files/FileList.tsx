@@ -25,6 +25,7 @@ interface FileListProps {
     sortBy: 'name' | 'size' | 'date' | 'type'
     sortOrder: 'asc' | 'desc'
     onSort: (field: 'name' | 'size' | 'date' | 'type') => void
+    userRole?: string | null
 }
 
 // Get appropriate icon based on file type
@@ -90,7 +91,8 @@ export function FileList({
     onDuplicate,
     sortBy,
     sortOrder,
-    onSort
+    onSort,
+    userRole
 }: FileListProps) {
     if (isLoading) {
         return <div className="flex items-center justify-center py-10 text-gray-500">Loading...</div>
@@ -112,6 +114,9 @@ export function FileList({
         if (sortBy !== field) return null
         return sortOrder === 'asc' ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />
     }
+
+    const canManageFile = userRole !== 'member'
+    const canManageFolder = userRole !== 'member'
 
     return (
         <div className="rounded-xl bg-[#1a1a24] overflow-hidden">
@@ -176,22 +181,28 @@ export function FileList({
                                             <Pencil className="h-4 w-4 text-amber-500" />
                                             <span>Edit</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                            <Copy className="h-4 w-4 text-gray-400" />
-                                            <span>Duplicate</span>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                            <Archive className="h-4 w-4 text-gray-400" />
-                                            <span>Archive</span>
-                                        </DropdownMenuItem>
+                                        {canManageFolder && (
+                                            <>
+                                                <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                    <Copy className="h-4 w-4 text-gray-400" />
+                                                    <span>Duplicate</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                    <Archive className="h-4 w-4 text-gray-400" />
+                                                    <span>Archive</span>
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
                                         <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                             <Info className="h-4 w-4 text-gray-400" />
                                             <span>Info</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                            <Trash2 className="h-4 w-4 text-amber-600" />
-                                            <span>Delete</span>
-                                        </DropdownMenuItem>
+                                        {canManageFolder && (
+                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                <Trash2 className="h-4 w-4 text-amber-600" />
+                                                <span>Delete</span>
+                                            </DropdownMenuItem>
+                                        )}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </td>
@@ -236,26 +247,32 @@ export function FileList({
                                                 <Download className="h-4 w-4 text-gray-400" />
                                                 <span>Download</span>
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                <Copy className="h-4 w-4 text-gray-400" />
-                                                <span>Duplicate</span>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMove(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                <FolderOpen className="h-4 w-4 text-gray-400" />
-                                                <span>Move to...</span>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                <Archive className="h-4 w-4 text-gray-400" />
-                                                <span>Archive</span>
-                                            </DropdownMenuItem>
+                                            {canManageFile && (
+                                                <>
+                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                        <Copy className="h-4 w-4 text-gray-400" />
+                                                        <span>Duplicate</span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMove(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                        <FolderOpen className="h-4 w-4 text-gray-400" />
+                                                        <span>Move to...</span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                        <Archive className="h-4 w-4 text-gray-400" />
+                                                        <span>Archive</span>
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
                                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onInfo?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                 <Info className="h-4 w-4 text-gray-400" />
                                                 <span>Info</span>
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                <Trash2 className="h-4 w-4 text-amber-600" />
-                                                <span>Delete</span>
-                                            </DropdownMenuItem>
+                                            {canManageFile && (
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                    <Trash2 className="h-4 w-4 text-amber-600" />
+                                                    <span>Delete</span>
+                                                </DropdownMenuItem>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </td>

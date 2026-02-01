@@ -3,13 +3,38 @@ import { FileExplorer } from '@/components/features/files/FileExplorer'
 import { FilesHeader } from '@/components/features/files/FilesHeader'
 import { FileUploadPanel } from '@/components/features/files/FileUploadPanel'
 import { useState, useCallback, useEffect } from 'react'
+import { useParams } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { apiFetchJson } from '@/lib/api'
+import { useSession } from '@/lib/auth'
 
 export const Route = createFileRoute('/$workspaceSlug/files/')({
     component: FilesPage,
 })
 
 function FilesPage() {
+    const { workspaceSlug } = useParams({ from: '/$workspaceSlug/files/' })
+    const { data: session } = useSession()
+
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+    // Fetch Workspace Details for role
+    const { data: workspaceData } = useQuery({
+        queryKey: ['workspace', workspaceSlug, session?.user?.id],
+        queryFn: async () => {
+            if (!workspaceSlug) return null
+            const json = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`, {
+                headers: {
+                    'x-user-id': session?.user?.id || ''
+                }
+            })
+            return json
+        },
+        enabled: !!workspaceSlug && !!session?.user?.id
+    })
+
+    const userRole = workspaceData?.userRole
+
     const [fileTypeFilter, setFileTypeFilter] = useState<string>('all')
     const [startDate, setStartDate] = useState<Date | null>(null)
     const [endDate, setEndDate] = useState<Date | null>(null)
@@ -144,6 +169,7 @@ function FilesPage() {
                     sortBy={sortBy}
                     sortOrder={sortOrder}
                     onSort={handleSortChange}
+                    userRole={userRole}
                 />
             </div>
 
