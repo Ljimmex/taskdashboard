@@ -7,13 +7,19 @@ interface MessageInputProps {
     onTyping: (isTyping: boolean) => void
     disabled?: boolean
     placeholder?: string
+    isEditing?: boolean
+    editValue?: string
+    onCancelEdit?: () => void
 }
 
 export function MessageInput({
     onSendMessage,
     onTyping,
     disabled = false,
-    placeholder = 'Type a message...'
+    placeholder = 'Type a message...',
+    isEditing = false,
+    editValue = '',
+    onCancelEdit
 }: MessageInputProps) {
     const [message, setMessage] = useState('')
     const [isSending, setIsSending] = useState(false)
@@ -27,6 +33,16 @@ export function MessageInput({
             textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
         }
     }, [message])
+
+    // Sync input with external edit value
+    useEffect(() => {
+        if (isEditing && editValue) {
+            setMessage(editValue)
+            textareaRef.current?.focus()
+        } else if (!isEditing) {
+            // setMessage('') // Optional: clear when edit cancelled, or leave draft?
+        }
+    }, [isEditing, editValue])
 
     // Handle typing indicator
     const handleInputChange = (value: string) => {
@@ -86,57 +102,92 @@ export function MessageInput({
 
     return (
         <div className="bg-[#12121a] p-4">
-            <div className="flex items-center gap-2">
+            {/* Editing Context Banner */}
+            {isEditing && (
+                <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a24] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
+                    <div className="flex items-center gap-2 text-amber-500">
+                        <span className="font-medium">Editing message</span>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setMessage('')
+                            if (onCancelEdit) onCancelEdit()
+                        }}
+                        className="text-gray-400 hover:text-white transition-colors"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            )}
+
+            <div className="flex items-end gap-3 bg-[#12121a] p-4">
                 {/* Attachment Button */}
-                <button
-                    type="button"
-                    className="p-2.5 hover:bg-gray-800/50 rounded-lg transition-colors flex-shrink-0"
-                    aria-label="Add attachment"
-                    disabled
-                    title="Coming soon"
-                >
-                    <Paperclip className="w-5 h-5 text-gray-400" />
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        className="p-2 hover:bg-gray-800/50 rounded-full transition-colors text-gray-400 hover:text-white"
+                        aria-label="Add attachment"
+                        disabled
+                        title="Coming soon"
+                    >
+                        <Paperclip className="w-5 h-5" />
+                    </button>
+                    {/* Emoji Picker - Moved here */}
+                    <EmojiPicker onEmojiSelect={handleEmojiSelect} className="hover:bg-gray-800/50 rounded-full p-2 transition-colors text-gray-400 hover:text-amber-500" />
+                </div>
 
-                {/* Textarea */}
-                <textarea
-                    ref={textareaRef}
-                    value={message}
-                    onChange={(e) => handleInputChange(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={placeholder}
-                    disabled={disabled || isSending}
-                    rows={1}
-                    className="flex-1 resize-none bg-[#1a1a24] border border-gray-800 rounded-xl px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500/50 max-h-32 overflow-y-auto disabled:bg-gray-900 disabled:cursor-not-allowed"
-                />
+                {/* Input Container */}
+                <div className="flex-1 relative bg-[#1a1a24] rounded-2xl">
+                    <textarea
+                        ref={textareaRef}
+                        value={message}
+                        onChange={(e) => handleInputChange(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={placeholder}
+                        disabled={disabled || isSending}
+                        rows={1}
+                        className="w-full resize-none bg-transparent border-none rounded-2xl pl-4 pr-10 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-0 max-h-32 overflow-y-auto disabled:cursor-not-allowed"
+                        style={{ minHeight: '44px' }}
+                    />
 
-                {/* Emoji Picker */}
-                <EmojiPicker onEmojiSelect={handleEmojiSelect} className="flex-shrink-0" />
+                    {/* Voice Message Button - Inside Input */}
+                    <button
+                        type="button"
+                        className="absolute right-2 bottom-1.5 p-1.5 hover:bg-gray-700/50 rounded-full transition-colors text-gray-400 hover:text-white"
+                        aria-label="Voice message"
+                        disabled
+                        title="Coming soon"
+                    >
+                        <div className="w-5 h-5 flex items-center justify-center">
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                <line x1="12" y1="19" x2="12" y2="23" />
+                                <line x1="8" y1="23" x2="16" y2="23" />
+                            </svg>
+                        </div>
+                    </button>
+                </div>
 
-                {/* Voice Message Button */}
-                <button
-                    type="button"
-                    className="p-2.5 hover:bg-gray-800/50 rounded-lg transition-colors flex-shrink-0"
-                    aria-label="Voice message"
-                    disabled
-                    title="Coming soon"
-                >
-                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="12" y1="19" x2="12" y2="23" />
-                        <line x1="8" y1="23" x2="16" y2="23" />
-                    </svg>
-                </button>
-
-                {/* Send Button */}
+                {/* Send/Save Button */}
                 <button
                     onClick={handleSend}
                     disabled={!message.trim() || isSending || disabled}
-                    className="p-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
-                    aria-label="Send message"
+                    className={`mb-1 p-2.5 text-white rounded-full transition-all shadow-lg hover:shadow-amber-900/20 ${isEditing
+                            ? 'bg-blue-600 hover:bg-blue-500' // Blue for Edit Save
+                            : 'bg-amber-600 hover:bg-amber-500' // Amber for Send
+                        } disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed`}
+                    aria-label={isEditing ? "Save changes" : "Send message"}
                 >
-                    <Send className={`w-5 h-5 ${isSending ? 'animate-pulse' : ''}`} />
+                    {isEditing ? (
+                        <svg className="w-5 h-5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                    ) : (
+                        <Send className={`w-5 h-5 ${isSending ? 'animate-pulse' : 'ml-0.5'}`} />
+                    )}
                 </button>
             </div>
 

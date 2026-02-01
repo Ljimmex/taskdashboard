@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { useSession } from '@/lib/auth'
+import { apiFetchJson } from '@/lib/api'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
-import { formatDistanceToNow } from 'date-fns'
 
 interface ConversationListProps {
     workspaceId: string
@@ -29,6 +31,44 @@ export function ConversationList({
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
+
+    // Fetch direct conversations to get last messages
+    const { data: session } = useSession()
+    const { data: conversations } = useQuery({
+        queryKey: ['conversations', 'direct', workspaceId],
+        queryFn: async () => {
+            const json = await apiFetchJson<any>(`/api/conversations?workspaceId=${workspaceId}&type=direct`, {
+                headers: { 'x-user-id': session?.user?.id || '' }
+            })
+            return json.data || []
+        },
+        enabled: !!session?.user?.id && !!workspaceId,
+        refetchInterval: 5000 // Poll for new messages
+    })
+
+    // Map participant ID to last message
+    const lastMessageMap = new Map()
+    if (conversations) {
+        conversations.forEach((conv: any) => {
+            if (conv.lastMessage && conv.participants) {
+                const otherUserId = conv.participants.filter((p: string) => p !== session?.user?.id)[0]
+                if (otherUserId) {
+                    lastMessageMap.set(otherUserId, conv.lastMessage)
+                }
+            }
+        })
+    }
+
+    const formatShortTime = (date: Date) => {
+        const now = new Date()
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+        if (diffInSeconds < 60) return 'now'
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`
+        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`
+        return `${Math.floor(diffInSeconds / 604800)}w`
+    }
 
     // Filter and sort members
     const filteredMembers = members
@@ -123,52 +163,77 @@ export function ConversationList({
                         {searchQuery ? 'No members found' : 'No team members yet'}
                     </div>
                 ) : (
-                    filteredMembers.map((member) => (
-                        <button
-                            key={member.id}
-                            onClick={() => onSelectConversation(member.id)}
-                            className={`
+                    filteredMembers.map((member) => {
+                        const lastMsg = lastMessageMap.get(member.id)
+                        // Determine status color
+                        let statusColor = 'bg-gray-500' // Offline
+                        let glowClass = ''
+
+                        if (member.isOnline) {
+                            statusColor = 'bg-green-500'
+                            glowClass = 'shadow-[0_0_8px_rgba(34,197,94,0.6)]'
+                        } else if (member.lastActiveAt) {
+                            // Check if away (< 1h)
+                            const diffMins = (Date.now() - new Date(member.lastActiveAt).getTime()) / (1000 * 60)
+                            if (diffMins < 60) {
+                                statusColor = 'bg-yellow-500'
+                                glowClass = 'shadow-[0_0_8px_rgba(234,179,8,0.6)]'
+                            }
+                        }
+
+                        return (
+                            <button
+                                key={member.id}
+                                onClick={() => onSelectConversation(member.id)}
+                                className={`
                                 w-full px-4 py-3 flex items-center gap-3 hover:bg-[#1a1a24] transition-colors text-left border-l-4
                                 ${selectedConversationId === member.id ? 'bg-[#1a1a24] border-amber-500' : 'border-transparent'}
                             `}
-                        >
-                            {/* Avatar with online indicator */}
-                            <div className="relative flex-shrink-0">
-                                {member.avatar ? (
-                                    <img
-                                        src={member.avatar}
-                                        alt={member.name}
-                                        className="w-12 h-12 rounded-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                                        {member.name.substring(0, 2).toUpperCase()}
-                                    </div>
-                                )}
-                                {member.isOnline && (
-                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#0d1117] rounded-full"></div>
-                                )}
-                            </div>
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
-                                    <h3 className="font-semibold text-gray-200 truncate">
-                                        {member.name}
-                                    </h3>
-                                    {member.lastActiveAt && (
-                                        <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                                            {formatDistanceToNow(new Date(member.lastActiveAt), { addSuffix: true })}
-                                        </span>
+                            >
+                                {/* Avatar with glowing online indicator */}
+                                <div className="relative flex-shrink-0">
+                                    {member.avatar ? (
+                                        <img
+                                            src={member.avatar}
+                                            alt={member.name}
+                                            className="w-12 h-12 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                                            {member.name.substring(0, 2).toUpperCase()}
+                                        </div>
                                     )}
+                                    <div className={`absolute bottom-0 right-0 w-3 h-3 ${statusColor} border-2 border-[#0d1117] rounded-full transition-all duration-300 ${glowClass}`}></div>
                                 </div>
 
-                                <p className="text-sm text-gray-400 truncate">
-                                    {member.position || member.email}
-                                </p>
-                            </div>
-                        </button>
-                    ))
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-0.5">
+                                        <h3 className="font-semibold text-gray-200 truncate pr-2">
+                                            {member.name}
+                                        </h3>
+                                        {/* Timestamp: Show last message time if exists, else last active */}
+                                        {(lastMsg?.timestamp || member.lastActiveAt) && (
+                                            <span className="text-[11px] text-gray-500 flex-shrink-0">
+                                                {formatShortTime(new Date(lastMsg?.timestamp || member.lastActiveAt))}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <p className="text-sm text-gray-400 truncate">
+                                        {lastMsg ? (
+                                            <span className={!lastMsg.read ? 'text-gray-300' : ''}>
+                                                {lastMsg.senderId === session?.user?.id && 'You: '}
+                                                {lastMsg.content}
+                                            </span>
+                                        ) : (
+                                            <span className="italic opacity-50">{member.position || 'No messages'}</span>
+                                        )}
+                                    </p>
+                                </div>
+                            </button>
+                        )
+                    })
                 )}
             </div>
         </div>

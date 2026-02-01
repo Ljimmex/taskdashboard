@@ -6,6 +6,41 @@ import type { ConversationMessage } from '@taskdashboard/types'
 
 const conversationsRoutes = new Hono()
 
+// In-memory store for typing status: ConversationId -> UserId -> Timestamp
+// In a production app with multiple instances, use Redis
+const typingMap = new Map<string, Map<string, number>>()
+
+// =============================================================================
+// POST /api/conversations/:id/typing - Update typing status
+// =============================================================================
+
+conversationsRoutes.post('/:id/typing', async (c) => {
+    try {
+        const userId = c.req.header('x-user-id')
+        const conversationId = c.req.param('id')
+        const body = await c.req.json()
+        const { isTyping } = body
+
+        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
+
+        if (!typingMap.has(conversationId)) {
+            typingMap.set(conversationId, new Map())
+        }
+
+        const convoMap = typingMap.get(conversationId)!
+
+        if (isTyping) {
+            convoMap.set(userId, Date.now())
+        } else {
+            convoMap.delete(userId)
+        }
+
+        return c.json({ success: true })
+    } catch (error) {
+        return c.json({ success: false }, 500)
+    }
+})
+
 // =============================================================================
 // GET /api/conversations/direct - Find or get direct conversation between 2 users
 // =============================================================================
@@ -131,13 +166,21 @@ conversationsRoutes.get('/', async (c) => {
 
         const result = await db.select().from(conversations).where(and(...whereConditions))
 
-        // If includeMessages is false, remove messages from response
+        // If includeMessages is false, remove full message history but keep last message for preview
         const sanitized = result.map(conv => {
             if (!includeMessages) {
                 const { messages, ...rest } = conv
+                const msgs = (messages as ConversationMessage[]) || []
+                const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null
+
                 return {
                     ...rest,
-                    messageCount: (messages as ConversationMessage[])?.length || 0
+                    messageCount: msgs.length,
+                    lastMessage: lastMsg ? {
+                        content: lastMsg.content,
+                        senderId: lastMsg.senderId,
+                        timestamp: lastMsg.timestamp
+                    } : null
                 }
             }
             return conv
@@ -239,11 +282,27 @@ conversationsRoutes.get('/:id', async (c) => {
             messages = messages.slice(-limit) // Get last N messages
         }
 
+        // Get active typing users (typed in last 3 seconds)
+        const now = Date.now()
+        const activeTypingUsers: string[] = []
+        if (typingMap.has(conversationId)) {
+            const convoMap = typingMap.get(conversationId)!
+            for (const [uid, timestamp] of convoMap.entries()) {
+                if (now - timestamp < 3000 && uid !== userId) {
+                    activeTypingUsers.push(uid)
+                } else if (now - timestamp >= 3000) {
+                    // Cleanup old entries
+                    convoMap.delete(uid)
+                }
+            }
+        }
+
         return c.json({
             success: true,
             data: {
                 ...conversation,
-                messages
+                messages,
+                typingUsers: activeTypingUsers
             }
         })
     } catch (error) {

@@ -43,7 +43,8 @@ export function useTeamMembers(workspaceSlug: string) {
             })
             return json.data
         },
-        enabled: !!currentWorkspace?.id && !!session?.user?.id
+        enabled: !!currentWorkspace?.id && !!session?.user?.id,
+        refetchInterval: 10000 // Poll every 10s for online status updates
     })
 
     // 3. Extract unique members from all teams

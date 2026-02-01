@@ -57,20 +57,26 @@ export function ChatWindow({
     })
 
     // 3. Fetch messages for the conversation
-    const { data: messages, refetch: refetchMessages } = useQuery({
+    const { data: conversationData, refetch: refetchMessages } = useQuery({
         queryKey: ['messages', conversation?.id],
         queryFn: async () => {
-            if (!conversation?.id) return []
+            if (!conversation?.id) return { messages: [], typingUsers: [] }
             const json = await apiFetchJson<any>(`/api/conversations/${conversation.id}`, {
                 headers: {
                     'x-user-id': currentUserId
                 }
             })
-            return json.data?.messages || []
+            return {
+                messages: json.data?.messages || [],
+                typingUsers: json.data?.typingUsers || []
+            }
         },
         enabled: !!conversation?.id,
-        refetchInterval: 3000 // Poll every 3s
+        refetchInterval: 1000 // Poll every 1s for faster typing updates
     })
+
+    const messages = conversationData?.messages || []
+    const typingUsers = conversationData?.typingUsers || []
 
     // 4. Auto-scroll to bottom
     const scrollToBottom = () => {
@@ -78,7 +84,10 @@ export function ChatWindow({
     }
     useEffect(() => {
         scrollToBottom()
-    }, [messages])
+    }, [messages, typingUsers]) // Scroll when typing changes too
+
+    // State for global editing
+    const [editingMessage, setEditingMessage] = useState<{ id: string, content: string } | null>(null)
 
     // EARLY UI RETURN (After all hooks)
     if (!recipientUserId) {
@@ -94,6 +103,12 @@ export function ChatWindow({
 
         setIsSending(true)
         try {
+            // Check if editing
+            if (editingMessage) {
+                await handleEditSubmit(editingMessage.id, content)
+                return
+            }
+
             // If no conversation exists yet, create it
             let conversationId = conversation?.id
 
@@ -120,8 +135,6 @@ export function ChatWindow({
                     finalContent = JSON.stringify(packet)
                 } catch (err) {
                     console.error('Encryption failed:', err)
-                    // Fallback to plain text or abort? 
-                    // For now, let's abort to be safe
                     alert('Failed to encrypt message. Security check failed.')
                     setIsSending(false)
                     return
@@ -149,11 +162,67 @@ export function ChatWindow({
             alert('Failed to send message')
         } finally {
             setIsSending(false)
+            setEditingMessage(null) // Reset edit state if it was editing
         }
     }
 
-    const handleTyping = (_isTyping: boolean) => {
-        // TODO: Implement typing indicator
+    const handleTyping = async (isTyping: boolean) => {
+        if (!conversation?.id) return
+        try {
+            await apiFetch(`/api/conversations/${conversation.id}/typing`, {
+                method: 'POST',
+                headers: { 'x-user-id': currentUserId },
+                body: JSON.stringify({ isTyping })
+            })
+        } catch (e) {
+            // Ignore typing errors
+        }
+    }
+
+    const handleReact = async (messageId: string, emoji: string) => {
+        if (!conversation?.id) return
+
+        try {
+            await apiFetchJson(`/api/conversations/${conversation.id}/reactions`, {
+                method: 'POST',
+                headers: { 'x-user-id': currentUserId },
+                body: JSON.stringify({ messageId, emoji })
+            })
+            // Refetch to show updated reactions
+            refetchMessages()
+        } catch (err) {
+            console.error('Failed to react:', err)
+        }
+    }
+
+    // Called when user clicks "Edit" on a bubble - sets up global state
+    const handleStartEdit = (messageId: string, currentContent: string) => {
+        setEditingMessage({ id: messageId, content: currentContent })
+        // Focus will automatically move to input due to sticky state
+    }
+
+    // Called when user submits the edit from the main input
+    const handleEditSubmit = async (messageId: string, newContent: string) => {
+        if (!conversation?.id) return
+
+        try {
+            let finalContent = newContent
+            if (keys?.publicKey) {
+                const packet = await encryptHybrid(newContent, keys.publicKey)
+                finalContent = JSON.stringify(packet)
+            }
+
+            await apiFetchJson(`/api/conversations/${conversation.id}/messages/${messageId}`, {
+                method: 'PATCH',
+                headers: { 'x-user-id': currentUserId },
+                body: JSON.stringify({ content: finalContent })
+            })
+            refetchMessages()
+            setEditingMessage(null)
+        } catch (err) {
+            console.error('Failed to edit:', err)
+            throw err // Propagate to handleSendMessage catch
+        }
     }
 
     return (
@@ -227,8 +296,33 @@ export function ChatWindow({
                                         ? session?.user?.name
                                         : recipient?.name) || '??'
                                 }
+                                onReact={(emoji) => handleReact(msg.id, emoji)}
+                                onEdit={(content) => handleStartEdit(msg.id, content)}
                             />
                         ))}
+
+                        {/* Typing Indicator */}
+                        {typingUsers.length > 0 && typingUsers.includes(recipientUserId) && (
+                            <div className="flex flex-col mb-4 items-start">
+                                <div className="flex gap-3 max-w-[80%] flex-row relative">
+                                    <div className="flex-shrink-0 self-end -mb-1">
+                                        {recipient?.avatar ? (
+                                            <img src={recipient.avatar} alt={recipient.name} className="w-8 h-8 rounded-full object-cover ring-2 ring-[#13161c]" />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-2 ring-[#13161c] bg-gradient-to-br from-gray-700 to-gray-600">
+                                                {recipient?.name?.substring(0, 2).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="rounded-2xl px-4 py-3 bg-[#2b2f3e] text-gray-100 rounded-bl-sm border border-gray-700/50 flex items-center gap-1">
+                                        <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div ref={messagesEndRef} />
                     </>
                 ) : (
@@ -242,6 +336,9 @@ export function ChatWindow({
             <MessageInput
                 onSendMessage={handleSendMessage}
                 onTyping={handleTyping}
+                isEditing={!!editingMessage}
+                editValue={editingMessage?.content}
+                onCancelEdit={() => setEditingMessage(null)}
                 disabled={isSending}
             />
         </div>
