@@ -43,7 +43,7 @@ app.use('*', cors({
         'http://localhost:5173',
         'http://localhost:3000',
         'https://taskdashboard.pages.dev',
-        'https://*.taskdashboard.pages.dev', // Allow Cloudflare preview deployments
+        'https://*.taskdashboard.pages.dev',
         'https://taskdashboard-api.onrender.com',
         'https://taskdashboard-web.onrender.com',
     ],

@@ -77,4 +77,6 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        value: https://taskdashboard-al61.onrender.com
+        value: https://taskdashboard-api.onrender.com # Use the standard service URL
+      - key: BETTER_AUTH_URL
+        value: https://taskdashboard-api.onrender.com
