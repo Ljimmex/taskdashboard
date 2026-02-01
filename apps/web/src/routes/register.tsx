@@ -114,9 +114,14 @@ function RegisterPage() {
                 return
             }
 
+            const activeUserId = signInResult.data?.user.id
+
             // 3. Join Team
             const joinResponse = await apiFetch('/api/teams/join', {
                 method: 'POST',
+                headers: {
+                    'x-user-id': activeUserId || ''
+                },
                 body: JSON.stringify({
                     workspaceSlug,
                     teamSlug

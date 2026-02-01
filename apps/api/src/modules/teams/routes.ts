@@ -160,7 +160,12 @@ teamsRoutes.get('/', async (c) => {
 // POST /api/teams/join - Join a team and workspace via invite params
 teamsRoutes.post('/join', async (c) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
-    const userId = session?.user?.id
+    let userId = session?.user?.id
+
+    // Fallback to x-user-id header (common in this app's existing routes)
+    if (!userId) {
+        userId = c.req.header('x-user-id')
+    }
 
     if (!userId) {
         return c.json({ error: 'Unauthorized' }, 401)

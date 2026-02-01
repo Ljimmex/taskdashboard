@@ -39,8 +39,12 @@ function LoginPage() {
 
                 if (workspaceSlug && teamSlug) {
                     try {
+                        const activeUserId = result.data?.user.id
                         await apiFetch('/api/teams/join', {
                             method: 'POST',
+                            headers: {
+                                'x-user-id': activeUserId || ''
+                            },
                             body: JSON.stringify({
                                 workspaceSlug,
                                 teamSlug
