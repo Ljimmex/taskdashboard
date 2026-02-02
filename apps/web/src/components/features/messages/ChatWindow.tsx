@@ -153,6 +153,22 @@ export function ChatWindow({
         decryptAll()
     }, [messages, keys?.privateKey])
 
+    // Mark as read when messages load
+    useEffect(() => {
+        if (conversation?.id && messages.length > 0 && !isMenuOpen) {
+            const markRead = async () => {
+                try {
+                    await apiFetch(`/api/conversations/${conversation.id}/read`, {
+                        method: 'POST',
+                    })
+                } catch (e) {
+                    // Ignore errors
+                }
+            }
+            markRead()
+        }
+    }, [conversation?.id, messages.length, isMenuOpen])
+
     // Filter Logic
     const filteredMessages = messages.filter((msg: any) => {
         if (showPinnedOnly && !msg.isPinned) return false
@@ -564,36 +580,52 @@ export function ChatWindow({
                             </div>
                         ) : filteredMessages.length > 0 ? (
                             <>
-                                {filteredMessages.map((msg: any) => (
-                                    <MessageBubble
-                                        key={msg.id}
-                                        domId={`message-${msg.id}`}
-                                        message={msg}
-                                        currentUserId={currentUserId}
-                                        privateKey={keys?.privateKey}
-                                        senderAvatar={
-                                            (msg.senderId === currentUserId
-                                                ? session?.user?.image
-                                                : recipient?.avatar) || undefined
+                                {filteredMessages.map((msg: any) => {
+                                    // Calculate status
+                                    let status: 'sent' | 'delivered' | 'read' = 'sent'
+                                    if (msg.senderId === currentUserId) {
+                                        const recipientState = conversation?.participantStates?.[recipientUserId || '']
+                                        if (recipientState) {
+                                            if (recipientState.readAt && new Date(recipientState.readAt) >= new Date(msg.timestamp)) {
+                                                status = 'read'
+                                            } else if (recipientState.deliveredAt && new Date(recipientState.deliveredAt) >= new Date(msg.timestamp)) {
+                                                status = 'delivered'
+                                            }
                                         }
-                                        senderName={
-                                            (msg.senderId === currentUserId
-                                                ? session?.user?.name
-                                                : recipient?.name) || '??'
-                                        }
-                                        recipientName={recipient?.name}
-                                        onReact={(emoji) => handleReact(msg.id, emoji)}
-                                        onEdit={(content) => handleStartEdit(msg.id, content)}
-                                        onReply={(content) => setReplyingTo({
-                                            id: msg.id,
-                                            content: content,
-                                            senderName: msg.senderId === currentUserId ? 'You' : recipient?.name || 'Unknown'
-                                        })}
-                                        onPin={() => handlePin(msg.id, !msg.isPinned)}
-                                        onDelete={() => handleDelete(msg.id)}
-                                        replyToMessage={msg.replyToId ? messages.find((m: any) => m.id === msg.replyToId) : undefined}
-                                    />
-                                ))}
+                                    }
+
+                                    return (
+                                        <MessageBubble
+                                            key={msg.id}
+                                            domId={`message-${msg.id}`}
+                                            message={msg}
+                                            currentUserId={currentUserId}
+                                            privateKey={keys?.privateKey}
+                                            senderAvatar={
+                                                (msg.senderId === currentUserId
+                                                    ? session?.user?.image
+                                                    : recipient?.avatar) || undefined
+                                            }
+                                            senderName={
+                                                (msg.senderId === currentUserId
+                                                    ? session?.user?.name
+                                                    : recipient?.name) || '??'
+                                            }
+                                            recipientName={recipient?.name}
+                                            status={status}
+                                            onReact={(emoji) => handleReact(msg.id, emoji)}
+                                            onEdit={(content) => handleStartEdit(msg.id, content)}
+                                            onReply={(content) => setReplyingTo({
+                                                id: msg.id,
+                                                content: content,
+                                                senderName: msg.senderId === currentUserId ? 'You' : recipient?.name || 'Unknown'
+                                            })}
+                                            onPin={() => handlePin(msg.id, !msg.isPinned)}
+                                            onDelete={() => handleDelete(msg.id)}
+                                            replyToMessage={msg.replyToId ? messages.find((m: any) => m.id === msg.replyToId) : undefined}
+                                        />
+                                    )
+                                })}
 
                                 {/* Typing Indicator */}
                                 {!showPinnedOnly && typingUsers.length > 0 && typingUsers.includes(recipientUserId) && (

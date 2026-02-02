@@ -43,6 +43,13 @@
       "when": 1769951673448,
       "tag": "0005_careful_agent_zero",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770040905227,
+      "tag": "0006_milky_smasher",
+      "breakpoints": true
     }
   ]
 }

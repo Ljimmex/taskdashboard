@@ -168,6 +168,7 @@ export interface Conversation {
     isPrivate: boolean
     messages: ConversationMessage[]
     participants: string[]
+    participantStates: Record<string, { readAt?: string, deliveredAt?: string }>
     createdBy: string
     createdAt: string
     updatedAt: string

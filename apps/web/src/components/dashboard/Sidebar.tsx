@@ -32,6 +32,19 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
         enabled: !!workspaceSlug
     })
 
+    // Fetch conversations for unread count
+    const { data: unreadCount } = useQuery({
+        queryKey: ['conversations', 'unread', workspaceSlug],
+        queryFn: async () => {
+            if (!workspaceSlug) return 0
+            const json = await apiFetchJson<any>(`/api/conversations?workspaceSlug=${workspaceSlug}&includeMessages=false`)
+            const conversations = json.data || []
+            return conversations.reduce((acc: number, conv: any) => acc + (conv.unreadCount || 0), 0)
+        },
+        enabled: !!workspaceSlug,
+        refetchInterval: 10000 // Poll every 10s
+    })
+
     // Default to 'dashboard' if no slug (shouldn't happen in workspace route)
     const baseUrl = workspaceSlug ? `/${workspaceSlug}` : '/dashboard'
 
@@ -39,7 +52,7 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
         { iconKey: 'dashboard', label: 'Dashboard', path: `${baseUrl}`, count: null },
         { iconKey: 'team', label: 'Team', path: `${baseUrl}/team`, count: teams?.length || null },
         { iconKey: 'product', label: 'Projects', path: `${baseUrl}/projects`, count: null },
-        { iconKey: 'messages', label: 'Messages', path: `${baseUrl}/messages`, count: null },
+        { iconKey: 'messages', label: 'Messages', path: `${baseUrl}/messages`, count: unreadCount || null },
         { iconKey: 'calendar', label: 'Calendar', path: `${baseUrl}/calendar`, count: null },
         { iconKey: 'files', label: 'Files', path: `${baseUrl}/files`, count: null },
         { iconKey: 'contact', label: 'Contact', path: `${baseUrl}/contact`, count: null },

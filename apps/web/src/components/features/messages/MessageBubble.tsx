@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { decryptHybrid } from '@/lib/crypto'
 import type { ConversationMessage } from '@taskdashboard/types'
-import { Edit2, Smile, MoreVertical } from 'lucide-react'
+import { Edit2, Smile, MoreVertical, Check, CheckCheck } from 'lucide-react'
 import { EmojiPicker } from './EmojiPicker'
 
 interface MessageBubbleProps {
@@ -19,6 +19,7 @@ interface MessageBubbleProps {
     replyToMessage?: ConversationMessage
     recipientName?: string
     domId?: string
+    status?: 'sent' | 'delivered' | 'read'
 }
 
 const QUICK_REACTIONS = ['❤️', '😆', '😮', '😢', '😡', '👍']
@@ -36,7 +37,8 @@ export function MessageBubble({
     onDelete,
     replyToMessage,
     recipientName,
-    domId
+    domId,
+    status = 'sent'
 }: MessageBubbleProps) {
     const isOwnMessage = message.senderId === currentUserId
     const isDeleted = (message as any).isDeleted // Cast for now
@@ -375,11 +377,18 @@ export function MessageBubble({
                 </div>
             </div>
 
-            {/* Timestamp + Edited Label */}
+            {/* Timestamp + Edited Label + Status */}
             <div className={`flex items-center gap-2 text-[11px] text-gray-500 mt-1.5 font-medium select-none ${isOwnMessage ? 'mr-12' : 'ml-12'}`}>
                 {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
                 {message.edited && !isDeleted && (
                     <span className="italic opacity-60">(edited)</span>
+                )}
+                {isOwnMessage && !isDeleted && (
+                    <span className={`ml-1 transition-colors ${status === 'read' ? 'text-amber-500' : 'text-gray-500'}`}>
+                        {status === 'sent' && <Check className="w-3.5 h-3.5" />}
+                        {status === 'delivered' && <CheckCheck className="w-3.5 h-3.5" />}
+                        {status === 'read' && <CheckCheck className="w-3.5 h-3.5" />}
+                    </span>
                 )}
             </div>
         </div>

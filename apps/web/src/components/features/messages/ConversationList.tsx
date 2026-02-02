@@ -46,14 +46,14 @@ export function ConversationList({
         refetchInterval: 5000 // Poll for new messages
     })
 
-    // Map participant ID to last message
-    const lastMessageMap = new Map()
+    // Map participant ID to conversation
+    const conversationMap = new Map()
     if (conversations) {
         conversations.forEach((conv: any) => {
-            if (conv.lastMessage && conv.participants) {
-                const otherUserId = conv.participants.filter((p: string) => p !== session?.user?.id)[0]
+            if (conv.participants) {
+                const otherUserId = conv.participants.find((p: string) => p !== session?.user?.id)
                 if (otherUserId) {
-                    lastMessageMap.set(otherUserId, conv.lastMessage)
+                    conversationMap.set(otherUserId, conv)
                 }
             }
         })
@@ -164,7 +164,10 @@ export function ConversationList({
                     </div>
                 ) : (
                     filteredMembers.map((member) => {
-                        const lastMsg = lastMessageMap.get(member.id)
+                        const conv = conversationMap.get(member.id)
+                        const lastMsg = conv?.lastMessage
+                        const unreadCount = conv?.unreadCount || 0
+
                         // Determine status color
                         let statusColor = 'bg-gray-500' // Offline
                         let glowClass = ''
@@ -220,16 +223,23 @@ export function ConversationList({
                                         )}
                                     </div>
 
-                                    <p className="text-sm text-gray-400 truncate">
-                                        {lastMsg ? (
-                                            <span className={!lastMsg.read ? 'text-gray-300' : ''}>
-                                                {lastMsg.senderId === session?.user?.id && 'You: '}
-                                                {lastMsg.content}
+                                    <div className="flex justify-between items-center gap-2">
+                                        <p className={`text-sm truncate ${unreadCount > 0 ? 'text-gray-200 font-medium' : 'text-gray-400'}`}>
+                                            {lastMsg ? (
+                                                <span>
+                                                    {lastMsg.senderId === session?.user?.id && 'You: '}
+                                                    {lastMsg.content}
+                                                </span>
+                                            ) : (
+                                                <span className="italic opacity-50">{member.position || 'No messages'}</span>
+                                            )}
+                                        </p>
+                                        {unreadCount > 0 && (
+                                            <span className="flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-[#0d1117] text-xs font-bold flex items-center justify-center">
+                                                {unreadCount}
                                             </span>
-                                        ) : (
-                                            <span className="italic opacity-50">{member.position || 'No messages'}</span>
                                         )}
-                                    </p>
+                                    </div>
                                 </div>
                             </button>
                         )

@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
-import { conversations } from '../../db/schema'
+import { conversations, workspaces } from '../../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import type { ConversationMessage } from '@taskdashboard/types'
 
@@ -37,6 +37,55 @@ conversationsRoutes.post('/:id/typing', async (c) => {
 
         return c.json({ success: true })
     } catch (error) {
+        return c.json({ success: false }, 500)
+    }
+})
+
+// =============================================================================
+// POST /api/conversations/:id/read - Mark conversation as read
+// =============================================================================
+
+conversationsRoutes.post('/:id/read', async (c) => {
+    try {
+        const userId = c.req.header('x-user-id')
+        const conversationId = c.req.param('id')
+
+        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
+
+        // Fetch conversation to get current states
+        const [conversation] = await db.select()
+            .from(conversations)
+            .where(eq(conversations.id, conversationId))
+            .limit(1)
+
+        if (!conversation) {
+            return c.json({ success: false, error: 'Conversation not found' }, 404)
+        }
+
+        // Update state
+        const currentStates = conversation.participantStates || {}
+        const userState = currentStates[userId] || {}
+
+        const now = new Date().toISOString()
+
+        const newStates = {
+            ...currentStates,
+            [userId]: {
+                ...userState,
+                readAt: now,
+                // If reading, it's definitely delivered
+                deliveredAt: userState.deliveredAt || now
+            }
+        }
+
+        // Save back
+        await db.update(conversations)
+            .set({ participantStates: newStates })
+            .where(eq(conversations.id, conversationId))
+
+        return c.json({ success: true, participantStates: newStates })
+    } catch (error) {
+        console.error('Failed to mark read:', error)
         return c.json({ success: false }, 500)
     }
 })
@@ -131,13 +180,21 @@ conversationsRoutes.post('/direct', async (c) => {
 conversationsRoutes.get('/', async (c) => {
     try {
         const userId = c.req.header('x-user-id')
-        const workspaceId = c.req.query('workspaceId')
+        let workspaceId = c.req.query('workspaceId')
+        const workspaceSlug = c.req.query('workspaceSlug')
         const teamId = c.req.query('teamId')
         const type = c.req.query('type') as 'direct' | 'group' | 'channel' | undefined
         const includeMessages = c.req.query('includeMessages') === 'true'
 
         if (!userId) {
             return c.json({ success: false, error: 'Unauthorized' }, 401)
+        }
+
+        if (workspaceSlug && !workspaceId) {
+            const [ws] = await db.select().from(workspaces).where(eq(workspaces.slug, workspaceSlug))
+            if (ws) {
+                workspaceId = ws.id
+            }
         }
 
         if (!workspaceId && !teamId) {
@@ -168,22 +225,34 @@ conversationsRoutes.get('/', async (c) => {
 
         // If includeMessages is false, remove full message history but keep last message for preview
         const sanitized = result.map(conv => {
+            const msgs = (conv.messages as ConversationMessage[]) || []
+
+            // Calculate unread count
+            const userState = (conv.participantStates as any)?.[userId] || {}
+            const readAt = userState.readAt ? new Date(userState.readAt) : new Date(0)
+            const unreadCount = msgs.filter(m =>
+                new Date(m.timestamp) > readAt &&
+                m.senderId !== userId &&
+                !(m as any).isSystem // Optional: Don't count system messages?
+            ).length
+
             if (!includeMessages) {
                 const { messages, ...rest } = conv
-                const msgs = (messages as ConversationMessage[]) || []
                 const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null
 
                 return {
                     ...rest,
+                    unreadCount,
                     messageCount: msgs.length,
                     lastMessage: lastMsg ? {
                         content: lastMsg.content,
                         senderId: lastMsg.senderId,
-                        timestamp: lastMsg.timestamp
+                        timestamp: lastMsg.timestamp,
+                        read: unreadCount === 0 // Helper
                     } : null
                 }
             }
-            return conv
+            return { ...conv, unreadCount }
         })
 
         return c.json({ success: true, data: sanitized })

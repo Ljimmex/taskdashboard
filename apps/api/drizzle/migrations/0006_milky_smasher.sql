@@ -1,0 +1,1 @@
+ALTER TABLE "conversations" ADD COLUMN "participant_states" jsonb DEFAULT '{}'::jsonb;
