@@ -32,6 +32,10 @@ export const conversations = pgTable('conversations', {
         editedAt?: string
         reactions: Array<{ emoji: string; userId: string }>
         attachments: Array<{ id: string; url: string; name: string; size?: number; mimeType?: string }>
+        replyToId?: string
+        isPinned?: boolean
+        isDeleted?: boolean
+        isSystem?: boolean
     }>>(),
 
     // JSONB array of participant user IDs
@@ -91,4 +95,8 @@ export interface ConversationMessage {
         size?: number
         mimeType?: string
     }>
+    replyToId?: string
+    isPinned?: boolean
+    isDeleted?: boolean
+    isSystem?: boolean
 }

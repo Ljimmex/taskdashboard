@@ -183,6 +183,7 @@ export interface ConversationMessage {
     editedAt?: string
     reactions: MessageReaction[]
     attachments: MessageAttachment[]
+    isDeleted?: boolean
 }
 
 export interface MessageReaction {

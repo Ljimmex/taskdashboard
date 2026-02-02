@@ -88,6 +88,7 @@ export function ChatWindow({
 
     // State for global editing
     const [editingMessage, setEditingMessage] = useState<{ id: string, content: string } | null>(null)
+    const [replyingTo, setReplyingTo] = useState<{ id: string, content: string, senderName: string } | null>(null)
 
     // EARLY UI RETURN (After all hooks)
     if (!recipientUserId) {
@@ -149,7 +150,8 @@ export function ChatWindow({
                 },
                 body: JSON.stringify({
                     content: finalContent,
-                    senderId: currentUserId
+                    senderId: currentUserId,
+                    replyToId: replyingTo?.id
                 })
             })
 
@@ -163,6 +165,7 @@ export function ChatWindow({
         } finally {
             setIsSending(false)
             setEditingMessage(null) // Reset edit state if it was editing
+            setReplyingTo(null)
         }
     }
 
@@ -222,6 +225,37 @@ export function ChatWindow({
         } catch (err) {
             console.error('Failed to edit:', err)
             throw err // Propagate to handleSendMessage catch
+        }
+    }
+
+    const handlePin = async (messageId: string, isPinned?: boolean) => {
+        if (!conversation?.id) return
+        try {
+            await apiFetchJson(`/api/conversations/${conversation.id}/messages/${messageId}/pin`, {
+                method: 'POST',
+                headers: { 'x-user-id': currentUserId },
+                body: JSON.stringify({ isPinned })
+            })
+            refetchMessages()
+        } catch (e) {
+            console.error('Failed to toggle pin:', e)
+        }
+    }
+
+    const handleDelete = async (messageId: string) => {
+        if (!conversation?.id) return
+        if (!confirm('Are you sure you want to delete this message?')) return
+
+        try {
+            const res = await apiFetchJson<any>(`/api/conversations/${conversation.id}/messages/${messageId}`, {
+                method: 'DELETE',
+                headers: { 'x-user-id': currentUserId }
+            })
+            if (!res.success) throw new Error(res.error)
+            refetchMessages()
+        } catch (e: any) {
+            console.error('Failed to delete:', e)
+            alert(e.message || 'Failed to delete message')
         }
     }
 
@@ -298,6 +332,14 @@ export function ChatWindow({
                                 }
                                 onReact={(emoji) => handleReact(msg.id, emoji)}
                                 onEdit={(content) => handleStartEdit(msg.id, content)}
+                                onReply={(content) => setReplyingTo({
+                                    id: msg.id,
+                                    content: content,
+                                    senderName: msg.senderId === currentUserId ? 'You' : recipient?.name || 'Unknown'
+                                })}
+                                onPin={() => handlePin(msg.id)}
+                                onDelete={() => handleDelete(msg.id)}
+                                replyToMessage={msg.replyToId ? messages.find((m: any) => m.id === msg.replyToId) : undefined}
                             />
                         ))}
 
@@ -340,6 +382,8 @@ export function ChatWindow({
                 editValue={editingMessage?.content}
                 onCancelEdit={() => setEditingMessage(null)}
                 disabled={isSending}
+                replyTo={replyingTo}
+                onCancelReply={() => setReplyingTo(null)}
             />
         </div>
     )

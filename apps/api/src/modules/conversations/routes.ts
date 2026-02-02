@@ -325,7 +325,7 @@ conversationsRoutes.post('/:id/messages', async (c) => {
             return c.json({ success: false, error: 'Unauthorized' }, 401)
         }
 
-        const { content, attachments, senderId } = body
+        const { content, attachments, senderId, replyToId } = body
 
         if (!content) {
             return c.json({ success: false, error: 'content required' }, 400)
@@ -344,14 +344,16 @@ conversationsRoutes.post('/:id/messages', async (c) => {
         }
 
         // Create new message
-        const newMessage: ConversationMessage = {
+        const newMessage: any = {
             id: crypto.randomUUID(),
             senderId: senderId || userId,
             content,
             timestamp: new Date().toISOString(),
             edited: false,
             reactions: [],
-            attachments: attachments || []
+            attachments: attachments || [],
+            replyToId: replyToId || undefined,
+            isPinned: false
         }
 
         // Append to messages array
@@ -531,13 +533,22 @@ conversationsRoutes.delete('/:id/messages/:msgId', async (c) => {
             return c.json({ success: false, error: 'Can only delete own messages' }, 403)
         }
 
-        // Remove message from array
-        const updatedMessages = messages.filter(m => m.id !== messageId)
+        // Soft delete message
+        const messageIndex = messages.findIndex(m => m.id === messageId)
+        if (messageIndex !== -1) {
+            messages[messageIndex] = {
+                ...messages[messageIndex],
+                content: 'Usunięto wiadomość', // Placeholder content
+                isDeleted: true,
+                reactions: [], // clear reactions
+                attachments: [] // clear attachments
+            }
+        }
 
         // Update conversation
         await db.update(conversations)
             .set({
-                messages: updatedMessages,
+                messages: messages,
                 updatedAt: new Date()
             })
             .where(eq(conversations.id, conversationId))
@@ -608,6 +619,75 @@ conversationsRoutes.post('/:id/reactions', async (c) => {
     } catch (error) {
         console.error('Error toggling reaction:', error)
         return c.json({ success: false, error: 'Failed to toggle reaction' }, 500)
+    }
+})
+
+// =============================================================================
+// POST /api/conversations/:id/messages/:msgId/pin - Toggle pin status
+// =============================================================================
+
+conversationsRoutes.post('/:id/messages/:msgId/pin', async (c) => {
+    try {
+        const userId = c.req.header('x-user-id')
+        const conversationId = c.req.param('id')
+        const messageId = c.req.param('msgId')
+        // Optional: Body to explicitly set state, otherwise toggle
+        const body = await c.req.json().catch(() => ({}))
+        const { isPinned } = body
+
+        if (!userId) {
+            return c.json({ success: false, error: 'Unauthorized' }, 401)
+        }
+
+        const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId))
+
+        if (!conversation) {
+            return c.json({ success: false, error: 'Conversation not found' }, 404)
+        }
+
+        const messages = (conversation.messages as ConversationMessage[]) || []
+        const messageIndex = messages.findIndex(m => m.id === messageId)
+
+        console.log(`[PIN] Toggling pin for msg: ${messageId} in conv: ${conversationId}`)
+        console.log(`[PIN] Found index: ${messageIndex}. Total messages: ${messages.length}`)
+
+        if (messageIndex === -1) {
+            console.error('[PIN] Message not found in conversation')
+            return c.json({ success: false, error: 'Message not found' }, 404)
+        }
+
+        // Toggle or set pin status
+        const message = messages[messageIndex] as any
+        const newPinState = typeof isPinned === 'boolean' ? isPinned : !message.isPinned
+        message.isPinned = newPinState
+
+        // Inject System Message
+        const systemMessage = {
+            id: crypto.randomUUID(),
+            content: newPinState
+                ? JSON.stringify({ type: 'system', action: 'pin', actorId: userId })
+                : JSON.stringify({ type: 'system', action: 'unpin', actorId: userId }),
+            senderId: 'system',
+            timestamp: new Date().toISOString(),
+            isSystem: true,
+            reactions: [],
+            edited: false
+        }
+
+        messages.push(systemMessage as any)
+
+        // Update conversation
+        await db.update(conversations)
+            .set({
+                messages,
+                updatedAt: new Date()
+            })
+            .where(eq(conversations.id, conversationId))
+
+        return c.json({ success: true, data: { isPinned: message.isPinned } })
+    } catch (error) {
+        console.error('Error toggling pin:', error)
+        return c.json({ success: false, error: 'Failed to toggle pin' }, 500)
     }
 })
 

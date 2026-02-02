@@ -10,6 +10,8 @@ interface MessageInputProps {
     isEditing?: boolean
     editValue?: string
     onCancelEdit?: () => void
+    replyTo?: { id: string; content: string; senderName: string } | null
+    onCancelReply?: () => void
 }
 
 export function MessageInput({
@@ -19,7 +21,9 @@ export function MessageInput({
     placeholder = 'Type a message...',
     isEditing = false,
     editValue = '',
-    onCancelEdit
+    onCancelEdit,
+    replyTo,
+    onCancelReply
 }: MessageInputProps) {
     const [message, setMessage] = useState('')
     const [isSending, setIsSending] = useState(false)
@@ -122,6 +126,26 @@ export function MessageInput({
                 </div>
             )}
 
+            {/* Replying Context Banner */}
+            {replyTo && (
+                <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a24] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
+                    <div className="flex items-center gap-2 text-gray-300">
+                        <span className="text-gray-500">Replying to {replyTo.senderName}:</span>
+                        <span className="italic truncate max-w-[200px] opacity-75">{replyTo.content}</span>
+                    </div>
+                    <button
+                        onClick={() => {
+                            if (onCancelReply) onCancelReply()
+                        }}
+                        className="text-gray-400 hover:text-white transition-colors"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            )}
+
             <div className="flex items-end gap-3 bg-[#12121a] p-4">
                 {/* Attachment Button */}
                 <div className="flex gap-2">
@@ -152,23 +176,6 @@ export function MessageInput({
                         style={{ minHeight: '44px' }}
                     />
 
-                    {/* Voice Message Button - Inside Input */}
-                    <button
-                        type="button"
-                        className="absolute right-2 bottom-1.5 p-1.5 hover:bg-gray-700/50 rounded-full transition-colors text-gray-400 hover:text-white"
-                        aria-label="Voice message"
-                        disabled
-                        title="Coming soon"
-                    >
-                        <div className="w-5 h-5 flex items-center justify-center">
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                                <line x1="12" y1="19" x2="12" y2="23" />
-                                <line x1="8" y1="23" x2="16" y2="23" />
-                            </svg>
-                        </div>
-                    </button>
                 </div>
 
                 {/* Send/Save Button */}
@@ -176,8 +183,8 @@ export function MessageInput({
                     onClick={handleSend}
                     disabled={!message.trim() || isSending || disabled}
                     className={`mb-1 p-2.5 text-white rounded-full transition-all shadow-lg hover:shadow-amber-900/20 ${isEditing
-                            ? 'bg-blue-600 hover:bg-blue-500' // Blue for Edit Save
-                            : 'bg-amber-600 hover:bg-amber-500' // Amber for Send
+                        ? 'bg-blue-600 hover:bg-blue-500' // Blue for Edit Save
+                        : 'bg-amber-600 hover:bg-amber-500' // Amber for Send
                         } disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed`}
                     aria-label={isEditing ? "Save changes" : "Send message"}
                 >
