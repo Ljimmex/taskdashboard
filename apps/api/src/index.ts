@@ -2,7 +2,8 @@
 // This is critical for ES module loading order
 import './loadEnv'
 
-import { Hono } from 'hono'
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { apiReference } from '@scalar/hono-api-reference'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
@@ -31,8 +32,8 @@ import { startWebhookWorker } from './modules/webhooks/worker'
 // Start async worker
 startWebhookWorker()
 
-// Create Hono app (using regular Hono instead of OpenAPIHono for compatibility)
-const app = new Hono()
+// Create OpenAPI Hono app
+const app = new OpenAPIHono()
 
 // =============================================================================
 // MIDDLEWARE
@@ -77,36 +78,100 @@ app.use('/api/*', updateLastActivity)
 // =============================================================================
 
 // Health check
-app.get('/health', (c) => {
-    return c.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-    })
-})
+app.openapi(
+    createRoute({
+        method: 'get',
+        path: '/health',
+        responses: {
+            200: {
+                content: {
+                    'application/json': {
+                        schema: z.object({
+                            status: z.string(),
+                            timestamp: z.string(),
+                            uptime: z.number(),
+                        }),
+                    },
+                },
+                description: 'Retrieve the health status of the API',
+            },
+        },
+        tags: ['System'],
+    }),
+    (c) => {
+        return c.json({
+            status: 'ok',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+        })
+    }
+)
 
 // API info
-app.get('/', (c) => {
-    return c.json({
-        name: 'Zadano.app API',
-        version: '0.1.0',
-        endpoints: {
-            auth: '/api/auth/*',
-            users: '/api/users/*',
-            workspaces: '/api/workspaces/*', // New endpoint
-            tasks: '/api/tasks/*',
-            projects: '/api/projects/*',
-            teams: '/api/teams/*',
-            labels: '/api/labels/*',
-            comments: '/api/comments/*',
-            time: '/api/time/*',
-            industryTemplates: '/api/industry-templates/*',
-            projectStages: '/api/projects/:id/stages/*',
-            filters: '/api/filters/*',
-            templates: '/api/templates/*',
+app.openapi(
+    createRoute({
+        method: 'get',
+        path: '/',
+        responses: {
+            200: {
+                content: {
+                    'application/json': {
+                        schema: z.object({
+                            name: z.string(),
+                            version: z.string(),
+                            endpoints: z.record(z.string()),
+                        }),
+                    },
+                },
+                description: 'Retrieve API information and common endpoints',
+            },
         },
-    })
+        tags: ['System'],
+    }),
+    (c) => {
+        return c.json({
+            name: 'Zadano.app API',
+            version: '0.1.0',
+            endpoints: {
+                auth: '/api/auth/*',
+                users: '/api/users/*',
+                workspaces: '/api/workspaces/*',
+                tasks: '/api/tasks/*',
+                projects: '/api/projects/*',
+                teams: '/api/teams/*',
+                labels: '/api/labels/*',
+                comments: '/api/comments/*',
+                time: '/api/time/*',
+                industryTemplates: '/api/industry-templates/*',
+                projectStages: '/api/projects/:id/stages/*',
+                filters: '/api/filters/*',
+                templates: '/api/templates/*',
+            },
+        })
+    }
+)
+
+// =============================================================================
+// API DOCUMENTATION (SCALAR)
+// =============================================================================
+
+app.doc('/openapi.json', {
+    openapi: '3.0.0',
+    info: {
+        version: '0.1.0',
+        title: 'Zadano.app API',
+    },
 })
+
+app.get(
+    '/docs',
+    apiReference({
+        theme: 'saturn',
+        spec: {
+            url: '/openapi.json',
+        }
+    } as any)
+)
 
 // ... (docs skipped)
 
