@@ -17,6 +17,8 @@ interface MessageBubbleProps {
     onPin?: () => void
     onDelete?: () => void
     replyToMessage?: ConversationMessage
+    recipientName?: string
+    domId?: string
 }
 
 const QUICK_REACTIONS = ['❤️', '😆', '😮', '😢', '😡', '👍']
@@ -32,7 +34,9 @@ export function MessageBubble({
     onReply,
     onPin,
     onDelete,
-    replyToMessage
+    replyToMessage,
+    recipientName,
+    domId
 }: MessageBubbleProps) {
     const isOwnMessage = message.senderId === currentUserId
     const isDeleted = (message as any).isDeleted // Cast for now
@@ -164,7 +168,7 @@ export function MessageBubble({
         const actionText = systemInfo.action === 'pin' ? 'pinned a message.' : 'unpinned a message.'
         return (
             <div className="flex items-center justify-center gap-1 my-3 text-xs text-gray-400 select-none">
-                <span>{isMe ? 'You' : 'User'} {actionText}</span>
+                <span>{isMe ? 'You' : (recipientName || 'User')} {actionText}</span>
                 <button className="text-blue-500 hover:underline font-medium">View all</button>
             </div>
         )
@@ -172,6 +176,7 @@ export function MessageBubble({
 
     return (
         <div
+            id={domId}
             className={`flex flex-col mb-4 bg-transparent hover:bg-transparent ${isOwnMessage ? 'items-end' : 'items-start'} group/message`}
             onMouseEnter={() => setShowActions(true)}
             onMouseLeave={() => {
