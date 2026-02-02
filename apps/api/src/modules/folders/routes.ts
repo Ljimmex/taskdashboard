@@ -7,6 +7,7 @@ import { folders } from '../../db/schema/folders'
 import { authMiddleware } from '@/middleware/auth'
 
 import { auth } from '../../lib/auth'
+import { triggerWebhook } from '../webhooks/trigger'
 
 type Env = {
     Variables: {
@@ -83,6 +84,11 @@ app.post('/', zValidator('json', createSchema), async (c) => {
         createdById: user?.id,
     }).returning()
 
+    // TRIGGER WEBHOOK
+    if (newFolder) {
+        triggerWebhook('folder.created', newFolder, body.workspaceId)
+    }
+
     return c.json(newFolder)
 })
 
@@ -106,6 +112,11 @@ app.patch('/:id', zValidator('json', updateSchema), async (c) => {
         .where(eq(folders.id, id))
         .returning()
 
+    // TRIGGER WEBHOOK
+    if (updated) {
+        triggerWebhook('folder.updated', updated, updated.workspaceId)
+    }
+
     return c.json(updated)
 })
 
@@ -120,7 +131,15 @@ app.delete('/:id', async (c) => {
     // For MVP, simplistic delete. 
     // Ideally: Use a recursive query to find all file keys to delete from R2, then DB delete.
 
+    // Get folder for workspaceId before delete
+    const [folder] = await db.select().from(folders).where(eq(folders.id, id)).limit(1)
+
     await db.delete(folders).where(eq(folders.id, id))
+
+    // TRIGGER WEBHOOK
+    if (folder) {
+        triggerWebhook('folder.deleted', folder, folder.workspaceId)
+    }
 
     return c.json({ success: true })
 })

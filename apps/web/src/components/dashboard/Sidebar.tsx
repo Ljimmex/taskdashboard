@@ -37,12 +37,14 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
         queryKey: ['conversations', 'unread', workspaceSlug],
         queryFn: async () => {
             if (!workspaceSlug) return 0
-            const json = await apiFetchJson<any>(`/api/conversations?workspaceSlug=${workspaceSlug}&includeMessages=false`)
+            const json = await apiFetchJson<any>(`/api/conversations?workspaceSlug=${workspaceSlug}&includeMessages=false&type=direct`, {
+                headers: { 'x-user-id': session?.user?.id || '' }
+            })
             const conversations = json.data || []
             return conversations.reduce((acc: number, conv: any) => acc + (conv.unreadCount || 0), 0)
         },
-        enabled: !!workspaceSlug,
-        refetchInterval: 10000 // Poll every 10s
+        enabled: !!workspaceSlug && !!session?.user?.id,
+        refetchInterval: 2000 // Poll every 2s for near real-time updates
     })
 
     // Default to 'dashboard' if no slug (shouldn't happen in workspace route)

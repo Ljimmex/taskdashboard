@@ -43,7 +43,7 @@ export function ConversationList({
             return json.data || []
         },
         enabled: !!session?.user?.id && !!workspaceId,
-        refetchInterval: 5000 // Poll for new messages
+        refetchInterval: 2000 // Poll every 2s for near real-time updates
     })
 
     // Map participant ID to conversation
@@ -51,7 +51,14 @@ export function ConversationList({
     if (conversations) {
         conversations.forEach((conv: any) => {
             if (conv.participants) {
-                const otherUserId = conv.participants.find((p: string) => p !== session?.user?.id)
+                // Try to find the OTHER user first
+                let otherUserId = conv.participants.find((p: string) => p !== session?.user?.id)
+
+                // If distinct other user not found, it might be a self-chat
+                if (!otherUserId && conv.participants.includes(session?.user?.id)) {
+                    otherUserId = session?.user?.id
+                }
+
                 if (otherUserId) {
                     conversationMap.set(otherUserId, conv)
                 }
@@ -165,7 +172,7 @@ export function ConversationList({
                 ) : (
                     filteredMembers.map((member) => {
                         const conv = conversationMap.get(member.id)
-                        const lastMsg = conv?.lastMessage
+                        const lastMsg = conv?.lastMessage || (conv?.messages?.length > 0 ? conv.messages[conv.messages.length - 1] : null)
                         const unreadCount = conv?.unreadCount || 0
 
                         // Determine status color
@@ -212,12 +219,12 @@ export function ConversationList({
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-0.5">
-                                        <h3 className="font-semibold text-gray-200 truncate pr-2">
+                                        <h3 className={`font-semibold truncate pr-2 ${unreadCount > 0 ? 'text-white' : 'text-gray-200'}`}>
                                             {member.name}
                                         </h3>
                                         {/* Timestamp: Show last message time if exists, else last active */}
                                         {(lastMsg?.timestamp || member.lastActiveAt) && (
-                                            <span className="text-[11px] text-gray-500 flex-shrink-0">
+                                            <span className={`text-[11px] flex-shrink-0 ${unreadCount > 0 ? 'text-amber-500 font-medium' : 'text-gray-500'}`}>
                                                 {formatShortTime(new Date(lastMsg?.timestamp || member.lastActiveAt))}
                                             </span>
                                         )}
@@ -225,19 +232,33 @@ export function ConversationList({
 
                                     <div className="flex justify-between items-center gap-2">
                                         <p className={`text-sm truncate ${unreadCount > 0 ? 'text-gray-200 font-medium' : 'text-gray-400'}`}>
-                                            {lastMsg ? (
-                                                <span>
-                                                    {lastMsg.senderId === session?.user?.id && 'You: '}
-                                                    {lastMsg.content}
-                                                </span>
-                                            ) : (
-                                                <span className="italic opacity-50">{member.position || 'No messages'}</span>
-                                            )}
+                                            {(() => {
+                                                if (!lastMsg) return <span className="italic opacity-50">Start a conversation</span>
+
+                                                if (lastMsg.senderId === session?.user?.id) {
+                                                    // I sent the last message
+                                                    const otherParticipantState = conv?.participantStates?.[member.id]
+                                                    const readAt = otherParticipantState?.readAt ? new Date(otherParticipantState.readAt) : null
+                                                    const msgTime = new Date(lastMsg.timestamp)
+
+                                                    if (readAt && readAt >= msgTime) {
+                                                        // Check if seen recently (< 1 min)
+                                                        const diff = Date.now() - readAt.getTime()
+                                                        if (diff < 60000) return 'Seen now'
+                                                        return 'Seen'
+                                                    }
+                                                    return 'Sent message'
+                                                } else {
+                                                    // They sent the last message
+                                                    if (unreadCount > 0) return 'New message'
+                                                    return 'Sent a message'
+                                                }
+                                            })()}
                                         </p>
                                         {unreadCount > 0 && (
-                                            <span className="flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500 text-[#0d1117] text-xs font-bold flex items-center justify-center">
-                                                {unreadCount}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+                                            </div>
                                         )}
                                     </div>
                                 </div>

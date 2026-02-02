@@ -12,6 +12,7 @@ import {
 } from '../../lib/permissions'
 import { encryptionKeys } from '../../db/schema/encryption'
 import { decryptPrivateKey } from '../../lib/server-encryption'
+import { triggerWebhook } from '../webhooks/trigger'
 
 export const workspacesRoutes = new Hono()
 
@@ -129,6 +130,9 @@ workspacesRoutes.post('/', async (c) => {
                 role: 'owner',
             })
 
+            // TRIGGER WEBHOOK for owner joining
+            triggerWebhook('member.joined', { userId, role: 'owner', workspaceId: newWorkspace.id }, newWorkspace.id)
+
             return newWorkspace
         })
 
@@ -180,6 +184,11 @@ workspacesRoutes.patch('/:id', async (c) => {
             .where(eq(workspaces.id, id))
             .returning()
 
+        // TRIGGER WEBHOOK
+        if (updated) {
+            triggerWebhook('workspace.updated', updated, updated.id)
+        }
+
         return c.json({ data: updated })
     } catch (error) {
         return c.json({ error: 'Failed to update workspace', details: String(error) }, 500)
@@ -228,6 +237,11 @@ workspacesRoutes.post('/:id/members', async (c) => {
             role,
             invitedBy: userId,
         }).returning()
+
+        // TRIGGER WEBHOOK
+        if (member) {
+            triggerWebhook('member.joined', member, workspaceId)
+        }
 
         return c.json({ data: member }, 201)
     } catch (error) {
@@ -295,8 +309,14 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
             return c.json({ error: 'Unauthorized to remove workspace members' }, 403)
         }
 
-        await db.delete(workspaceMembers)
+        const [deleted] = await db.delete(workspaceMembers)
             .where(eq(workspaceMembers.id, memberId))
+            .returning()
+
+        // TRIGGER WEBHOOK
+        if (deleted) {
+            triggerWebhook('member.removed', deleted, workspaceId)
+        }
 
         return c.json({ message: 'Member removed from workspace' })
     } catch (error) {
@@ -373,7 +393,7 @@ workspacesRoutes.get('/:id/keys', async (c) => {
             .where(eq(encryptionKeys.workspaceId, workspaceId))
             .limit(1)
 
-        let keyData: { publicKey: string; privateKey: string; expiresAt: Date }
+        let keyData: { publicKey: string; privateKey: string; expiresAt: Date | null }
 
         if (keys.length === 0) {
             console.log(`Keys missing for workspace ${workspaceId}, generating new ones...`)

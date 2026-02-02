@@ -50,6 +50,20 @@
       "when": 1770040905227,
       "tag": "0006_milky_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1770044332833,
+      "tag": "0007_outgoing_black_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1770046765719,
+      "tag": "0008_cuddly_valeria_richards",
+      "breakpoints": true
     }
   ]
 }

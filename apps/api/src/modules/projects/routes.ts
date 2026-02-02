@@ -9,6 +9,8 @@ import {
     type WorkspaceRole,
     type TeamLevel
 } from '../../lib/permissions'
+import { triggerWebhook } from '../webhooks/trigger'
+import { teams } from '../../db/schema'
 
 export const projectsRoutes = new Hono()
 
@@ -225,6 +227,17 @@ projectsRoutes.post('/', async (c) => {
             )
         }
 
+        // TRIGGER WEBHOOK
+        let finalWorkspaceId = workspaceId
+        if (!finalWorkspaceId) {
+            const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, teamId)).limit(1)
+            finalWorkspaceId = team?.workspaceId || null
+        }
+
+        if (finalWorkspaceId) {
+            triggerWebhook('project.created', created, finalWorkspaceId)
+        }
+
         return c.json({ success: true, data: created }, 201)
     } catch (error) {
         console.error('Error creating project:', error)
@@ -260,6 +273,13 @@ projectsRoutes.patch('/:id', async (c) => {
 
         const [updated] = await db.update(projects).set(updateData).where(eq(projects.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Project not found' }, 404)
+
+        // TRIGGER WEBHOOK
+        const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, updated.teamId)).limit(1)
+        if (team?.workspaceId) {
+            triggerWebhook('project.updated', updated, team.workspaceId)
+        }
+
         return c.json({ success: true, data: updated })
     } catch (error) {
         console.error('Error updating project:', error)
@@ -286,6 +306,13 @@ projectsRoutes.delete('/:id', async (c) => {
 
         const [deleted] = await db.delete(projects).where(eq(projects.id, id)).returning()
         if (!deleted) return c.json({ success: false, error: 'Project not found' }, 404)
+
+        // TRIGGER WEBHOOK
+        const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, project.teamId)).limit(1)
+        if (team?.workspaceId) {
+            triggerWebhook('project.deleted', deleted, team.workspaceId)
+        }
+
         return c.json({ success: true, message: `Project "${deleted.name}" deleted` })
     } catch (error) {
         console.error('Error deleting project:', error)

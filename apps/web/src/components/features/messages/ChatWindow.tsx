@@ -68,7 +68,8 @@ export function ChatWindow({
             })
             return {
                 messages: json.data?.messages || [],
-                typingUsers: json.data?.typingUsers || []
+                typingUsers: json.data?.typingUsers || [],
+                participantStates: json.data?.participantStates || {}
             }
         },
         enabled: !!conversation?.id,
@@ -155,11 +156,14 @@ export function ChatWindow({
 
     // Mark as read when messages load
     useEffect(() => {
-        if (conversation?.id && messages.length > 0 && !isMenuOpen) {
+        if (conversation?.id && messages.length > 0 && !isMenuOpen && session?.user?.id) {
             const markRead = async () => {
                 try {
                     await apiFetch(`/api/conversations/${conversation.id}/read`, {
                         method: 'POST',
+                        headers: {
+                            'x-user-id': session.user.id
+                        }
                     })
                 } catch (e) {
                     // Ignore errors
@@ -167,7 +171,7 @@ export function ChatWindow({
             }
             markRead()
         }
-    }, [conversation?.id, messages.length, isMenuOpen])
+    }, [conversation?.id, messages.length, isMenuOpen, session?.user?.id])
 
     // Filter Logic
     const filteredMessages = messages.filter((msg: any) => {
@@ -584,7 +588,9 @@ export function ChatWindow({
                                     // Calculate status
                                     let status: 'sent' | 'delivered' | 'read' = 'sent'
                                     if (msg.senderId === currentUserId) {
-                                        const recipientState = conversation?.participantStates?.[recipientUserId || '']
+                                        // Use polled participantStates if available, fallback to initial
+                                        const states = conversationData?.participantStates || conversation?.participantStates
+                                        const recipientState = states?.[recipientUserId || '']
                                         if (recipientState) {
                                             if (recipientState.readAt && new Date(recipientState.readAt) >= new Date(msg.timestamp)) {
                                                 status = 'read'

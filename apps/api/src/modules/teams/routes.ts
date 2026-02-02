@@ -11,6 +11,7 @@ import {
     type WorkspaceRole,
     type TeamLevel
 } from '../../lib/permissions'
+import { triggerWebhook } from '../webhooks/trigger'
 
 export const teamsRoutes = new Hono()
 
@@ -300,6 +301,11 @@ teamsRoutes.post('/', async (c) => {
             return newTeam
         })
 
+        // TRIGGER WEBHOOK
+        if (result) {
+            triggerWebhook('team.created', result, workspaceId)
+        }
+
         return c.json({ data: result }, 201)
     } catch (error) {
         return c.json({ error: 'Failed to create team', details: String(error) }, 500)
@@ -377,6 +383,11 @@ teamsRoutes.patch('/:id', async (c) => {
             .where(eq(teams.id, id))
             .returning()
 
+        // TRIGGER WEBHOOK
+        if (updated) {
+            triggerWebhook('team.updated', updated, team.workspaceId)
+        }
+
         return c.json({ data: updated })
     } catch (error) {
         return c.json({ error: 'Failed to update team', details: String(error) }, 500)
@@ -406,6 +417,10 @@ teamsRoutes.delete('/:id', async (c) => {
         }
 
         await db.delete(teams).where(eq(teams.id, id))
+
+        // TRIGGER WEBHOOK
+        triggerWebhook('team.deleted', team, team.workspaceId)
+
         return c.json({ message: 'Team deleted' })
     } catch (error) {
         return c.json({ error: 'Failed to delete team', details: String(error) }, 500)
@@ -466,6 +481,11 @@ teamsRoutes.post('/:id/members', async (c) => {
             teamLevel: newMemberLevel,
         }).returning()
 
+        // TRIGGER WEBHOOK
+        if (newMember) {
+            triggerWebhook('team.member_joined', newMember, team.workspaceId)
+        }
+
         return c.json({ data: newMember }, 201)
     } catch (error) {
         return c.json({ error: 'Failed to add member', details: String(error) }, 500)
@@ -497,6 +517,9 @@ teamsRoutes.delete('/:id/members/:memberId', async (c) => {
 
         await db.delete(teamMembers)
             .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, memberId)))
+
+        // TRIGGER WEBHOOK
+        triggerWebhook('team.member_removed', { teamId, userId: memberId }, team.workspaceId)
 
         return c.json({ message: 'Member removed' })
     } catch (error) {

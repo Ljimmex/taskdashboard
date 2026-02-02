@@ -10,6 +10,8 @@ import {
     canReorderStages,
     type TeamLevel
 } from '../../lib/permissions'
+import { triggerWebhook } from '../webhooks/trigger'
+import { teams } from '../../db/schema'
 
 const app = new Hono()
 
@@ -25,6 +27,17 @@ async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLev
 async function getTeamIdFromProject(projectId: string): Promise<string | null> {
     const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, projectId)).limit(1)
     return project?.teamId || null
+}
+
+// Helper: Get workspaceId from projectId
+async function getWorkspaceIdFromProject(projectId: string): Promise<string | null> {
+    const [result] = await db
+        .select({ workspaceId: teams.workspaceId })
+        .from(projects)
+        .innerJoin(teams, eq(projects.teamId, teams.id))
+        .where(eq(projects.id, projectId))
+        .limit(1)
+    return result?.workspaceId || null
 }
 
 // =============================================================================
@@ -96,6 +109,12 @@ app.post('/:projectId/stages', async (c) => {
             })
             .returning()
 
+        // TRIGGER WEBHOOK
+        const workspaceId = await getWorkspaceIdFromProject(projectId)
+        if (workspaceId) {
+            triggerWebhook('stage.created', stage, workspaceId)
+        }
+
         return c.json({ success: true, data: stage }, 201)
     } catch (error) {
         console.error('Error creating stage:', error)
@@ -141,6 +160,12 @@ app.patch('/:projectId/stages/:stageId', async (c) => {
             return c.json({ success: false, error: 'Stage not found' }, 404)
         }
 
+        // TRIGGER WEBHOOK
+        const workspaceId = await getWorkspaceIdFromProject(projectId)
+        if (workspaceId) {
+            triggerWebhook('stage.updated', stage, workspaceId)
+        }
+
         return c.json({ success: true, data: stage })
     } catch (error) {
         console.error('Error updating stage:', error)
@@ -176,6 +201,12 @@ app.delete('/:projectId/stages/:stageId', async (c) => {
 
         if (!deleted) {
             return c.json({ success: false, error: 'Stage not found' }, 404)
+        }
+
+        // TRIGGER WEBHOOK
+        const workspaceId = await getWorkspaceIdFromProject(projectId)
+        if (workspaceId) {
+            triggerWebhook('stage.deleted', deleted, workspaceId)
         }
 
         return c.json({ success: true, data: deleted })
@@ -228,6 +259,12 @@ app.post('/:projectId/stages/reorder', async (c) => {
             .from(projectStages)
             .where(eq(projectStages.projectId, projectId))
             .orderBy(asc(projectStages.position))
+
+        // TRIGGER WEBHOOK
+        const workspaceId = await getWorkspaceIdFromProject(projectId)
+        if (workspaceId) {
+            triggerWebhook('stage.reordered', stages, workspaceId)
+        }
 
         return c.json({ success: true, data: stages })
     } catch (error) {

@@ -9,6 +9,7 @@ import { getUploadUrl, getDownloadUrl, deleteFile } from '../../lib/r2'
 import { authMiddleware } from '@/middleware/auth'
 
 import { type Auth } from '../../lib/auth'
+import { triggerWebhook } from '../webhooks/trigger'
 
 type Env = {
     Variables: {
@@ -62,6 +63,11 @@ app.post('/upload', zValidator('json', uploadSchema), async (c) => {
         taskId: body.taskId || null, // Ensure null if undefined
         uploadedBy: user.id,
     } as NewFileRecord).returning()
+
+    // TRIGGER WEBHOOK
+    if (newFile) {
+        triggerWebhook('file.uploaded', newFile, body.workspaceId)
+    }
 
     return c.json({
         uploadUrl,
@@ -237,6 +243,11 @@ app.post('/:id/duplicate', async (c) => {
             uploadedBy: user.id,
         } as NewFileRecord).returning()
 
+        // TRIGGER WEBHOOK
+        if (newFile && originalFile.workspaceId) {
+            triggerWebhook('file.uploaded', newFile, originalFile.workspaceId)
+        }
+
         return c.json(newFile)
     } catch (error) {
         console.error('Failed to duplicate file:', error)
@@ -268,6 +279,11 @@ app.delete('/:id', async (c) => {
 
     // Delete from DB
     await db.delete(files).where(eq(files.id, id))
+
+    // TRIGGER WEBHOOK
+    if (file.workspaceId) {
+        triggerWebhook('file.deleted', file, file.workspaceId)
+    }
 
     return c.json({ success: true })
 })

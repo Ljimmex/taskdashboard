@@ -25,7 +25,11 @@ import { templatesRoutes } from './modules/templates/routes'
 import filesRoutes from './modules/files/routes'
 import foldersRoutes from './modules/folders/routes'
 import conversationsRoutes from './modules/conversations/routes'
+import { webhooksRoutes } from './modules/webhooks/routes'
+import { startWebhookWorker } from './modules/webhooks/worker'
 
+// Start async worker
+startWebhookWorker()
 
 // Create Hono app (using regular Hono instead of OpenAPIHono for compatibility)
 const app = new Hono()
@@ -123,6 +127,7 @@ app.route('/api/projects', projectStagesRoutes)  // Adds stages endpoints under 
 app.route('/api/filters', filtersRoutes)
 app.route('/api/templates', templatesRoutes)
 app.route('/api/conversations', conversationsRoutes)
+app.route('/api/webhooks', webhooksRoutes)
 
 
 // =============================================================================

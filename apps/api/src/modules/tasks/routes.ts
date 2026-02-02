@@ -14,6 +14,8 @@ import {
     type TeamLevel,
     type WorkspaceRole
 } from '../../lib/permissions'
+import { triggerWebhook } from '../webhooks/trigger'
+import { teams } from '../../db/schema/teams'
 
 export const tasksRoutes = new Hono()
 
@@ -29,6 +31,19 @@ async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLev
 async function getTeamIdFromProject(projectId: string): Promise<string | null> {
     const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, projectId)).limit(1)
     return project?.teamId || null
+}
+
+// Helper: Get workspaceId from projectId
+async function getWorkspaceIdFromProject(projectId: string): Promise<string | null> {
+    try {
+        const teamId = await getTeamIdFromProject(projectId)
+        if (!teamId) return null
+
+        const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, teamId)).limit(1)
+        return team?.workspaceId || null
+    } catch (e) {
+        return null
+    }
 }
 
 // =============================================================================
@@ -393,6 +408,13 @@ tasksRoutes.post('/', async (c) => {
         }
 
         await db.insert(taskActivityLog).values({ taskId: created.id, userId: reporterId, activityType: 'created', newValue: created.title })
+
+        // TRIGGER WEBHOOK
+        const workspaceId = await getWorkspaceIdFromProject(created.projectId)
+        if (workspaceId) {
+            triggerWebhook('task.created', created, workspaceId)
+        }
+
         return c.json({ success: true, data: created }, 201)
     } catch (error) {
         console.error('💥 Error creating task:', error)
@@ -452,6 +474,22 @@ tasksRoutes.patch('/:id', async (c) => {
         const [updated] = await db.update(tasks).set(updateData).where(eq(tasks.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Task not found' }, 404)
 
+        // TRIGGER WEBHOOKS
+        const workspaceId = await getWorkspaceIdFromProject(updated.projectId)
+        if (workspaceId) {
+            triggerWebhook('task.updated', updated, workspaceId)
+
+            if (body.status !== undefined && body.status !== task.status) {
+                triggerWebhook('task.status_changed', { taskId: id, oldStatus: task.status, newStatus: updated.status, task: updated }, workspaceId)
+            }
+            if (body.assigneeId !== undefined && body.assigneeId !== task.assigneeId) {
+                triggerWebhook('task.assigned', { taskId: id, oldAssigneeId: task.assigneeId, newAssigneeId: updated.assigneeId, task: updated }, workspaceId)
+            }
+            if (body.dueDate !== undefined && body.dueDate?.toString() !== task.dueDate?.toString()) {
+                triggerWebhook('task.due_date_changed', { taskId: id, oldDueDate: task.dueDate, newDueDate: updated.dueDate, task: updated }, workspaceId)
+            }
+        }
+
         // Ensure new assignee is a member of the project
         if (body.assigneeId && body.assigneeId !== task.assigneeId) {
             const isMember = await db.query.projectMembers.findFirst({
@@ -500,6 +538,13 @@ tasksRoutes.delete('/:id', async (c) => {
 
         const [deleted] = await db.delete(tasks).where(eq(tasks.id, id)).returning()
         if (!deleted) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // TRIGGER WEBHOOK
+        const workspaceId = await getWorkspaceIdFromProject(deleted.projectId)
+        if (workspaceId) {
+            triggerWebhook('task.deleted', deleted, workspaceId)
+        }
+
         return c.json({ success: true, message: `Task "${deleted.title}" deleted` })
     } catch (error) {
         console.error('Error deleting task:', error)
@@ -542,6 +587,16 @@ tasksRoutes.patch('/:id/move', async (c) => {
 
         const [updated] = await db.update(tasks).set(updateData).where(eq(tasks.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // TRIGGER WEBHOOK
+        const workspaceId = await getWorkspaceIdFromProject(updated.projectId)
+        if (workspaceId) {
+            if (body.status && body.status !== task.status) {
+                triggerWebhook('task.status_changed', { taskId: id, oldStatus: task.status, newStatus: updated.status, task: updated }, workspaceId)
+            }
+            triggerWebhook('task.updated', updated, workspaceId)
+        }
+
         return c.json({ success: true, data: updated })
     } catch (error) {
         console.error('Error moving task:', error)
@@ -585,6 +640,15 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
             activityType: 'subtask_created',
             newValue: created.title
         })
+
+        // TRIGGER WEBHOOK
+        const task = await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, id), columns: { projectId: true } })
+        if (task) {
+            const workspaceId = await getWorkspaceIdFromProject(task.projectId)
+            if (workspaceId) {
+                triggerWebhook('subtask.created', created, workspaceId)
+            }
+        }
 
         return c.json({ success: true, data: created }, 201)
     } catch (error) {
@@ -648,6 +712,15 @@ tasksRoutes.patch('/:taskId/subtasks/:subtaskId', async (c) => {
             })
         }
 
+        // TRIGGER WEBHOOK
+        const parentTask = await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, taskId), columns: { projectId: true } })
+        if (parentTask) {
+            const wsId = await getWorkspaceIdFromProject(parentTask.projectId)
+            if (wsId) {
+                triggerWebhook('subtask.updated', updated, wsId)
+            }
+        }
+
         return c.json({ success: true, data: updated })
     } catch (error) {
         console.error('Error updating subtask:', error)
@@ -670,6 +743,15 @@ tasksRoutes.delete('/:taskId/subtasks/:subtaskId', async (c) => {
             activityType: 'subtask_deleted',
             newValue: deleted.title
         })
+
+        // TRIGGER WEBHOOK
+        const parentTask = await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, taskId), columns: { projectId: true } })
+        if (parentTask) {
+            const wsId = await getWorkspaceIdFromProject(parentTask.projectId)
+            if (wsId) {
+                triggerWebhook('subtask.deleted', deleted, wsId)
+            }
+        }
 
         return c.json({ success: true, message: 'Subtask deleted' })
     } catch (error) {
@@ -795,6 +877,15 @@ tasksRoutes.post('/:id/comments', async (c) => {
             activityType: 'commented',
             newValue: content.slice(0, 50) + (content.length > 50 ? '...' : '')
         })
+
+        // TRIGGER WEBHOOK
+        const task = await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, id), columns: { projectId: true } })
+        if (task) {
+            const workspaceId = await getWorkspaceIdFromProject(task.projectId)
+            if (workspaceId) {
+                triggerWebhook('comment.created', created, workspaceId)
+            }
+        }
 
         // Fetch user for response
         const user = await db.query.users.findFirst({

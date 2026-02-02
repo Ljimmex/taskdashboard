@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { db } from '../../db'
 import { workspaces } from '../../db/schema/workspaces'
 import { eq } from 'drizzle-orm'
+import { triggerWebhook } from '../webhooks/trigger'
 
 export const labelsRoutes = new Hono()
 
@@ -59,6 +60,9 @@ labelsRoutes.post('/', async (c) => {
             .set({ labels: updatedLabels, updatedAt: new Date() })
             .where(eq(workspaces.id, workspace.id))
 
+        // TRIGGER WEBHOOK
+        triggerWebhook('label.created', newLabel, workspace.id)
+
         return c.json({ success: true, data: newLabel }, 201)
     } catch (error) {
         console.error('Error creating label:', error)
@@ -101,6 +105,9 @@ labelsRoutes.patch('/:id', async (c) => {
             .set({ labels: currentLabels, updatedAt: new Date() })
             .where(eq(workspaces.id, workspace.id))
 
+        // TRIGGER WEBHOOK
+        triggerWebhook('label.updated', updatedLabel, workspace.id)
+
         return c.json({ success: true, data: updatedLabel })
     } catch (error) {
         console.error('Error updating label:', error)
@@ -136,6 +143,9 @@ labelsRoutes.delete('/:id', async (c) => {
         await db.update(workspaces)
             .set({ labels: updatedLabels, updatedAt: new Date() })
             .where(eq(workspaces.id, workspace.id))
+
+        // TRIGGER WEBHOOK
+        triggerWebhook('label.deleted', deletedLabel, workspace.id)
 
         return c.json({ success: true, message: `Label "${deletedLabel.name}" deleted` })
     } catch (error) {

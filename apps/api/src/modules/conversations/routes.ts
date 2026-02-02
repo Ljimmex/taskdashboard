@@ -3,6 +3,7 @@ import { db } from '../../db'
 import { conversations, workspaces } from '../../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import type { ConversationMessage } from '@taskdashboard/types'
+import { triggerWebhook } from '../webhooks/trigger'
 
 const conversationsRoutes = new Hono()
 
@@ -438,6 +439,15 @@ conversationsRoutes.post('/:id/messages', async (c) => {
             })
             .where(eq(conversations.id, conversationId))
 
+        // TRIGGER WEBHOOK
+        if (conversation.workspaceId) {
+            triggerWebhook('message.sent', {
+                conversationId,
+                message: newMessage,
+                workspaceId: conversation.workspaceId
+            }, conversation.workspaceId)
+        }
+
         return c.json({ success: true, data: newMessage })
     } catch (error) {
         console.error('Error adding message:', error)
@@ -501,6 +511,15 @@ conversationsRoutes.patch('/:id/messages', async (c) => {
             })
             .where(eq(conversations.id, conversationId))
 
+        // TRIGGER WEBHOOK
+        if (conversation.workspaceId) {
+            triggerWebhook('message.sent', {
+                conversationId,
+                message: newMessage,
+                workspaceId: conversation.workspaceId
+            }, conversation.workspaceId)
+        }
+
         return c.json({ success: true, data: newMessage })
     } catch (error) {
         console.error('Error adding message:', error)
@@ -563,6 +582,15 @@ conversationsRoutes.patch('/:id/messages/:msgId', async (c) => {
             })
             .where(eq(conversations.id, conversationId))
 
+        // TRIGGER WEBHOOK
+        if (conversation.workspaceId) {
+            triggerWebhook('message.updated', {
+                conversationId,
+                message: messages[messageIndex],
+                workspaceId: conversation.workspaceId
+            }, conversation.workspaceId)
+        }
+
         return c.json({ success: true, data: messages[messageIndex] })
     } catch (error) {
         console.error('Error editing message:', error)
@@ -621,6 +649,16 @@ conversationsRoutes.delete('/:id/messages/:msgId', async (c) => {
                 updatedAt: new Date()
             })
             .where(eq(conversations.id, conversationId))
+
+        // TRIGGER WEBHOOK
+        if (conversation.workspaceId) {
+            triggerWebhook('message.deleted', {
+                conversationId,
+                messageId,
+                message: messages[messageIndex],
+                workspaceId: conversation.workspaceId
+            }, conversation.workspaceId)
+        }
 
         return c.json({ success: true })
     } catch (error) {
