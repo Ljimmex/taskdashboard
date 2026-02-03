@@ -42,16 +42,29 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
 
     const { mutate: createInvite, isPending: isCreating } = useMutation({
         mutationFn: async (data: any) => {
+            const userId = session?.user?.id
+
+            console.log('🚀 Sending Invite Request:', {
+                url: `/api/workspaces/${workspace.id}/invites`,
+                userId: userId || 'MISSING (Will cause 500 if strict DB constraints)',
+                data
+            })
+
+            if (!userId) {
+                throw new Error('User ID is missing. Cannot create invite without authenticated user.')
+            }
+
             return apiFetchJson(`/api/workspaces/${workspace.id}/invites`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-user-id': session?.user?.id || ''
+                    'x-user-id': userId
                 },
                 body: JSON.stringify(data)
             })
         },
         onSuccess: (res: any) => {
+            console.log('✅ Invite Created:', res)
             if (activeTab === 'email') {
                 setEmail('')
                 onClose()
@@ -61,8 +74,8 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
             queryClient.invalidateQueries({ queryKey: ['workspace-invites', workspace.id] })
         },
         onError: (error) => {
-            console.error('Failed to create invite', error)
-            alert('Failed to create invitation')
+            console.error('❌ Failed to create invite:', error)
+            alert(`Failed to create invitation: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
     })
 
