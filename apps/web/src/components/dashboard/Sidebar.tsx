@@ -5,6 +5,7 @@ import { signOut, useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { sidebarIcons as icons } from './icons'
 import { WorkspaceSwitcher } from '../features/workspace/WorkspaceSwitcher'
+import { OrganizationSettingsPanel } from '../features/settings/panels/OrganizationSettingsPanel'
 
 interface SidebarProps {
     isOpen?: boolean
@@ -16,6 +17,7 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
     const [isDarkMode, setIsDarkMode] = useState(true)
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
     const { data: session } = useSession()
 
@@ -113,6 +115,26 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
             {/* Separator line */}
             <div className="border-t border-gray-800/50 mx-3 mt-2" />
 
+            {/* Organisation Settings */}
+            <div className="px-3 pt-2">
+                <button
+                    onClick={() => setIsSettingsOpen(true)}
+                    onMouseEnter={() => setHoveredItem('settings')}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    className={`flex items-center gap-3 px-3 py-2 w-full rounded-lg transition-all ${hoveredItem === 'settings' || isSettingsOpen
+                        ? 'bg-[#1a1a24] text-[#F2CE88]'
+                        : 'text-gray-500 hover:bg-gray-800/30'
+                        }`}
+                >
+                    <div className="w-6 h-6 flex items-center justify-center">
+                        {hoveredItem === 'settings' || isSettingsOpen ? icons.settings.gold : icons.settings.gray}
+                    </div>
+                    <span className={`text-sm whitespace-nowrap ${hoveredItem === 'settings' || isSettingsOpen ? 'text-[#F2CE88] font-medium' : 'text-gray-500'}`}>
+                        Org. Settings
+                    </span>
+                </button>
+            </div>
+
             {/* Logout */}
             <div className="px-3 py-2">
                 <button
@@ -180,7 +202,11 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
             {/* Workspace Switcher */}
             <WorkspaceSwitcher />
 
-
+            {/* Settings Panel */}
+            <OrganizationSettingsPanel
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+            />
 
         </aside>
     )

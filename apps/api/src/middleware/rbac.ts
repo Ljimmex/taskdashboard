@@ -9,14 +9,18 @@ type PermissionPath = string
 const WORKSPACE_ROLE_MAP: Record<string, typeof SYSTEM_ROLES[keyof typeof SYSTEM_ROLES]> = {
     'owner': SYSTEM_ROLES.OWNER,
     'admin': SYSTEM_ROLES.ADMIN,
+    'project_manager': SYSTEM_ROLES.PROJECT_MANAGER,
+    'hr_manager': SYSTEM_ROLES.HR_MANAGER,
     'member': SYSTEM_ROLES.WORKSPACE_MEMBER,
     'guest': SYSTEM_ROLES.INTERN // Fallback for guest
 }
 
 const TEAM_ROLE_MAP: Record<string, typeof SYSTEM_ROLES[keyof typeof SYSTEM_ROLES]> = {
-    'owner': SYSTEM_ROLES.TEAM_LEAD,
-    'admin': SYSTEM_ROLES.SENIOR,
-    'member': SYSTEM_ROLES.MID
+    'team_lead': SYSTEM_ROLES.TEAM_LEAD,
+    'senior': SYSTEM_ROLES.SENIOR,
+    'mid': SYSTEM_ROLES.MID,
+    'junior': SYSTEM_ROLES.JUNIOR,
+    'intern': SYSTEM_ROLES.INTERN
 }
 
 /**
@@ -78,7 +82,7 @@ export const requirePermission = (permission: PermissionPath) => createMiddlewar
         })
 
         if (teamMember) {
-            const roleDef = TEAM_ROLE_MAP[teamMember.role] // Map 'owner' -> TEAM_LEAD etc
+            const roleDef = TEAM_ROLE_MAP[teamMember.teamLevel] // Map 'team_lead' -> TEAM_LEAD etc
             if (roleDef && getPermissionValue(roleDef.permissions, permission)) {
                 hasAccess = true
             }

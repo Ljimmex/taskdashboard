@@ -18,6 +18,10 @@ export type PermissionCategory =
     | 'timeTracking'
     | 'files'
     | 'analytics'
+    | 'webhooks'
+    | 'calendar'
+    | 'invitations'
+    | 'conversations'
 
 export type PermissionAction = string // e.g., 'create', 'update', 'delete', 'manageMembers', etc.
 
@@ -270,6 +274,50 @@ export function canManageTimeEntries(workspaceRole: WorkspaceRole | null, teamLe
 /** Check if user can view analytics */
 export function canViewAnalytics(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
     return hasPermission(workspaceRole, teamLevel, 'analytics', 'view')
+}
+
+// =============================================================================
+// PERMISSION GUARDS - WEBHOOKS
+// =============================================================================
+
+export function canManageWebhooks(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
+    return hasPermission(workspaceRole, teamLevel, 'webhooks', 'manage')
+}
+
+export function canViewWebhookLogs(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
+    return hasPermission(workspaceRole, teamLevel, 'webhooks', 'viewLogs')
+}
+
+// =============================================================================
+// PERMISSION GUARDS - CALENDAR
+// =============================================================================
+
+export function canCreateCalendarEvents(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
+    return hasPermission(workspaceRole, teamLevel, 'calendar', 'createEvents')
+}
+
+export function canManageCalendarEvents(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
+    return hasPermission(workspaceRole, teamLevel, 'calendar', 'manageEvents')
+}
+
+// =============================================================================
+// PERMISSION GUARDS - INVITATIONS
+// =============================================================================
+
+export function canManageInvitations(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
+    return hasPermission(workspaceRole, teamLevel, 'invitations', 'manage')
+}
+
+// =============================================================================
+// PERMISSION GUARDS - CONVERSATIONS
+// =============================================================================
+
+export function canCreateChannels(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
+    return hasPermission(workspaceRole, teamLevel, 'conversations', 'createChannels')
+}
+
+export function canManageChannels(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
+    return hasPermission(workspaceRole, teamLevel, 'conversations', 'manageChannels')
 }
 
 // =============================================================================

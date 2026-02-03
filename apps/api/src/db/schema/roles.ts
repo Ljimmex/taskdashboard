@@ -71,6 +71,21 @@ export interface RolePermissions {
         view?: boolean
         export?: boolean
     }
+    webhooks?: {
+        manage?: boolean
+        viewLogs?: boolean
+    }
+    calendar?: {
+        createEvents?: boolean
+        manageEvents?: boolean
+    }
+    invitations?: {
+        manage?: boolean
+    }
+    conversations?: {
+        createChannels?: boolean // include private/groups
+        manageChannels?: boolean // rename/archive
+    }
     apiAccess?: boolean
 }
 
@@ -150,6 +165,21 @@ export const SYSTEM_ROLES = {
                 view: true,
                 export: true,
             },
+            webhooks: {
+                manage: true,
+                viewLogs: true,
+            },
+            calendar: {
+                createEvents: true,
+                manageEvents: true,
+            },
+            invitations: {
+                manage: true,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: true,
+            },
             apiAccess: true,
         } as RolePermissions,
     },
@@ -220,6 +250,21 @@ export const SYSTEM_ROLES = {
             analytics: {
                 view: true,
                 export: true,
+            },
+            webhooks: {
+                manage: true,
+                viewLogs: true,
+            },
+            calendar: {
+                createEvents: true,
+                manageEvents: true,
+            },
+            invitations: {
+                manage: true,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: true,
             },
             apiAccess: false,
         } as RolePermissions,
@@ -292,6 +337,21 @@ export const SYSTEM_ROLES = {
                 view: true,
                 export: true,
             },
+            webhooks: {
+                manage: false,
+                viewLogs: false,
+            },
+            calendar: {
+                createEvents: true,
+                manageEvents: true,
+            },
+            invitations: {
+                manage: false,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: true,
+            },
             apiAccess: false,
         } as RolePermissions,
     },
@@ -362,6 +422,21 @@ export const SYSTEM_ROLES = {
             analytics: {
                 view: true,
                 export: true,
+            },
+            webhooks: {
+                manage: false,
+                viewLogs: false,
+            },
+            calendar: {
+                createEvents: true,
+                manageEvents: true,
+            },
+            invitations: {
+                manage: true,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: true,
             },
             apiAccess: false,
         } as RolePermissions,
@@ -434,6 +509,21 @@ export const SYSTEM_ROLES = {
                 view: false,
                 export: false,
             },
+            webhooks: {
+                manage: false,
+                viewLogs: false,
+            },
+            calendar: {
+                createEvents: false,
+                manageEvents: false,
+            },
+            invitations: {
+                manage: false,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: false,
+            },
             apiAccess: false,
         } as RolePermissions,
     },
@@ -503,6 +593,21 @@ export const SYSTEM_ROLES = {
                 view: true,
                 export: false,
             },
+            webhooks: {
+                manage: false,
+                viewLogs: false,
+            },
+            calendar: {
+                createEvents: true,
+                manageEvents: true,
+            },
+            invitations: {
+                manage: false,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: true,
+            },
             apiAccess: false,
         } as RolePermissions,
     },
@@ -567,6 +672,21 @@ export const SYSTEM_ROLES = {
             analytics: {
                 view: true,
                 export: false,
+            },
+            webhooks: {
+                manage: false,
+                viewLogs: false,
+            },
+            calendar: {
+                createEvents: true,
+                manageEvents: false,
+            },
+            invitations: {
+                manage: false,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: false,
             },
             apiAccess: false,
         } as RolePermissions,
@@ -633,6 +753,21 @@ export const SYSTEM_ROLES = {
                 view: false,
                 export: false,
             },
+            webhooks: {
+                manage: false,
+                viewLogs: false,
+            },
+            calendar: {
+                createEvents: true,
+                manageEvents: false,
+            },
+            invitations: {
+                manage: false,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: false,
+            },
             apiAccess: false,
         } as RolePermissions,
     },
@@ -698,6 +833,21 @@ export const SYSTEM_ROLES = {
                 view: false,
                 export: false,
             },
+            webhooks: {
+                manage: false,
+                viewLogs: false,
+            },
+            calendar: {
+                createEvents: true,
+                manageEvents: false,
+            },
+            invitations: {
+                manage: false,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: false,
+            },
             apiAccess: false,
         } as RolePermissions,
     },
@@ -762,6 +912,21 @@ export const SYSTEM_ROLES = {
             analytics: {
                 view: false,
                 export: false,
+            },
+            webhooks: {
+                manage: false,
+                viewLogs: false,
+            },
+            calendar: {
+                createEvents: false,
+                manageEvents: false,
+            },
+            invitations: {
+                manage: false,
+            },
+            conversations: {
+                createChannels: true,
+                manageChannels: false,
             },
             apiAccess: false,
         } as RolePermissions,

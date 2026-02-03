@@ -7,7 +7,7 @@ interface Workspace {
     id: string
     name: string
     slug: string
-    avatar?: string
+    logo?: string
 }
 
 export function WorkspaceSwitcher() {
@@ -54,9 +54,9 @@ export function WorkspaceSwitcher() {
                     onClick={() => setIsOpen(!isOpen)}
                     className="flex items-center gap-3 w-full p-2 rounded-xl bg-[#1a1a24] hover:bg-[#252530] transition-colors border border-gray-800/50"
                 >
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black font-bold text-sm">
-                        {currentWorkspace.avatar ? (
-                            <img src={currentWorkspace.avatar} alt={currentWorkspace.name} className="w-full h-full rounded-lg object-cover" />
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-black font-bold text-sm overflow-hidden ${currentWorkspace.logo ? '' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}>
+                        {currentWorkspace.logo ? (
+                            <img src={currentWorkspace.logo} alt={currentWorkspace.name} className="w-full h-full object-cover" />
                         ) : (
                             currentWorkspace.name.substring(0, 2).toUpperCase()
                         )}
@@ -94,8 +94,12 @@ export function WorkspaceSwitcher() {
                                     className={`flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${ws.slug === workspaceSlug ? 'bg-amber-500/10' : 'hover:bg-gray-800'
                                         }`}
                                 >
-                                    <div className={`w-6 h-6 rounded bg-gray-700 flex items-center justify-center text-[10px] font-bold ${ws.slug === workspaceSlug ? 'text-amber-400' : 'text-gray-400'}`}>
-                                        {ws.name.substring(0, 1).toUpperCase()}
+                                    <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold overflow-hidden ${ws.logo ? '' : 'bg-gray-700'} ${ws.slug === workspaceSlug && !ws.logo ? 'text-amber-400' : 'text-gray-400'}`}>
+                                        {ws.logo ? (
+                                            <img src={ws.logo} alt={ws.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            ws.name.substring(0, 1).toUpperCase()
+                                        )}
                                     </div>
                                     <span className={`text-sm truncate ${ws.slug === workspaceSlug ? 'text-amber-400' : 'text-gray-300'}`}>
                                         {ws.name}

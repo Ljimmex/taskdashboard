@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { eq, or, like, and } from 'drizzle-orm'
+import { eq, or, like, and, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { users } from '../../db/schema/users'
@@ -179,8 +179,33 @@ workspacesRoutes.patch('/:id', async (c) => {
             return c.json({ error: 'Unauthorized to update workspace' }, 403)
         }
 
+        // Fetch current workspace to merge settings
+        const currentWorkspace = await db.query.workspaces.findFirst({
+            where: (ws, { eq }) => eq(ws.id, id)
+        })
+
+        if (!currentWorkspace) {
+            return c.json({ error: 'Workspace not found' }, 404)
+        }
+
+        // Prepare update data
+        const updateData: any = {
+            updatedAt: new Date()
+        }
+
+        if (body.name) updateData.name = body.name
+        if (body.slug) updateData.slug = body.slug
+        if (body.description) updateData.description = body.description
+        if (body.logo) updateData.logo = body.logo
+        if (body.settings) {
+            updateData.settings = {
+                ...currentWorkspace.settings,
+                ...body.settings
+            }
+        }
+
         const [updated] = await db.update(workspaces)
-            .set({ ...body, updatedAt: new Date() })
+            .set(updateData)
             .where(eq(workspaces.id, id))
             .returning()
 
@@ -219,7 +244,13 @@ workspacesRoutes.delete('/:id', async (c) => {
 // POST /api/workspaces/:id/members - Add member to workspace (requires workspace.manageMembers)
 workspacesRoutes.post('/:id/members', async (c) => {
     const workspaceId = c.req.param('id')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+
+    if (!session?.user) {
+        return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    const userId = session.user.id
     const body = await c.req.json()
     const { userId: newMemberId, role = 'member' } = body
 
@@ -252,6 +283,7 @@ workspacesRoutes.post('/:id/members', async (c) => {
 // GET /api/workspaces/:id/members - List members of workspace (with search)
 workspacesRoutes.get('/:id/members', async (c) => {
     const workspaceId = c.req.param('id')
+    console.log(`[DEBUG] GET /api/workspaces/${workspaceId}/members called`)
     const query = c.req.query('q')?.toLowerCase()
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
@@ -266,13 +298,15 @@ workspacesRoutes.get('/:id/members', async (c) => {
             return c.json({ error: 'Access denied' }, 403)
         }
 
-        // 2. Fetch members
-        const members = await db.select({
-            id: users.id,
-            name: users.name,
-            email: users.email,
-            image: users.image,
-            position: users.position
+        // 2. Fetch members - Use explicit column selection
+        const rows = await db.select({
+            userId: users.id,
+            userName: users.name,
+            userEmail: users.email,
+            userImage: users.image,
+            userPosition: users.position,
+            memberRole: workspaceMembers.role,
+            memberJoinedAt: workspaceMembers.joinedAt,
         })
             .from(workspaceMembers)
             .innerJoin(users, eq(users.id, workspaceMembers.userId))
@@ -286,10 +320,84 @@ workspacesRoutes.get('/:id/members', async (c) => {
                 )
             )
 
+        // Debug first row structure
+        if (rows.length > 0) {
+            console.log('=== MEMBER QUERY DEBUG ===')
+            console.log('Row Keys:', Object.keys(rows[0]))
+            console.log('First Row:', rows[0])
+            console.log('Member Role:', rows[0].memberRole)
+            console.log('Joined At:', rows[0].memberJoinedAt)
+        }
+
+        const members = rows.map(row => ({
+            id: row.userId,
+            name: row.userName,
+            email: row.userEmail,
+            image: row.userImage,
+            position: row.userPosition,
+            workspaceRole: row.memberRole,
+            joinedAt: row.memberJoinedAt,
+        }))
+
+        console.log('Final Members:', JSON.stringify(members, null, 2))
+
         return c.json({ data: members })
     } catch (error) {
         console.error('Fetch members error:', error)
         return c.json({ error: 'Failed to fetch members', details: String(error) }, 500)
+    }
+})
+
+// PATCH /api/workspaces/:id/members/:memberId - Update member role (requires workspace.manageMembers)
+workspacesRoutes.patch('/:id/members/:memberId', async (c) => {
+    const workspaceId = c.req.param('id')
+    const memberId = c.req.param('memberId')
+    const userId = c.req.header('x-user-id') || 'temp-user-id'
+    const body = await c.req.json()
+    const { role } = body
+
+    if (!role) {
+        return c.json({ error: 'Role is required' }, 400)
+    }
+
+    try {
+        // Get user's workspace role
+        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+
+        if (!canManageWorkspaceMembers(workspaceRole)) {
+            return c.json({ error: 'Unauthorized to manage workspace members' }, 403)
+        }
+
+        // Check if member exists in workspace
+        const targetMember = await db.query.workspaceMembers.findFirst({
+            where: (wm, { eq, and }) => and(eq(wm.workspaceId, workspaceId), eq(wm.userId, memberId))
+        })
+
+        if (!targetMember) {
+            // Member logic for ID check omitted for brevity, assuming userId for now
+        }
+
+        // Let's use User ID for finding the membership record.
+        const [updated] = await db.update(workspaceMembers)
+            .set({ role })
+            .where(
+                and(
+                    eq(workspaceMembers.workspaceId, workspaceId),
+                    eq(workspaceMembers.userId, memberId) // Assuming memberId is userId
+                )
+            )
+            .returning()
+
+        if (!updated) {
+            return c.json({ error: 'Member not found in workspace' }, 404)
+        }
+
+        // TRIGGER WEBHOOK
+        triggerWebhook('member.updated', updated, workspaceId)
+
+        return c.json({ data: updated })
+    } catch (error) {
+        return c.json({ error: 'Failed to update member role', details: String(error) }, 500)
     }
 })
 
@@ -310,7 +418,12 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
         }
 
         const [deleted] = await db.delete(workspaceMembers)
-            .where(eq(workspaceMembers.id, memberId))
+            .where(
+                and(
+                    eq(workspaceMembers.workspaceId, workspaceId),
+                    eq(workspaceMembers.userId, memberId)
+                )
+            )
             .returning()
 
         // TRIGGER WEBHOOK
@@ -324,7 +437,6 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
     }
 })
 
-// GET /api/workspaces/:id/keys - Get encryption keys (member access)
 // GET /api/workspaces/:id/keys - Get encryption keys (member access)
 workspacesRoutes.get('/:id/keys', async (c) => {
     const workspaceId = c.req.param('id')

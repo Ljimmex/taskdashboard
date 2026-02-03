@@ -138,6 +138,20 @@ export const sidebarIcons = {
             </svg>
         ),
     },
+    settings: {
+        gold: (
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="16" r="5" fill="#7A664E" />
+                <path d="M16 4V8M16 24V28M28 16H24M8 16H4M24.4853 7.51472L21.6569 10.3431M10.3431 21.6569L7.51472 24.4853M24.4853 24.4853L21.6569 21.6569M10.3431 10.3431L7.51472 7.51472" stroke="#F2CE88" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+        ),
+        gray: (
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="16" r="5" fill="#545454" />
+                <path d="M16 4V8M16 24V28M28 16H24M8 16H4M24.4853 7.51472L21.6569 10.3431M10.3431 21.6569L7.51472 24.4853M24.4853 24.4853L21.6569 21.6569M10.3431 10.3431L7.51472 7.51472" stroke="#9E9E9E" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+        ),
+    },
 }
 
 // Day/Night mode icons

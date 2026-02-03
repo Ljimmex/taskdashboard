@@ -133,6 +133,12 @@ export const workspaceRoleEnum = pgEnum('workspace_role', [
     'guest'            // Gość - ograniczony dostęp
 ])
 
+export const memberStatusEnum = pgEnum('member_status', [
+    'active',
+    'invited',
+    'suspended'
+])
+
 export const workspaceMembers = pgTable('workspace_members', {
     id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
     workspaceId: text('workspace_id')
@@ -142,6 +148,7 @@ export const workspaceMembers = pgTable('workspace_members', {
         .notNull()
         .references(() => users.id, { onDelete: 'cascade' }),
     role: workspaceRoleEnum('role').default('member').notNull(),
+    status: memberStatusEnum('status').default('active').notNull(),
     invitedBy: text('invited_by').references(() => users.id),
     joinedAt: timestamp('joined_at').defaultNow().notNull(),
 })

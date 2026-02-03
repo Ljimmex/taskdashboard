@@ -30,7 +30,8 @@ import { webhooksRoutes } from './modules/webhooks/routes'
 import { startWebhookWorker } from './modules/webhooks/worker'
 
 // Start async worker
-startWebhookWorker()
+// TEMPORARILY DISABLED: Worker has postgres connection issues
+// startWebhookWorker()
 
 // Create OpenAPI Hono app
 const app = new OpenAPIHono()
