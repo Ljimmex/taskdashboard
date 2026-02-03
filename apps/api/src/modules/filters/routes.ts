@@ -1,9 +1,26 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { savedFilters } from '../../db/schema/filters'
+import { workspaceMembers } from '../../db/schema/workspaces'
 import { eq, and } from 'drizzle-orm'
+import type { WorkspaceRole } from '../../lib/permissions'
 
 export const filtersRoutes = new Hono()
+
+// Helper: Get user's workspace role (blocks suspended members)
+async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    const [member] = await db.select()
+        .from(workspaceMembers)
+        .where(
+            and(
+                eq(workspaceMembers.userId, userId),
+                eq(workspaceMembers.workspaceId, workspaceId),
+                eq(workspaceMembers.status, 'active')
+            )
+        )
+        .limit(1)
+    return (member?.role as WorkspaceRole) || null
+}
 
 // =============================================================================
 // GET /api/filters - List user's saved filters
@@ -27,6 +44,11 @@ filtersRoutes.get('/', async (c) => {
             })
             if (workspace) {
                 workspaceId = workspace.id
+                // Check workspace membership status
+                const workspaceRole = await getUserWorkspaceRole(userId, workspace.id)
+                if (!workspaceRole) {
+                    return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+                }
             }
         }
 
@@ -96,6 +118,12 @@ filtersRoutes.post('/', async (c) => {
 
         if (!workspace) {
             return c.json({ success: false, error: 'Workspace not found' }, 404)
+        }
+
+        // Check workspace membership status
+        const workspaceRole = await getUserWorkspaceRole(userId, workspace.id)
+        if (!workspaceRole) {
+            return c.json({ error: 'Forbidden: No active workspace access' }, 403)
         }
 
         // Create the filter

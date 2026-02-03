@@ -2,14 +2,29 @@ import { Hono } from 'hono'
 import { db } from '../../db'
 import { taskComments, type NewTaskComment, tasks } from '../../db/schema/tasks'
 import { projects } from '../../db/schema/projects'
+import { teams } from '../../db/schema/teams'
+import { workspaceMembers } from '../../db/schema/workspaces'
 import { eq } from 'drizzle-orm'
 import {
     canCreateComments,
     canModerateComments,
-    type TeamLevel
+    type TeamLevel,
+    type WorkspaceRole
 } from '../../lib/permissions'
 
 export const commentsRoutes = new Hono()
+
+// Helper: Get user's workspace role (blocks suspended members)
+async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    const member = await db.query.workspaceMembers.findFirst({
+        where: (wm, { eq, and }) => and(
+            eq(wm.userId, userId),
+            eq(wm.workspaceId, workspaceId),
+            eq(wm.status, 'active')
+        )
+    })
+    return (member?.role as WorkspaceRole) || null
+}
 
 // Helper: Get user's team level for a project's team
 async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
@@ -25,6 +40,14 @@ async function getTeamIdFromTask(taskId: string): Promise<string | null> {
     if (!task) return null
     const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, task.projectId)).limit(1)
     return project?.teamId || null
+}
+
+// Helper: Get workspaceId from taskId
+async function getWorkspaceIdFromTask(taskId: string): Promise<string | null> {
+    const teamId = await getTeamIdFromTask(taskId)
+    if (!teamId) return null
+    const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, teamId)).limit(1)
+    return team?.workspaceId || null
 }
 
 // GET /api/comments - List comments for a task (anyone with project access can view)
@@ -46,6 +69,18 @@ commentsRoutes.post('/', async (c) => {
         const userId = c.req.header('x-user-id') || 'temp-user-id'
         const body = await c.req.json()
 
+        // Get workspace context
+        const workspaceId = await getWorkspaceIdFromTask(body.taskId)
+        if (!workspaceId) {
+            return c.json({ success: false, error: 'Task workspace not found' }, 404)
+        }
+
+        // Check workspace membership status (blocks suspended users)
+        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+        if (!workspaceRole) {
+            return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+        }
+
         // Get teamId from task
         const teamId = await getTeamIdFromTask(body.taskId)
         if (!teamId) {
@@ -55,7 +90,7 @@ commentsRoutes.post('/', async (c) => {
         // Get permissions
         const teamLevel = await getUserTeamLevel(userId, teamId)
 
-        if (!canCreateComments(null, teamLevel)) {
+        if (!canCreateComments(workspaceRole, teamLevel)) {
             return c.json({ success: false, error: 'Unauthorized to create comments' }, 403)
         }
 

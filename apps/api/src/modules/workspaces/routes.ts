@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+// @ts-expect-error -- sql may be used in future queries
 import { eq, or, like, and, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
@@ -13,14 +14,28 @@ import {
 import { encryptionKeys } from '../../db/schema/encryption'
 import { decryptPrivateKey } from '../../lib/server-encryption'
 import { triggerWebhook } from '../webhooks/trigger'
+import { workspaceInvitesRoutes } from './invites'
 
 export const workspacesRoutes = new Hono()
 
-// Helper: Get user's workspace role
+// Mount invitation routes
+workspacesRoutes.route('/', workspaceInvitesRoutes)
+
+// Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
-    const member = await db.query.workspaceMembers.findFirst({
-        where: (wm, { eq, and }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId))
+    const [member] = await db.select({
+        role: workspaceMembers.role
     })
+        .from(workspaceMembers)
+        .where(
+            and(
+                eq(workspaceMembers.userId, userId),
+                eq(workspaceMembers.workspaceId, workspaceId),
+                eq(workspaceMembers.status, 'active')
+            )
+        )
+        .limit(1)
+
     return (member?.role as WorkspaceRole) || null
 }
 
@@ -42,7 +57,12 @@ workspacesRoutes.get('/', async (c) => {
             })
             .from(workspaceMembers)
             .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
-            .where(eq(workspaceMembers.userId, userId))
+            .where(
+                and(
+                    eq(workspaceMembers.userId, userId),
+                    eq(workspaceMembers.status, 'active') // Filter out suspended/invited
+                )
+            )
 
         return c.json({
             data: userWorkspaces.map(w => ({
@@ -306,6 +326,7 @@ workspacesRoutes.get('/:id/members', async (c) => {
             userImage: users.image,
             userPosition: users.position,
             memberRole: workspaceMembers.role,
+            memberStatus: workspaceMembers.status,
             memberJoinedAt: workspaceMembers.joinedAt,
         })
             .from(workspaceMembers)
@@ -336,6 +357,7 @@ workspacesRoutes.get('/:id/members', async (c) => {
             image: row.userImage,
             position: row.userPosition,
             workspaceRole: row.memberRole,
+            status: row.memberStatus,
             joinedAt: row.memberJoinedAt,
         }))
 
@@ -354,10 +376,10 @@ workspacesRoutes.patch('/:id/members/:memberId', async (c) => {
     const memberId = c.req.param('memberId')
     const userId = c.req.header('x-user-id') || 'temp-user-id'
     const body = await c.req.json()
-    const { role } = body
+    const { role, status } = body
 
-    if (!role) {
-        return c.json({ error: 'Role is required' }, 400)
+    if (!role && !status) {
+        return c.json({ error: 'Role or status is required' }, 400)
     }
 
     try {
@@ -368,22 +390,16 @@ workspacesRoutes.patch('/:id/members/:memberId', async (c) => {
             return c.json({ error: 'Unauthorized to manage workspace members' }, 403)
         }
 
-        // Check if member exists in workspace
-        const targetMember = await db.query.workspaceMembers.findFirst({
-            where: (wm, { eq, and }) => and(eq(wm.workspaceId, workspaceId), eq(wm.userId, memberId))
-        })
-
-        if (!targetMember) {
-            // Member logic for ID check omitted for brevity, assuming userId for now
-        }
-
-        // Let's use User ID for finding the membership record.
+        // Update the membership record
         const [updated] = await db.update(workspaceMembers)
-            .set({ role })
+            .set({
+                ...(role && { role }),
+                ...(status && { status })
+            })
             .where(
                 and(
                     eq(workspaceMembers.workspaceId, workspaceId),
-                    eq(workspaceMembers.userId, memberId) // Assuming memberId is userId
+                    eq(workspaceMembers.userId, memberId)
                 )
             )
             .returning()

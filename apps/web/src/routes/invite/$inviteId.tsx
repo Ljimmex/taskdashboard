@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useParams } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useSession } from '@/lib/auth'
-import { apiFetch } from '@/lib/api'
+import { apiFetch, apiFetchJson } from '@/lib/api'
+import { useQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/invite/$inviteId')({
     component: InvitePage,
@@ -15,48 +16,80 @@ function InvitePage() {
     const [joined, setJoined] = useState(false)
     const [error, setError] = useState('')
 
-    // Reconstruction logic for display
-    const teamName = inviteId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    // Try to resolve as Workspace Invite first
+    const { data: wsInvite, isLoading: resolvingWs, error: wsError } = useQuery({
+        queryKey: ['resolve-invite', inviteId],
+        queryFn: async () => {
+            const res = await apiFetchJson<any>(`/api/workspaces/invites/resolve/${inviteId}`)
+            return res.data
+        },
+        retry: false
+    })
 
-    // Read query params for mock data
+    // Fallback for legacy Team Invites (if workspace resolution fails)
+    const isLegacyTeamInvite = !wsInvite && !!new URLSearchParams(window.location.search).get('workspace')
+
+    // Legacy Reconstruction logic
     const searchParams = new URLSearchParams(window.location.search)
-    const inviterName = searchParams.get('inviter') || 'Team Admin'
+    const teamName = wsInvite ? wsInvite.workspace?.name : inviteId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    const inviterName = wsInvite ? 'Workspace Admin' : (searchParams.get('inviter') || 'Team Admin')
     const inviterRole = searchParams.get('role') || 'Team Lead'
-    const workspaceSlug = searchParams.get('workspace') || 'demo'
+    const workspaceSlug = searchParams.get('workspace') || (wsInvite?.workspace?.slug) || 'demo'
 
     const handleJoin = async () => {
         if (!session?.user) {
-            // User not logged in, redirect to login by default as "Existing user" scenario
-            window.location.href = `/login?workspace=${workspaceSlug}&team=${inviteId}`
+            // User not logged in, redirect to login
+            const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search)
+            window.location.href = `/login?redirect=${redirectUrl}`
             return
         }
 
         setIsJoining(true)
         setError('')
         try {
-            const response = await apiFetch('/api/teams/join', {
-                method: 'POST',
-                body: JSON.stringify({
-                    workspaceSlug,
-                    teamSlug: inviteId
-                }),
-                headers: {
-                    'x-user-id': session.user.id
-                }
-            })
+            if (wsInvite) {
+                // New Workspace Invite Flow
+                const response = await apiFetch(`/api/workspaces/invites/accept/${inviteId}`, {
+                    method: 'POST',
+                    headers: { 'x-user-id': session.user.id }
+                })
 
-            if (!response.ok) {
-                const data = await response.json()
-                throw new Error(data.error || 'Failed to join team')
+                if (!response.ok) {
+                    const data = await response.json()
+                    throw new Error(data.error || 'Failed to join workspace')
+                }
+            } else {
+                // Legacy Team Invite Flow
+                const response = await apiFetch('/api/teams/join', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        workspaceSlug,
+                        teamSlug: inviteId
+                    }),
+                    headers: { 'x-user-id': session.user.id }
+                })
+
+                if (!response.ok) {
+                    const data = await response.json()
+                    throw new Error(data.error || 'Failed to join team')
+                }
             }
 
             setJoined(true)
         } catch (err: any) {
             console.error(err)
-            setError(err.message || 'Wystąpił błąd podczas dołączania do zespołu')
+            setError(err.message || 'Wystąpił błąd podczas dołączania')
         } finally {
             setIsJoining(false)
         }
+    }
+
+    if (resolvingWs && !isLegacyTeamInvite) {
+        return (
+            <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
+                <div className="animate-spin h-8 w-8 text-[#F2CE88] border-4 border-t-transparent rounded-full" />
+            </div>
+        )
     }
 
     if (joined) {
@@ -69,13 +102,13 @@ function InvitePage() {
                         </svg>
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Welcome to {teamName}!</h1>
-                        <p className="text-gray-400">You have successfully joined the team.</p>
+                        <h1 className="text-2xl font-bold text-white mb-2">Welcome!</h1>
+                        <p className="text-gray-400">You have successfully joined {wsInvite ? 'the workspace' : 'the team'}.</p>
                     </div>
                     <Link
                         to="/$workspaceSlug"
                         params={{ workspaceSlug: workspaceSlug }}
-                        className="block w-full py-3 px-4 bg-[#0F4C75] hover:bg-[#0F4C75]/80 text-white font-medium rounded-xl transition-colors"
+                        className="block w-full py-3 px-4 bg-[#F2CE88] text-black font-semibold rounded-xl transition-colors text-center"
                     >
                         Go to Dashboard
                     </Link>
@@ -88,23 +121,27 @@ function InvitePage() {
         <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-[#12121a] border border-gray-800 rounded-2xl p-8 space-y-8">
                 <div className="text-center">
-                    <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-orange-500/20">
-                        {teamName.charAt(0)}
+                    <div className="w-20 h-20 bg-gradient-to-br from-[#F2CE88] to-orange-400 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl font-bold text-black shadow-lg shadow-orange-500/20">
+                        {teamName?.charAt(0)}
                     </div>
-                    <h1 className="text-2xl font-bold text-white mb-2">Join {teamName}</h1>
+                    <h1 className="text-2xl font-bold text-white mb-2">Join {wsInvite ? 'Workspace' : 'Team'}</h1>
                     <p className="text-gray-400 text-sm">
-                        You've been invited to join the <strong>{teamName}</strong> team on <strong>{workspaceSlug}</strong>.
+                        You've been invited to join <strong>{teamName}</strong>.
                     </p>
                 </div>
 
                 <div className="space-y-4">
                     <div className="p-4 rounded-xl bg-[#1a1a24] border border-gray-800 flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white">
-                            {inviterName.charAt(0)}
+                            {inviterName?.charAt(0)}
                         </div>
                         <div>
                             <div className="text-sm font-medium text-white">Invited by {inviterName}</div>
-                            <div className="text-xs text-gray-500">{inviterRole}</div>
+                            {wsInvite ? (
+                                <div className="text-xs text-gray-500">Workspace Invitation</div>
+                            ) : (
+                                <div className="text-xs text-gray-500">{inviterRole}</div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -115,22 +152,28 @@ function InvitePage() {
                     </div>
                 )}
 
+                {(wsError && !isLegacyTeamInvite) && (
+                    <div className="p-3 rounded-lg bg-red-500/10 text-red-500 text-sm border border-red-500/20 text-center">
+                        This invitation is invalid or has expired.
+                    </div>
+                )}
+
                 <div className="space-y-3">
                     <button
                         onClick={handleJoin}
-                        disabled={isJoining || sessionLoading}
-                        className="w-full py-3 px-4 bg-[#0F4C75] hover:bg-[#0F4C75]/80 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                        disabled={isJoining || sessionLoading || (!!wsError && !isLegacyTeamInvite)}
+                        className="w-full py-3 px-4 bg-[#F2CE88] text-black font-semibold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {isJoining ? (
                             <>
-                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
                                 Joining...
                             </>
                         ) : (
-                            session?.user ? 'Join Team' : 'Log In & Join'
+                            session?.user ? 'Join Now' : 'Log In & Join'
                         )}
                     </button>
 
@@ -139,7 +182,7 @@ function InvitePage() {
                             New to Zadano?{' '}
                             <Link
                                 to="/register"
-                                search={{ workspace: workspaceSlug, team: inviteId }}
+                                search={{ workspace: workspaceSlug }}
                                 className="text-amber-500 hover:underline"
                             >
                                 Create an account

@@ -5,6 +5,7 @@ import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
 import { GeneralSettingsTab } from '../tabs/GeneralSettingsTab'
 import { MembersSettingsTab } from '../tabs/MembersSettingsTab'
+import { LabelsSettingsTab } from '../tabs/LabelsSettingsTab'
 
 interface OrganizationSettingsPanelProps {
     isOpen: boolean
@@ -16,7 +17,7 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
     const [mounted, setMounted] = useState(false)
 
     // We can fetch the workspace details here to pass to tabs
-    const [activeTab, setActiveTab] = useState<'general' | 'members'>('general')
+    const [activeTab, setActiveTab] = useState<'general' | 'members' | 'labels'>('general')
 
     const { data: workspace, isLoading } = useQuery({
         queryKey: ['workspace', workspaceSlug],
@@ -75,6 +76,11 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
                             onClick={() => setActiveTab('members')}
                             label="Członkowie"
                         />
+                        <TabButton
+                            active={activeTab === 'labels'}
+                            onClick={() => setActiveTab('labels')}
+                            label="Etykiety"
+                        />
                     </div>
                 </div>
 
@@ -86,6 +92,7 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
                         <>
                             {activeTab === 'general' && <GeneralSettingsTab workspace={workspace} />}
                             {activeTab === 'members' && <MembersSettingsTab workspace={workspace} />}
+                            {activeTab === 'labels' && <LabelsSettingsTab workspace={workspace} />}
                         </>
                     ) : (
                         <div className="text-red-500">Nie udało się załadować danych organizacji.</div>

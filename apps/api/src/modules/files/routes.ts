@@ -4,12 +4,14 @@ import { zValidator } from '@hono/zod-validator'
 import { eq, and, desc, sql, ilike } from 'drizzle-orm'
 import { db } from '../../db'
 import { files, NewFileRecord } from '../../db/schema/files'
+import { workspaceMembers } from '../../db/schema/workspaces'
 
 import { getUploadUrl, getDownloadUrl, deleteFile } from '../../lib/r2'
 import { authMiddleware } from '@/middleware/auth'
 
 import { type Auth } from '../../lib/auth'
 import { triggerWebhook } from '../webhooks/trigger'
+import type { WorkspaceRole } from '../../lib/permissions'
 
 type Env = {
     Variables: {
@@ -19,6 +21,18 @@ type Env = {
 }
 
 const app = new Hono<Env>()
+
+// Helper: Get user's workspace role (blocks suspended members)
+async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    const member = await db.query.workspaceMembers.findFirst({
+        where: (wm, { eq, and }) => and(
+            eq(wm.userId, userId),
+            eq(wm.workspaceId, workspaceId),
+            eq(wm.status, 'active')
+        )
+    })
+    return (member?.role as WorkspaceRole) || null
+}
 
 // Apply auth middleware to all routes
 app.use('*', authMiddleware)
@@ -41,6 +55,12 @@ app.post('/upload', zValidator('json', uploadSchema), async (c) => {
     const user = c.get('user')
 
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
+
+    // Check workspace membership status (blocks suspended users)
+    const workspaceRole = await getUserWorkspaceRole(user.id, body.workspaceId)
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
 
     // Generate a unique key for R2
     const fileExt = body.name.split('.').pop() || ''

@@ -1,11 +1,24 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
-import { conversations, workspaces } from '../../db/schema'
+import { conversations, workspaces, workspaceMembers } from '../../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import type { ConversationMessage } from '@taskdashboard/types'
 import { triggerWebhook } from '../webhooks/trigger'
+import type { WorkspaceRole } from '../../lib/permissions'
 
 const conversationsRoutes = new Hono()
+
+// Helper: Get user's workspace role (blocks suspended members)
+async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    const member = await db.query.workspaceMembers.findFirst({
+        where: (wm, { eq, and }) => and(
+            eq(wm.userId, userId),
+            eq(wm.workspaceId, workspaceId),
+            eq(wm.status, 'active')
+        )
+    })
+    return (member?.role as WorkspaceRole) || null
+}
 
 // In-memory store for typing status: ConversationId -> UserId -> Timestamp
 // In a production app with multiple instances, use Redis
@@ -210,6 +223,11 @@ conversationsRoutes.get('/', async (c) => {
         }
 
         if (workspaceId) {
+            // Check workspace membership status (blocks suspended users)
+            const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+            if (!workspaceRole) {
+                return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+            }
             whereConditions.push(eq(conversations.workspaceId, workspaceId))
         }
 

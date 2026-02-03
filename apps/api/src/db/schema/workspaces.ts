@@ -154,6 +154,28 @@ export const workspaceMembers = pgTable('workspace_members', {
 })
 
 // =============================================================================
+// WORKSPACE INVITES
+// =============================================================================
+
+export const workspaceInvites = pgTable('workspace_invites', {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text('workspace_id')
+        .notNull()
+        .references(() => workspaces.id, { onDelete: 'cascade' }),
+    email: varchar('email', { length: 255 }), // Nullable for general link invites
+    token: varchar('token', { length: 255 }).notNull().unique(),
+    role: workspaceRoleEnum('role').default('member').notNull(),
+    invitedBy: text('invited_by')
+        .notNull()
+        .references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp('expires_at').notNull(),
+    allowedDomains: jsonb('allowed_domains').$type<string[]>().default([]),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    acceptedAt: timestamp('accepted_at'),
+    status: varchar('status', { length: 20 }).default('pending').notNull(), // 'pending', 'accepted', 'revoked', 'expired'
+})
+
+// =============================================================================
 // TYPES
 // =============================================================================
 
@@ -161,3 +183,5 @@ export type Workspace = typeof workspaces.$inferSelect
 export type NewWorkspace = typeof workspaces.$inferInsert
 export type WorkspaceMember = typeof workspaceMembers.$inferSelect
 export type NewWorkspaceMember = typeof workspaceMembers.$inferInsert
+export type WorkspaceInvite = typeof workspaceInvites.$inferSelect
+export type NewWorkspaceInvite = typeof workspaceInvites.$inferInsert

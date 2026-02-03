@@ -4,10 +4,12 @@ import { zValidator } from '@hono/zod-validator'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { folders } from '../../db/schema/folders'
+import { workspaceMembers } from '../../db/schema/workspaces'
 import { authMiddleware } from '@/middleware/auth'
 
 import { auth } from '../../lib/auth'
 import { triggerWebhook } from '../webhooks/trigger'
+import type { WorkspaceRole } from '../../lib/permissions'
 
 type Env = {
     Variables: {
@@ -18,17 +20,43 @@ type Env = {
 
 const app = new Hono<Env>()
 
+// Helper: Get user's workspace role (blocks suspended members)
+async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    const [member] = await db.select()
+        .from(workspaceMembers)
+        .where(
+            and(
+                eq(workspaceMembers.userId, userId),
+                eq(workspaceMembers.workspaceId, workspaceId),
+                eq(workspaceMembers.status, 'active')
+            )
+        )
+        .limit(1)
+    return (member?.role as WorkspaceRole) || null
+}
+
 app.use('*', authMiddleware)
 
 // -----------------------------------------------------------------------------
 // GET /folders - List folders
 // -----------------------------------------------------------------------------
 app.get('/', async (c) => {
+    const user = c.get('user')
     const workspaceId = c.req.query('workspaceId')
     const parentId = c.req.query('parentId')
 
     if (!workspaceId) {
         return c.json({ error: 'Workspace ID is required' }, 400)
+    }
+
+    if (!user) {
+        return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    // Check workspace membership status
+    const workspaceRole = await getUserWorkspaceRole(user.id, workspaceId)
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
     }
 
     const conditions = [

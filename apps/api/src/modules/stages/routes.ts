@@ -2,18 +2,35 @@ import { Hono } from 'hono'
 import { db } from '../../db'
 import { projectStages, industryTemplateStages, industryTemplates } from '../../db/schema'
 import { projects } from '../../db/schema/projects'
-import { eq, asc, max } from 'drizzle-orm'
+import { workspaceMembers } from '../../db/schema/workspaces'
+import { eq, asc, max, and } from 'drizzle-orm'
 import {
     canCreateStages,
     canUpdateStages,
     canDeleteStages,
     canReorderStages,
-    type TeamLevel
+    type TeamLevel,
+    type WorkspaceRole
 } from '../../lib/permissions'
 import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema'
 
 const app = new Hono()
+
+// Helper: Get user's workspace role (blocks suspended members)
+async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    const [member] = await db.select()
+        .from(workspaceMembers)
+        .where(
+            and(
+                eq(workspaceMembers.userId, userId),
+                eq(workspaceMembers.workspaceId, workspaceId),
+                eq(workspaceMembers.status, 'active')
+            )
+        )
+        .limit(1)
+    return (member?.role as WorkspaceRole) || null
+}
 
 // Helper: Get user's team level for a project's team
 async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
@@ -77,6 +94,17 @@ app.post('/:projectId/stages', async (c) => {
     }
 
     try {
+        // Get workspace context and check suspension status
+        const workspaceId = await getWorkspaceIdFromProject(projectId)
+        if (!workspaceId) {
+            return c.json({ success: false, error: 'Project workspace not found' }, 404)
+        }
+
+        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+        if (!workspaceRole) {
+            return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+        }
+
         // Get teamId from project
         const teamId = await getTeamIdFromProject(projectId)
         if (!teamId) {
@@ -86,7 +114,7 @@ app.post('/:projectId/stages', async (c) => {
         // Get permissions
         const teamLevel = await getUserTeamLevel(userId, teamId)
 
-        if (!canCreateStages(null, teamLevel)) {
+        if (!canCreateStages(workspaceRole, teamLevel)) {
             return c.json({ success: false, error: 'Unauthorized to create stages' }, 403)
         }
 
@@ -110,7 +138,6 @@ app.post('/:projectId/stages', async (c) => {
             .returning()
 
         // TRIGGER WEBHOOK
-        const workspaceId = await getWorkspaceIdFromProject(projectId)
         if (workspaceId) {
             triggerWebhook('stage.created', stage, workspaceId)
         }

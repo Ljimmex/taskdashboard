@@ -18,7 +18,11 @@ export const teamsRoutes = new Hono()
 // Helper: Get user's workspace role
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
     const member = await db.query.workspaceMembers.findFirst({
-        where: (wm, { eq, and }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId))
+        where: (wm, { eq, and }) => and(
+            eq(wm.userId, userId),
+            eq(wm.workspaceId, workspaceId),
+            eq(wm.status, 'active')
+        )
     })
     return (member?.role as WorkspaceRole) || null
 }

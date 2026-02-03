@@ -5,6 +5,7 @@ import {
     type NewTask, type NewSubtask, type NewTaskComment
 } from '../../db/schema/tasks'
 import { projects, projectMembers } from '../../db/schema/projects'
+import { workspaceMembers } from '../../db/schema/workspaces'
 import { eq, desc } from 'drizzle-orm'
 import {
     canCreateTasks,
@@ -18,6 +19,18 @@ import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema/teams'
 
 export const tasksRoutes = new Hono()
+
+// Helper: Get user's workspace role (blocks suspended members)
+async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    const member = await db.query.workspaceMembers.findFirst({
+        where: (wm, { eq, and }) => and(
+            eq(wm.userId, userId),
+            eq(wm.workspaceId, workspaceId),
+            eq(wm.status, 'active')
+        )
+    })
+    return (member?.role as WorkspaceRole) || null
+}
 
 // Helper: Get user's team level for a project's team
 async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
@@ -64,11 +77,12 @@ tasksRoutes.get('/', async (c) => {
                 where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
             })
             if (ws) {
-                // Get user role in workspace
-                const member = await db.query.workspaceMembers.findFirst({
-                    where: (wm, { eq, and }) => and(eq(wm.userId, userId), eq(wm.workspaceId, ws.id))
-                })
-                userWorkspaceRole = (member?.role as WorkspaceRole) || null
+                // Check workspace membership status (blocks suspended users)
+                userWorkspaceRole = await getUserWorkspaceRole(userId, ws.id)
+
+                if (!userWorkspaceRole) {
+                    return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+                }
 
                 const isProjectManagerOrHigher = userWorkspaceRole && ['owner', 'admin', 'project_manager'].includes(userWorkspaceRole)
 

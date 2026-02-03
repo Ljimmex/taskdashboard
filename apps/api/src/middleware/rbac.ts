@@ -62,6 +62,10 @@ export const requirePermission = (permission: PermissionPath) => createMiddlewar
         })
 
         if (member) {
+            // Check for suspension
+            if (member.status === 'suspended') {
+                return c.json({ error: 'Forbidden: Member suspended' }, 403)
+            }
             const roleDef = WORKSPACE_ROLE_MAP[member.role]
             if (roleDef && getPermissionValue(roleDef.permissions, permission)) {
                 hasAccess = true

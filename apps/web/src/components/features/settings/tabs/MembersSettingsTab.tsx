@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
+import { InviteWorkspaceMemberPanel } from '../panels/InviteWorkspaceMemberPanel'
 
 interface MembersSettingsTabProps {
     workspace: any
@@ -15,6 +16,7 @@ interface Member {
     position?: string
     role?: string
     workspaceRole?: string // Added alias from backend
+    status?: 'active' | 'invited' | 'suspended'
     joinedAt?: string
 }
 
@@ -103,11 +105,35 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
         setOpenMenuId(null)
     }
 
-    const handleDisable = (_memberId: string) => {
-        // Placeholder for disable logic
-        alert('Disable feature requires backend migration. Coming soon.')
+    // Update status mutation
+    const { mutate: updateStatus, isPending: isUpdatingStatus } = useMutation({
+        mutationFn: async ({ memberId, status }: { memberId: string; status: string }) => {
+            return apiFetchJson(`/api/workspaces/${workspace.id}/members/${memberId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': session?.user?.id || ''
+                },
+                body: JSON.stringify({ status })
+            })
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['workspace-members', workspace.id] })
+        },
+        onError: (error) => {
+            console.error('Failed to update status', error)
+            alert('Failed to update status')
+        }
+    })
+
+    const handleToggleStatus = (memberId: string, currentStatus: string) => {
+        const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended'
+        if (confirm(`Are you sure you want to ${newStatus === 'suspended' ? 'suspend' : 'activate'} this member?`)) {
+            updateStatus({ memberId, status: newStatus })
+        }
         setOpenMenuId(null)
     }
+
 
     // Close menu on click outside
     useEffect(() => {
@@ -142,7 +168,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                     placeholder="Search members..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-[#1a1a24] border border-gray-800 rounded-lg pl-10 pr-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                    className="w-full bg-[#1a1a24] rounded-lg pl-10 pr-4 py-2 text-white outline-none focus:border-[#F2CE88]"
                 />
                 <svg className="w-5 h-5 text-gray-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -151,7 +177,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
 
             {/* List */}
             {/* Removed overflow-hidden from container to fix dropdown clipping */}
-            <div className="bg-[#1a1a24] rounded-xl border border-gray-800/50">
+            <div className="bg-[#1a1a24] rounded-xl ">
                 {isLoading ? (
                     <div className="p-8 text-center text-gray-500">Loading...</div>
                 ) : filteredMembers.length > 0 ? (
@@ -184,7 +210,14 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                             )}
                                         </div>
                                         <div className="min-w-0">
-                                            <h4 className="text-sm font-medium text-white truncate">{member.name}</h4>
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="text-sm font-medium text-white truncate">{member.name}</h4>
+                                                {member.status === 'suspended' && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 uppercase tracking-tight">
+                                                        Suspended
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-xs text-gray-500 truncate">{member.email}</p>
                                         </div>
                                     </div>
@@ -192,17 +225,17 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                     {/* Role Selector */}
                                     <div className="col-span-3">
                                         {isOwner ? (
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                            <div className="w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium bg-gray-900/50 text-gray-400 cursor-default">
                                                 Owner
-                                            </span>
+                                            </div>
                                         ) : (
                                             <select
                                                 value={displayRole}
                                                 onChange={(e) => handleRoleChange(member.id, e.target.value)}
                                                 disabled={isUpdatingRole || isSelf} // Owner can't demote self easily via this select
-                                                className={`w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium border border-gray-700 outline-none transition-colors appearance-none cursor-pointer ${isSelf
+                                                className={`w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium  outline-none transition-colors appearance-none cursor-pointer ${isSelf
                                                     ? 'bg-gray-800 text-gray-400 cursor-not-allowed opacity-50'
-                                                    : 'bg-gray-900 text-gray-300 hover:bg-gray-800 focus:border-[#F2CE88]'
+                                                    : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
                                                     }`}
                                             >
                                                 <option value="admin">Admin</option>
@@ -252,13 +285,14 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                         )}
 
                                                         <button
-                                                            onClick={() => handleDisable(member.id)}
-                                                            className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-colors flex items-center gap-2"
+                                                            onClick={() => handleToggleStatus(member.id, member.status || 'active')}
+                                                            disabled={isUpdatingStatus}
+                                                            className={`w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-colors flex items-center gap-2 ${isUpdatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         >
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                                                             </svg>
-                                                            Disable
+                                                            {member.status === 'suspended' ? 'Activate' : 'Suspend'}
                                                         </button>
 
                                                         <div className="h-px bg-gray-800 my-1" />
@@ -290,25 +324,12 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                 )}
             </div>
 
-            {/* Invite Modal Placeholder */}
-            {isInviteModalOpen && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-[#1a1a24] rounded-xl border border-gray-800 p-6 w-full max-w-md space-y-4">
-                        <h3 className="text-lg font-semibold text-white">Invite Member</h3>
-                        <p className="text-sm text-gray-400">
-                            Invitation feature requires backend implementation (user search). Coming soon.
-                        </p>
-                        <div className="flex justify-end pt-2">
-                            <button
-                                onClick={() => setIsInviteModalOpen(false)}
-                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Invite Panel */}
+            <InviteWorkspaceMemberPanel
+                isOpen={isInviteModalOpen}
+                onClose={() => setIsInviteModalOpen(false)}
+                workspace={workspace}
+            />
         </div>
     )
 }
