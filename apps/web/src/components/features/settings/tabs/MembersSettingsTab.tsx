@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
@@ -103,7 +103,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
         setOpenMenuId(null)
     }
 
-    const handleDisable = (memberId: string) => {
+    const handleDisable = (_memberId: string) => {
         // Placeholder for disable logic
         alert('Disable feature requires backend migration. Coming soon.')
         setOpenMenuId(null)

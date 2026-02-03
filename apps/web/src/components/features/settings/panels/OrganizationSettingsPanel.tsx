@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
-import { useSession } from '@/lib/auth'
 import { GeneralSettingsTab } from '../tabs/GeneralSettingsTab'
 import { MembersSettingsTab } from '../tabs/MembersSettingsTab'
 
@@ -13,7 +12,6 @@ interface OrganizationSettingsPanelProps {
 }
 
 export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSettingsPanelProps) {
-    const { data: session } = useSession()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
     const [mounted, setMounted] = useState(false)
 
@@ -104,8 +102,8 @@ function TabButton({ active, onClick, label }: { active: boolean, onClick: () =>
         <button
             onClick={onClick}
             className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${active
-                    ? 'border-[#F2CE88] text-white'
-                    : 'border-transparent text-gray-400 hover:text-white hover:border-gray-700'
+                ? 'border-[#F2CE88] text-white'
+                : 'border-transparent text-gray-400 hover:text-white hover:border-gray-700'
                 }`}
         >
             {label}
