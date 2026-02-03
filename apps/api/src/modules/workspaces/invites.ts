@@ -34,7 +34,16 @@ workspaceInvitesRoutes.post('/:workspaceId/invites', async (c) => {
     const { email, role = 'member', expiresDays = 7, allowedDomains = [] } = await c.req.json()
 
     try {
-        const workspaceRole = await getUserWorkspaceRole(session.user.id, workspaceId)
+        // Resolve workspaceId if it's a slug
+        let internalWorkspaceId = workspaceId
+        if (!workspaceId.includes('-')) { // Assuming UUIDs contain dashes, slugs don't
+            const ws = await db.query.workspaces.findFirst({
+                where: (w, { eq }) => eq(w.slug, workspaceId)
+            })
+            if (ws) internalWorkspaceId = ws.id
+        }
+
+        const workspaceRole = await getUserWorkspaceRole(session.user.id, internalWorkspaceId)
         if (!canManageInvitations(workspaceRole, null)) {
             return c.json({ error: 'Forbidden: No permission to manage invitations' }, 403)
         }
@@ -43,10 +52,10 @@ workspaceInvitesRoutes.post('/:workspaceId/invites', async (c) => {
         const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
 
         const expiresAt = new Date()
-        expiresAt.setDate(expiresAt.getDate() + expiresDays)
+        expiresAt.setDate(expiresAt.getDate() + Number(expiresDays))
 
         const [invite] = await db.insert(workspaceInvites).values({
-            workspaceId,
+            workspaceId: internalWorkspaceId,
             email: email?.toLowerCase() || null,
             token,
             role: role as WorkspaceRole,
@@ -58,7 +67,12 @@ workspaceInvitesRoutes.post('/:workspaceId/invites', async (c) => {
         return c.json({ success: true, data: invite }, 201)
     } catch (error) {
         console.error('Error creating invite:', error)
-        return c.json({ error: 'Failed to create invitation' }, 500)
+        if (error instanceof Error) {
+            console.error('Stack trace:', error.stack)
+        }
+        // Log the inputs to help debug
+        console.error('Invite Inputs:', { workspaceId, email, role, expiresDays })
+        return c.json({ error: 'Failed to create invitation', details: String(error) }, 500)
     }
 })
 

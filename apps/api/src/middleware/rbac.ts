@@ -1,6 +1,9 @@
+
+import { Context, Next } from 'hono'
 import { createMiddleware } from 'hono/factory'
-import { db } from '../db' // Verify path
+import { db } from '../db'
 import { SYSTEM_ROLES } from '../db/schema/roles'
+import { auth } from '../lib/auth'
 
 // Generic permission path type (e.g., 'workspace.manageSettings')
 type PermissionPath = string
@@ -39,26 +42,24 @@ function getPermissionValue(permissions: any, path: string): boolean {
     return !!current
 }
 
-export const requirePermission = (permission: PermissionPath) => createMiddleware(async (c, next) => {
-    // 1. Get User ID (Assume auth middleware ran before)
-    const userId = c.req.header('x-user-id')
+export const requirePermission = (permission: PermissionPath) => createMiddleware(async (c: Context, next: Next) => {
+    // 1. Get User Session
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+    const userId = session?.user?.id
 
     if (!userId) {
-        return c.json({ error: 'Unauthorized: No user ID found' }, 401)
+        return c.json({ error: 'Unauthorized: No session found' }, 401)
     }
 
     // Flags to check both contexts
     let hasAccess = false
 
     // CHECK WORKSPACE PERMISSIONS
-    if (c.req.path.startsWith('/api/workspaces/') && c.req.param('id')) {
-        const wsId = c.req.param('id')
-
-        // Ensure wsId is present
-        if (!wsId) return c.json({ error: 'Invalid workspace ID' }, 400)
-
+    const workspaceId = c.req.param('id') || c.req.param('workspaceId')
+    if (c.req.path.includes('/workspaces/') && workspaceId) {
+        // Find member from DB using userId and workspaceId
         const member = await db.query.workspaceMembers.findFirst({
-            where: (m, { and, eq }) => and(eq(m.workspaceId, wsId), eq(m.userId, userId))
+            where: (wm, { eq, and }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId))
         })
 
         if (member) {

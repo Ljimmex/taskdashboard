@@ -3,6 +3,7 @@ import { db } from '../../db'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { tasks } from '../../db/schema/tasks'
 import { eq, sql, and } from 'drizzle-orm'
+import { auth } from '../../lib/auth'
 import { triggerWebhook } from '../webhooks/trigger'
 import type { WorkspaceRole } from '../../lib/permissions'
 
@@ -33,7 +34,10 @@ async function getWorkspaceBySlug(slug: string) {
 // GET /api/labels - List labels for a workspace
 labelsRoutes.get('/', async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const workspaceSlug = c.req.query('workspaceSlug')
         if (!workspaceSlug) return c.json({ success: false, error: 'workspaceSlug is required' }, 400)
 
@@ -58,7 +62,10 @@ labelsRoutes.get('/', async (c) => {
 // POST /api/labels - Add label to workspace
 labelsRoutes.post('/', async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const body = await c.req.json()
         const { workspaceSlug, name, color } = body
 
@@ -104,7 +111,10 @@ labelsRoutes.post('/', async (c) => {
 // PATCH /api/labels/:id - Update label in workspace
 labelsRoutes.patch('/:id', async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const labelId = c.req.param('id')
         const body = await c.req.json()
         const { workspaceSlug, name, color } = body
@@ -156,7 +166,10 @@ labelsRoutes.patch('/:id', async (c) => {
 // DELETE /api/labels/:id - Remove label from workspace
 labelsRoutes.delete('/:id', async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const labelId = c.req.param('id')
         const workspaceSlug = c.req.query('workspaceSlug')
 

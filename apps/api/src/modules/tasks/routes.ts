@@ -4,8 +4,8 @@ import {
     tasks, subtasks, taskActivityLog, taskComments,
     type NewTask, type NewSubtask, type NewTaskComment
 } from '../../db/schema/tasks'
+import { auth } from '../../lib/auth'
 import { projects, projectMembers } from '../../db/schema/projects'
-import { workspaceMembers } from '../../db/schema/workspaces'
 import { eq, desc } from 'drizzle-orm'
 import {
     canCreateTasks,
@@ -66,7 +66,10 @@ async function getWorkspaceIdFromProject(projectId: string): Promise<string | nu
 // GET /api/tasks - List tasks (filtered by project membership)
 tasksRoutes.get('/', async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const { projectId, status, priority, assigneeId, isArchived, type, workspaceSlug } = c.req.query()
 
         let userWorkspaceRole: WorkspaceRole | null = null
@@ -202,7 +205,9 @@ tasksRoutes.get('/:id', async (c) => {
         })
         if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
 
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
 
         // Get teamId from project
         const teamId = await getTeamIdFromProject(task.projectId)
@@ -325,7 +330,10 @@ function formatTimeAgo(date: Date): string {
 // POST /api/tasks - Create task (requires tasks.create permission)
 tasksRoutes.post('/', async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const body = await c.req.json()
 
         console.log('📝 Creating task:', { userId, title: body.title, projectId: body.projectId })
@@ -440,7 +448,10 @@ tasksRoutes.post('/', async (c) => {
 tasksRoutes.patch('/:id', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const body = await c.req.json()
 
         // Get task
@@ -531,7 +542,9 @@ tasksRoutes.patch('/:id', async (c) => {
 tasksRoutes.delete('/:id', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
 
         // Get task
         const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
@@ -573,7 +586,10 @@ tasksRoutes.delete('/:id', async (c) => {
 tasksRoutes.patch('/:id/move', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const body = await c.req.json()
 
         // Get task
@@ -636,7 +652,10 @@ tasksRoutes.get('/:id/subtasks', async (c) => {
 tasksRoutes.post('/:id/subtasks', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const body = await c.req.json()
         const [created] = await db.insert(subtasks).values({
             taskId: id,
@@ -675,7 +694,10 @@ tasksRoutes.patch('/:taskId/subtasks/:subtaskId', async (c) => {
     try {
         const taskId = c.req.param('taskId')
         const subtaskId = c.req.param('subtaskId')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
+
         const body = await c.req.json()
 
         // Get old version for logging
@@ -746,7 +768,9 @@ tasksRoutes.delete('/:taskId/subtasks/:subtaskId', async (c) => {
     try {
         const taskId = c.req.param('taskId')
         const subtaskId = c.req.param('subtaskId')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
         const [deleted] = await db.delete(subtasks).where(eq(subtasks.id, subtaskId)).returning()
         if (!deleted) return c.json({ success: false, error: 'Subtask not found' }, 404)
 
@@ -781,6 +805,8 @@ tasksRoutes.delete('/:taskId/subtasks/:subtaskId', async (c) => {
 tasksRoutes.post('/:id/labels', async (c) => {
     try {
         const id = c.req.param('id')
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
         const { labelId } = await c.req.json()
 
         // Get current task and its labels
@@ -807,6 +833,8 @@ tasksRoutes.delete('/:id/labels/:labelId', async (c) => {
     try {
         const id = c.req.param('id')
         const labelId = c.req.param('labelId')
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
 
         // Get current task and its labels
         const task = await db.query.tasks.findFirst({
@@ -864,7 +892,9 @@ tasksRoutes.get('/:id/comments', async (c) => {
 tasksRoutes.post('/:id/comments', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
         const { content, parentId } = await c.req.json()
 
         if (!content) return c.json({ success: false, error: 'Content is required' }, 400)
@@ -927,7 +957,9 @@ tasksRoutes.post('/:id/comments', async (c) => {
 tasksRoutes.patch('/:taskId/comments/:commentId/like', async (c) => {
     try {
         const commentId = c.req.param('commentId')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
 
         // For demo, use real user if temp
         let effectiveUserId = userId
@@ -984,6 +1016,8 @@ tasksRoutes.get('/:id/activity', async (c) => {
 // POST /api/tasks/bulk/delete - Delete multiple tasks
 tasksRoutes.post('/bulk/delete', async (c) => {
     try {
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
         const { taskIds } = await c.req.json()
 
         if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
@@ -1015,6 +1049,9 @@ tasksRoutes.post('/bulk/delete', async (c) => {
 // POST /api/tasks/bulk/move - Move multiple tasks to a different status/column
 tasksRoutes.post('/bulk/move', async (c) => {
     try {
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+
         const { taskIds, status } = await c.req.json()
 
         if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
@@ -1049,6 +1086,9 @@ tasksRoutes.post('/bulk/move', async (c) => {
 // POST /api/tasks/bulk/archive - Archive multiple tasks
 tasksRoutes.post('/bulk/archive', async (c) => {
     try {
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+
         const { taskIds } = await c.req.json()
 
         if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
@@ -1085,6 +1125,9 @@ tasksRoutes.post('/bulk/archive', async (c) => {
 // GET /api/tasks/:id/files - Get all files attached to task
 tasksRoutes.get('/:id/files', async (c) => {
     try {
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+
         const id = c.req.param('id')
 
         // Query files where task_id = id
@@ -1108,6 +1151,9 @@ tasksRoutes.get('/:id/files', async (c) => {
 // POST /api/tasks/:id/files/:fileId - Attach existing file to task
 tasksRoutes.post('/:id/files/:fileId', async (c) => {
     try {
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+
         const taskId = c.req.param('id')
         const fileId = c.req.param('fileId')
 
@@ -1141,6 +1187,9 @@ tasksRoutes.post('/:id/files/:fileId', async (c) => {
 tasksRoutes.post('/:id/upload', async (c) => {
     try {
         const taskId = c.req.param('id')
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
 
         // Verify task exists
         const task = await db.query.tasks.findFirst({
@@ -1187,7 +1236,6 @@ tasksRoutes.post('/:id/upload', async (c) => {
 
         // Create file record in database with taskId
         const { files } = await import('../../db/schema/files')
-        const userId = c.req.header('x-user-id')
         const teamId = task.project.teamId
 
         const [created] = await db.insert(files).values({
@@ -1213,6 +1261,9 @@ tasksRoutes.post('/:id/upload', async (c) => {
 // DELETE /api/tasks/:id/files/:fileId - Remove file from task
 tasksRoutes.delete('/:id/files/:fileId', async (c) => {
     try {
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+
         const fileId = c.req.param('fileId')
 
         // Set task_id to null (keeps file in workspace)
@@ -1239,7 +1290,9 @@ tasksRoutes.delete('/:id/files/:fileId', async (c) => {
 tasksRoutes.post('/:id/links', async (c) => {
     try {
         const taskId = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        const userId = session.user.id
         const body = await c.req.json()
 
         if (!body.url) return c.json({ success: false, error: 'URL is required' }, 400)
