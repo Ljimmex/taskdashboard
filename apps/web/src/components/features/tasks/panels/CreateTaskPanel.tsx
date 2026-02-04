@@ -41,7 +41,7 @@ interface NewTaskData {
     description: string
     type: 'task' | 'meeting'
     status: string
-    priority: 'urgent' | 'high' | 'medium' | 'low'
+    priority: string
     assignees: string[]
     dueDate?: string
     startDate?: string
@@ -126,7 +126,7 @@ export function CreateTaskPanel({
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [status, setStatus] = useState(defaultStatus)
-    const [priority, setPriority] = useState<'urgent' | 'high' | 'medium' | 'low'>('medium')
+    const [priority, setPriority] = useState<string>('medium')
     const [assignees, setAssignees] = useState<Assignee[]>([])
     const [dueDate, setDueDate] = useState(defaultDueDate || '')
     const [startDate, setStartDate] = useState('')

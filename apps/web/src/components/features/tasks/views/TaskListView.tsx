@@ -274,8 +274,8 @@ export function TaskListView({
                     comparison = a.status.localeCompare(b.status)
                     break
                 case 'priority':
-                    const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 }
-                    comparison = (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2)
+                    const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 }
+                    comparison = (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2)
                     break
                 case 'startDate':
                 case 'endDate':
