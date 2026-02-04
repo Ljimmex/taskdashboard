@@ -21,12 +21,14 @@ interface DeliveryLog {
 }
 
 export function WebhookDeliveryLogs({ webhookId, onClose }: WebhookDeliveryLogsProps) {
+    // Fetch logs
     const { data: logs = [], isLoading, refetch, isRefetching } = useQuery({
         queryKey: ['webhook-logs', webhookId],
         queryFn: async () => {
-            const res = await apiFetchJson<{ data: DeliveryLog[] }>(`/api/workspaces/dummy/webhooks/${webhookId}/deliveries`)
-            return res.data
-        }
+            const res = await apiFetchJson<{ data: DeliveryLog[] }>(`/api/webhooks/${webhookId}/deliveries`)
+            return res.data || []
+        },
+        refetchInterval: 5000 // Poll every 5s
     })
 
     return (

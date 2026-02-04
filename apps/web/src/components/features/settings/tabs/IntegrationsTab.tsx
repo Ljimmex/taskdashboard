@@ -45,7 +45,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
     const { data: webhooks = [], isLoading } = useQuery({
         queryKey: ['webhooks', workspace.id],
         queryFn: async () => {
-            const res = await apiFetchJson<{ data: Webhook[] }>(`/api/workspaces/${workspace.id}/webhooks`)
+            const res = await apiFetchJson<{ data: Webhook[] }>(`/api/webhooks?workspaceId=${workspace.id}`)
             return res.data || []
         }
     })
@@ -53,7 +53,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
     // Delete mutation
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            await apiFetchJson(`/api/workspaces/${workspace.id}/webhooks/${id}`, {
+            await apiFetchJson(`/api/webhooks/${id}`, {
                 method: 'DELETE'
             })
         },
@@ -65,7 +65,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
     // Toggle Active mutation
     const toggleActiveMutation = useMutation({
         mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
-            await apiFetchJson(`/api/workspaces/${workspace.id}/webhooks/${id}`, {
+            await apiFetchJson(`/api/webhooks/${id}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ isActive })
             })

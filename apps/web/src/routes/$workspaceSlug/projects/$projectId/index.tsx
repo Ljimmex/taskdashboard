@@ -748,6 +748,106 @@ function ProjectDetailPage() {
     )
   }
 
+  // Handle creating new stage (column)
+  const handleCreateStage = async (name: string, color: string) => {
+    try {
+      const res = await apiFetch(`/api/projects/${projectId}/stages`, {
+        method: 'POST',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ name, color, position: (project?.stages?.length || 0) })
+      })
+      if (res.ok) {
+        // Refetch project to get updated stages
+        const projectData = await apiFetchJson<any>(`/api/projects/${projectId}`)
+        if (projectData.success) setProject(projectData.data)
+      }
+    } catch (error) {
+      console.error('Error creating stage:', error)
+    }
+  }
+
+  // Handle renaming stage (column)
+  const handleRenameStage = async (stageId: string, name: string) => {
+    try {
+      const res = await apiFetch(`/api/projects/${projectId}/stages/${stageId}`, {
+        method: 'PATCH',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ name })
+      })
+      if (res.ok) {
+        // Refetch project to get updated stages
+        const projectData = await apiFetchJson<any>(`/api/projects/${projectId}`)
+        if (projectData.success) setProject(projectData.data)
+      }
+    } catch (error) {
+      console.error('Error renaming stage:', error)
+    }
+  }
+
+  // Handle changing stage color
+  const handleChangeStageColor = async (stageId: string, color: string) => {
+    try {
+      const res = await apiFetch(`/api/projects/${projectId}/stages/${stageId}`, {
+        method: 'PATCH',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ color })
+      })
+      if (res.ok) {
+        // Refetch project to get updated stages
+        const projectData = await apiFetchJson<any>(`/api/projects/${projectId}`)
+        if (projectData.success) setProject(projectData.data)
+      }
+    } catch (error) {
+      console.error('Error changing stage color:', error)
+    }
+  }
+
+  // Handle deleting stage
+  const handleDeleteStage = async (stageId: string) => {
+    if (!confirm('Czy na pewno chcesz usunąć tę kolumnę? Wszystkie zadania w niej zostaną usunięte.')) return
+    try {
+      const res = await apiFetch(`/api/projects/${projectId}/stages/${stageId}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': session?.user?.id || '' }
+      })
+      if (res.ok) {
+        // Refetch project to get updated stages
+        const projectData = await apiFetchJson<any>(`/api/projects/${projectId}`)
+        if (projectData.success) setProject(projectData.data)
+        refetchTasks()
+      }
+    } catch (error) {
+      console.error('Error deleting stage:', error)
+    }
+  }
+
+  // Handle reordering stages
+  const handleReorderStages = async (oldIndex: number, newIndex: number) => {
+    if (!project?.stages) return
+
+    // Create new array with reordered stages
+    const newStages = [...project.stages]
+    const [removed] = newStages.splice(oldIndex, 1)
+    newStages.splice(newIndex, 0, removed)
+
+    // Optimistic update
+    setProject(prev => prev ? { ...prev, stages: newStages } : null)
+
+    try {
+      const stageIds = newStages.map(s => s.id)
+      await apiFetch(`/api/projects/${projectId}/stages/reorder`, {
+        method: 'POST',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ stageIds })
+      })
+    } catch (error) {
+      console.error('Error reordering stages:', error)
+      // Revert by refetching
+      const projectData = await apiFetchJson<any>(`/api/projects/${projectId}`)
+      if (projectData.success) setProject(projectData.data)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header - Project Info and View Switcher */}
@@ -823,6 +923,11 @@ function ProjectDetailPage() {
               onTaskDuplicate={handleDuplicateTask}
               onAddTask={handleKanbanAddTask}
               onQuickUpdate={handleQuickUpdateTask}
+              onAddColumn={handleCreateStage}
+              onRenameColumn={handleRenameStage}
+              onChangeColumnColor={handleChangeStageColor}
+              onDeleteColumn={handleDeleteStage}
+              onColumnReorder={handleReorderStages}
             />
           </div>
         )}

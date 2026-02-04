@@ -736,7 +736,15 @@ export function TaskColumn({
                             className="bg-[#12121a] border border-gray-700 rounded px-2 py-0.5 text-sm text-white focus:outline-none focus:border-amber-500 w-full mr-2"
                         />
                     ) : (
-                        <h3 className="font-semibold text-white text-sm">{title || config.label}</h3>
+                        <h3
+                            className="font-semibold text-white text-sm cursor-pointer hover:text-amber-400 transition-colors"
+                            onDoubleClick={() => {
+                                setRenameTitle(title || config.label)
+                                setIsRenaming(true)
+                            }}
+                        >
+                            {title || config.label}
+                        </h3>
                     )}
                     {!isRenaming && (
                         <span

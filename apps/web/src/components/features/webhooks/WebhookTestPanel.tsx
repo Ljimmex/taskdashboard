@@ -11,11 +11,14 @@ interface WebhookTestPanelProps {
 export function WebhookTestPanel({ webhookId, onClose }: WebhookTestPanelProps) {
     const [response, setResponse] = useState<any>(null)
 
+    // Test mutation
     const testMutation = useMutation({
         mutationFn: async () => {
-            return await apiFetchJson(`/api/workspaces/dummy/webhooks/${webhookId}/test`, {
+            const res = await apiFetchJson<{ success: boolean; message: string; error?: string }>(`/api/webhooks/${webhookId}/test`, {
                 method: 'POST'
             })
+            if (!res.success) throw new Error(res.error)
+            return res
         },
         onSuccess: (data) => {
             setResponse({

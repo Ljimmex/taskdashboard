@@ -83,15 +83,19 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
 
             if (webhook) {
                 // Update
-                await apiFetchJson(`/api/workspaces/${workspaceId}/webhooks/${webhook.id}`, {
+                await apiFetchJson(`/api/webhooks/${webhook.id}`, {
                     method: 'PATCH',
                     body: JSON.stringify(data)
                 })
             } else {
                 // Create
-                await apiFetchJson(`/api/workspaces/${workspaceId}/webhooks`, {
+                await apiFetchJson(`/api/webhooks`, {
                     method: 'POST',
-                    body: JSON.stringify({ ...data, secret: 'ignore-for-discord' }) // Secret generation handled by backend normally
+                    body: JSON.stringify({
+                        ...data,
+                        workspaceId, // Required for creation
+                        secret: 'ignore-for-discord'
+                    })
                 })
             }
         },

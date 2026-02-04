@@ -193,19 +193,28 @@ export function CreateTaskPanel({
     useEffect(() => {
         if (projectId) {
             const projectData = projects.find(p => p.id === projectId)
-            if (projectData?.stages) {
-                setCurrentStages(projectData.stages)
-                if (projectData.stages.length > 0 && !status) {
-                    setStatus(projectData.stages[0].id)
+
+            const handleStagesUpdate = (stages: any[]) => {
+                setCurrentStages(stages)
+
+                // If we have stages, ensure status is valid
+                if (stages && stages.length > 0) {
+                    // If no status is set, OR the current status doesn't exist in these stages
+                    // default to the first stage
+                    const statusExists = stages.some(s => s.id === status)
+                    if (!status || !statusExists) {
+                        setStatus(stages[0].id)
+                    }
                 }
+            }
+
+            if (projectData?.stages) {
+                handleStagesUpdate(projectData.stages)
             } else {
                 apiFetchJson<any>(`/api/projects/${projectId}`)
                     .then(data => {
                         if (data.success && data.data?.stages) {
-                            setCurrentStages(data.data.stages)
-                            if (!status) {
-                                setStatus(data.data.stages[0].id)
-                            }
+                            handleStagesUpdate(data.data.stages)
                         }
                     })
                     .catch(console.error)
