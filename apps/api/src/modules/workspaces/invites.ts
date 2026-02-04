@@ -225,7 +225,8 @@ workspaceInvitesRoutes.post('/invites/accept/:token', async (c) => {
             where: (wi, { eq }) => eq(wi.token, token)
         })
 
-        if (!invite || invite.status !== 'pending' || new Date() > invite.expiresAt) {
+        // Allow 'pending' or 'accepted' invites (multi-use links)
+        if (!invite || (invite.status !== 'pending' && invite.status !== 'accepted') || new Date() > invite.expiresAt) {
             return c.json({ error: 'Invite invalid or expired' }, 400)
         }
 
@@ -254,9 +255,10 @@ workspaceInvitesRoutes.post('/invites/accept/:token', async (c) => {
 
             if (existing) {
                 if (existing.status === 'active') {
-                    // Already active, just accept invite record
+                    // Already a member, nothing to do
+                    return c.json({ error: 'You are already a member of this workspace' }, 400)
                 } else {
-                    // Update to active
+                    // Reactivate suspended member
                     await tx.update(workspaceMembers)
                         .set({ status: 'active', role: invite.role, joinedAt: new Date() })
                         .where(eq(workspaceMembers.id, existing.id))
@@ -272,9 +274,9 @@ workspaceInvitesRoutes.post('/invites/accept/:token', async (c) => {
                 })
             }
 
-            // Mark invite as accepted
+            // Update invite last used timestamp (but keep status as 'pending' for reuse)
             await tx.update(workspaceInvites)
-                .set({ status: 'accepted', acceptedAt: new Date() })
+                .set({ acceptedAt: new Date() }) // Track last use, status remains 'pending'
                 .where(eq(workspaceInvites.id, invite.id))
         })
 

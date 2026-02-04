@@ -1,4 +1,5 @@
-import { pgTable, text, varchar, timestamp, jsonb, pgEnum, integer, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, text, varchar, timestamp, jsonb, pgEnum, integer, boolean, pgPolicy } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import { users } from './users'
 
 // =============================================================================
@@ -10,6 +11,13 @@ export const subscriptionPlanEnum = pgEnum('subscription_plan', [
     'starter',
     'professional',
     'enterprise'
+])
+
+export const inviteStatusEnum = pgEnum('invite_status', [
+    'pending',
+    'accepted',
+    'revoked',
+    'expired'
 ])
 
 export const subscriptionStatusEnum = pgEnum('subscription_status', [
@@ -112,6 +120,23 @@ export const workspaces = pgTable('workspaces', {
         { id: 'docs', name: 'Dokumentacja', color: '#6b7280' },
     ]),
 
+    // Priorities (workspace-level, stored as JSONB array)
+    priorities: jsonb('priorities').$type<{
+        id: string
+        name: string
+        color: string
+        icon?: string
+        position: number
+    }[]>().default([
+        { id: 'low', name: 'Low', color: '#6b7280', position: 0 },
+        { id: 'medium', name: 'Medium', color: '#3b82f6', position: 1 },
+        { id: 'high', name: 'High', color: '#f59e0b', position: 2 },
+        { id: 'urgent', name: 'Urgent', color: '#ef4444', position: 3 },
+    ]),
+
+    // Default industry template for new projects
+    defaultIndustryTemplateId: text('default_industry_template_id'),
+
     // Metadata
     isActive: boolean('is_active').default(true).notNull(),
 
@@ -172,8 +197,50 @@ export const workspaceInvites = pgTable('workspace_invites', {
     allowedDomains: jsonb('allowed_domains').$type<string[]>().default([]),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     acceptedAt: timestamp('accepted_at'),
-    status: varchar('status', { length: 20 }).default('pending').notNull(), // 'pending', 'accepted', 'revoked', 'expired'
-})
+    status: inviteStatusEnum('status').default('pending').notNull(),
+}, () => [
+    pgPolicy("workspace_invites_select_policy", {
+        for: "select",
+        to: "public",
+        using: sql`true`, // Public can view by token, backend filters
+    }),
+    pgPolicy("workspace_invites_insert_policy", {
+        for: "insert",
+        to: "authenticated",
+        withCheck: sql`
+            workspace_id IN (
+                SELECT workspace_id FROM workspace_members 
+                WHERE user_id = auth.uid()::text 
+                AND status = 'active'
+                AND role IN ('owner', 'admin', 'hr_manager')
+            )
+        `,
+    }),
+    pgPolicy("workspace_invites_update_policy", {
+        for: "update",
+        to: "authenticated",
+        using: sql`
+            workspace_id IN (
+                SELECT workspace_id FROM workspace_members 
+                WHERE user_id = auth.uid()::text 
+                AND status = 'active'
+                AND role IN ('owner', 'admin', 'hr_manager')
+            )
+        `,
+    }),
+    pgPolicy("workspace_invites_delete_policy", {
+        for: "delete",
+        to: "authenticated",
+        using: sql`
+            workspace_id IN (
+                SELECT workspace_id FROM workspace_members 
+                WHERE user_id = auth.uid()::text 
+                AND status = 'active'
+                AND role IN ('owner', 'admin', 'hr_manager')
+            )
+        `,
+    }),
+])
 
 // =============================================================================
 // TYPES

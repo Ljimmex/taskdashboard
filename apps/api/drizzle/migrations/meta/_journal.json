@@ -5,78 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1767283352748,
-      "tag": "0000_early_firelord",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1767391068386,
-      "tag": "0001_elite_ken_ellis",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1767614711134,
-      "tag": "0002_foamy_spectrum",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1767614837568,
-      "tag": "0003_nostalgic_maggott",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1768910483501,
-      "tag": "0004_certain_vision",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1769951673448,
-      "tag": "0005_careful_agent_zero",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1770040905227,
-      "tag": "0006_milky_smasher",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1770044332833,
-      "tag": "0007_outgoing_black_knight",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1770046765719,
-      "tag": "0008_cuddly_valeria_richards",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1770117935693,
-      "tag": "0009_sloppy_omega_flight",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1770202990330,
-      "tag": "0010_abandoned_jazinda",
+      "when": 1770206954674,
+      "tag": "0000_dapper_red_hulk",
       "breakpoints": true
     }
   ]

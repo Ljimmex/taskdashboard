@@ -15,14 +15,16 @@ import { encryptionKeys } from '../../db/schema/encryption'
 import { decryptPrivateKey } from '../../lib/server-encryption'
 import { triggerWebhook } from '../webhooks/trigger'
 import { workspaceInvitesRoutes } from './invites'
+import { workspaceDefaultsRoutes } from './defaults'
 
 export const workspacesRoutes = new Hono()
 
-// Mount invitation routes
+// Mount sub-routes
 workspacesRoutes.route('/', workspaceInvitesRoutes)
+workspacesRoutes.route('/', workspaceDefaultsRoutes)
 
 // Helper: Get user's workspace role (blocks suspended members)
-async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+export async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
     const [member] = await db.select({
         role: workspaceMembers.role
     })

@@ -1,5 +1,7 @@
 CREATE TYPE "public"."user_role" AS ENUM('admin', 'manager', 'member');--> statement-breakpoint
 CREATE TYPE "public"."user_status" AS ENUM('active', 'inactive', 'pending');--> statement-breakpoint
+CREATE TYPE "public"."invite_status" AS ENUM('pending', 'accepted', 'revoked', 'expired');--> statement-breakpoint
+CREATE TYPE "public"."member_status" AS ENUM('active', 'invited', 'suspended');--> statement-breakpoint
 CREATE TYPE "public"."subscription_plan" AS ENUM('free', 'starter', 'professional', 'enterprise');--> statement-breakpoint
 CREATE TYPE "public"."subscription_status" AS ENUM('active', 'trial', 'expired', 'cancelled', 'past_due');--> statement-breakpoint
 CREATE TYPE "public"."workspace_role" AS ENUM('owner', 'admin', 'project_manager', 'hr_manager', 'member', 'guest');--> statement-breakpoint
@@ -10,6 +12,8 @@ CREATE TYPE "public"."task_priority" AS ENUM('low', 'medium', 'high', 'urgent');
 CREATE TYPE "public"."task_status" AS ENUM('todo', 'in_progress', 'review', 'done');--> statement-breakpoint
 CREATE TYPE "public"."task_type" AS ENUM('task', 'meeting');--> statement-breakpoint
 CREATE TYPE "public"."conversation_type" AS ENUM('direct', 'group', 'channel');--> statement-breakpoint
+CREATE TYPE "public"."webhook_queue_status" AS ENUM('pending', 'processing', 'failed', 'completed');--> statement-breakpoint
+CREATE TYPE "public"."webhook_type" AS ENUM('generic', 'discord', 'slack');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
@@ -72,11 +76,28 @@ CREATE TABLE "users" (
 );
 --> statement-breakpoint
 ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "workspace_invites" (
+	"id" text PRIMARY KEY NOT NULL,
+	"workspace_id" text NOT NULL,
+	"email" varchar(255),
+	"token" varchar(255) NOT NULL,
+	"role" "workspace_role" DEFAULT 'member' NOT NULL,
+	"invited_by" text NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"allowed_domains" jsonb DEFAULT '[]'::jsonb,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"accepted_at" timestamp,
+	"status" "invite_status" DEFAULT 'pending' NOT NULL,
+	CONSTRAINT "workspace_invites_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+ALTER TABLE "workspace_invites" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "workspace_members" (
 	"id" text PRIMARY KEY NOT NULL,
 	"workspace_id" text NOT NULL,
 	"user_id" text NOT NULL,
 	"role" "workspace_role" DEFAULT 'member' NOT NULL,
+	"status" "member_status" DEFAULT 'active' NOT NULL,
 	"invited_by" text,
 	"joined_at" timestamp DEFAULT now() NOT NULL
 );
@@ -101,6 +122,8 @@ CREATE TABLE "workspaces" (
 	"features" jsonb DEFAULT '{"customBranding":false,"advancedReporting":false,"apiAccess":false,"ssoEnabled":false,"prioritySupport":false}'::jsonb,
 	"settings" jsonb DEFAULT '{"defaultLanguage":"pl","timezone":"Europe/Warsaw","dateFormat":"DD/MM/YYYY","timeFormat":"24h","weekStartsOn":"monday","currency":"PLN","notifications":{"email":true,"inApp":true}}'::jsonb,
 	"labels" jsonb DEFAULT '[{"id":"bug","name":"Bug","color":"#ef4444"},{"id":"feature","name":"Feature","color":"#10b981"},{"id":"frontend","name":"Frontend","color":"#3b82f6"},{"id":"backend","name":"Backend","color":"#8b5cf6"},{"id":"urgent","name":"Pilne","color":"#f97316"},{"id":"docs","name":"Dokumentacja","color":"#6b7280"}]'::jsonb,
+	"priorities" jsonb DEFAULT '[{"id":"low","name":"Low","color":"#6b7280","position":0},{"id":"medium","name":"Medium","color":"#3b82f6","position":1},{"id":"high","name":"High","color":"#f59e0b","position":2},{"id":"urgent","name":"Urgent","color":"#ef4444","position":3}]'::jsonb,
+	"default_industry_template_id" text,
 	"is_active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -229,7 +252,7 @@ CREATE TABLE "tasks" (
 	"title" varchar(255) NOT NULL,
 	"description" text,
 	"status" text DEFAULT 'todo' NOT NULL,
-	"priority" "task_priority" DEFAULT 'medium' NOT NULL,
+	"priority" text DEFAULT 'medium' NOT NULL,
 	"assignee_id" text,
 	"reporter_id" text NOT NULL,
 	"start_date" timestamp,
@@ -240,6 +263,7 @@ CREATE TABLE "tasks" (
 	"position" integer DEFAULT 0 NOT NULL,
 	"is_archived" boolean DEFAULT false NOT NULL,
 	"labels" text[] DEFAULT '{}',
+	"links" jsonb DEFAULT '[]'::jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -256,26 +280,56 @@ CREATE TABLE "time_entries" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-
+CREATE TABLE "files" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"path" text NOT NULL,
+	"size" integer,
+	"mime_type" varchar(127),
+	"file_type" varchar(20),
+	"r2_key" text,
+	"thumbnail_url" text,
+	"is_archived" boolean DEFAULT false NOT NULL,
+	"workspace_id" text,
+	"folder_id" text,
+	"uploaded_by" text,
+	"team_id" uuid,
+	"task_id" uuid,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "files" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "conversations" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"team_id" uuid NOT NULL,
+	"team_id" uuid,
+	"workspace_id" text,
 	"name" varchar(100),
+	"description" text,
 	"type" "conversation_type" DEFAULT 'direct' NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"is_private" boolean DEFAULT false NOT NULL,
+	"messages" jsonb DEFAULT '[]'::jsonb,
+	"participants" jsonb DEFAULT '[]'::jsonb,
+	"participant_states" jsonb DEFAULT '{}'::jsonb,
+	"created_by" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"last_message_at" timestamp
 );
 --> statement-breakpoint
 ALTER TABLE "conversations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE TABLE "messages" (
+CREATE TABLE "encryption_keys" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"conversation_id" uuid NOT NULL,
-	"sender_id" uuid NOT NULL,
-	"content" text NOT NULL,
-	"read_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"workspace_id" text NOT NULL,
+	"public_key" text NOT NULL,
+	"encrypted_private_key" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"rotated_at" timestamp,
+	"expires_at" timestamp,
+	CONSTRAINT "encryption_keys_workspace_id_unique" UNIQUE("workspace_id")
 );
 --> statement-breakpoint
-ALTER TABLE "messages" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "encryption_keys" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "calendar_events" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"title" varchar(255) NOT NULL,
@@ -291,6 +345,89 @@ CREATE TABLE "calendar_events" (
 );
 --> statement-breakpoint
 ALTER TABLE "calendar_events" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "saved_filters" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"workspace_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"name" varchar(100) NOT NULL,
+	"filters" jsonb NOT NULL,
+	"is_default" boolean DEFAULT false NOT NULL,
+	"is_shared" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "saved_filters" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "task_templates" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"workspace_id" text NOT NULL,
+	"created_by" text NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"description" text,
+	"template_data" jsonb NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "task_templates" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "folders" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"workspace_id" text NOT NULL,
+	"parent_id" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"created_by_id" text
+);
+--> statement-breakpoint
+ALTER TABLE "folders" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "webhook_deliveries" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"webhook_id" uuid NOT NULL,
+	"event" text NOT NULL,
+	"payload" jsonb NOT NULL,
+	"request_headers" jsonb,
+	"response_status" integer,
+	"response_body" text,
+	"duration_ms" integer,
+	"attempt_index" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "webhook_deliveries" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "webhook_queue" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"webhook_id" uuid NOT NULL,
+	"event" text NOT NULL,
+	"payload" jsonb NOT NULL,
+	"status" "webhook_queue_status" DEFAULT 'pending' NOT NULL,
+	"attempt_count" integer DEFAULT 0 NOT NULL,
+	"next_run_at" timestamp DEFAULT now() NOT NULL,
+	"last_error" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "webhook_queue" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "webhooks" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"workspace_id" text NOT NULL,
+	"url" text NOT NULL,
+	"type" "webhook_type" DEFAULT 'generic' NOT NULL,
+	"secret" text NOT NULL,
+	"events" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"description" text,
+	"failure_count" integer DEFAULT 0 NOT NULL,
+	"created_by" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "webhooks" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "workspace_invites" ADD CONSTRAINT "workspace_invites_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "workspace_invites" ADD CONSTRAINT "workspace_invites_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -314,13 +451,27 @@ ALTER TABLE "tasks" ADD CONSTRAINT "tasks_assignee_id_users_id_fk" FOREIGN KEY (
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_reporter_id_users_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-
+ALTER TABLE "files" ADD CONSTRAINT "files_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "files" ADD CONSTRAINT "files_folder_id_folders_id_fk" FOREIGN KEY ("folder_id") REFERENCES "public"."folders"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "files" ADD CONSTRAINT "files_uploaded_by_users_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "files" ADD CONSTRAINT "files_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "files" ADD CONSTRAINT "files_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "messages" ADD CONSTRAINT "messages_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "messages" ADD CONSTRAINT "messages_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "conversations" ADD CONSTRAINT "conversations_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "encryption_keys" ADD CONSTRAINT "encryption_keys_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "saved_filters" ADD CONSTRAINT "saved_filters_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "saved_filters" ADD CONSTRAINT "saved_filters_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "task_templates" ADD CONSTRAINT "task_templates_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "task_templates" ADD CONSTRAINT "task_templates_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "folders" ADD CONSTRAINT "folders_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "folders" ADD CONSTRAINT "folders_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "webhook_deliveries" ADD CONSTRAINT "webhook_deliveries_webhook_id_webhooks_id_fk" FOREIGN KEY ("webhook_id") REFERENCES "public"."webhooks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "webhook_queue" ADD CONSTRAINT "webhook_queue_webhook_id_webhooks_id_fk" FOREIGN KEY ("webhook_id") REFERENCES "public"."webhooks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "webhooks" ADD CONSTRAINT "webhooks_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "webhooks" ADD CONSTRAINT "webhooks_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE POLICY "Users can view own accounts" ON "accounts" AS PERMISSIVE FOR SELECT TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Users can delete own accounts" ON "accounts" AS PERMISSIVE FOR DELETE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Users can view own sessions" ON "sessions" AS PERMISSIVE FOR SELECT TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
@@ -328,6 +479,31 @@ CREATE POLICY "Users can delete own sessions" ON "sessions" AS PERMISSIVE FOR DE
 CREATE POLICY "Backend can manage verifications" ON "verifications" AS PERMISSIVE FOR ALL TO public USING (true);--> statement-breakpoint
 CREATE POLICY "Users can view own profile" ON "users" AS PERMISSIVE FOR SELECT TO public USING (auth.uid()::text = id);--> statement-breakpoint
 CREATE POLICY "Users can update own profile" ON "users" AS PERMISSIVE FOR UPDATE TO public USING (auth.uid()::text = id);--> statement-breakpoint
+CREATE POLICY "workspace_invites_select_policy" ON "workspace_invites" AS PERMISSIVE FOR SELECT TO public USING (true);--> statement-breakpoint
+CREATE POLICY "workspace_invites_insert_policy" ON "workspace_invites" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (
+            workspace_id IN (
+                SELECT workspace_id FROM workspace_members 
+                WHERE user_id = auth.uid()::text 
+                AND status = 'active'
+                AND role IN ('owner', 'admin', 'hr_manager')
+            )
+        );--> statement-breakpoint
+CREATE POLICY "workspace_invites_update_policy" ON "workspace_invites" AS PERMISSIVE FOR UPDATE TO "authenticated" USING (
+            workspace_id IN (
+                SELECT workspace_id FROM workspace_members 
+                WHERE user_id = auth.uid()::text 
+                AND status = 'active'
+                AND role IN ('owner', 'admin', 'hr_manager')
+            )
+        );--> statement-breakpoint
+CREATE POLICY "workspace_invites_delete_policy" ON "workspace_invites" AS PERMISSIVE FOR DELETE TO "authenticated" USING (
+            workspace_id IN (
+                SELECT workspace_id FROM workspace_members 
+                WHERE user_id = auth.uid()::text 
+                AND status = 'active'
+                AND role IN ('owner', 'admin', 'hr_manager')
+            )
+        );--> statement-breakpoint
 CREATE POLICY "Members can view team members" ON "team_members" AS PERMISSIVE FOR SELECT TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
 CREATE POLICY "Admins can insert members" ON "team_members" AS PERMISSIVE FOR INSERT TO public WITH CHECK (team_id IN (
             SELECT id FROM teams WHERE owner_id = auth.uid()::text
@@ -386,17 +562,41 @@ CREATE POLICY "Team members can update tasks" ON "tasks" AS PERMISSIVE FOR UPDAT
             )
         ));--> statement-breakpoint
 CREATE POLICY "Assignee or reporter can delete tasks" ON "tasks" AS PERMISSIVE FOR DELETE TO public USING (assignee_id = auth.uid()::text OR reporter_id = auth.uid()::text);--> statement-breakpoint
-
-CREATE POLICY "Team members can view conversations" ON "conversations" AS PERMISSIVE FOR SELECT TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
-CREATE POLICY "Team members can create conversations" ON "conversations" AS PERMISSIVE FOR INSERT TO public WITH CHECK (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
-CREATE POLICY "Team members can view messages" ON "messages" AS PERMISSIVE FOR SELECT TO public USING (conversation_id IN (
-            SELECT id FROM conversations WHERE team_id IN (
-                SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
-            )
+CREATE POLICY "Workspace members can view files" ON "files" AS PERMISSIVE FOR SELECT TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Workspace members can create files" ON "files" AS PERMISSIVE FOR INSERT TO public WITH CHECK (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Workspace members can update files" ON "files" AS PERMISSIVE FOR UPDATE TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Uploader or admin can delete files" ON "files" AS PERMISSIVE FOR DELETE TO public USING (uploaded_by = auth.uid()::text OR workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text AND role IN ('owner', 'admin')));--> statement-breakpoint
+CREATE POLICY "Members can view their conversations" ON "conversations" AS PERMISSIVE FOR SELECT TO public USING (auth.uid()::text = ANY(SELECT jsonb_array_elements_text(participants)) OR created_by = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Members can add messages to their conversations" ON "conversations" AS PERMISSIVE FOR UPDATE TO public USING (auth.uid()::text = ANY(SELECT jsonb_array_elements_text(participants)) OR created_by = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Workspace members can create conversations" ON "conversations" AS PERMISSIVE FOR INSERT TO public WITH CHECK (EXISTS (SELECT 1 FROM workspace_members WHERE workspace_id = conversations.workspace_id AND user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Workspace members can view encryption keys" ON "encryption_keys" AS PERMISSIVE FOR SELECT TO public USING (workspace_id IN (
+            SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text
         ));--> statement-breakpoint
-CREATE POLICY "Team members can send messages" ON "messages" AS PERMISSIVE FOR INSERT TO public WITH CHECK (sender_id = auth.uid()::text);--> statement-breakpoint
-CREATE POLICY "Sender can delete own messages" ON "messages" AS PERMISSIVE FOR DELETE TO public USING (sender_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Workspace owners can manage encryption keys" ON "encryption_keys" AS PERMISSIVE FOR ALL TO public USING (workspace_id IN (
+            SELECT workspace_id FROM workspace_members 
+            WHERE user_id = auth.uid()::text AND role = 'owner'
+        ));--> statement-breakpoint
 CREATE POLICY "Team members can view events" ON "calendar_events" AS PERMISSIVE FOR SELECT TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
 CREATE POLICY "Team members can create events" ON "calendar_events" AS PERMISSIVE FOR INSERT TO public WITH CHECK (created_by = auth.uid()::text AND team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
 CREATE POLICY "Creator can update events" ON "calendar_events" AS PERMISSIVE FOR UPDATE TO public USING (created_by = auth.uid()::text);--> statement-breakpoint
-CREATE POLICY "Creator can delete events" ON "calendar_events" AS PERMISSIVE FOR DELETE TO public USING (created_by = auth.uid()::text);
+CREATE POLICY "Creator can delete events" ON "calendar_events" AS PERMISSIVE FOR DELETE TO public USING (created_by = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Users can view own filters or shared filters" ON "saved_filters" AS PERMISSIVE FOR SELECT TO public USING (user_id = auth.uid()::text OR is_shared = true);--> statement-breakpoint
+CREATE POLICY "Users can create own filters" ON "saved_filters" AS PERMISSIVE FOR INSERT TO public WITH CHECK (user_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Users can update own filters" ON "saved_filters" AS PERMISSIVE FOR UPDATE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Users can delete own filters" ON "saved_filters" AS PERMISSIVE FOR DELETE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Workspace members can view templates" ON "task_templates" AS PERMISSIVE FOR SELECT TO public USING (workspace_id IN (
+            SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text
+        ));--> statement-breakpoint
+CREATE POLICY "Workspace members can create templates" ON "task_templates" AS PERMISSIVE FOR INSERT TO public WITH CHECK (workspace_id IN (
+            SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text
+        ));--> statement-breakpoint
+CREATE POLICY "Template creators can update templates" ON "task_templates" AS PERMISSIVE FOR UPDATE TO public USING (created_by = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Template creators can delete templates" ON "task_templates" AS PERMISSIVE FOR DELETE TO public USING (created_by = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Workspace members can view folders" ON "folders" AS PERMISSIVE FOR SELECT TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Workspace members can create folders" ON "folders" AS PERMISSIVE FOR INSERT TO public WITH CHECK (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Workspace members can update folders" ON "folders" AS PERMISSIVE FOR UPDATE TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Workspace members can delete folders" ON "folders" AS PERMISSIVE FOR DELETE TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Workspace members can view delivery logs" ON "webhook_deliveries" AS PERMISSIVE FOR SELECT TO public USING (webhook_id IN (SELECT id FROM webhooks WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
+CREATE POLICY "Workspace members can view their webhook jobs" ON "webhook_queue" AS PERMISSIVE FOR SELECT TO public USING (webhook_id IN (SELECT id FROM webhooks WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
+CREATE POLICY "Workspace members can view webhooks" ON "webhooks" AS PERMISSIVE FOR SELECT TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Workspace admins can manage webhooks" ON "webhooks" AS PERMISSIVE FOR ALL TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text AND role IN ('owner', 'admin')));

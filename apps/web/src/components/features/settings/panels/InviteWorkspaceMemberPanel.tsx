@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { ChevronDoubleRightIcon } from '../../tasks/components/TaskIcons'
 import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 
 interface InviteWorkspaceMemberPanelProps {
     isOpen: boolean
@@ -30,7 +30,8 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
     const queryClient = useQueryClient()
 
     useEffect(() => {
-        setOrigin(window.location.origin)
+        // Use production URL from env, fallback to current origin for development
+        setOrigin(import.meta.env.VITE_APP_URL || window.location.origin)
     }, [])
 
     // Auto-focus input
@@ -39,6 +40,23 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
             setTimeout(() => inputRef.current?.focus(), 300)
         }
     }, [isOpen, activeTab])
+
+    // Fetch existing invites
+    const { data: existingInvites, isLoading: isLoadingInvites } = useQuery({
+        queryKey: ['workspace-invites', workspace.id],
+        queryFn: async () => {
+            const res = await apiFetchJson<{ success: boolean; data: any[] }>(
+                `/api/workspaces/${workspace.id}/invites`,
+                {
+                    headers: {
+                        'x-user-id': session?.user?.id || ''
+                    }
+                }
+            )
+            return res.data || []
+        },
+        enabled: isOpen && activeTab === 'link' && !!session?.user?.id,
+    })
 
     const { mutate: createInvite, isPending: isCreating } = useMutation({
         mutationFn: async (data: any) => {
@@ -184,47 +202,105 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                 />
                             </div>
                         ) : (
-                            <div>
-                                {generatedInvite ? (
-                                    <div className="space-y-4">
-                                        <label className="block text-sm font-medium text-gray-400">Your Invitation Link</label>
+                            <div className="space-y-4">
+                                {/* Recently Generated Invite */}
+                                {generatedInvite && (
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-[#F2CE88]">✨ Newly Generated Link</label>
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
                                                 readOnly
                                                 value={inviteLink}
-                                                className="flex-1 text-sm text-gray-400 bg-[#1a1a24] outline-none px-4 py-3 rounded-xl border border-gray-800 cursor-text select-all"
+                                                className="flex-1 text-sm text-white bg-[#F2CE88]/10 outline-none px-4 py-3 rounded-xl border border-[#F2CE88]/50 cursor-text select-all"
                                             />
                                             <button
                                                 onClick={handleCopyLink}
-                                                className="px-4 py-2 bg-[#1a1a24] border border-gray-800 rounded-xl hover:bg-gray-800 transition-colors flex items-center justify-center min-w-[3rem]"
+                                                className="px-4 py-2 bg-[#F2CE88] text-black border border-[#F2CE88] rounded-xl hover:bg-[#d9b877] transition-colors flex items-center justify-center min-w-[3rem]"
                                                 title="Copy Link"
                                             >
                                                 {isCopied ? (
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                         <polyline points="20 6 9 17 4 12" />
                                                     </svg>
                                                 ) : (
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                         <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                                                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                                                     </svg>
                                                 )}
                                             </button>
                                         </div>
-                                        <p className="text-xs text-gray-500 italic">Anyone with this link can join this workspace as a {role}.</p>
+                                    </div>
+                                )}
+
+                                {/* Generate New Button */}
+                                <div className="text-center py-2">
+                                    <button
+                                        onClick={handleGenerateLink}
+                                        disabled={isCreating}
+                                        className="px-6 py-2.5 bg-[#F2CE88] text-black text-sm font-semibold rounded-xl hover:bg-[#d9b877] transition-all disabled:opacity-50"
+                                    >
+                                        {isCreating ? 'Generating...' : '+ Generate New Link'}
+                                    </button>
+                                </div>
+
+                                {/* Existing Invites List */}
+                                {isLoadingInvites ? (
+                                    <div className="text-center py-8 text-gray-500 text-sm">Loading invites...</div>
+                                ) : existingInvites && existingInvites.length > 0 ? (
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-gray-400">Active Invite Links ({existingInvites.length})</label>
+                                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            {existingInvites.map((invite: any) => {
+                                                const link = `${origin}/invite/${invite.token}`
+                                                const isExpired = new Date(invite.expiresAt) < new Date()
+                                                const statusColor = invite.status === 'pending' ? 'text-yellow-500' :
+                                                    invite.status === 'accepted' ? 'text-green-500' :
+                                                        invite.status === 'revoked' ? 'text-red-500' :
+                                                            'text-gray-500'
+                                                return (
+                                                    <div key={invite.id} className="bg-[#1a1a24] border border-gray-800 rounded-lg p-3 space-y-2">
+                                                        <div className="flex items-center justify-between text-xs">
+                                                            <span className="text-gray-400">
+                                                                Role: <span className="text-white capitalize">{invite.role}</span>
+                                                            </span>
+                                                            <span className={`font-medium ${statusColor} ${isExpired ? 'line-through' : ''}`}>
+                                                                {isExpired ? 'Expired' : invite.status}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <input
+                                                                type="text"
+                                                                readOnly
+                                                                value={link}
+                                                                className="flex-1 text-xs text-gray-400 bg-[#0f0f14] outline-none px-3 py-2 rounded-lg border border-gray-800 cursor-text select-all"
+                                                            />
+                                                            <button
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(link)
+                                                                    setIsCopied(true)
+                                                                    setTimeout(() => setIsCopied(false), 2000)
+                                                                }}
+                                                                className="p-2 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
+                                                                title="Copy"
+                                                            >
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
+                                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">
+                                                            Expires: {new Date(invite.expiresAt).toLocaleDateString()}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
                                 ) : (
-                                    <div className="text-center py-4 space-y-4">
-                                        <p className="text-sm text-gray-400">Generate a unique link that you can share with others.</p>
-                                        <button
-                                            onClick={handleGenerateLink}
-                                            disabled={isCreating}
-                                            className="px-6 py-2.5 bg-[#F2CE88] text-black text-sm font-semibold rounded-xl hover:bg-[#d9b877] transition-all disabled:opacity-50"
-                                        >
-                                            {isCreating ? 'Generating...' : 'Generate Invite Link'}
-                                        </button>
-                                    </div>
+                                    <div className="text-center py-4 text-gray-500 text-sm">No active invites yet</div>
                                 )}
                             </div>
                         )}

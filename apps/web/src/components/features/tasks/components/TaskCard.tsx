@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useParams } from '@tanstack/react-router'
+import { apiFetchJson } from '@/lib/api'
 import { LabelBadge } from '../../labels/LabelBadge'
 import { SubtaskProgress } from '@/components/common/ProgressBar'
 import {
@@ -27,6 +30,13 @@ interface TaskAssignee {
     avatar?: string
 }
 
+interface Priority {
+    id: string
+    name: string
+    color: string
+    position: number
+}
+
 export interface TaskCardProps {
     id: string
     projectName?: string
@@ -34,7 +44,7 @@ export interface TaskCardProps {
     title: string
     description?: string | null
     type?: 'task' | 'meeting'
-    priority: 'urgent' | 'high' | 'medium' | 'low'
+    priority: string
     status: string // Can be any column ID
     assignees?: TaskAssignee[]
     labels?: TaskLabel[]
@@ -51,6 +61,14 @@ export interface TaskCardProps {
     onDuplicate?: () => void
     onArchive?: () => void
     isDragging?: boolean
+}
+
+// Icon mapping based on priority ID
+const ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
+    'urgent': PriorityUrgentIcon,
+    'high': PriorityHighIcon,
+    'medium': PriorityMediumIcon,
+    'low': PriorityLowIcon,
 }
 
 export function TaskCard({
@@ -73,10 +91,33 @@ export function TaskCard({
     onArchive,
     isDragging = false,
 }: TaskCardProps) {
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const [showMenu, setShowMenu] = useState(false)
     const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('down')
     const menuRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
+
+    // Fetch workspace priorities
+    const { data: workspace } = useQuery({
+        queryKey: ['workspace', workspaceSlug],
+        queryFn: async () => {
+            if (!workspaceSlug) return null
+            const res = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+            return res
+        },
+        enabled: !!workspaceSlug
+    })
+
+    const priorities: Priority[] = workspace?.priorities || [
+        { id: 'low', name: 'Low', color: '#6b7280', position: 0 },
+        { id: 'medium', name: 'Medium', color: '#3b82f6', position: 1 },
+        { id: 'high', name: 'High', color: '#f59e0b', position: 2 },
+        { id: 'urgent', name: 'Urgent', color: '#ef4444', position: 3 },
+    ]
+
+    // Find current priority config
+    const currentPriority = priorities.find(p => p.id === priority) || priorities[1]
+    const PriorityIcon = ICON_MAP[currentPriority.id] || PriorityMediumIcon
 
     // Deduplicate labels and assignees to ensure rendering stability
     const safeLabels = useMemo(() => {
@@ -109,14 +150,6 @@ export function TaskCard({
             setMenuDirection(spaceBelow >= 180 || spaceAbove < spaceBelow ? 'down' : 'up')
         }
         setShowMenu(!showMenu)
-    }
-
-    // Priority styles with custom icons
-    const priorityConfig = {
-        urgent: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30', label: 'Pilne', Icon: PriorityUrgentIcon },
-        high: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30', label: 'Wysoki', Icon: PriorityHighIcon },
-        medium: { bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30', label: 'Średni', Icon: PriorityMediumIcon },
-        low: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30', label: 'Niski', Icon: PriorityLowIcon },
     }
 
     // Check if overdue
@@ -214,12 +247,16 @@ export function TaskCard({
                         <path d="M12 25L7 20L4 28L12 25Z" fill="currentColor" />
                     </svg>
                 </button>
-                <span className={`px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5 ${priorityConfig[priority].bg} ${priorityConfig[priority].text}`}>
-                    {(() => {
-                        const PriorityIcon = priorityConfig[priority].Icon
-                        return <PriorityIcon size={12} />
-                    })()}
-                    {priorityConfig[priority].label}
+                <span
+                    className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5"
+                    style={{
+                        backgroundColor: `${currentPriority.color}33`,
+                        color: currentPriority.color,
+                        borderColor: `${currentPriority.color}4D`
+                    }}
+                >
+                    <PriorityIcon size={12} />
+                    {currentPriority.name}
                 </span>
             </div>
 

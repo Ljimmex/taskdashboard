@@ -6,6 +6,7 @@ import { apiFetchJson } from '@/lib/api'
 import { GeneralSettingsTab } from '../tabs/GeneralSettingsTab'
 import { MembersSettingsTab } from '../tabs/MembersSettingsTab'
 import { LabelsSettingsTab } from '../tabs/LabelsSettingsTab'
+import { WorkspaceDefaultsTab } from '../tabs/WorkspaceDefaultsTab'
 
 interface OrganizationSettingsPanelProps {
     isOpen: boolean
@@ -17,7 +18,7 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
     const [mounted, setMounted] = useState(false)
 
     // We can fetch the workspace details here to pass to tabs
-    const [activeTab, setActiveTab] = useState<'general' | 'members' | 'labels'>('general')
+    const [activeTab, setActiveTab] = useState<'general' | 'members' | 'labels' | 'defaults'>('general')
 
     const { data: workspace, isLoading } = useQuery({
         queryKey: ['workspace', workspaceSlug],
@@ -81,6 +82,11 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
                             onClick={() => setActiveTab('labels')}
                             label="Etykiety"
                         />
+                        <TabButton
+                            active={activeTab === 'defaults'}
+                            onClick={() => setActiveTab('defaults')}
+                            label="Domyślne"
+                        />
                     </div>
                 </div>
 
@@ -93,6 +99,7 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
                             {activeTab === 'general' && <GeneralSettingsTab workspace={workspace} />}
                             {activeTab === 'members' && <MembersSettingsTab workspace={workspace} />}
                             {activeTab === 'labels' && <LabelsSettingsTab workspace={workspace} />}
+                            {activeTab === 'defaults' && <WorkspaceDefaultsTab workspace={workspace} />}
                         </>
                     ) : (
                         <div className="text-red-500">Nie udało się załadować danych organizacji.</div>

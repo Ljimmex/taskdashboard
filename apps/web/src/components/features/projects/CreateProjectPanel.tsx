@@ -98,8 +98,19 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     }
                 })
                 .catch(console.error)
+
+            // Fetch workspace to get default industry template
+            if (workspaceId) {
+                apiFetchJson<any>(`/api/workspaces/${workspaceId}`)
+                    .then((workspace) => {
+                        if (workspace?.defaultIndustryTemplateId) {
+                            setIndustryTemplateId(workspace.defaultIndustryTemplateId)
+                        }
+                    })
+                    .catch(console.error)
+            }
         }
-    }, [isOpen])
+    }, [isOpen, workspaceId])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()

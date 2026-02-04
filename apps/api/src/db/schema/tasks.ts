@@ -27,7 +27,7 @@ export const tasks = pgTable('tasks', {
     title: varchar('title', { length: 255 }).notNull(),
     description: text('description'),
     status: text('status').default('todo').notNull(),
-    priority: taskPriorityEnum('priority').default('medium').notNull(),
+    priority: text('priority').default('medium').notNull(), // References workspace.priorities[].id
     assigneeId: text('assignee_id').references(() => users.id, { onDelete: 'set null' }),
     reporterId: text('reporter_id').notNull().references(() => users.id),
     startDate: timestamp('start_date'),
