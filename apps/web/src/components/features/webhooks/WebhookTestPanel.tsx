@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { X, Play, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 
@@ -9,13 +10,19 @@ interface WebhookTestPanelProps {
 }
 
 export function WebhookTestPanel({ webhookId, onClose }: WebhookTestPanelProps) {
+    const { data: session } = useSession()
+    const userId = session?.user?.id
     const [response, setResponse] = useState<any>(null)
 
     // Test mutation
     const testMutation = useMutation({
         mutationFn: async () => {
+            if (!userId) {
+                throw new Error('Unauthorized: User not found')
+            }
             const res = await apiFetchJson<{ success: boolean; message: string; error?: string }>(`/api/webhooks/${webhookId}/test`, {
-                method: 'POST'
+                method: 'POST',
+                headers: { 'x-user-id': userId }
             })
             if (!res.success) throw new Error(res.error)
             return res

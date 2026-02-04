@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { X, CheckCircle, AlertCircle, Clock, RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
@@ -21,14 +22,21 @@ interface DeliveryLog {
 }
 
 export function WebhookDeliveryLogs({ webhookId, onClose }: WebhookDeliveryLogsProps) {
+    const { data: session } = useSession()
+    const userId = session?.user?.id
+
     // Fetch logs
     const { data: logs = [], isLoading, refetch, isRefetching } = useQuery({
         queryKey: ['webhook-logs', webhookId],
         queryFn: async () => {
-            const res = await apiFetchJson<{ data: DeliveryLog[] }>(`/api/webhooks/${webhookId}/deliveries`)
+            if (!userId) return []
+            const res = await apiFetchJson<{ data: DeliveryLog[] }>(`/api/webhooks/${webhookId}/deliveries`, {
+                headers: { 'x-user-id': userId }
+            })
             return res.data || []
         },
-        refetchInterval: 5000 // Poll every 5s
+        refetchInterval: 5000, // Poll every 5s
+        enabled: !!userId
     })
 
     return (
