@@ -27,8 +27,13 @@ workspaceInvitesRoutes.post('/:workspaceId/invites', async (c) => {
     const workspaceId = c.req.param('workspaceId')
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
-    if (!session?.user) {
-        return c.json({ error: 'Unauthorized' }, 401)
+    // CRITICAL: Reject immediately if no valid session (prevents DB foreign key errors)
+    if (!session?.user?.id) {
+        console.error('❌ Invite creation failed: No valid session or user ID')
+        return c.json({
+            error: 'Unauthorized: Valid session required to create invitations',
+            details: 'Please ensure you are logged in and your session is active'
+        }, 401)
     }
 
     const { email, role = 'member', expiresDays = 7, allowedDomains = [] } = await c.req.json()
@@ -59,20 +64,35 @@ workspaceInvitesRoutes.post('/:workspaceId/invites', async (c) => {
             email: email?.toLowerCase() || null,
             token,
             role: role as WorkspaceRole,
-            invitedBy: session.user.id,
+            invitedBy: session.user.id, // Safe now - we verified it exists above
             expiresAt,
             allowedDomains: allowedDomains || [],
         }).returning()
 
+        console.log('✅ Invite created successfully:', { token, role, workspaceId: internalWorkspaceId })
         return c.json({ success: true, data: invite }, 201)
     } catch (error) {
-        console.error('Error creating invite:', error)
+        console.error('❌ Error creating invite:', error)
         if (error instanceof Error) {
             console.error('Stack trace:', error.stack)
+            console.error('Error message:', error.message)
         }
         // Log the inputs to help debug
-        console.error('Invite Inputs:', { workspaceId, email, role, expiresDays })
-        return c.json({ error: 'Failed to create invitation', details: String(error) }, 500)
+        console.error('Invite Inputs:', {
+            workspaceId,
+            userId: session.user.id,
+            email,
+            role,
+            expiresDays
+        })
+
+        // Return more specific error message
+        return c.json({
+            error: 'Failed to create invitation',
+            details: process.env.NODE_ENV === 'production'
+                ? 'An internal error occurred. Please try again later.'
+                : String(error)
+        }, 500)
     }
 })
 

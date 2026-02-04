@@ -71,6 +71,13 @@
       "when": 1770117935693,
       "tag": "0009_sloppy_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1770202990330,
+      "tag": "0010_abandoned_jazinda",
+      "breakpoints": true
     }
   ]
 }
