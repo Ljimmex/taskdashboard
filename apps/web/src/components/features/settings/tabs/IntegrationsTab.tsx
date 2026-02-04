@@ -30,7 +30,7 @@ interface IntegrationsTabProps {
 // Icons map
 const TYPE_Icons = {
     generic: <Activity className="w-5 h-5 text-gray-400" />,
-    discord: <MessageSquare className="w-5 h-5 text-[#5865F2]" />, // Discord Color
+    discord: <img src="/discord-round-color-icon.webp" alt="Discord" className="w-5 h-5 object-contain" />,
     slack: <Smartphone className="w-5 h-5 text-[#E01E5A]" /> // Slack Color
 }
 
@@ -193,8 +193,8 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-3 border-t border-gray-800 mt-3">
-                                <div className="flex gap-2">
+                            <div className="flex flex-wrap items-center justify-between gap-y-3 gap-x-4 pt-3 border-t border-gray-800 mt-3">
+                                <div className="flex flex-wrap gap-2">
                                     {webhook.events.slice(0, 3).map(event => (
                                         <span key={event} className="px-2 py-1 rounded-md bg-gray-800 text-xs text-gray-400">
                                             {event}
@@ -206,7 +206,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex items-center gap-4 text-xs text-gray-500">
+                                <div className="flex items-center gap-4 text-xs text-gray-500 ml-auto">
                                     <div className="flex items-center gap-1">
                                         <AlertCircle className={`w-3 h-3 ${webhook.failureCount > 0 ? 'text-red-400' : 'text-gray-600'}`} />
                                         <span>{webhook.failureCount} fails</span>

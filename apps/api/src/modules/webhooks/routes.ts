@@ -96,13 +96,23 @@ webhooksRoutes.post('/', zValidator('json', createWebhookSchema), async (c) => {
 })
 
 // PATCH /api/webhooks/:id - Update webhook
-webhooksRoutes.patch('/:id', requirePermission('webhooks.manage'), zValidator('json', updateWebhookSchema), async (c) => {
+webhooksRoutes.patch('/:id', zValidator('json', updateWebhookSchema), async (c) => {
     try {
         const userId = c.req.header('x-user-id')
         const id = c.req.param('id')
         const body = c.req.valid('json')
 
         if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
+
+        // 1. Get Webhook to check Workspace
+        const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id)).limit(1)
+        if (!webhook) return c.json({ success: false, error: 'Not found' }, 404)
+
+        // 2. Check Permissions
+        const member = await db.query.workspaceMembers.findFirst({
+            where: (m, { and, eq }) => and(eq(m.workspaceId, webhook.workspaceId), eq(m.userId, userId))
+        })
+        if (!member) return c.json({ success: false, error: 'Forbidden' }, 403)
 
         const [updated] = await db.update(webhooks)
             .set({
@@ -112,8 +122,6 @@ webhooksRoutes.patch('/:id', requirePermission('webhooks.manage'), zValidator('j
             .where(eq(webhooks.id, id))
             .returning()
 
-        if (!updated) return c.json({ success: false, error: 'Not found' }, 404)
-
         return c.json({ success: true, data: updated })
     } catch (error) {
         return c.json({ success: false, error: 'Internal Server Error' }, 500)
@@ -121,18 +129,25 @@ webhooksRoutes.patch('/:id', requirePermission('webhooks.manage'), zValidator('j
 })
 
 // DELETE /api/webhooks/:id - Delete webhook
-webhooksRoutes.delete('/:id', requirePermission('webhooks.manage'), async (c) => {
+webhooksRoutes.delete('/:id', async (c) => {
     try {
         const userId = c.req.header('x-user-id')
         const id = c.req.param('id')
 
         if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
 
+        const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id)).limit(1)
+        if (!webhook) return c.json({ success: false, error: 'Not found' }, 404)
+
+        // Check Permissions
+        const member = await db.query.workspaceMembers.findFirst({
+            where: (m, { and, eq }) => and(eq(m.workspaceId, webhook.workspaceId), eq(m.userId, userId))
+        })
+        if (!member) return c.json({ success: false, error: 'Forbidden' }, 403)
+
         const [deleted] = await db.delete(webhooks)
             .where(eq(webhooks.id, id))
             .returning()
-
-        if (!deleted) return c.json({ success: false, error: 'Not found' }, 404)
 
         return c.json({ success: true, data: deleted })
     } catch (error) {
@@ -141,12 +156,21 @@ webhooksRoutes.delete('/:id', requirePermission('webhooks.manage'), async (c) =>
 })
 
 // GET /api/webhooks/:id/deliveries - View delivery logs
-webhooksRoutes.get('/:id/deliveries', requirePermission('webhooks.viewLogs'), async (c) => {
+webhooksRoutes.get('/:id/deliveries', async (c) => {
     try {
         const userId = c.req.header('x-user-id')
         const id = c.req.param('id')
 
         if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
+
+        // Need to check workspace access first via webhook
+        const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id)).limit(1)
+        if (!webhook) return c.json({ success: false, error: 'Webhook not found' }, 404)
+
+        const member = await db.query.workspaceMembers.findFirst({
+            where: (m, { and, eq }) => and(eq(m.workspaceId, webhook.workspaceId), eq(m.userId, userId))
+        })
+        if (!member) return c.json({ success: false, error: 'Forbidden' }, 403)
 
         const data = await db.select()
             .from(webhookDeliveries)
@@ -161,7 +185,7 @@ webhooksRoutes.get('/:id/deliveries', requirePermission('webhooks.viewLogs'), as
 })
 
 // POST /api/webhooks/:id/test - Send a test payload
-webhooksRoutes.post('/:id/test', requirePermission('webhooks.manage'), async (c) => {
+webhooksRoutes.post('/:id/test', async (c) => {
     try {
         const userId = c.req.header('x-user-id')
         const id = c.req.param('id')
@@ -170,6 +194,12 @@ webhooksRoutes.post('/:id/test', requirePermission('webhooks.manage'), async (c)
 
         const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id)).limit(1)
         if (!webhook) return c.json({ success: false, error: 'Webhook not found' }, 404)
+
+        // Check Permissions
+        const member = await db.query.workspaceMembers.findFirst({
+            where: (m, { and, eq }) => and(eq(m.workspaceId, webhook.workspaceId), eq(m.userId, userId))
+        })
+        if (!member) return c.json({ success: false, error: 'Forbidden' }, 403)
 
         const testPayload = {
             id: 'test-123',
