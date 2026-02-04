@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
+import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { X, AlertCircle, Check } from 'lucide-react'
 
@@ -41,6 +42,8 @@ const EVENT_OPTIONS = [
 export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const queryClient = useQueryClient()
+    const { data: session } = useSession()
+    const userId = session?.user?.id
 
     const [url, setUrl] = useState('')
     const [description, setDescription] = useState('')
@@ -77,6 +80,10 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
     // Mutations
     const mutation = useMutation({
         mutationFn: async (data: any) => {
+            if (!userId) {
+                throw new Error('Unauthorized: User not found')
+            }
+
             // Re-fetching workspace by slug to get ID
             const workspaceRes = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
             const workspaceId = workspaceRes.id
@@ -85,7 +92,8 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                 // Update
                 await apiFetchJson(`/api/webhooks/${webhook.id}`, {
                     method: 'PATCH',
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(data),
+                    headers: { 'x-user-id': userId }
                 })
             } else {
                 // Create
@@ -95,7 +103,8 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                         ...data,
                         workspaceId, // Required for creation
                         secret: 'ignore-for-discord'
-                    })
+                    }),
+                    headers: { 'x-user-id': userId }
                 })
             }
         },

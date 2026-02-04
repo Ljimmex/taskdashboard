@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-
+import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { Plus, Trash2, Edit2, Activity, MessageSquare, AlertCircle, Smartphone } from 'lucide-react'
 import { format } from 'date-fns'
@@ -36,25 +36,34 @@ const TYPE_Icons = {
 
 export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
     const queryClient = useQueryClient()
+    const { data: session } = useSession()
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null)
     const [testWebhookId, setTestWebhookId] = useState<string | null>(null)
     const [logsWebhookId, setLogsWebhookId] = useState<string | null>(null)
 
+    const userId = session?.user?.id
+
     // Fetch webhooks
     const { data: webhooks = [], isLoading } = useQuery({
         queryKey: ['webhooks', workspace.id],
         queryFn: async () => {
-            const res = await apiFetchJson<{ data: Webhook[] }>(`/api/webhooks?workspaceId=${workspace.id}`)
+            if (!userId) return []
+            const res = await apiFetchJson<{ data: Webhook[] }>(`/api/webhooks?workspaceId=${workspace.id}`, {
+                headers: { 'x-user-id': userId }
+            })
             return res.data || []
-        }
+        },
+        enabled: !!userId
     })
 
     // Delete mutation
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
+            if (!userId) return
             await apiFetchJson(`/api/webhooks/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: { 'x-user-id': userId }
             })
         },
         onSuccess: () => {
@@ -65,9 +74,11 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
     // Toggle Active mutation
     const toggleActiveMutation = useMutation({
         mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+            if (!userId) return
             await apiFetchJson(`/api/webhooks/${id}`, {
                 method: 'PATCH',
-                body: JSON.stringify({ isActive })
+                body: JSON.stringify({ isActive }),
+                headers: { 'x-user-id': userId }
             })
         },
         onSuccess: () => {
