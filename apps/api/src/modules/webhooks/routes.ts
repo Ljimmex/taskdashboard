@@ -1,3 +1,4 @@
+
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { webhooks, webhookDeliveries, webhookQueue } from '../../db/schema'
@@ -5,7 +6,6 @@ import { eq, desc } from 'drizzle-orm'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 
-import { requirePermission } from '../../middleware/rbac'
 
 const webhooksRoutes = new Hono()
 

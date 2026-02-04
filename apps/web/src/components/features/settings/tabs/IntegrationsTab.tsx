@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
-import { Plus, Trash2, Edit2, Activity, MessageSquare, AlertCircle, Smartphone } from 'lucide-react'
-import { format } from 'date-fns'
-import { pl } from 'date-fns/locale'
+import { Plus, Trash2, Smartphone, Activity, Edit2, Play, FileText, AlertCircle } from 'lucide-react'
 import { WebhookModal } from '../modals/WebhookModal'
 import { WebhookTestPanel } from '../../webhooks/WebhookTestPanel'
 import { WebhookDeliveryLogs } from '../../webhooks/WebhookDeliveryLogs'
-import { Play, FileText } from 'lucide-react'
+import { format } from 'date-fns'
+import { pl } from 'date-fns/locale'
+import { useSession } from '@/lib/auth'
 
 // Types
 interface Webhook {
@@ -17,6 +16,8 @@ interface Webhook {
     type: 'generic' | 'discord' | 'slack'
     events: string[]
     isActive: boolean
+
+    // Types
     silentMode: boolean
     description: string
     failureCount: number
@@ -49,7 +50,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
         queryKey: ['webhooks', workspace.id],
         queryFn: async () => {
             if (!userId) return []
-            const res = await apiFetchJson<{ data: Webhook[] }>(`/api/webhooks?workspaceId=${workspace.id}`, {
+            const res = await apiFetchJson<{ data: Webhook[] }>(`/ api / webhooks ? workspaceId = ${workspace.id} `, {
                 headers: { 'x-user-id': userId }
             })
             return res.data || []
@@ -61,7 +62,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
             if (!userId) return
-            await apiFetchJson(`/api/webhooks/${id}`, {
+            await apiFetchJson(`/ api / webhooks / ${id} `, {
                 method: 'DELETE',
                 headers: { 'x-user-id': userId }
             })
@@ -75,7 +76,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
     const toggleActiveMutation = useMutation({
         mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
             if (!userId) return
-            await apiFetchJson(`/api/webhooks/${id}`, {
+            await apiFetchJson(`/ api / webhooks / ${id} `, {
                 method: 'PATCH',
                 body: JSON.stringify({ isActive }),
                 headers: { 'x-user-id': userId }
@@ -129,7 +130,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                     {webhooks.map((webhook) => (
                         <div
                             key={webhook.id}
-                            className={`bg-[#1a1a24] border border-gray-800 rounded-xl p-4 transition-all hover:border-gray-700 ${!webhook.isActive && 'opacity-75 grayscale'}`}
+                            className={`bg - [#1a1a24] border border - gray - 800 rounded - xl p - 4 transition - all hover: border - gray - 700 ${!webhook.isActive && 'opacity-75 grayscale'} `}
                         >
                             <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center gap-3">
@@ -170,10 +171,10 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                     <div className="w-px h-4 bg-gray-800 mx-1" />
                                     <button
                                         onClick={() => toggleActiveMutation.mutate({ id: webhook.id, isActive: !webhook.isActive })}
-                                        className={`w-8 h-5 rounded-full relative transition-colors ${webhook.isActive ? 'bg-green-500/20' : 'bg-gray-700'}`}
+                                        className={`w - 8 h - 5 rounded - full relative transition - colors ${webhook.isActive ? 'bg-green-500/20' : 'bg-gray-700'} `}
                                         title={webhook.isActive ? 'Active' : 'Paused'}
                                     >
-                                        <div className={`absolute top-1 left-1 w-3 h-3 rounded-full transition-transform ${webhook.isActive ? 'bg-green-500 translate-x-3' : 'bg-gray-400'}`} />
+                                        <div className={`absolute top - 1 left - 1 w - 3 h - 3 rounded - full transition - transform ${webhook.isActive ? 'bg-green-500 translate-x-3' : 'bg-gray-400'} `} />
                                     </button>
                                     <button
                                         onClick={() => {
@@ -208,7 +209,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                 </div>
                                 <div className="flex items-center gap-4 text-xs text-gray-500 ml-auto">
                                     <div className="flex items-center gap-1">
-                                        <AlertCircle className={`w-3 h-3 ${webhook.failureCount > 0 ? 'text-red-400' : 'text-gray-600'}`} />
+                                        <AlertCircle className={`w - 3 h - 3 ${webhook.failureCount > 0 ? 'text-red-400' : 'text-gray-600'} `} />
                                         <span>{webhook.failureCount} fails</span>
                                     </div>
                                     <span>Created {format(new Date(webhook.createdAt), 'd MMM yyyy', { locale: pl })}</span>
