@@ -43,7 +43,8 @@ export async function prepareDiscordRequest(job: any, config: any) {
             'User-Agent': 'TaskDashboard-Webhook-Worker/1.0'
         },
         body: JSON.stringify({
-            embeds: [embed]
+            embeds: [embed],
+            flags: config.silentMode ? 4096 : undefined
         })
     }
 }

@@ -7,6 +7,7 @@ import { GeneralSettingsTab } from '../tabs/GeneralSettingsTab'
 import { MembersSettingsTab } from '../tabs/MembersSettingsTab'
 import { LabelsSettingsTab } from '../tabs/LabelsSettingsTab'
 import { WorkspaceDefaultsTab } from '../tabs/WorkspaceDefaultsTab'
+import { IntegrationsTab } from '../tabs/IntegrationsTab'
 
 interface OrganizationSettingsPanelProps {
     isOpen: boolean
@@ -18,7 +19,7 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
     const [mounted, setMounted] = useState(false)
 
     // We can fetch the workspace details here to pass to tabs
-    const [activeTab, setActiveTab] = useState<'general' | 'members' | 'labels' | 'defaults'>('general')
+    const [activeTab, setActiveTab] = useState<'general' | 'members' | 'labels' | 'defaults' | 'integrations'>('general')
 
     const { data: workspace, isLoading } = useQuery({
         queryKey: ['workspace', workspaceSlug],
@@ -87,6 +88,11 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
                             onClick={() => setActiveTab('defaults')}
                             label="Domyślne"
                         />
+                        <TabButton
+                            active={activeTab === 'integrations'}
+                            onClick={() => setActiveTab('integrations')}
+                            label="Integracje"
+                        />
                     </div>
                 </div>
 
@@ -100,6 +106,7 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
                             {activeTab === 'members' && <MembersSettingsTab workspace={workspace} />}
                             {activeTab === 'labels' && <LabelsSettingsTab workspace={workspace} />}
                             {activeTab === 'defaults' && <WorkspaceDefaultsTab workspace={workspace} />}
+                            {activeTab === 'integrations' && <IntegrationsTab workspace={workspace} />}
                         </>
                     ) : (
                         <div className="text-red-500">Nie udało się załadować danych organizacji.</div>

@@ -16,6 +16,7 @@ interface ProjectTimelineViewProps {
     onMonthChange: (date: Date) => void
     onTaskClick?: (taskId: string) => void
     onAddTask?: (date?: Date) => void
+    timezone?: string
 }
 
 const HOUR_RANGES: { label: string; range: HourRange }[] = [
@@ -93,6 +94,7 @@ export function ProjectTimelineView({
     onMonthChange,
     onTaskClick,
     onAddTask,
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 }: ProjectTimelineViewProps) {
     const [viewMode, setViewMode] = useState<TimelineViewMode>('day')
     const [hourRange, setHourRange] = useState<HourRange>(HOUR_RANGES[1].range)
@@ -154,8 +156,29 @@ export function ProjectTimelineView({
         onMonthChange(now)
     }
 
-    // Calculate current time position
-    const currentMinutes = now.getHours() * 60 + now.getMinutes()
+    // Calculate current time position based on timezone
+    const getWorkspaceTime = () => {
+        try {
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: false
+            }).formatToParts(now)
+
+            const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10)
+            const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10)
+
+            // Handle edge case where 24:00 is returned as 24 or 0 depending on browser
+            return (hour % 24) * 60 + minute
+        } catch (e) {
+            // Fallback to local time if timezone is invalid
+            console.warn('Invalid timezone:', timezone, e)
+            return now.getHours() * 60 + now.getMinutes()
+        }
+    }
+
+    const currentMinutes = getWorkspaceTime()
     const rangeStartMinutes = hourRange.start * 60
     const rangeEndMinutes = hourRange.end * 60
     const totalRangeMinutes = rangeEndMinutes - rangeStartMinutes
@@ -302,18 +325,18 @@ export function ProjectTimelineView({
                                 }
 
                                 return dayTasks.map((task) => (
-                                    <div key={task.id} className="flex h-16 border-b border-gray-800 hover:bg-gray-800/20 transition-colors">
+                                    <div key={task.id} className="flex h-11 border-b border-gray-800 hover:bg-gray-800/20 transition-colors">
                                         <div className="w-8 flex-shrink-0 border-r border-gray-800" />
-                                        <div className="flex-1 relative px-2 py-2">
+                                        <div className="flex-1 relative px-2 py-1.5">
                                             <button
                                                 onClick={() => onTaskClick?.(task.id)}
-                                                className={`absolute left-2 right-2 top-2 bottom-2 rounded-lg border-l-4 px-3 py-2 flex items-center justify-between ${getPriorityColor(task.priority || 'medium')}`}
+                                                className={`absolute left-2 right-2 top-1.5 bottom-1.5 rounded-lg border-l-4 px-3 flex items-center justify-between ${getPriorityColor(task.priority || 'medium')}`}
                                             >
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="text-sm font-medium text-white truncate">{task.title}</div>
+                                                    <div className="text-xs font-medium text-white truncate">{task.title}</div>
                                                 </div>
                                                 {task.assignee && (
-                                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[10px] text-black font-bold ml-2 flex-shrink-0">
+                                                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[8px] text-black font-bold ml-2 flex-shrink-0">
                                                         {task.assignee.name?.charAt(0)}
                                                     </div>
                                                 )}
@@ -346,7 +369,7 @@ export function ProjectTimelineView({
                             <div
                                 className="absolute top-0 bottom-0 border-l-2 border-dashed border-amber-500 z-20 pointer-events-none"
                                 style={{
-                                    left: `calc((100% / 7) * ${viewDays.findIndex(d => isSameDay(d, today))} + ((100% / 7) * ${(now.getHours() * 60 + now.getMinutes()) / (24 * 60)}))`
+                                    left: `calc((100% / 7) * ${viewDays.findIndex(d => isSameDay(d, today))} + ((100% / 7) * ${currentMinutes / (24 * 60)}))`
                                 }}
                             />
                         )}
@@ -398,7 +421,7 @@ export function ProjectTimelineView({
                             <div
                                 className="absolute top-0 bottom-0 border-l-2 border-dashed border-amber-500 z-20 pointer-events-none"
                                 style={{
-                                    left: `${(viewDays.findIndex(d => isSameDay(d, today)) * 40) + (40 * ((now.getHours() * 60 + now.getMinutes()) / (24 * 60)))}px`
+                                    left: `${(viewDays.findIndex(d => isSameDay(d, today)) * 40) + (40 * (currentMinutes / (24 * 60)))}px`
                                 }}
                             />
                         )}

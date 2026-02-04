@@ -3,6 +3,7 @@ import { usePanelStore } from '../../../../lib/panelStore'
 import { StatusBadge } from '../components/StatusBadge'
 import type { Label } from '../../labels/LabelBadge'
 import { DocumentIcon, DocumentIconGold, CommentIcon, CommentIconGold, PaperclipIcon, PaperclipIconGold, HistoryIcon, HistoryIconGold } from '../components/TaskIcons'
+import { PriorityBadge } from '../components/PrioritySelector'
 import { LinksList } from '../links/LinksList'
 import type { TaskLink } from '@taskdashboard/types'
 import { CommentList } from '../../comments/CommentList'
@@ -106,21 +107,7 @@ const TabButton = ({
     </button>
 )
 
-// Priority Badge
-const PriorityBadge = ({ priority }: { priority: string }) => {
-    const config: Record<string, { label: string; color: string; bg: string }> = {
-        urgent: { label: 'Pilne', color: 'text-red-400', bg: 'bg-red-500/20' },
-        high: { label: 'Wysoki', color: 'text-orange-400', bg: 'bg-orange-500/20' },
-        medium: { label: 'Średni', color: 'text-amber-400', bg: 'bg-amber-500/20' },
-        low: { label: 'Niski', color: 'text-green-400', bg: 'bg-green-500/20' },
-    }
-    const { label, color, bg } = config[priority] || config.medium
-    return (
-        <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${bg} ${color}`}>
-            {label}
-        </span>
-    )
-}
+
 
 // SubtaskItem moved to SubtaskList.tsx
 
@@ -516,8 +503,8 @@ export function TaskDetailsPanel({
                                 <button
                                     onClick={() => setSharedView('files')}
                                     className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${sharedView === 'files'
-                                            ? 'text-amber-500 border-amber-500'
-                                            : 'text-gray-400 border-transparent hover:text-gray-300'
+                                        ? 'text-amber-500 border-amber-500'
+                                        : 'text-gray-400 border-transparent hover:text-gray-300'
                                         }`}
                                 >
                                     Files
@@ -525,8 +512,8 @@ export function TaskDetailsPanel({
                                 <button
                                     onClick={() => setSharedView('links')}
                                     className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${sharedView === 'links'
-                                            ? 'text-amber-500 border-amber-500'
-                                            : 'text-gray-400 border-transparent hover:text-gray-300'
+                                        ? 'text-amber-500 border-amber-500'
+                                        : 'text-gray-400 border-transparent hover:text-gray-300'
                                         }`}
                                 >
                                     Links

@@ -827,54 +827,48 @@ function ProjectDetailPage() {
           </div>
         )}
 
-        {
-          viewMode === 'list' && (
-            <div className="px-6 pb-6">
-              <TaskListView
-                tasks={listViewTasks as any}
-                columns={(project.stages || []).map(s => ({ id: s.id, title: s.name, color: s.color || '' })) as any}
-                onTaskClick={handleTaskClick}
-                selectedTasks={selectedTasks}
-                onTaskSelect={handleTaskSelect}
-                onSelectAll={handleSelectAll}
-                onTaskEdit={handleFullEditTask}
-                onTaskDelete={handleDeleteTask}
-                onTaskDuplicate={handleDuplicateTask}
-                onTaskArchive={handleArchiveTask}
-              />
-            </div>
-          )
-        }
+        {viewMode === 'list' && (
+          <TaskListView
+            tasks={listViewTasks}
+            selectedTasks={selectedTasks}
+            onTaskSelect={handleTaskSelect}
+            onSelectAll={handleSelectAll}
+            onTaskClick={(id) => handleTaskClick(id)}
+            onTaskEdit={handleFullEditTask}
+            onTaskDelete={handleDeleteTask}
+            onTaskDuplicate={handleDuplicateTask}
+            onTaskArchive={handleArchiveTask}
+            columns={kanbanColumns.map(c => ({ id: c.id, title: c.title, color: c.color }))}
+            priorities={currentWorkspace?.priorities}
+            onSort={(field, dir) => {
+              setSortBy(field)
+              setSortDirection(dir)
+            }}
+          />
+        )}
 
-        {
-          viewMode === 'calendar' && (
-            <div className="px-6 pb-6">
-              <ProjectCalendarView
-                tasks={tasks}
-                projectColor={project.color || '#6366f1'}
-                currentMonth={currentMonth}
-                onMonthChange={setCurrentMonth}
-                onTaskClick={handleTaskClick}
-                onAddTask={handleAddTask}
-              />
-            </div>
-          )
-        }
+        {viewMode === 'calendar' && (
+          <ProjectCalendarView
+            tasks={tasks}
+            projectColor={project?.color || '#6366f1'}
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+            onTaskClick={(id) => handleTaskClick(id)}
+            onAddTask={handleAddTask}
+          />
+        )}
 
-        {
-          viewMode === 'timeline' && (
-            <div className="h-full px-6 pb-6">
-              <ProjectTimelineView
-                tasks={tasks}
-                projectColor={project.color || '#6366f1'}
-                currentMonth={currentMonth}
-                onMonthChange={setCurrentMonth}
-                onTaskClick={handleTaskClick}
-                onAddTask={handleAddTask}
-              />
-            </div>
-          )
-        }
+        {viewMode === 'timeline' && (
+          <ProjectTimelineView
+            tasks={tasks}
+            projectColor={project?.color || '#6366f1'}
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+            onTaskClick={(id) => handleTaskClick(id)}
+            onAddTask={handleAddTask}
+            timezone={currentWorkspace?.settings?.timezone}
+          />
+        )}
       </div >
 
       {/* Create Task Panel */}

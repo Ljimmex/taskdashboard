@@ -17,6 +17,7 @@ import { DueDatePicker } from '../components/DueDatePicker'
 import { LinkInput } from '../links/LinkInput'
 import { LinksList } from '../links/LinksList'
 import type { TaskLink } from '@taskdashboard/types'
+import { PrioritySelector } from '../components/PrioritySelector'
 
 interface EditTaskPanelProps {
     task: TaskCardProps | null
@@ -75,43 +76,7 @@ const TabButton = ({
     </button>
 )
 
-// Priority config
-const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
-    urgent: { label: 'Pilne', color: 'text-red-400', bg: 'bg-red-500/20' },
-    high: { label: 'Wysoki', color: 'text-orange-400', bg: 'bg-orange-500/20' },
-    medium: { label: 'Średni', color: 'text-amber-400', bg: 'bg-amber-500/20' },
-    low: { label: 'Niski', color: 'text-blue-400', bg: 'bg-blue-500/20' },
-}
 
-// Priority Badge with dropdown
-const PrioritySelector = ({ priority, onChange }: { priority: string; onChange: (p: string) => void }) => {
-    const [showDropdown, setShowDropdown] = useState(false)
-    const { label, color, bg } = priorityConfig[priority] || priorityConfig.medium
-
-    return (
-        <div className="relative">
-            <button
-                onClick={() => setShowDropdown(!showDropdown)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium ${bg} ${color} hover:opacity-80 transition-opacity cursor-pointer`}
-            >
-                {label} ▾
-            </button>
-            {showDropdown && (
-                <div className="absolute top-full left-0 mt-1 bg-[#1a1a24] rounded-lg border border-gray-800 shadow-xl z-20 py-1 min-w-24">
-                    {Object.entries(priorityConfig).map(([value, config]) => (
-                        <button
-                            key={value}
-                            onClick={() => { onChange(value); setShowDropdown(false) }}
-                            className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors ${config.color}`}
-                        >
-                            {config.label}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    )
-}
 
 // Status Selector with dropdown
 const StatusSelector = ({
@@ -379,7 +344,7 @@ export function EditTaskPanel({
                         {/* Priority - Editable */}
                         <div className="flex items-center gap-4">
                             <span className="text-sm text-gray-500 w-20">Priority</span>
-                            <PrioritySelector priority={priority} onChange={setPriority} />
+                            <PrioritySelector value={priority} onChange={setPriority} size="sm" />
                         </div>
 
                         {/* Labels - Editable */}

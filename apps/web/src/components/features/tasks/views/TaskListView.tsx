@@ -24,6 +24,7 @@ interface TaskListViewProps {
     onTaskArchive?: (taskId: string) => void
     selectedTasks?: string[]
     columns?: any[] // Added for dynamic status labels
+    priorities?: { id: string; name: string; color: string }[] // Dynamic priorities
     onSort?: (by: string, dir: 'asc' | 'desc') => void
 }
 
@@ -50,8 +51,6 @@ const Checkbox = ({ checked, onChange, indeterminate = false }: {
         )}
     </button>
 )
-
-
 
 // Status badge component - now supports dynamic column-based statuses
 const StatusBadge = ({ status, columns }: { status: string; columns?: { id: string; title: string; color?: string }[] }) => {
@@ -85,8 +84,24 @@ const StatusBadge = ({ status, columns }: { status: string; columns?: { id: stri
     )
 }
 
-// Priority badge component
-const PriorityBadge = ({ priority }: { priority: string }) => {
+// Priority badge component - Updated for dynamic priorities
+const PriorityBadge = ({ priority, priorities }: { priority: string; priorities?: { id: string; name: string; color: string }[] }) => {
+    // 1. Try to find in dynamic priorities
+    const dynamicPriority = priorities?.find(p => p.id === priority)
+
+    if (dynamicPriority) {
+        return (
+            <span
+                className="flex items-center gap-1.5 text-xs font-medium"
+                style={{ color: dynamicPriority.color }}
+            >
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                {dynamicPriority.name}
+            </span>
+        )
+    }
+
+    // 2. Fallback to hardcoded
     const priorityConfig: Record<string, { label: string; color: string }> = {
         urgent: { label: 'Urgent', color: 'text-red-400' },
         high: { label: 'High', color: 'text-orange-400' },
@@ -229,6 +244,7 @@ const RowMenu = ({
 
 type SortColumn = 'name' | 'project' | 'subtasks' | 'status' | 'priority' | 'startDate' | 'endDate'
 
+// Main component
 export function TaskListView({
     tasks,
     onTaskClick,
@@ -239,7 +255,8 @@ export function TaskListView({
     onTaskDuplicate,
     onTaskArchive,
     selectedTasks = [],
-    columns = []
+    columns = [],
+    priorities = []
 }: TaskListViewProps) {
     const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -356,7 +373,7 @@ export function TaskListView({
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 text-center"><StatusBadge status={task.status} columns={columns} /></td>
-                                <td className="px-4 py-3"><div className="flex justify-center"><PriorityBadge priority={task.priority} /></div></td>
+                                <td className="px-4 py-3"><div className="flex justify-center"><PriorityBadge priority={task.priority} priorities={priorities} /></div></td>
                                 <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate((task as any).startDate)}</span></td>
                                 <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate((task as any).endDate || task.dueDate)}</span></td>
                                 <td className="px-4 py-3"><AssigneeAvatars assignees={task.assignees || []} /></td>

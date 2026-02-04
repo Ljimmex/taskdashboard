@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
 import { Trash2, Edit2, Plus, Check, X, GripVertical } from 'lucide-react'
 
@@ -35,6 +36,7 @@ const PRESET_COLORS = [
 ]
 
 export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const queryClient = useQueryClient()
 
     const [editingId, setEditingId] = useState<string | null>(null)
@@ -72,11 +74,39 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
             })
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['workspace-priorities', workspace.id] })
+            // Invalidate the workspace query to refresh priorities
+            queryClient.invalidateQueries({ queryKey: ['workspace', workspaceSlug] })
             setIsCreating(false)
             setNewName('')
             setNewColor('#6B7280')
             setNewIcon('')
+        }
+    })
+
+
+
+    // Delete priority mutation
+    const deletePriorityMutation = useMutation({
+        mutationFn: async (id: string) => {
+            await apiFetchJson(`/api/workspaces/${workspace.id}/priorities/${id}`, {
+                method: 'DELETE'
+            })
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['workspace', workspaceSlug] })
+        }
+    })
+
+    // Update workspace defaults mutation
+    const updateDefaultsMutation = useMutation({
+        mutationFn: async (data: { defaultIndustryTemplateId?: string }) => {
+            await apiFetchJson(`/api/workspaces/${workspace.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(data)
+            })
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['workspace', workspaceSlug] })
         }
     })
 
@@ -89,33 +119,8 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
             })
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['workspace-priorities', workspace.id] })
+            queryClient.invalidateQueries({ queryKey: ['workspace', workspaceSlug] })
             setEditingId(null)
-        }
-    })
-
-    // Delete priority mutation
-    const deletePriorityMutation = useMutation({
-        mutationFn: async (id: string) => {
-            await apiFetchJson(`/api/workspaces/${workspace.id}/priorities/${id}`, {
-                method: 'DELETE'
-            })
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['workspace-priorities', workspace.id] })
-        }
-    })
-
-    // Update default industry template
-    const updateDefaultsMutation = useMutation({
-        mutationFn: async (defaultIndustryTemplateId: string | null) => {
-            await apiFetchJson(`/api/workspaces/${workspace.id}/defaults`, {
-                method: 'PATCH',
-                body: JSON.stringify({ defaultIndustryTemplateId })
-            })
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['workspace', workspace.slug] })
         }
     })
 
@@ -296,7 +301,7 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
 
                 <select
                     value={workspace.defaultIndustryTemplateId || ''}
-                    onChange={(e) => updateDefaultsMutation.mutate(e.target.value || null)}
+                    onChange={(e) => updateDefaultsMutation.mutate({ defaultIndustryTemplateId: e.target.value || undefined })}
                     className="w-full bg-[#1a1a24] border border-gray-800 rounded-lg px-4 py-2 text-white"
                 >
                     <option value="">No default (manual selection)</option>

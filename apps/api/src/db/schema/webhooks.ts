@@ -34,6 +34,7 @@ export const webhooks = pgTable('webhooks', {
     secret: text('secret').notNull(), // Shared secret for HMAC signing
     events: jsonb('events').$type<string[]>().default([]).notNull(),
     isActive: boolean('is_active').default(true).notNull(),
+    silentMode: boolean('silent_mode').default(false).notNull(), // If true, messages will be sent silently (e.g. Discord silent)
     description: text('description'),
     failureCount: integer('failure_count').default(0).notNull(), // For circuit breaking
     createdBy: text('created_by')

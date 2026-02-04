@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useParams } from '@tanstack/react-router'
+import { apiFetchJson } from '@/lib/api'
 import { TaskCard, TaskCardProps } from '../components/TaskCard'
 import { AssigneePicker, Assignee } from '../components/AssigneePicker'
 import { DueDatePicker } from '../components/DueDatePicker'
@@ -119,12 +122,33 @@ function QuickAddTask({
         }
     }
 
-    const priorities = [
-        { value: 'urgent', label: 'Urgent', color: 'text-red-400' },
-        { value: 'high', label: 'High', color: 'text-orange-400' },
-        { value: 'medium', label: 'Medium', color: 'text-amber-400' },
-        { value: 'low', label: 'Low', color: 'text-green-400' },
-    ]
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
+    const { data: workspace } = useQuery({
+        queryKey: ['workspace', workspaceSlug],
+        queryFn: async () => {
+            if (!workspaceSlug) return null
+            const res = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+            return res
+        },
+        enabled: !!workspaceSlug
+    })
+
+    interface PriorityOption {
+        value: string
+        label: string
+        color: string
+    }
+
+    const priorities: PriorityOption[] = workspace?.priorities?.map((p: any) => ({
+        value: p.id,
+        label: p.name,
+        color: p.color
+    })) || [
+            { value: 'urgent', label: 'Urgent', color: '#ef4444' },
+            { value: 'high', label: 'High', color: '#f59e0b' },
+            { value: 'medium', label: 'Medium', color: '#3b82f6' },
+            { value: 'low', label: 'Low', color: '#6b7280' },
+        ]
 
     return (
         <div
@@ -161,7 +185,8 @@ function QuickAddTask({
                                 <button
                                     key={p.value}
                                     onClick={() => { setPriority(p.value); setShowPriority(false) }}
-                                    className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors ${priority === p.value ? p.color : 'text-gray-400'}`}
+                                    className="w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors text-gray-400"
+                                    style={{ color: priority === p.value ? p.color : undefined }}
                                 >
                                     {p.label}
                                 </button>
@@ -172,11 +197,13 @@ function QuickAddTask({
 
                 {/* Priority Badge - shown when selected */}
                 {priority && (
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                        priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                            priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
-                                'bg-green-500/20 text-green-400'
-                        }`}>
+                    <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium`}
+                        style={{
+                            backgroundColor: `${priorities.find((p: any) => p.value === priority)?.color}20`,
+                            color: priorities.find((p: any) => p.value === priority)?.color
+                        }}
+                    >
                         {priorities.find(p => p.value === priority)?.label}
                     </span>
                 )}
@@ -278,7 +305,7 @@ function QuickAddTask({
                     <CheckIcon />
                 </button>
             </div>
-        </div>
+        </div >
     )
 }
 
@@ -303,6 +330,35 @@ export function QuickEditTask({
     const [selectedAssignees, setSelectedAssignees] = useState<Assignee[]>(uniqueAssignees)
     const [dueDate, setDueDate] = useState<string | undefined>(task.dueDate || undefined)
     const containerRef = useRef<HTMLDivElement>(null)
+
+    // Fetch dynamic priorities
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
+    const { data: workspace } = useQuery({
+        queryKey: ['workspace', workspaceSlug],
+        queryFn: async () => {
+            if (!workspaceSlug) return null
+            const res = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+            return res
+        },
+        enabled: !!workspaceSlug
+    })
+
+    interface PriorityOption {
+        value: string
+        label: string
+        color: string
+    }
+
+    const priorities: PriorityOption[] = workspace?.priorities?.map((p: any) => ({
+        value: p.id,
+        label: p.name,
+        color: p.color
+    })) || [
+            { value: 'urgent', label: 'Urgent', color: '#ef4444' },
+            { value: 'high', label: 'High', color: '#f59e0b' },
+            { value: 'medium', label: 'Medium', color: '#3b82f6' },
+            { value: 'low', label: 'Low', color: '#6b7280' },
+        ]
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -336,12 +392,7 @@ export function QuickEditTask({
         }
     }
 
-    const priorities = [
-        { value: 'urgent', label: 'Urgent', color: 'text-red-400' },
-        { value: 'high', label: 'High', color: 'text-orange-400' },
-        { value: 'medium', label: 'Medium', color: 'text-amber-400' },
-        { value: 'low', label: 'Low', color: 'text-green-400' },
-    ]
+
 
     // Convert members to Assignee format and deduplicate by id
     const availableAssignees: Assignee[] = members?.reduce((acc, m) => {
@@ -390,7 +441,8 @@ export function QuickEditTask({
                                 <button
                                     key={p.value}
                                     onClick={() => { setPriority(p.value); setShowPriority(false) }}
-                                    className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors ${priority === p.value ? p.color : 'text-gray-400'}`}
+                                    className="w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors text-gray-400"
+                                    style={{ color: priority === p.value ? p.color : undefined }}
                                 >
                                     {p.label}
                                 </button>
@@ -400,11 +452,13 @@ export function QuickEditTask({
                 </div>
 
                 {/* Priority Badge - shown when selected */}
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                    priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                        priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
-                            'bg-green-500/20 text-green-400'
-                    }`}>
+                <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium`}
+                    style={{
+                        backgroundColor: `${priorities.find((p: any) => p.value === priority)?.color}20`,
+                        color: priorities.find((p: any) => p.value === priority)?.color
+                    }}
+                >
                     {priorities.find(p => p.value === priority)?.label}
                 </span>
             </div>
