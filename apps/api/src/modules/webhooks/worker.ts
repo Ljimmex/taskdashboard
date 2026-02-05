@@ -58,6 +58,23 @@ async function deliverWebhook(job: any) {
             return
         }
 
+        // IMPROVEMENT: Ensure payload is an object (Drizzle sometimes returns string for jsonb)
+        if (typeof job.payload === 'string') {
+            try {
+                job.payload = JSON.parse(job.payload)
+            } catch (e) {
+                console.error(`[Webhook Worker] Failed to parse payload for job ${job.id}`, e)
+            }
+        }
+
+        // IMPROVEMENT: Inject App URL and Workspace ID if missing
+        ; (config as any).appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+        // If job doesn't have workspaceId, try to find it (it sits on the webhook config usually)
+        if (!job.workspaceId && config.workspaceId) {
+            job.workspaceId = config.workspaceId
+        }
+
         console.log(`[Webhook Worker] Preparing ${config.type} request for ${config.url}`)
 
         // 2. SELECT ADAPTER

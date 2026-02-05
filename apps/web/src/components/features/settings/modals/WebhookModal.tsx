@@ -11,31 +11,47 @@ interface WebhookModalProps {
     webhook?: any // If provided, edit mode
 }
 
-const EVENT_OPTIONS = [
-    // Tasks
-    { id: 'task.created', label: 'Zadanie utworzone' },
-    { id: 'task.updated', label: 'Zadanie zaktualizowane (tytuł, opis)' },
-    { id: 'task.status_changed', label: 'Zmieniono status zadania' },
-    { id: 'task.priority_changed', label: 'Zmieniono priorytet zadania' },
-    { id: 'task.assigned', label: 'Przypisano użytkownika' },
-    { id: 'task.due_date_changed', label: 'Zmieniono termin wykonania' },
-    { id: 'task.deleted', label: 'Zadanie usunięte' },
-
-    // Subtasks
-    { id: 'subtask.created', label: 'Podzadanie utworzone' },
-    { id: 'subtask.updated', label: 'Podzadanie zaktualizowane' },
-    { id: 'subtask.completed', label: 'Podzadanie ukończone' },
-
-    // Comments
-    { id: 'comment.added', label: 'Dodano komentarz' },
-
-    // Files
-    { id: 'file.uploaded', label: 'Przesłano plik' },
-    { id: 'file.deleted', label: 'Usunięto plik' },
-
-    // Members
-    { id: 'member.added', label: 'Dołączył nowy członek' },
-    { id: 'member.removed', label: 'Usunięto członka' },
+const EVENT_GROUPS = [
+    {
+        title: 'ZADANIA',
+        items: [
+            { id: 'task.created', label: 'Zadanie utworzone' },
+            { id: 'task.updated', label: 'Zadanie zaktualizowane (tytuł, opis)' },
+            { id: 'task.status_changed', label: 'Zmieniono status zadania' },
+            { id: 'task.priority_changed', label: 'Zmieniono priorytet zadania' },
+            { id: 'task.assigned', label: 'Przypisano użytkownika' },
+            { id: 'task.due_date_changed', label: 'Zmieniono termin wykonania' },
+            { id: 'task.deleted', label: 'Zadanie usunięte' },
+        ]
+    },
+    {
+        title: 'PODZADANIA',
+        items: [
+            { id: 'subtask.created', label: 'Podzadanie utworzone' },
+            { id: 'subtask.updated', label: 'Podzadanie zaktualizowane' },
+            { id: 'subtask.completed', label: 'Podzadanie ukończone' },
+        ]
+    },
+    {
+        title: 'KOMENTARZE',
+        items: [
+            { id: 'comment.added', label: 'Dodano komentarz' },
+        ]
+    },
+    {
+        title: 'PLIKI',
+        items: [
+            { id: 'file.uploaded', label: 'Przesłano plik' },
+            { id: 'file.deleted', label: 'Usunięto plik' },
+        ]
+    },
+    {
+        title: 'UŻYTKOWNICY',
+        items: [
+            { id: 'member.added', label: 'Dołączył nowy członek' },
+            { id: 'member.removed', label: 'Usunięto członka' },
+        ]
+    }
 ]
 
 export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
@@ -137,16 +153,42 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
         })
     }
 
+    // Icons
+    const DiscordIcon = () => (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z" />
+        </svg>
+    )
+
+    const SlackIcon = () => (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 15a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2h2v2zm1 0a2 2 0 0 1 2-2a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2a2 2 0 0 1-2-2v-5z" />
+            <path d="M9 6a2 2 0 0 1-2-2a2 2 0 0 1 2-2a2 2 0 0 1 2 2v2H9zm0 1a2 2 0 0 1 2 2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2a2 2 0 0 1 2-2h5z" />
+            <path d="M18 9a2 2 0 0 1 2-2a2 2 0 0 1 2 2a2 2 0 0 1-2 2h-2V9zm-1 0a2 2 0 0 1-2 2a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2a2 2 0 0 1 2 2v5z" />
+            <path d="M15 18a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2v-2h2zm0-1a2 2 0 0 1-2-2a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2a2 2 0 0 1-2 2h-5z" />
+        </svg>
+    )
+
+    const GenericIcon = () => (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+    )
+
     if (!isOpen) return null
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1a1a24] rounded-2xl w-full max-w-lg shadow-2xl border border-gray-800 flex flex-col max-h-[90vh]">
+            <div className="bg-[#1a1a24] rounded-2xl w-full max-w-lg shadow-2xl border border-gray-800 flex flex-col max-h-[90vh] overflow-hidden">
+                {/* Header */}
                 <div className="p-6 border-b border-gray-800 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-white">
                         {webhook ? 'Edytuj Webhook' : 'Dodaj Webhook'}
                     </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white">
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+                    >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -165,36 +207,40 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                         <div className="grid grid-cols-3 gap-3">
                             <button
                                 onClick={() => setType('discord')}
-                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${type === 'discord'
-                                    ? 'bg-[#5865F2]/20 border-[#5865F2] text-white ring-1 ring-[#5865F2]/50'
-                                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600 hover:bg-gray-800/50'
+                                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2 relative ${type === 'discord'
+                                    ? 'bg-amber-500/10 border-amber-500 text-white'
+                                    : 'bg-gray-800/30 border-transparent text-gray-400 hover:bg-gray-800/50 hover:border-gray-700'
                                     }`}
                             >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mb-2">
-                                    <path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c.04.05.08.1.12.15c1.6 1.18 3.15 1.91 4.71 2.2c.03 0 .07-.01.08-.04c.36-.49.68-1.02.96-1.57c.02-.05-.03-.11-.08-.13a11.48 11.48 0 0 1-1.6-.77c-.06-.03-.06-.11 0-.16c.32-.23.63-.49.92-.75c.05-.05.12-.05.15 0c3.23 1.49 6.7 1.49 9.92 0c.04-.01.1 0 .15.06c.29.26.6.51.92.75c.06.05.06.13 0 .16a11.48 11.48 0 0 1-1.6.77c-.05.02-.1.08-.08.13c.27.55.6 1.08.96 1.57c.01.03.05.05.08.04c1.56-.29 3.11-1.02 4.71-2.2c.04-.05.08-.1.12-.15c.42-4.35-.61-8.31-3.1-11.95c-.01-.01-.02-.02-.03-.02ZM8.5 13.5c-.9 0-1.62-.83-1.62-1.83s.71-1.83 1.62-1.83s1.62.83 1.62 1.83s-.71 1.83-1.62 1.83ZM15.5 13.5c-.9 0-1.62-.83-1.62-1.83s.71-1.83 1.62-1.83s1.62.83 1.62 1.83s-.71 1.83-1.62 1.83Z" fill="#5865F2" />
-                                </svg>
+                                <div className={type === 'discord' ? 'text-amber-500' : 'text-current'}>
+                                    <DiscordIcon />
+                                </div>
                                 <span className="text-sm font-semibold">Discord</span>
                             </button>
+
                             <button
                                 onClick={() => setType('slack')}
-                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${type === 'slack'
-                                    ? 'bg-[#4A154B]/20 border-[#4A154B] text-white ring-1 ring-[#4A154B]/50'
-                                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600 hover:bg-gray-800/50'
+                                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2 relative ${type === 'slack'
+                                    ? 'bg-amber-500/10 border-amber-500 text-white'
+                                    : 'bg-gray-800/30 border-transparent text-gray-400 hover:bg-gray-800/50 hover:border-gray-700'
                                     }`}
                             >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mb-2">
-                                    <path d="M5.042 15.123a2.52 2.52 0 0 1-2.52 2.523 2.52 2.52 0 0 1-2.522-2.523 2.52 2.52 0 0 1 2.522-2.52h2.52v2.52Zm1.261 0a2.52 2.52 0 0 1 2.521-2.52 2.52 2.52 0 0 1 2.521 2.52v6.307a2.52 2.52 0 0 1-2.52 2.523 2.52 2.52 0 0 1-2.522-2.523v-6.307Zm3.782-5.042a2.52 2.52 0 0 1 2.52-2.522 2.52 2.52 0 0 1 2.522 2.522 2.52 2.52 0 0 1-2.522 2.52h-2.52v-2.52ZM8.823 8.82a2.52 2.52 0 0 1-2.52 2.522 2.52 2.52 0 0 1-2.522-2.522V2.513a2.52 2.52 0 0 1 2.522-2.523 2.52 2.52 0 0 1 2.52 2.523V8.82Zm6.307 2.52a2.52 2.52 0 0 1 2.52 2.523 2.52 2.52 0 0 1 2.522-2.523 2.52 2.52 0 0 1-2.522 2.52h-2.52v-2.52Zm-1.261 0a2.52 2.52 0 0 1-2.522 2.52 2.52 2.52 0 0 1-2.52-2.52V2.512a2.52 2.52 0 0 1 2.52-2.523 2.52 2.52 0 0 1 2.522 2.523v6.308Zm3.782 5.042a2.52 2.52 0 0 1-2.52 2.522 2.52 2.52 0 0 1-2.522-2.522 2.52 2.52 0 0 1 2.522-2.52h2.52v2.52Zm1.26 1.262a2.52 2.52 0 0 1 2.523 2.522 2.52 2.52 0 0 1-2.523 2.522h-6.306a2.52 2.52 0 0 1-2.522-2.522 2.52 2.52 0 0 1 2.522-2.522h6.307Z" fill="#E01E5A" />
-                                </svg>
+                                <div className={type === 'slack' ? 'text-amber-500' : 'text-current'}>
+                                    <SlackIcon />
+                                </div>
                                 <span className="text-sm font-semibold">Slack</span>
                             </button>
+
                             <button
                                 onClick={() => setType('generic')}
-                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${type === 'generic'
-                                    ? 'bg-amber-500/20 border-amber-500 text-amber-500 ring-1 ring-amber-500/50'
-                                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600 hover:bg-gray-800/50'
+                                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2 relative ${type === 'generic'
+                                    ? 'bg-amber-500/10 border-amber-500 text-white'
+                                    : 'bg-gray-800/30 border-transparent text-gray-400 hover:bg-gray-800/50 hover:border-gray-700'
                                     }`}
                             >
-                                <Webhook className="w-8 h-8 mb-2" />
+                                <div className={type === 'generic' ? 'text-amber-500' : 'text-current'}>
+                                    <GenericIcon />
+                                </div>
                                 <span className="text-sm font-semibold">Inny</span>
                             </button>
                         </div>
@@ -212,13 +258,15 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                     type === 'slack' ? "https://hooks.slack.com/services/..." :
                                         "https://example.com/webhook"
                             }
-                            className="w-full bg-[#0f0f14] border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:border-amber-500 focus:outline-none transition-colors"
+                            className="w-full bg-[#0f0f14] border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-amber-500 focus:bg-[#0a0a0e] focus:outline-none transition-all font-mono text-sm"
                         />
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Opis (opcjonalne)</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                            Opis <span className="text-gray-600 font-normal">(opcjonalne)</span>
+                        </label>
                         <input
                             type="text"
                             value={description}
@@ -228,13 +276,13 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                     type === 'slack' ? "np. Slack #alerts" :
                                         "np. Integracja z CRM"
                             }
-                            className="w-full bg-[#0f0f14] border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none transition-colors"
+                            className="w-full bg-[#0f0f14] border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-amber-500 focus:bg-[#0a0a0e] focus:outline-none transition-all"
                         />
                     </div>
 
                     {/* Silent Mode */}
                     {type === 'discord' && (
-                        <label className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-800 cursor-pointer hover:border-gray-700 transition-colors">
+                        <label className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-lg border border-gray-800 cursor-pointer hover:bg-gray-800/50 transition-colors group">
                             <div className="relative flex items-center justify-center">
                                 <input
                                     type="checkbox"
@@ -242,77 +290,105 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                     onChange={(e) => setSilentMode(e.target.checked)}
                                     className="sr-only"
                                 />
-                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${silentMode
+                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${silentMode
                                     ? 'bg-amber-500 border-amber-500 text-black'
-                                    : 'bg-gray-800 border-gray-600'
+                                    : 'bg-transparent border-gray-600 group-hover:border-gray-500'
                                     }`}>
                                     {silentMode && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                                 </div>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white">Tryb cichy (@silent)</span>
-                                <span className="text-xs text-gray-400">Wiadomości nie będą wysyłać powiadomień push</span>
+                                <span className="text-sm font-medium text-white group-hover:text-amber-500 transition-colors">Tryb cichy (@silent)</span>
+                                <span className="text-xs text-gray-500">Wiadomości nie będą wysyłać powiadomień push</span>
                             </div>
                         </label>
                     )}
 
                     {/* Events Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Zdarzenia</label>
-                        <div className="grid grid-cols-1 gap-2">
-                            {EVENT_OPTIONS.map(event => (
-                                <label
-                                    key={event.id}
-                                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${selectedEvents.includes(event.id)
-                                        ? 'bg-amber-500/10 border-amber-500/50'
-                                        : 'bg-gray-800/30 border-gray-800 hover:border-gray-700'
-                                        }`}
-                                >
-                                    <div className="relative flex items-center justify-center">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedEvents.includes(event.id)}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    setSelectedEvents([...selectedEvents, event.id])
-                                                } else {
-                                                    setSelectedEvents(selectedEvents.filter(id => id !== event.id))
-                                                }
-                                            }}
-                                            className="sr-only"
-                                        />
-                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedEvents.includes(event.id)
-                                            ? 'bg-amber-500 border-amber-500 text-black'
-                                            : 'bg-gray-800 border-gray-600'
-                                            }`}>
-                                            {selectedEvents.includes(event.id) && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                                        </div>
+                        <label className="block text-sm font-medium text-gray-400 mb-3">Zdarzenia</label>
+                        <div className="bg-gray-800/30 rounded-lg border border-gray-800 p-2 max-h-[280px] overflow-y-auto custom-scrollbar">
+                            {EVENT_GROUPS.map(group => (
+                                <div key={group.title} className="mb-2 last:mb-0">
+                                    <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 py-2">
+                                        {group.title}
+                                    </h3>
+                                    <div className="space-y-0.5">
+                                        {group.items.map(event => {
+                                            const isSelected = selectedEvents.includes(event.id)
+                                            return (
+                                                <label
+                                                    key={event.id}
+                                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-all ${isSelected
+                                                        ? 'bg-amber-500/5'
+                                                        : 'hover:bg-white/5'
+                                                        }`}
+                                                >
+                                                    <div className="relative flex items-center justify-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isSelected}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) {
+                                                                    setSelectedEvents([...selectedEvents, event.id])
+                                                                } else {
+                                                                    setSelectedEvents(selectedEvents.filter(id => id !== event.id))
+                                                                }
+                                                            }}
+                                                            className="sr-only"
+                                                        />
+                                                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${isSelected
+                                                            ? 'bg-amber-500 border-amber-500 text-black'
+                                                            : 'bg-transparent border-gray-600'
+                                                            }`}>
+                                                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                                        </div>
+                                                    </div>
+                                                    <span className={`text-sm ${isSelected ? 'text-white font-medium' : 'text-gray-400'}`}>
+                                                        {event.label}
+                                                    </span>
+                                                </label>
+                                            )
+                                        })}
                                     </div>
-                                    <span className={`text-sm font-medium ${selectedEvents.includes(event.id) ? 'text-amber-500' : 'text-gray-300'}`}>
-                                        {event.label}
-                                    </span>
-                                </label>
+                                </div>
                             ))}
                         </div>
                     </div>
                 </div>
 
-                <div className="p-6 border-t border-gray-800 flex justify-end gap-3">
+                {/* Footer */}
+                <div className="p-5 border-t border-gray-800 flex justify-end gap-3">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-gray-400 hover:text-white font-medium transition-colors"
+                        className="px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-medium transition-colors text-sm"
                     >
                         Anuluj
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={mutation.isPending}
-                        className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                        className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 active:translate-y-[1px] text-black font-bold rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(245,158,11,0.2)] hover:shadow-[0_6px_16px_rgba(245,158,11,0.3)] text-sm"
                     >
                         {mutation.isPending ? 'Zapisywanie...' : 'Zapisz'}
                     </button>
                 </div>
             </div>
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #374151;
+                    border-radius: 3px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #4b5563;
+                }
+            `}</style>
         </div>
     )
 }
