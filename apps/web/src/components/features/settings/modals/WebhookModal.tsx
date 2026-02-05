@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
-import { X, AlertCircle, Check, Webhook } from 'lucide-react'
+import { X, AlertCircle, Check } from 'lucide-react'
 
 interface WebhookModalProps {
     isOpen: boolean
