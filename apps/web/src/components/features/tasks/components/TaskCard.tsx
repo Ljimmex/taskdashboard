@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import Markdown from 'react-markdown'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
@@ -262,7 +263,9 @@ export function TaskCard({
 
             {/* Description */}
             {description && (
-                <p className="text-gray-500 text-xs mb-auto line-clamp-2">{description}</p>
+                <div className="text-gray-500 text-xs mb-auto line-clamp-2 [&>p]:mb-0 [&>ul]:mb-0 [&>ol]:mb-0 [&>*]:inline">
+                    <Markdown>{description}</Markdown>
+                </div>
             )}
 
 

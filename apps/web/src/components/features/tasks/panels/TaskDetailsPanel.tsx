@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import Markdown from 'react-markdown'
 import { usePanelStore } from '../../../../lib/panelStore'
 import { StatusBadge } from '../components/StatusBadge'
 import type { Label } from '../../labels/LabelBadge'
@@ -412,7 +413,9 @@ export function TaskDetailsPanel({
                 {task.description && (
                     <div className="flex-none p-6 border-b border-gray-800">
                         <h3 className="text-sm font-semibold text-white mb-2">Description</h3>
-                        <p className="text-sm text-gray-400 leading-relaxed break-words">{task.description}</p>
+                        <div className="prose prose-sm prose-invert max-w-none text-gray-400 leading-relaxed break-words [&>h1]:text-white [&>h1]:text-lg [&>h1]:font-bold [&>h1]:mb-2 [&>h2]:text-white [&>h2]:text-base [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1.5 [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:mb-2 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:mb-2 [&>li]:mb-1 [&>blockquote]:border-l-2 [&>blockquote]:border-amber-500 [&>blockquote]:pl-3 [&>blockquote]:italic [&>blockquote]:text-gray-500 [&>code]:bg-gray-800 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-amber-400 [&>code]:text-xs [&>strong]:text-white [&>strong]:font-semibold [&>em]:italic">
+                            <Markdown>{task.description}</Markdown>
+                        </div>
                     </div>
                 )}
 
