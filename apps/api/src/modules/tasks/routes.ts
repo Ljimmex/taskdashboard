@@ -502,30 +502,43 @@ tasksRoutes.patch('/:id', async (c) => {
         // TRIGGER WEBHOOKS
         const workspaceId = await getWorkspaceIdFromProject(updated.projectId)
         if (workspaceId) {
-            // Status Change
+            // Status Change - fetch stage names for display
             if (body.status !== undefined && body.status !== task.status) {
+                // Lookup stage names
+                const [oldStage, newStage] = await Promise.all([
+                    task.status ? db.query.projectStages.findFirst({ where: (s, { eq }) => eq(s.id, task.status), columns: { name: true } }) : null,
+                    updated.status ? db.query.projectStages.findFirst({ where: (s, { eq }) => eq(s.id, updated.status), columns: { name: true } }) : null
+                ])
+
                 triggerWebhook('task.status_changed', {
                     taskId: id,
-                    oldStatus: task.status,
-                    newStatus: updated.status,
+                    oldStatus: oldStage?.name || task.status,
+                    newStatus: newStage?.name || updated.status,
                     task: updated,
                     title: updated.title
                 }, workspaceId)
             }
 
-            // Assignee Change
+            // Assignee Change - fetch user names for display
             if (body.assigneeId !== undefined && body.assigneeId !== task.assigneeId) {
+                const [oldUser, newUser] = await Promise.all([
+                    task.assigneeId ? db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, task.assigneeId!), columns: { name: true } }) : null,
+                    updated.assigneeId ? db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, updated.assigneeId!), columns: { name: true } }) : null
+                ])
+
                 triggerWebhook('task.assigned', {
                     taskId: id,
-                    oldAssigneeId: task.assigneeId,
-                    newAssigneeId: updated.assigneeId,
+                    oldAssignee: oldUser?.name || 'Unassigned',
+                    newAssignee: newUser?.name || 'Unassigned',
                     task: updated,
                     title: updated.title
                 }, workspaceId)
             }
 
-            // Due Date Change
-            if (body.dueDate !== undefined && body.dueDate?.toString() !== task.dueDate?.toString()) {
+            // Due Date Change - use proper date comparison
+            const oldDueMs = task.dueDate ? new Date(task.dueDate).getTime() : null
+            const newDueMs = body.dueDate !== undefined ? (body.dueDate ? new Date(body.dueDate).getTime() : null) : oldDueMs
+            if (body.dueDate !== undefined && oldDueMs !== newDueMs) {
                 triggerWebhook('task.due_date_changed', {
                     taskId: id,
                     oldDueDate: task.dueDate,
@@ -535,7 +548,7 @@ tasksRoutes.patch('/:id', async (c) => {
                 }, workspaceId)
             }
 
-            // Priority Change (treating as specific event if we want, or part of updated)
+            // Priority Change
             if (body.priority !== undefined && body.priority !== task.priority) {
                 triggerWebhook('task.priority_changed', {
                     taskId: id,
@@ -667,13 +680,22 @@ tasksRoutes.patch('/:id/move', async (c) => {
         const [updated] = await db.update(tasks).set(updateData).where(eq(tasks.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Task not found' }, 404)
 
-        // TRIGGER WEBHOOK
+        // TRIGGER WEBHOOK - only for status change (drag-drop move)
         const workspaceId = await getWorkspaceIdFromProject(updated.projectId)
-        if (workspaceId) {
-            if (body.status && body.status !== task.status) {
-                triggerWebhook('task.status_changed', { taskId: id, oldStatus: task.status, newStatus: updated.status, task: updated }, workspaceId)
-            }
-            triggerWebhook('task.updated', updated, workspaceId)
+        if (workspaceId && body.status && body.status !== task.status) {
+            // Lookup stage names
+            const [oldStage, newStage] = await Promise.all([
+                task.status ? db.query.projectStages.findFirst({ where: (s, { eq }) => eq(s.id, task.status), columns: { name: true } }) : null,
+                updated.status ? db.query.projectStages.findFirst({ where: (s, { eq }) => eq(s.id, updated.status), columns: { name: true } }) : null
+            ])
+
+            triggerWebhook('task.status_changed', {
+                taskId: id,
+                oldStatus: oldStage?.name || task.status,
+                newStatus: newStage?.name || updated.status,
+                task: updated,
+                title: updated.title
+            }, workspaceId)
         }
 
         return c.json({ success: true, data: updated })
@@ -976,7 +998,7 @@ tasksRoutes.post('/:id/comments', async (c) => {
         if (task) {
             const workspaceId = await getWorkspaceIdFromProject(task.projectId)
             if (workspaceId) {
-                triggerWebhook('comment.created', created, workspaceId)
+                triggerWebhook('comment.added', { ...created, taskTitle: (await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, id), columns: { title: true } }))?.title }, workspaceId)
             }
         }
 

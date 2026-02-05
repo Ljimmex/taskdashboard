@@ -87,6 +87,10 @@ export async function prepareSlackRequest(job: any, config: any) {
             const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
             const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
             fields.push({ type: 'mrkdwn', text: `*📅 Due Date Change:*\n${oldDate} ➡️ ${newDate}` })
+        } else if (event === 'task.assigned') {
+            const oldName = payload.oldAssignee || 'Unassigned'
+            const newName = payload.newAssignee || 'Unassigned'
+            fields.push({ type: 'mrkdwn', text: `*👤 Assignee Change:*\n${oldName} ➡️ ${newName}` })
         } else if (event === 'task.updated' && payload.updatedFields) {
             const changed = payload.updatedFields.map((f: string) => f.charAt(0).toUpperCase() + f.slice(1)).join(', ')
             fields.push({ type: 'mrkdwn', text: `*✏️ Fields Updated:*\n${changed}` })
@@ -166,6 +170,36 @@ export async function prepareSlackRequest(job: any, config: any) {
                 elements: [{ type: 'mrkdwn', text: `*On Task:* ${payload.taskTitle}` }]
             })
         }
+    } else if (event === 'file.uploaded') {
+        const fileName = payload.name || payload.fileName || 'Unknown file'
+        text = `${emoji} File Uploaded`
+        attachmentColor = '#10B981'
+
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} File Uploaded`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*${fileName}*` }
+            }
+        ]
+    } else if (event === 'file.deleted') {
+        const fileName = payload.name || payload.fileName || 'Unknown file'
+        text = `${emoji} File Deleted`
+        attachmentColor = '#EF4444'
+
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} File Deleted`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*${fileName}* was deleted.` }
+            }
+        ]
     } else if (event.startsWith('member.')) {
         const action = event.split('.')[1]
         text = `${emoji} Member ${action === 'added' ? 'Joined' : 'Left'}`

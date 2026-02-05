@@ -13,6 +13,14 @@ export async function prepareDiscordRequest(job: any, config: any) {
         none: 0x6B7280     // Gray
     }
 
+    // Helper to format file size
+    const formatFileSize = (bytes: number): string => {
+        if (bytes < 1024) return `${bytes} B`
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+        if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+        return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+    }
+
     // Event emoji mapping
     const EVENT_EMOJIS: Record<string, string> = {
         'task.created': '📝',
@@ -71,7 +79,9 @@ export async function prepareDiscordRequest(job: any, config: any) {
             const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
             fields.push({ name: '📅 Due Date Change', value: `${oldDate} ➡️ ${newDate}`, inline: false })
         } else if (event === 'task.assigned') {
-            fields.push({ name: '👤 Assignee Change', value: 'User assigned', inline: true }) // We might not have names for old IDs easily unless passed, assuming generic for now or updated state
+            const oldName = payload.oldAssignee || 'Unassigned'
+            const newName = payload.newAssignee || 'Unassigned'
+            fields.push({ name: '👤 Assignee Change', value: `${oldName} ➡️ ${newName}`, inline: false })
         } else if (event === 'task.updated' && payload.updatedFields) {
             const changed = payload.updatedFields.map((f: string) => f.charAt(0).toUpperCase() + f.slice(1)).join(', ')
             fields.push({ name: '✏️ Fields Updated', value: changed, inline: false })
@@ -129,9 +139,18 @@ export async function prepareDiscordRequest(job: any, config: any) {
             embed.fields = [{ name: '📝 On Task', value: payload.taskTitle, inline: true }]
         }
     } else if (event === 'file.uploaded') {
+        const fileName = payload.name || payload.fileName || 'Unknown file'
         embed.title = `${emoji} File Uploaded`
-        embed.description = payload.fileName ? `**${payload.fileName}**` : 'A new file was uploaded.'
+        embed.description = `**${fileName}**`
         embed.color = 0x10B981 // Green for files
+        if (payload.size) {
+            embed.fields = [{ name: '📦 Size', value: formatFileSize(payload.size), inline: true }]
+        }
+    } else if (event === 'file.deleted') {
+        const fileName = payload.name || payload.fileName || 'Unknown file'
+        embed.title = `${emoji} File Deleted`
+        embed.description = `**${fileName}** was deleted.`
+        embed.color = 0xEF4444 // Red for delete
     } else if (event.startsWith('member.')) {
         const action = event.split('.')[1]
         embed.title = `${emoji} Member ${action === 'added' ? 'Joined' : 'Left'}`
