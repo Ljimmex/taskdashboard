@@ -434,7 +434,28 @@ tasksRoutes.post('/', async (c) => {
         // TRIGGER WEBHOOK
         const workspaceId = await getWorkspaceIdFromProject(created.projectId)
         if (workspaceId) {
-            triggerWebhook('task.created', created, workspaceId)
+            // Fetch status name and priorities
+            const [statusStage, workspace] = await Promise.all([
+                created.status ? db.query.projectStages.findFirst({
+                    where: (s, { eq }) => eq(s.id, created.status!),
+                    columns: { name: true }
+                }) : null,
+                db.query.workspaces.findFirst({
+                    where: (w, { eq }) => eq(w.id, workspaceId),
+                    columns: { priorities: true }
+                })
+            ])
+
+            const priorityObj = workspace?.priorities?.find((p: any) => p.id === created.priority)
+            const priorityName = priorityObj?.name || created.priority
+            const priorityColor = priorityObj?.color
+
+            triggerWebhook('task.created', {
+                ...created,
+                statusName: statusStage?.name || created.status,
+                priorityName,
+                priorityColor
+            }, workspaceId)
         }
 
         return c.json({ success: true, data: created }, 201)
@@ -550,15 +571,33 @@ tasksRoutes.patch('/:id', async (c) => {
 
             // Priority Change
             if (body.priority !== undefined && body.priority !== task.priority) {
+                const workspace = await db.query.workspaces.findFirst({
+                    where: (w, { eq }) => eq(w.id, workspaceId),
+                    columns: { priorities: true }
+                })
+                const oldPriorityObj = workspace?.priorities?.find((p: any) => p.id === task.priority)
+                const newPriorityObj = workspace?.priorities?.find((p: any) => p.id === updated.priority)
+
+                const oldPriorityName = oldPriorityObj?.name || task.priority
+                const newPriorityName = newPriorityObj?.name || updated.priority
+                const oldPriorityColor = oldPriorityObj?.color
+                const newPriorityColor = newPriorityObj?.color
+
                 triggerWebhook('task.priority_changed', {
                     taskId: id,
                     oldPriority: task.priority,
                     newPriority: updated.priority,
+                    oldPriorityName,
+                    newPriorityName,
+                    oldPriorityColor,
+                    newPriorityColor,
                     task: updated,
                     title: updated.title
                 }, workspaceId)
             }
 
+            // Check for explicit "Task Updated" fields (Title, Description)
+            // Only trigger task.updated if these specific fields changed
             // Check for explicit "Task Updated" fields (Title, Description)
             // Only trigger task.updated if these specific fields changed
             if ((body.title !== undefined && body.title !== task.title) ||
@@ -568,11 +607,18 @@ tasksRoutes.patch('/:id', async (c) => {
                 if (body.title !== undefined && body.title !== task.title) updatedFields.push('title')
                 if (body.description !== undefined && body.description !== task.description) updatedFields.push('description')
 
+                // Fetch status name for display
+                const statusStage = updated.status ? await db.query.projectStages.findFirst({
+                    where: (s, { eq }) => eq(s.id, updated.status!),
+                    columns: { name: true }
+                }) : null
+
                 triggerWebhook('task.updated', {
-                    ...updated,
+                    taskId: id,
                     updatedFields,
-                    oldTitle: task.title,
-                    oldDescription: task.description
+                    task: updated,
+                    title: updated.title,
+                    statusName: statusStage?.name || updated.status
                 }, workspaceId)
             }
         }
@@ -746,11 +792,25 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
         })
 
         // TRIGGER WEBHOOK
-        const task = await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, id), columns: { projectId: true } })
+        const task = await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, id), columns: { projectId: true, title: true } })
         if (task) {
             const workspaceId = await getWorkspaceIdFromProject(task.projectId)
             if (workspaceId) {
-                triggerWebhook('subtask.created', created, workspaceId)
+                // Fetch workspace priorities
+                const workspace = await db.query.workspaces.findFirst({
+                    where: (w, { eq }) => eq(w.id, workspaceId),
+                    columns: { priorities: true }
+                })
+                const priorityObj = workspace?.priorities?.find((p: any) => p.id === created.priority)
+                const priorityName = priorityObj?.name || created.priority
+                const priorityColor = priorityObj?.color
+
+                triggerWebhook('subtask.created', {
+                    ...created,
+                    taskTitle: task.title,
+                    priorityName,
+                    priorityColor
+                }, workspaceId)
             }
         }
 
@@ -820,11 +880,44 @@ tasksRoutes.patch('/:taskId/subtasks/:subtaskId', async (c) => {
         }
 
         // TRIGGER WEBHOOK
-        const parentTask = await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, taskId), columns: { projectId: true } })
+        const parentTask = await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, taskId), columns: { projectId: true, title: true } })
         if (parentTask) {
             const wsId = await getWorkspaceIdFromProject(parentTask.projectId)
             if (wsId) {
-                triggerWebhook('subtask.updated', updated, wsId)
+                let extra: any = {}
+                if (body.priority !== undefined) {
+                    const workspace = await db.query.workspaces.findFirst({
+                        where: (w, { eq }) => eq(w.id, wsId),
+                        columns: { priorities: true }
+                    })
+                    const priorityObj = workspace?.priorities?.find((p: any) => p.id === updated.priority)
+                    const oldPriorityObj = workspace?.priorities?.find((p: any) => p.id === oldSubtask.priority)
+
+                    extra.priorityName = priorityObj?.name || updated.priority
+                    extra.oldPriorityName = oldPriorityObj?.name || oldSubtask.priority
+                    extra.priorityColor = priorityObj?.color
+                    extra.oldPriorityColor = oldPriorityObj?.color
+                }
+
+                if ((body.status === 'done' || body.status === 'completed' || body.isCompleted) && !oldSubtask.isCompleted) {
+                    triggerWebhook('subtask.completed', {
+                        ...updated,
+                        taskTitle: parentTask.title
+                    }, wsId)
+                } else {
+                    const webhookChanges = { ...metadata }
+                    if (body.priority !== undefined && extra.priorityName) {
+                        webhookChanges.from = extra.oldPriorityName
+                        webhookChanges.to = extra.priorityName
+                    }
+
+                    triggerWebhook('subtask.updated', {
+                        ...updated,
+                        taskTitle: parentTask.title,
+                        changes: webhookChanges,
+                        ...extra
+                    }, wsId)
+                }
             }
         }
 

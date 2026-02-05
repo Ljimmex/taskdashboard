@@ -4,15 +4,6 @@ export async function prepareDiscordRequest(job: any, config: any) {
     // Brand color - amber/gold to match TaskDashboard theme
     const BRAND_COLOR = 0xF59E0B
 
-    // Priority colors
-    const PRIORITY_COLORS: Record<string, number> = {
-        urgent: 0xEF4444,  // Red
-        high: 0xF97316,    // Orange
-        medium: 0xF59E0B,  // Amber
-        low: 0x22C55E,     // Green
-        none: 0x6B7280     // Gray
-    }
-
     // Helper to format file size
     const formatFileSize = (bytes: number): string => {
         if (bytes < 1024) return `${bytes} B`
@@ -30,14 +21,14 @@ export async function prepareDiscordRequest(job: any, config: any) {
         'task.priority_changed': '⚡',
         'task.assigned': '👤',
         'task.due_date_changed': '📅',
+        'subtask.created': '🔨',
+        'subtask.updated': '🛠️',
+        'subtask.completed': '✅',
         'comment.added': '💬',
         'file.uploaded': '📎',
         'file.deleted': '🗑️',
         'member.added': '👋',
         'member.removed': '👋',
-        'message.sent': '💬',
-        'message.updated': '✏️',
-        'message.deleted': '🗑️',
         'webhook.test': '🧪'
     }
 
@@ -60,76 +51,90 @@ export async function prepareDiscordRequest(job: any, config: any) {
             { name: '📍 Status', value: '✅ Connection successful', inline: true },
             { name: '⏰ Timestamp', value: new Date().toLocaleString('pl-PL'), inline: true }
         ]
-    } else if (event.startsWith('task.')) {
-        const action = event.split('.')[1]
-        const actionText = action.charAt(0).toUpperCase() + action.slice(1).replace('_', ' ')
+    } else if (event === 'task.created') {
+        embed.title = `${emoji} Task Created`
+        embed.description = `**${payload.title}**`
+        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.id}`
 
-        embed.title = `${emoji} Task ${actionText}`
-        embed.description = payload.title ? `**${payload.title}**` : undefined
-        embed.color = PRIORITY_COLORS[payload.priority] || BRAND_COLOR
-
-        const fields: any[] = []
-
-        if (event === 'task.status_changed') {
-            fields.push({ name: '🔄 Status Change', value: `\`${payload.oldStatus}\` ➡️ \`${payload.newStatus}\``, inline: false })
-        } else if (event === 'task.priority_changed') {
-            fields.push({ name: '⚡ Priority Change', value: `\`${payload.oldPriority}\` ➡️ \`${payload.newPriority}\``, inline: false })
-        } else if (event === 'task.due_date_changed') {
-            const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
-            const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
-            fields.push({ name: '📅 Due Date Change', value: `${oldDate} ➡️ ${newDate}`, inline: false })
-        } else if (event === 'task.assigned') {
-            const oldName = payload.oldAssignee || 'Unassigned'
-            const newName = payload.newAssignee || 'Unassigned'
-            fields.push({ name: '👤 Assignee Change', value: `${oldName} ➡️ ${newName}`, inline: false })
-        } else if (event === 'task.updated' && payload.updatedFields) {
-            const changed = payload.updatedFields.map((f: string) => f.charAt(0).toUpperCase() + f.slice(1)).join(', ')
-            fields.push({ name: '✏️ Fields Updated', value: changed, inline: false })
-
-            if (payload.updatedFields.includes('title')) {
-                fields.push({ name: 'Old Title', value: payload.oldTitle, inline: true })
-                fields.push({ name: 'New Title', value: payload.title, inline: true })
-            }
+        // Use priority color from payload if available (strip # and parse hex)
+        if (payload.priorityColor) {
+            embed.color = parseInt(payload.priorityColor.replace('#', ''), 16)
         }
 
-        // Always show context fields if they exist and we aren't duplicating info
-        if (payload.status && event !== 'task.status_changed') {
-            fields.push({ name: '📊 Status', value: `\`${payload.status}\``, inline: true })
+        embed.fields = [
+            { name: 'Status', value: payload.statusName || payload.status, inline: true },
+            { name: 'Priority', value: payload.priorityName || payload.priority, inline: true }
+        ]
+
+        if (payload.assigneeId) {
+            embed.fields.push({ name: 'Assignee', value: payload.assigneeName || 'Unassigned', inline: true })
         }
-        if (payload.priority && event !== 'task.priority_changed') {
-            const priorityEmoji = payload.priority === 'urgent' ? '🔴' :
-                payload.priority === 'high' ? '🟠' :
-                    payload.priority === 'medium' ? '🟡' : '🟢'
-            fields.push({ name: '⚡ Priority', value: `${priorityEmoji} ${payload.priority}`, inline: true })
-        }
-        if (payload.assignee && event !== 'task.assigned') {
-            fields.push({ name: '👤 Assignee', value: payload.assignee, inline: true })
-        }
-        if (payload.dueDate && event !== 'task.due_date_changed') {
-            fields.push({ name: '📅 Due Date', value: new Date(payload.dueDate).toLocaleDateString('pl-PL'), inline: true })
-        }
-        if (payload.description && event === 'task.created') {
-            fields.push({ name: '📝 Description', value: payload.description.substring(0, 200) + (payload.description.length > 200 ? '...' : ''), inline: false })
+    } else if (event === 'task.priority_changed') {
+        embed.title = `${emoji} Priority Changed`
+        embed.description = `Priority for **${payload.title}** was updated.`
+        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
+
+        if (payload.newPriorityColor) {
+            embed.color = parseInt(payload.newPriorityColor.replace('#', ''), 16)
         }
 
-        if (fields.length > 0) {
-            embed.fields = fields
-        }
-    } else if (event === 'message.sent' || event === 'message.updated') {
-        embed.title = `${emoji} ${event === 'message.sent' ? 'New Message' : 'Message Updated'}`
-        const content = typeof payload.message === 'string' ? payload.message : (payload.message?.content || payload.content || 'New message')
-        embed.description = content.length > 300 ? content.substring(0, 300) + '...' : content
-        embed.color = 0x3B82F6 // Blue for messages
+        embed.fields = [
+            { name: 'Old Priority', value: payload.oldPriorityName || payload.oldPriority, inline: true },
+            { name: 'New Priority', value: payload.newPriorityName || payload.newPriority, inline: true }
+        ]
+    } else if (event === 'task.status_changed') {
+        embed.title = `${emoji} Status Changed`
+        embed.description = `Status for **${payload.title}** was updated.`
+        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
 
-        if (payload.sender || payload.userName) {
-            embed.author = {
-                name: payload.sender || payload.userName
-            }
+        embed.fields = [
+            { name: 'From', value: payload.oldStatus, inline: true },
+            { name: 'To', value: payload.newStatus, inline: true }
+        ]
+    } else if (event === 'task.updated') {
+        embed.title = `${emoji} Task Updated`
+        embed.description = `**${payload.title}** was updated.`
+        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
+
+        const changes = []
+        if (payload.updatedFields?.includes('title')) changes.push('Title')
+        if (payload.updatedFields?.includes('description')) changes.push('Description')
+        if (payload.updatedFields?.includes('status')) changes.push('Status')
+
+        embed.fields = [{ name: 'Changed Fields', value: changes.join(', ') || 'Details updated', inline: true }]
+        if (payload.statusName) {
+            embed.fields.push({ name: 'Current Status', value: payload.statusName, inline: true })
         }
-    } else if (event === 'message.deleted') {
-        embed.title = `${emoji} Message Deleted`
-        embed.description = 'A message was deleted from the conversation.'
-        embed.color = 0xEF4444 // Red for delete
+    } else if (event === 'task.assigned') {
+        embed.title = `${emoji} Assignee Changed`
+        embed.description = `Assignee for **${payload.title}** was updated.`
+        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
+        embed.fields = [{ name: 'Change', value: `${payload.oldAssignee} ➡️ ${payload.newAssignee}`, inline: true }]
+    } else if (event === 'task.due_date_changed') {
+        embed.title = `${emoji} Due Date Changed`
+        embed.description = `Due date for **${payload.title}** was updated.`
+        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
+        const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
+        const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
+        embed.fields = [{ name: 'Change', value: `${oldDate} ➡️ ${newDate}`, inline: true }]
+    } else if (event === 'subtask.created') {
+        embed.title = `${emoji} Subtask Created`
+        embed.description = `**${payload.title}** added to **${payload.taskTitle}**`
+        embed.color = BRAND_COLOR
+        embed.fields = [
+            { name: 'Status', value: payload.status, inline: true },
+            { name: 'Priority', value: payload.priorityName || payload.priority, inline: true }
+        ]
+    } else if (event === 'subtask.updated') {
+        embed.title = `${emoji} Subtask Updated`
+        embed.description = `Subtask **${payload.title}** in **${payload.taskTitle}** was updated.`
+        if (payload.changes?.from && payload.changes?.to) {
+            embed.fields = [{ name: 'Change', value: `${payload.changes.from} ➡️ ${payload.changes.to}`, inline: false }]
+        }
+    } else if (event === 'subtask.completed') {
+        embed.title = `${emoji} Subtask Completed`
+        embed.description = `✅ **${payload.title}** in **${payload.taskTitle}** was completed.`
+        embed.color = 0x22C55E
     } else if (event === 'comment.added') {
         embed.title = `${emoji} New Comment`
         embed.description = payload.content ? `> ${payload.content.substring(0, 300)}` : 'A new comment was added.'

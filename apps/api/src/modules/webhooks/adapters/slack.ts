@@ -10,24 +10,15 @@ export async function prepareSlackRequest(job: any, config: any) {
         'task.priority_changed': '⚡',
         'task.assigned': '👤',
         'task.due_date_changed': '📅',
+        'subtask.created': '🔨',
+        'subtask.updated': '🛠️',
+        'subtask.completed': '✅',
         'comment.added': '💬',
         'file.uploaded': '📎',
         'file.deleted': '🗑️',
         'member.added': '👋',
         'member.removed': '👋',
-        'message.sent': '💬',
-        'message.updated': '✏️',
-        'message.deleted': '🗑️',
         'webhook.test': '🧪'
-    }
-
-    // Priority colors for Slack (hex format for attachment)
-    const PRIORITY_COLORS: Record<string, string> = {
-        urgent: '#EF4444',
-        high: '#F97316',
-        medium: '#F59E0B',
-        low: '#22C55E',
-        none: '#6B7280'
     }
 
     const emoji = EVENT_EMOJIS[event] || '📢'
@@ -56,99 +47,182 @@ export async function prepareSlackRequest(job: any, config: any) {
                 ]
             }
         ]
-    } else if (event.startsWith('task.')) {
-        const action = event.split('.')[1]
-        const actionText = action.charAt(0).toUpperCase() + action.slice(1).replace('_', ' ')
-
-        text = `${emoji} Task ${actionText}: ${payload.title || 'Untitled'}`
-        attachmentColor = PRIORITY_COLORS[payload.priority] || '#F59E0B'
+    } else if (event === 'task.created') {
+        text = `${emoji} Task Created: ${payload.title}`
+        attachmentColor = payload.priorityColor || '#F59E0B'
 
         blocks = [
             {
                 type: 'header',
-                text: { type: 'plain_text', text: `${emoji} Task ${actionText}`, emoji: true }
-            }
-        ]
-
-        if (payload.title) {
-            blocks.push({
-                type: 'section',
-                text: { type: 'mrkdwn', text: `*${payload.title}*` }
-            })
-        }
-
-        const fields = []
-
-        if (event === 'task.status_changed') {
-            fields.push({ type: 'mrkdwn', text: `*🔄 Status Change:*\n\`${payload.oldStatus}\` ➡️ \`${payload.newStatus}\`` })
-        } else if (event === 'task.priority_changed') {
-            fields.push({ type: 'mrkdwn', text: `*⚡ Priority Change:*\n\`${payload.oldPriority}\` ➡️ \`${payload.newPriority}\`` })
-        } else if (event === 'task.due_date_changed') {
-            const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
-            const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
-            fields.push({ type: 'mrkdwn', text: `*📅 Due Date Change:*\n${oldDate} ➡️ ${newDate}` })
-        } else if (event === 'task.assigned') {
-            const oldName = payload.oldAssignee || 'Unassigned'
-            const newName = payload.newAssignee || 'Unassigned'
-            fields.push({ type: 'mrkdwn', text: `*👤 Assignee Change:*\n${oldName} ➡️ ${newName}` })
-        } else if (event === 'task.updated' && payload.updatedFields) {
-            const changed = payload.updatedFields.map((f: string) => f.charAt(0).toUpperCase() + f.slice(1)).join(', ')
-            fields.push({ type: 'mrkdwn', text: `*✏️ Fields Updated:*\n${changed}` })
-
-            if (payload.updatedFields.includes('title')) {
-                fields.push({ type: 'mrkdwn', text: `*Old Title:*\n${payload.oldTitle}` })
-                fields.push({ type: 'mrkdwn', text: `*New Title:*\n${payload.title}` })
-            }
-        }
-
-        if (payload.status && event !== 'task.status_changed') {
-            fields.push({ type: 'mrkdwn', text: `*📊 Status:*\n\`${payload.status}\`` })
-        }
-        if (payload.priority && event !== 'task.priority_changed') {
-            const priorityEmoji = payload.priority === 'urgent' ? '🔴' :
-                payload.priority === 'high' ? '🟠' :
-                    payload.priority === 'medium' ? '🟡' : '🟢'
-            fields.push({ type: 'mrkdwn', text: `*⚡ Priority:*\n${priorityEmoji} ${payload.priority}` })
-        }
-        if (payload.assignee && event !== 'task.assigned') {
-            fields.push({ type: 'mrkdwn', text: `*👤 Assignee:*\n${payload.assignee}` })
-        }
-        if (payload.dueDate && event !== 'task.due_date_changed') {
-            fields.push({ type: 'mrkdwn', text: `*📅 Due Date:*\n${new Date(payload.dueDate).toLocaleDateString('pl-PL')}` })
-        }
-
-        if (fields.length > 0) {
-            blocks.push({ type: 'section', fields })
-        }
-
-        if (payload.description && event === 'task.created') {
-            blocks.push({
-                type: 'section',
-                text: { type: 'mrkdwn', text: `*📝 Description:*\n${payload.description.substring(0, 200)}${payload.description.length > 200 ? '...' : ''}` }
-            })
-        }
-    } else if (event === 'message.sent' || event === 'message.updated') {
-        const content = typeof payload.message === 'string' ? payload.message : (payload.message?.content || payload.content || 'New message')
-        text = `${emoji} ${event === 'message.sent' ? 'New Message' : 'Message Updated'}`
-        attachmentColor = '#3B82F6'
-
-        blocks = [
-            {
-                type: 'header',
-                text: { type: 'plain_text', text: `${emoji} ${event === 'message.sent' ? 'New Message' : 'Message Updated'}`, emoji: true }
+                text: { type: 'plain_text', text: `${emoji} Task Created`, emoji: true }
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `> ${content.substring(0, 300)}${content.length > 300 ? '...' : ''}` }
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.id}|${payload.title}>*` }
+            },
+            {
+                type: 'section',
+                fields: [
+                    { type: 'mrkdwn', text: `*Status:*\n${payload.statusName || payload.status}` },
+                    { type: 'mrkdwn', text: `*Priority:*\n${payload.priorityName || payload.priority}` }
+                ]
             }
         ]
 
-        if (payload.sender || payload.userName) {
-            blocks.splice(1, 0, {
-                type: 'context',
-                elements: [{ type: 'mrkdwn', text: `*From:* ${payload.sender || payload.userName}` }]
+        if (payload.assigneeId) {
+            blocks[2].fields?.push({ type: 'mrkdwn', text: `*Assignee:*\n${payload.assigneeName || 'Unassigned'}` })
+        }
+    } else if (event === 'task.status_changed') {
+        text = `${emoji} Status Changed: ${payload.title}`
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} Status Changed`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+            },
+            {
+                type: 'section',
+                fields: [
+                    { type: 'mrkdwn', text: `*From:*\n${payload.oldStatus}` },
+                    { type: 'mrkdwn', text: `*To:*\n${payload.newStatus}` }
+                ]
+            }
+        ]
+    } else if (event === 'task.priority_changed') {
+        text = `${emoji} Priority Changed: ${payload.title}`
+        attachmentColor = payload.newPriorityColor || '#F59E0B'
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} Priority Changed`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+            },
+            {
+                type: 'section',
+                fields: [
+                    { type: 'mrkdwn', text: `*Old:*\n${payload.oldPriorityName || payload.oldPriority}` },
+                    { type: 'mrkdwn', text: `*New:*\n${payload.newPriorityName || payload.newPriority}` }
+                ]
+            }
+        ]
+    } else if (event === 'task.updated') {
+        text = `${emoji} Task Updated: ${payload.title}`
+        const changes = []
+        if (payload.updatedFields?.includes('title')) changes.push('Title')
+        if (payload.updatedFields?.includes('description')) changes.push('Description')
+        if (payload.updatedFields?.includes('status')) changes.push('Status')
+
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} Task Updated`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*Changed Fields:* ${changes.join(', ') || 'Details'}` }
+            }
+        ]
+        if (payload.statusName) {
+            blocks.push({
+                type: 'section',
+                fields: [{ type: 'mrkdwn', text: `*Current Status:*\n${payload.statusName}` }]
             })
         }
+    } else if (event === 'task.assigned') {
+        text = `${emoji} Assignee Changed: ${payload.title}`
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} Assignee Changed`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*Change:* ${payload.oldAssignee} ➡️ ${payload.newAssignee}` }
+            }
+        ]
+    } else if (event === 'task.due_date_changed') {
+        text = `${emoji} Due Date Updated: ${payload.title}`
+        const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
+        const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} Due Date Updated`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*Change:* ${oldDate} ➡️ ${newDate}` }
+            }
+        ]
+    } else if (event === 'subtask.created') {
+        text = `${emoji} Subtask Created: ${payload.title}`
+        attachmentColor = '#10B981'
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} Subtask Created`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*${payload.title}* in *${payload.taskTitle}*` }
+            },
+            {
+                type: 'section',
+                fields: [
+                    { type: 'mrkdwn', text: `*Status:*\n${payload.status}` },
+                    { type: 'mrkdwn', text: `*Priority:*\n${payload.priorityName || payload.priority}` }
+                ]
+            }
+        ]
+    } else if (event === 'subtask.updated') {
+        text = `${emoji} Subtask Updated: ${payload.title}`
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} Subtask Updated`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*${payload.title}* in *${payload.taskTitle}*` }
+            }
+        ]
+        if (payload.changes?.from) {
+            blocks.push({
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*Change:* ${payload.changes.from} ➡️ ${payload.changes.to}` }
+            })
+        }
+    } else if (event === 'subtask.completed') {
+        text = `${emoji} Subtask Completed: ${payload.title}`
+        attachmentColor = '#10B981'
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} Subtask Completed`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `✅ *${payload.title}* in *${payload.taskTitle}* was completed.` }
+            }
+        ]
     } else if (event === 'comment.added') {
         text = `${emoji} New Comment`
         attachmentColor = '#8B5CF6'

@@ -21,6 +21,11 @@ const EVENT_OPTIONS = [
     { id: 'task.due_date_changed', label: 'Zmieniono termin wykonania' },
     { id: 'task.deleted', label: 'Zadanie usunięte' },
 
+    // Subtasks
+    { id: 'subtask.created', label: 'Podzadanie utworzone' },
+    { id: 'subtask.updated', label: 'Podzadanie zaktualizowane' },
+    { id: 'subtask.completed', label: 'Podzadanie ukończone' },
+
     // Comments
     { id: 'comment.added', label: 'Dodano komentarz' },
 
@@ -28,15 +33,9 @@ const EVENT_OPTIONS = [
     { id: 'file.uploaded', label: 'Przesłano plik' },
     { id: 'file.deleted', label: 'Usunięto plik' },
 
-    // Members & Workspace
+    // Members
     { id: 'member.added', label: 'Dołączył nowy członek' },
     { id: 'member.removed', label: 'Usunięto członka' },
-    { id: 'workspace.updated', label: 'Zaktualizowano ustawienia workspace' },
-
-    // Messages
-    { id: 'message.sent', label: 'Wysłano wiadomość' },
-    { id: 'message.updated', label: 'Edytowano wiadomość' },
-    { id: 'message.deleted', label: 'Usunięto wiadomość' },
 ]
 
 export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
