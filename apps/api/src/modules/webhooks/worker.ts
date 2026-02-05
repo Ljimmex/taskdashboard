@@ -11,6 +11,7 @@ import { WebhookAdapters } from './adapters'
 export async function processWebhookQueue() {
     try {
         const now = new Date()
+        console.log(`[Webhook Worker] Processing queue at ${now.toISOString()}`)
 
         // 1. Find jobs that are due for processing
         // We use skipLocked to allow horizontal scaling of the API
@@ -25,13 +26,16 @@ export async function processWebhookQueue() {
             .limit(10) // Process in chunks
         // .forUpdate({ skipLocked: true }) // Drizzle ORM might need raw SQL for this if not supported yet
 
+        console.log(`[Webhook Worker] Found ${jobs.length} pending jobs`)
+
         if (jobs.length === 0) return
 
         for (const job of jobs) {
+            console.log(`[Webhook Worker] Delivering job ${job.id} for webhook ${job.webhookId}`)
             await deliverWebhook(job)
         }
     } catch (error) {
-        console.error('Webhook worker error:', error)
+        console.error('[Webhook Worker] Error:', error)
     }
 }
 
@@ -49,9 +53,12 @@ async function deliverWebhook(job: any) {
             .limit(1)
 
         if (!config || !config.isActive) {
+            console.log(`[Webhook Worker] Webhook ${job.webhookId} not found or inactive, removing job`)
             await db.delete(webhookQueue).where(eq(webhookQueue.id, job.id))
             return
         }
+
+        console.log(`[Webhook Worker] Preparing ${config.type} request for ${config.url}`)
 
         // 2. SELECT ADAPTER
         const type = (config.type || 'generic') as keyof typeof WebhookAdapters
@@ -60,6 +67,9 @@ async function deliverWebhook(job: any) {
         // 3. PREPARE REQUEST
         const request = await adapter(job, config)
         requestHeaders = request.headers
+
+        console.log(`[Webhook Worker] Sending to ${request.url}`)
+        console.log(`[Webhook Worker] Body: ${request.body}`)
 
         const response = await fetch(request.url, {
             method: request.method || 'POST',
@@ -72,16 +82,20 @@ async function deliverWebhook(job: any) {
         responseStatus = response.status
         responseBody = await response.text()
 
+        console.log(`[Webhook Worker] Response: ${responseStatus} - ${responseBody}`)
+
         if (response.ok) {
             // Success!
+            console.log(`[Webhook Worker] ✓ Delivery successful for job ${job.id}`)
             await finalizeJob(job.id, 'completed', responseStatus, responseBody, requestHeaders, startTime)
             // Reset failure count on webhook config
             await db.update(webhooks).set({ failureCount: 0 }).where(eq(webhooks.id, config.id))
         } else {
-            throw new Error(`Endpoint returned status ${response.status}`)
+            throw new Error(`Endpoint returned status ${response.status}: ${responseBody}`)
         }
 
     } catch (error: any) {
+        console.error(`[Webhook Worker] ✗ Delivery failed for job ${job.id}:`, error.message)
         // Failure! Schedule retry or fail permanently
         const maxRetries = 5
         const attemptCount = job.attemptCount + 1
@@ -149,14 +163,24 @@ async function finalizeJob(jobId: string, status: string, responseStatus: number
 
 /**
  * Starts the worker loop
+ * Only runs in production to avoid overwhelming shared database connections
  */
-export function startWebhookWorker(intervalMs = 30000) {
-    console.log('🚀 Webhook worker started')
+export function startWebhookWorker(intervalMs = 60000) {
+    // Only run in production to avoid DB connection issues in development
+    if (process.env.NODE_ENV !== 'production') {
+        console.log('⚠️ Webhook worker disabled in development mode')
+        return
+    }
 
-    // Run immediately then on interval
-    processWebhookQueue()
+    console.log('🚀 Webhook worker started (interval: ' + (intervalMs / 1000) + 's)')
 
-    setInterval(() => {
+    // Delay first run to allow DB pool to initialize
+    setTimeout(() => {
         processWebhookQueue()
-    }, intervalMs)
+
+        setInterval(() => {
+            processWebhookQueue()
+        }, intervalMs)
+    }, 5000)
 }
+

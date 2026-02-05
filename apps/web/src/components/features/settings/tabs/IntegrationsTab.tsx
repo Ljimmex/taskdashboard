@@ -50,7 +50,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
         queryKey: ['webhooks', workspace.id],
         queryFn: async () => {
             if (!userId) return []
-            const res = await apiFetchJson<{ data: Webhook[] }>(`/ api / webhooks ? workspaceId = ${workspace.id} `, {
+            const res = await apiFetchJson<{ data: Webhook[] }>(`/api/webhooks?workspaceId=${workspace.id}`, {
                 headers: { 'x-user-id': userId }
             })
             return res.data || []

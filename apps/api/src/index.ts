@@ -27,12 +27,10 @@ import filesRoutes from './modules/files/routes'
 import foldersRoutes from './modules/folders/routes'
 import conversationsRoutes from './modules/conversations/routes'
 import { webhooksRoutes } from './modules/webhooks/routes'
-// @ts-expect-error -- Temporarily disabled due to connection issues (see line 34)
 import { startWebhookWorker } from './modules/webhooks/worker'
 
-// Start async worker
-// TEMPORARILY DISABLED: Worker has postgres connection issues
-// startWebhookWorker()
+// Start async worker for processing webhook queue
+startWebhookWorker()
 
 // Create OpenAPI Hono app
 const app = new OpenAPIHono()
