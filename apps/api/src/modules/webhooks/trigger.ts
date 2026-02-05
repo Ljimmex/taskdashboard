@@ -1,6 +1,7 @@
 import { db } from '../../db'
 import { webhooks, webhookQueue } from '../../db/schema'
 import { sql } from 'drizzle-orm'
+import { processWebhookQueue } from './worker'
 
 /**
  * Enqueues a webhook event for all active subscribers in a workspace.
@@ -34,8 +35,11 @@ export async function triggerWebhook(event: string, payload: any, workspaceId: s
 
         if (jobs.length > 0) {
             await db.insert(webhookQueue).values(jobs)
+            // Process immediately instead of waiting for worker interval
+            processWebhookQueue()
         }
     } catch (error) {
         console.error(`Failed to trigger webhook ${event}:`, error)
     }
 }
+

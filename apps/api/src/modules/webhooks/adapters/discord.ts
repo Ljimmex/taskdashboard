@@ -35,6 +35,15 @@ export async function prepareDiscordRequest(job: any, config: any) {
         embed.description = `User ${payload.userId || 'unknown'} has ${event.split('.')[1]}ed the workspace.`
     }
 
+    // Debug: Log silentMode value
+    console.log(`[Discord Adapter] silentMode = ${config.silentMode} (type: ${typeof config.silentMode})`)
+
+    // Build the body - only add flags if silentMode is explicitly true
+    const body: any = { embeds: [embed] }
+    if (config.silentMode === true) {
+        body.flags = 4096 // SUPPRESS_NOTIFICATIONS flag
+    }
+
     return {
         url: config.url,
         method: 'POST',
@@ -42,9 +51,7 @@ export async function prepareDiscordRequest(job: any, config: any) {
             'Content-Type': 'application/json',
             'User-Agent': 'TaskDashboard-Webhook-Worker/1.0'
         },
-        body: JSON.stringify({
-            embeds: [embed],
-            flags: config.silentMode ? 4096 : undefined
-        })
+        body: JSON.stringify(body)
     }
 }
+

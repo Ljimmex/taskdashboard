@@ -1,10 +1,10 @@
-
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { webhooks, webhookDeliveries, webhookQueue } from '../../db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import { processWebhookQueue } from './worker'
 
 
 const webhooksRoutes = new Hono()
@@ -19,6 +19,7 @@ const createWebhookSchema = z.object({
     type: z.enum(['generic', 'discord', 'slack']).default('generic'),
     events: z.array(z.string()).default([]),
     isActive: z.boolean().default(true),
+    silentMode: z.boolean().default(false),
     description: z.string().optional(),
 })
 
@@ -219,6 +220,9 @@ webhooksRoutes.post('/:id/test', async (c) => {
             status: 'pending',
             nextRunAt: new Date()
         })
+
+        // Process immediately instead of waiting for worker interval
+        processWebhookQueue()
 
         return c.json({ success: true, message: 'Test delivery enqueued' })
     } catch (error) {
