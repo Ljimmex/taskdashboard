@@ -60,24 +60,45 @@ export async function prepareDiscordRequest(job: any, config: any) {
         embed.description = payload.title ? `**${payload.title}**` : undefined
         embed.color = PRIORITY_COLORS[payload.priority] || BRAND_COLOR
 
-        const fields = []
+        const fields: any[] = []
 
-        if (payload.status) {
+        if (event === 'task.status_changed') {
+            fields.push({ name: '🔄 Status Change', value: `\`${payload.oldStatus}\` ➡️ \`${payload.newStatus}\``, inline: false })
+        } else if (event === 'task.priority_changed') {
+            fields.push({ name: '⚡ Priority Change', value: `\`${payload.oldPriority}\` ➡️ \`${payload.newPriority}\``, inline: false })
+        } else if (event === 'task.due_date_changed') {
+            const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
+            const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
+            fields.push({ name: '📅 Due Date Change', value: `${oldDate} ➡️ ${newDate}`, inline: false })
+        } else if (event === 'task.assigned') {
+            fields.push({ name: '👤 Assignee Change', value: 'User assigned', inline: true }) // We might not have names for old IDs easily unless passed, assuming generic for now or updated state
+        } else if (event === 'task.updated' && payload.updatedFields) {
+            const changed = payload.updatedFields.map((f: string) => f.charAt(0).toUpperCase() + f.slice(1)).join(', ')
+            fields.push({ name: '✏️ Fields Updated', value: changed, inline: false })
+
+            if (payload.updatedFields.includes('title')) {
+                fields.push({ name: 'Old Title', value: payload.oldTitle, inline: true })
+                fields.push({ name: 'New Title', value: payload.title, inline: true })
+            }
+        }
+
+        // Always show context fields if they exist and we aren't duplicating info
+        if (payload.status && event !== 'task.status_changed') {
             fields.push({ name: '📊 Status', value: `\`${payload.status}\``, inline: true })
         }
-        if (payload.priority) {
+        if (payload.priority && event !== 'task.priority_changed') {
             const priorityEmoji = payload.priority === 'urgent' ? '🔴' :
                 payload.priority === 'high' ? '🟠' :
                     payload.priority === 'medium' ? '🟡' : '🟢'
             fields.push({ name: '⚡ Priority', value: `${priorityEmoji} ${payload.priority}`, inline: true })
         }
-        if (payload.assignee) {
+        if (payload.assignee && event !== 'task.assigned') {
             fields.push({ name: '👤 Assignee', value: payload.assignee, inline: true })
         }
-        if (payload.dueDate) {
+        if (payload.dueDate && event !== 'task.due_date_changed') {
             fields.push({ name: '📅 Due Date', value: new Date(payload.dueDate).toLocaleDateString('pl-PL'), inline: true })
         }
-        if (payload.description) {
+        if (payload.description && event === 'task.created') {
             fields.push({ name: '📝 Description', value: payload.description.substring(0, 200) + (payload.description.length > 200 ? '...' : ''), inline: false })
         }
 

@@ -78,19 +78,38 @@ export async function prepareSlackRequest(job: any, config: any) {
         }
 
         const fields = []
-        if (payload.status) {
+
+        if (event === 'task.status_changed') {
+            fields.push({ type: 'mrkdwn', text: `*🔄 Status Change:*\n\`${payload.oldStatus}\` ➡️ \`${payload.newStatus}\`` })
+        } else if (event === 'task.priority_changed') {
+            fields.push({ type: 'mrkdwn', text: `*⚡ Priority Change:*\n\`${payload.oldPriority}\` ➡️ \`${payload.newPriority}\`` })
+        } else if (event === 'task.due_date_changed') {
+            const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
+            const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
+            fields.push({ type: 'mrkdwn', text: `*📅 Due Date Change:*\n${oldDate} ➡️ ${newDate}` })
+        } else if (event === 'task.updated' && payload.updatedFields) {
+            const changed = payload.updatedFields.map((f: string) => f.charAt(0).toUpperCase() + f.slice(1)).join(', ')
+            fields.push({ type: 'mrkdwn', text: `*✏️ Fields Updated:*\n${changed}` })
+
+            if (payload.updatedFields.includes('title')) {
+                fields.push({ type: 'mrkdwn', text: `*Old Title:*\n${payload.oldTitle}` })
+                fields.push({ type: 'mrkdwn', text: `*New Title:*\n${payload.title}` })
+            }
+        }
+
+        if (payload.status && event !== 'task.status_changed') {
             fields.push({ type: 'mrkdwn', text: `*📊 Status:*\n\`${payload.status}\`` })
         }
-        if (payload.priority) {
+        if (payload.priority && event !== 'task.priority_changed') {
             const priorityEmoji = payload.priority === 'urgent' ? '🔴' :
                 payload.priority === 'high' ? '🟠' :
                     payload.priority === 'medium' ? '🟡' : '🟢'
             fields.push({ type: 'mrkdwn', text: `*⚡ Priority:*\n${priorityEmoji} ${payload.priority}` })
         }
-        if (payload.assignee) {
+        if (payload.assignee && event !== 'task.assigned') {
             fields.push({ type: 'mrkdwn', text: `*👤 Assignee:*\n${payload.assignee}` })
         }
-        if (payload.dueDate) {
+        if (payload.dueDate && event !== 'task.due_date_changed') {
             fields.push({ type: 'mrkdwn', text: `*📅 Due Date:*\n${new Date(payload.dueDate).toLocaleDateString('pl-PL')}` })
         }
 
@@ -98,7 +117,7 @@ export async function prepareSlackRequest(job: any, config: any) {
             blocks.push({ type: 'section', fields })
         }
 
-        if (payload.description) {
+        if (payload.description && event === 'task.created') {
             blocks.push({
                 type: 'section',
                 text: { type: 'mrkdwn', text: `*📝 Description:*\n${payload.description.substring(0, 200)}${payload.description.length > 200 ? '...' : ''}` }

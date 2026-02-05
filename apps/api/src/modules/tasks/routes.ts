@@ -502,16 +502,65 @@ tasksRoutes.patch('/:id', async (c) => {
         // TRIGGER WEBHOOKS
         const workspaceId = await getWorkspaceIdFromProject(updated.projectId)
         if (workspaceId) {
-            triggerWebhook('task.updated', updated, workspaceId)
-
+            // Status Change
             if (body.status !== undefined && body.status !== task.status) {
-                triggerWebhook('task.status_changed', { taskId: id, oldStatus: task.status, newStatus: updated.status, task: updated }, workspaceId)
+                triggerWebhook('task.status_changed', {
+                    taskId: id,
+                    oldStatus: task.status,
+                    newStatus: updated.status,
+                    task: updated,
+                    title: updated.title
+                }, workspaceId)
             }
+
+            // Assignee Change
             if (body.assigneeId !== undefined && body.assigneeId !== task.assigneeId) {
-                triggerWebhook('task.assigned', { taskId: id, oldAssigneeId: task.assigneeId, newAssigneeId: updated.assigneeId, task: updated }, workspaceId)
+                triggerWebhook('task.assigned', {
+                    taskId: id,
+                    oldAssigneeId: task.assigneeId,
+                    newAssigneeId: updated.assigneeId,
+                    task: updated,
+                    title: updated.title
+                }, workspaceId)
             }
+
+            // Due Date Change
             if (body.dueDate !== undefined && body.dueDate?.toString() !== task.dueDate?.toString()) {
-                triggerWebhook('task.due_date_changed', { taskId: id, oldDueDate: task.dueDate, newDueDate: updated.dueDate, task: updated }, workspaceId)
+                triggerWebhook('task.due_date_changed', {
+                    taskId: id,
+                    oldDueDate: task.dueDate,
+                    newDueDate: updated.dueDate,
+                    task: updated,
+                    title: updated.title
+                }, workspaceId)
+            }
+
+            // Priority Change (treating as specific event if we want, or part of updated)
+            if (body.priority !== undefined && body.priority !== task.priority) {
+                triggerWebhook('task.priority_changed', {
+                    taskId: id,
+                    oldPriority: task.priority,
+                    newPriority: updated.priority,
+                    task: updated,
+                    title: updated.title
+                }, workspaceId)
+            }
+
+            // Check for explicit "Task Updated" fields (Title, Description)
+            // Only trigger task.updated if these specific fields changed
+            if ((body.title !== undefined && body.title !== task.title) ||
+                (body.description !== undefined && body.description !== task.description)) {
+
+                const updatedFields = []
+                if (body.title !== undefined && body.title !== task.title) updatedFields.push('title')
+                if (body.description !== undefined && body.description !== task.description) updatedFields.push('description')
+
+                triggerWebhook('task.updated', {
+                    ...updated,
+                    updatedFields,
+                    oldTitle: task.title,
+                    oldDescription: task.description
+                }, workspaceId)
             }
         }
 
