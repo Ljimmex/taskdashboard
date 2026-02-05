@@ -21,6 +21,13 @@ export async function prepareSlackRequest(job: any, config: any) {
         'webhook.test': '🧪'
     }
 
+    // Helper to safely parse color
+    const parseColor = (colorStr?: string): string => {
+        if (!colorStr) return '#F59E0B' // Default brand color
+        // Validate hex
+        return /^#[0-9A-F]{6}$/i.test(colorStr) ? colorStr : '#F59E0B'
+    }
+
     const emoji = EVENT_EMOJIS[event] || '📢'
     let text = ''
     let blocks: any[] = []
@@ -48,8 +55,8 @@ export async function prepareSlackRequest(job: any, config: any) {
             }
         ]
     } else if (event === 'task.created') {
-        text = `${emoji} Task Created: ${payload.title}`
-        attachmentColor = payload.priorityColor || '#F59E0B'
+        text = `${emoji} Task Created: ${payload.title || 'Unknown Task'}`
+        attachmentColor = parseColor(payload.priorityColor)
 
         blocks = [
             {
@@ -58,13 +65,13 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.id}|${payload.title}>*` }
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.id}|${payload.title || 'Unknown Task'}>*` }
             },
             {
                 type: 'section',
                 fields: [
-                    { type: 'mrkdwn', text: `*Status:*\n${payload.statusName || payload.status}` },
-                    { type: 'mrkdwn', text: `*Priority:*\n${payload.priorityName || payload.priority}` }
+                    { type: 'mrkdwn', text: `*Status:*\n${payload.statusName || payload.status || 'None'}` },
+                    { type: 'mrkdwn', text: `*Priority:*\n${payload.priorityName || payload.priority || 'None'}` }
                 ]
             }
         ]
@@ -73,7 +80,7 @@ export async function prepareSlackRequest(job: any, config: any) {
             blocks[2].fields?.push({ type: 'mrkdwn', text: `*Assignee:*\n${payload.assigneeName || 'Unassigned'}` })
         }
     } else if (event === 'task.status_changed') {
-        text = `${emoji} Status Changed: ${payload.title}`
+        text = `${emoji} Status Changed: ${payload.title || 'Unknown Task'}`
         blocks = [
             {
                 type: 'header',
@@ -81,19 +88,19 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title || 'Unknown Task'}>*` }
             },
             {
                 type: 'section',
                 fields: [
-                    { type: 'mrkdwn', text: `*From:*\n${payload.oldStatus}` },
-                    { type: 'mrkdwn', text: `*To:*\n${payload.newStatus}` }
+                    { type: 'mrkdwn', text: `*From:*\n${payload.oldStatus || 'None'}` },
+                    { type: 'mrkdwn', text: `*To:*\n${payload.newStatus || 'None'}` }
                 ]
             }
         ]
     } else if (event === 'task.priority_changed') {
-        text = `${emoji} Priority Changed: ${payload.title}`
-        attachmentColor = payload.newPriorityColor || '#F59E0B'
+        text = `${emoji} Priority Changed: ${payload.title || 'Unknown Task'}`
+        attachmentColor = parseColor(payload.newPriorityColor)
         blocks = [
             {
                 type: 'header',
@@ -101,18 +108,18 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title || 'Unknown Task'}>*` }
             },
             {
                 type: 'section',
                 fields: [
-                    { type: 'mrkdwn', text: `*Old:*\n${payload.oldPriorityName || payload.oldPriority}` },
-                    { type: 'mrkdwn', text: `*New:*\n${payload.newPriorityName || payload.newPriority}` }
+                    { type: 'mrkdwn', text: `*Old:*\n${payload.oldPriorityName || payload.oldPriority || 'None'}` },
+                    { type: 'mrkdwn', text: `*New:*\n${payload.newPriorityName || payload.newPriority || 'None'}` }
                 ]
             }
         ]
     } else if (event === 'task.updated') {
-        text = `${emoji} Task Updated: ${payload.title}`
+        text = `${emoji} Task Updated: ${payload.title || 'Unknown Task'}`
         const changes = []
         if (payload.updatedFields?.includes('title')) changes.push('Title')
         if (payload.updatedFields?.includes('description')) changes.push('Description')
@@ -125,7 +132,7 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title || 'Unknown Task'}>*` }
             },
             {
                 type: 'section',
@@ -139,7 +146,7 @@ export async function prepareSlackRequest(job: any, config: any) {
             })
         }
     } else if (event === 'task.assigned') {
-        text = `${emoji} Assignee Changed: ${payload.title}`
+        text = `${emoji} Assignee Changed: ${payload.title || 'Unknown Task'}`
         blocks = [
             {
                 type: 'header',
@@ -147,15 +154,15 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title || 'Unknown Task'}>*` }
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*Change:* ${payload.oldAssignee} ➡️ ${payload.newAssignee}` }
+                text: { type: 'mrkdwn', text: `*Change:* ${payload.oldAssignee || 'Unassigned'} ➡️ ${payload.newAssignee || 'Unassigned'}` }
             }
         ]
     } else if (event === 'task.due_date_changed') {
-        text = `${emoji} Due Date Updated: ${payload.title}`
+        text = `${emoji} Due Date Updated: ${payload.title || 'Unknown Task'}`
         const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
         const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
         blocks = [
@@ -165,7 +172,7 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title}>*` }
+                text: { type: 'mrkdwn', text: `*<${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}|${payload.title || 'Unknown Task'}>*` }
             },
             {
                 type: 'section',
@@ -173,8 +180,8 @@ export async function prepareSlackRequest(job: any, config: any) {
             }
         ]
     } else if (event === 'subtask.created') {
-        text = `${emoji} Subtask Created: ${payload.title}`
-        attachmentColor = '#10B981'
+        text = `${emoji} Subtask Created: ${payload.title || 'Unknown Subtask'}`
+        attachmentColor = parseColor(payload.priorityColor) || '#10B981'
         blocks = [
             {
                 type: 'header',
@@ -182,18 +189,18 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*${payload.title}* in *${payload.taskTitle}*` }
+                text: { type: 'mrkdwn', text: `*${payload.title || 'Unknown Subtask'}* in *${payload.taskTitle || 'Unknown Task'}*` }
             },
             {
                 type: 'section',
                 fields: [
-                    { type: 'mrkdwn', text: `*Status:*\n${payload.status}` },
-                    { type: 'mrkdwn', text: `*Priority:*\n${payload.priorityName || payload.priority}` }
+                    { type: 'mrkdwn', text: `*Status:*\n${payload.status || 'todo'}` },
+                    { type: 'mrkdwn', text: `*Priority:*\n${payload.priorityName || payload.priority || 'None'}` }
                 ]
             }
         ]
     } else if (event === 'subtask.updated') {
-        text = `${emoji} Subtask Updated: ${payload.title}`
+        text = `${emoji} Subtask Updated: ${payload.title || 'Unknown Subtask'}`
         blocks = [
             {
                 type: 'header',
@@ -201,7 +208,7 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*${payload.title}* in *${payload.taskTitle}*` }
+                text: { type: 'mrkdwn', text: `*${payload.title || 'Unknown Subtask'}* in *${payload.taskTitle || 'Unknown Task'}*` }
             }
         ]
         if (payload.changes?.from) {
@@ -209,9 +216,14 @@ export async function prepareSlackRequest(job: any, config: any) {
                 type: 'section',
                 text: { type: 'mrkdwn', text: `*Change:* ${payload.changes.from} ➡️ ${payload.changes.to}` }
             })
+        } else {
+            blocks.push({
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*Details updated*` }
+            })
         }
     } else if (event === 'subtask.completed') {
-        text = `${emoji} Subtask Completed: ${payload.title}`
+        text = `${emoji} Subtask Completed: ${payload.title || 'Unknown Subtask'}`
         attachmentColor = '#10B981'
         blocks = [
             {
@@ -220,7 +232,7 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `✅ *${payload.title}* in *${payload.taskTitle}* was completed.` }
+                text: { type: 'mrkdwn', text: `✅ *${payload.title || 'Unknown Subtask'}* in *${payload.taskTitle || 'Unknown Task'}* was completed.` }
             }
         ]
     } else if (event === 'comment.added') {
@@ -241,7 +253,7 @@ export async function prepareSlackRequest(job: any, config: any) {
         if (payload.taskTitle) {
             blocks.push({
                 type: 'context',
-                elements: [{ type: 'mrkdwn', text: `*On Task:* ${payload.taskTitle}` }]
+                elements: [{ type: 'mrkdwn', text: `*On Task:* ${payload.taskTitle || 'Unknown Task'}` }]
             })
         }
     } else if (event === 'file.uploaded') {

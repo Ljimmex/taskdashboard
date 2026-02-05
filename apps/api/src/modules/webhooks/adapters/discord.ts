@@ -42,6 +42,17 @@ export async function prepareDiscordRequest(job: any, config: any) {
         }
     }
 
+    // Helper to safely parse color
+    const parseColor = (colorStr?: string): number | undefined => {
+        if (!colorStr) return undefined
+        try {
+            const parsed = parseInt(colorStr.replace('#', ''), 16)
+            return isNaN(parsed) ? undefined : parsed
+        } catch {
+            return undefined
+        }
+    }
+
     // Format based on event type
     if (event === 'webhook.test') {
         embed.title = `${emoji} Test Webhook`
@@ -56,14 +67,12 @@ export async function prepareDiscordRequest(job: any, config: any) {
         embed.description = `**${payload.title}**`
         embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.id}`
 
-        // Use priority color from payload if available (strip # and parse hex)
-        if (payload.priorityColor) {
-            embed.color = parseInt(payload.priorityColor.replace('#', ''), 16)
-        }
+        const priorityColor = parseColor(payload.priorityColor)
+        if (priorityColor) embed.color = priorityColor
 
         embed.fields = [
-            { name: 'Status', value: payload.statusName || payload.status, inline: true },
-            { name: 'Priority', value: payload.priorityName || payload.priority, inline: true }
+            { name: 'Status', value: payload.statusName || payload.status || 'Unknown', inline: true },
+            { name: 'Priority', value: payload.priorityName || payload.priority || 'None', inline: true }
         ]
 
         if (payload.assigneeId) {
@@ -74,13 +83,12 @@ export async function prepareDiscordRequest(job: any, config: any) {
         embed.description = `Priority for **${payload.title}** was updated.`
         embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
 
-        if (payload.newPriorityColor) {
-            embed.color = parseInt(payload.newPriorityColor.replace('#', ''), 16)
-        }
+        const newPriorityColor = parseColor(payload.newPriorityColor)
+        if (newPriorityColor) embed.color = newPriorityColor
 
         embed.fields = [
-            { name: 'Old Priority', value: payload.oldPriorityName || payload.oldPriority, inline: true },
-            { name: 'New Priority', value: payload.newPriorityName || payload.newPriority, inline: true }
+            { name: 'Old Priority', value: payload.oldPriorityName || payload.oldPriority || 'None', inline: true },
+            { name: 'New Priority', value: payload.newPriorityName || payload.newPriority || 'None', inline: true }
         ]
     } else if (event === 'task.status_changed') {
         embed.title = `${emoji} Status Changed`
@@ -120,16 +128,23 @@ export async function prepareDiscordRequest(job: any, config: any) {
     } else if (event === 'subtask.created') {
         embed.title = `${emoji} Subtask Created`
         embed.description = `**${payload.title}** added to **${payload.taskTitle}**`
-        embed.color = BRAND_COLOR
+
+        const priorityColor = parseColor(payload.priorityColor)
+        if (priorityColor) embed.color = priorityColor
+        else embed.color = BRAND_COLOR
+
         embed.fields = [
-            { name: 'Status', value: payload.status, inline: true },
-            { name: 'Priority', value: payload.priorityName || payload.priority, inline: true }
+            { name: 'Status', value: payload.status || 'todo', inline: true },
+            { name: 'Priority', value: payload.priorityName || payload.priority || 'None', inline: true }
         ]
     } else if (event === 'subtask.updated') {
         embed.title = `${emoji} Subtask Updated`
         embed.description = `Subtask **${payload.title}** in **${payload.taskTitle}** was updated.`
         if (payload.changes?.from && payload.changes?.to) {
             embed.fields = [{ name: 'Change', value: `${payload.changes.from} ➡️ ${payload.changes.to}`, inline: false }]
+        } else {
+            // Fallback if no specific change text (should prevent empty fields error if fields were added without value)
+            embed.description = `Subtask **${payload.title}** in **${payload.taskTitle}** details updated.`
         }
     } else if (event === 'subtask.completed') {
         embed.title = `${emoji} Subtask Completed`

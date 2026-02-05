@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
-import { X, AlertCircle, Check } from 'lucide-react'
+import { X, AlertCircle, Check, Webhook } from 'lucide-react'
 
 interface WebhookModalProps {
     isOpen: boolean
@@ -162,33 +162,40 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                     {/* Platform Selector */}
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">Platforma</label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-3">
                             <button
                                 onClick={() => setType('discord')}
-                                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${type === 'discord'
-                                    ? 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2]'
-                                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${type === 'discord'
+                                    ? 'bg-[#5865F2]/20 border-[#5865F2] text-white ring-1 ring-[#5865F2]/50'
+                                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600 hover:bg-gray-800/50'
                                     }`}
                             >
-                                Discord
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mb-2">
+                                    <path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c.04.05.08.1.12.15c1.6 1.18 3.15 1.91 4.71 2.2c.03 0 .07-.01.08-.04c.36-.49.68-1.02.96-1.57c.02-.05-.03-.11-.08-.13a11.48 11.48 0 0 1-1.6-.77c-.06-.03-.06-.11 0-.16c.32-.23.63-.49.92-.75c.05-.05.12-.05.15 0c3.23 1.49 6.7 1.49 9.92 0c.04-.01.1 0 .15.06c.29.26.6.51.92.75c.06.05.06.13 0 .16a11.48 11.48 0 0 1-1.6.77c-.05.02-.1.08-.08.13c.27.55.6 1.08.96 1.57c.01.03.05.05.08.04c1.56-.29 3.11-1.02 4.71-2.2c.04-.05.08-.1.12-.15c.42-4.35-.61-8.31-3.1-11.95c-.01-.01-.02-.02-.03-.02ZM8.5 13.5c-.9 0-1.62-.83-1.62-1.83s.71-1.83 1.62-1.83s1.62.83 1.62 1.83s-.71 1.83-1.62 1.83ZM15.5 13.5c-.9 0-1.62-.83-1.62-1.83s.71-1.83 1.62-1.83s1.62.83 1.62 1.83s-.71 1.83-1.62 1.83Z" fill="#5865F2" />
+                                </svg>
+                                <span className="text-sm font-semibold">Discord</span>
                             </button>
                             <button
                                 onClick={() => setType('slack')}
-                                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${type === 'slack'
-                                    ? 'bg-[#4A154B]/20 border-[#4A154B] text-[#E01E5A]' // Slack colorsish
-                                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${type === 'slack'
+                                    ? 'bg-[#4A154B]/20 border-[#4A154B] text-white ring-1 ring-[#4A154B]/50'
+                                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600 hover:bg-gray-800/50'
                                     }`}
                             >
-                                Slack
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mb-2">
+                                    <path d="M5.042 15.123a2.52 2.52 0 0 1-2.52 2.523 2.52 2.52 0 0 1-2.522-2.523 2.52 2.52 0 0 1 2.522-2.52h2.52v2.52Zm1.261 0a2.52 2.52 0 0 1 2.521-2.52 2.52 2.52 0 0 1 2.521 2.52v6.307a2.52 2.52 0 0 1-2.52 2.523 2.52 2.52 0 0 1-2.522-2.523v-6.307Zm3.782-5.042a2.52 2.52 0 0 1 2.52-2.522 2.52 2.52 0 0 1 2.522 2.522 2.52 2.52 0 0 1-2.522 2.52h-2.52v-2.52ZM8.823 8.82a2.52 2.52 0 0 1-2.52 2.522 2.52 2.52 0 0 1-2.522-2.522V2.513a2.52 2.52 0 0 1 2.522-2.523 2.52 2.52 0 0 1 2.52 2.523V8.82Zm6.307 2.52a2.52 2.52 0 0 1 2.52 2.523 2.52 2.52 0 0 1 2.522-2.523 2.52 2.52 0 0 1-2.522 2.52h-2.52v-2.52Zm-1.261 0a2.52 2.52 0 0 1-2.522 2.52 2.52 2.52 0 0 1-2.52-2.52V2.512a2.52 2.52 0 0 1 2.52-2.523 2.52 2.52 0 0 1 2.522 2.523v6.308Zm3.782 5.042a2.52 2.52 0 0 1-2.52 2.522 2.52 2.52 0 0 1-2.522-2.522 2.52 2.52 0 0 1 2.522-2.52h2.52v2.52Zm1.26 1.262a2.52 2.52 0 0 1 2.523 2.522 2.52 2.52 0 0 1-2.523 2.522h-6.306a2.52 2.52 0 0 1-2.522-2.522 2.52 2.52 0 0 1 2.522-2.522h6.307Z" fill="#E01E5A" />
+                                </svg>
+                                <span className="text-sm font-semibold">Slack</span>
                             </button>
                             <button
                                 onClick={() => setType('generic')}
-                                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${type === 'generic'
-                                    ? 'bg-amber-500/20 border-amber-500 text-amber-500'
-                                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${type === 'generic'
+                                    ? 'bg-amber-500/20 border-amber-500 text-amber-500 ring-1 ring-amber-500/50'
+                                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600 hover:bg-gray-800/50'
                                     }`}
                             >
-                                Inny (Generic)
+                                <Webhook className="w-8 h-8 mb-2" />
+                                <span className="text-sm font-semibold">Inny</span>
                             </button>
                         </div>
                     </div>

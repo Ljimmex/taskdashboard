@@ -87,7 +87,7 @@ async function deliverWebhook(job: any) {
         if (response.ok) {
             // Success!
             console.log(`[Webhook Worker] ✓ Delivery successful for job ${job.id}`)
-            await finalizeJob(job.id, 'completed', responseStatus, responseBody, requestHeaders, startTime)
+            await finalizeJob(job.id, 'completed', responseStatus, responseBody || 'OK (No Content)', requestHeaders, startTime)
             // Reset failure count on webhook config
             await db.update(webhooks).set({ failureCount: 0 }).where(eq(webhooks.id, config.id))
         } else {
