@@ -114,9 +114,10 @@ interface TeamTableProps {
     onViewMember: (member: TeamMember) => void
     onEditTeam?: (team: Team) => void
     onDeleteTeam?: (team: Team) => void
+    onDeleteMember?: (member: TeamMember) => void
 }
 
-export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember, onEditTeam, onDeleteTeam }: TeamTableProps) {
+export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember, onEditTeam, onDeleteTeam, onDeleteMember }: TeamTableProps) {
     const [isExpanded, setIsExpanded] = useState(true)
     const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -414,6 +415,12 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                                                 <div className="hidden group-hover/btn:block"><PencilIconGold /></div>
                                                             </button>
                                                             <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    if (confirm(`Are you sure you want to remove ${member.name} from this team?`)) {
+                                                                        onDeleteMember?.(member)
+                                                                    }
+                                                                }}
                                                                 className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
                                                                 title="Delete Member"
                                                             >

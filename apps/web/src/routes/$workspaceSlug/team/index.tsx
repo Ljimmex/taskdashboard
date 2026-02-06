@@ -334,13 +334,19 @@ export default function TeamPage() {
         })
     }
 
-    const handleDeleteMember = async (id: string, _teamId?: string) => {
-        const teamName = editingSession?.teamName
-        const team = teams.find(t => t.name === teamName)
-        if (!team) return
+    const handleDeleteMember = async (id: string, teamIdArg?: string) => {
+        let teamId = teamIdArg
+
+        if (!teamId) {
+            const teamName = editingSession?.teamName
+            const team = teams.find(t => t.name === teamName)
+            teamId = team?.id
+        }
+
+        if (!teamId) return
 
         deleteMemberMutation.mutate({
-            teamId: team.id,
+            teamId: teamId,
             userId: id
         })
     }
@@ -410,6 +416,7 @@ export default function TeamPage() {
                         onViewMember={(member) => setViewingSession({ member, teamName: team.name })}
                         onEditTeam={handleEditTeam}
                         onDeleteTeam={handleDeleteTeam}
+                        onDeleteMember={(member) => handleDeleteMember(member.id, team.id)}
                     />
                 ))}
             </div>

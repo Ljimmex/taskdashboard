@@ -182,7 +182,10 @@ function InvitePage() {
                             New to Zadano?{' '}
                             <Link
                                 to="/register"
-                                search={{ workspace: workspaceSlug }}
+                                search={{
+                                    workspace: workspaceSlug,
+                                    invite: inviteId
+                                }}
                                 className="text-amber-500 hover:underline"
                             >
                                 Create an account

@@ -4,6 +4,13 @@ import { DueDatePicker } from '../tasks/components/DueDatePicker'
 import { useSession } from '@/lib/auth'
 import { usePanelStore } from '@/lib/panelStore'
 import { apiFetch, apiFetchJson } from '@/lib/api'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 interface Team {
     id: string
@@ -55,7 +62,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
     const [description, setDescription] = useState('')
     const [color, setColor] = useState(PROJECT_COLORS[0])
     const [teamId, setTeamId] = useState<string>('')
-    const [industryTemplateId, setIndustryTemplateId] = useState<string>('')
+    const [industryTemplateId, setIndustryTemplateId] = useState<string>('no_template')
     const [startDate, setStartDate] = useState('')
     const [deadline, setDeadline] = useState('')
     const [teams, setTeams] = useState<Team[]>([])
@@ -69,48 +76,72 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
         return () => setIsPanelOpen(false)
     }, [isOpen, setIsPanelOpen])
 
-    // Fetch teams and templates
+    // Load Data
     useEffect(() => {
-        if (isOpen) {
-            // Fetch teams (need workspaceId)
-            const teamsUrl = workspaceId ? `/api/teams?workspaceId=${workspaceId}` : '/api/teams'
-            apiFetchJson<any>(teamsUrl, {
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
-                .then((data) => {
-                    // API returns { data: [...] }
-                    if (data.data && Array.isArray(data.data)) {
-                        setTeams(data.data)
-                        if (data.data.length > 0 && !teamId) {
-                            setTeamId(data.data[0].id)
-                        }
-                    }
-                })
-                .catch(console.error)
+        if (!isOpen) return
 
-            // Fetch industry templates
-            apiFetchJson<any>('/api/industry-templates', {
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
-                .then((data) => {
-                    if (data.success && data.data) {
-                        setTemplates(data.data)
-                    }
-                })
-                .catch(console.error)
+        let mounted = true
 
-            // Fetch workspace to get default industry template
-            if (workspaceId) {
-                apiFetchJson<any>(`/api/workspaces/${workspaceId}`)
-                    .then((workspace) => {
-                        if (workspace?.defaultIndustryTemplateId) {
-                            setIndustryTemplateId(workspace.defaultIndustryTemplateId)
-                        }
+        const loadData = async () => {
+            // Reset fields
+            setName('')
+            setDescription('')
+            setStartDate('')
+            setDeadline('')
+            setColor(PROJECT_COLORS[0])
+            setTeamId('')
+            // Don't reset industryTemplateId immediately to avoid flash if we fetch a default
+
+            try {
+                // 1. Fetch Templates & Teams in parallel
+                const [templatesRes, teamsRes] = await Promise.all([
+                    apiFetchJson<any>('/api/industry-templates', {
+                        headers: { 'x-user-id': session?.user?.id || '' }
+                    }),
+                    apiFetchJson<any>(workspaceId ? `/api/teams?workspaceId=${workspaceId}` : '/api/teams', {
+                        headers: { 'x-user-id': session?.user?.id || '' }
                     })
-                    .catch(console.error)
+                ])
+
+                if (!mounted) return
+
+                if (templatesRes.success && templatesRes.data) {
+                    setTemplates(templatesRes.data)
+                }
+
+                if (teamsRes.data && Array.isArray(teamsRes.data)) {
+                    setTeams(teamsRes.data)
+                    if (teamsRes.data.length > 0) {
+                        setTeamId(teamsRes.data[0].id)
+                    }
+                }
+
+                // 2. Fetch Workspace Default Template (after templates loaded)
+                if (workspaceId) {
+                    const wsRes = await apiFetchJson<any>(`/api/workspaces/${workspaceId}`)
+                    if (!mounted) return
+
+                    const wsData = wsRes.data || wsRes
+                    if (wsData?.defaultIndustryTemplateId) {
+                        setIndustryTemplateId(wsData.defaultIndustryTemplateId)
+                    } else {
+                        setIndustryTemplateId('no_template')
+                    }
+                } else {
+                    setIndustryTemplateId('no_template')
+                }
+
+            } catch (err) {
+                console.error('Error loading project panel data:', err)
             }
         }
-    }, [isOpen, workspaceId])
+
+        loadData()
+
+        return () => {
+            mounted = false
+        }
+    }, [isOpen, workspaceId, session?.user?.id])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -120,6 +151,8 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
         setError(null)
 
         try {
+            const finalTemplateId = industryTemplateId === 'no_template' ? null : industryTemplateId
+
             const response = await apiFetch('/api/projects', {
                 method: 'POST',
                 headers: {
@@ -130,8 +163,8 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     description: description.trim() || null,
                     color,
                     teamId,
-                    workspaceId, // Add workspaceId for permission check
-                    industryTemplateId: industryTemplateId || null,
+                    workspaceId,
+                    industryTemplateId: finalTemplateId,
                     startDate: startDate || null,
                     deadline: deadline || null,
                 }),
@@ -140,11 +173,6 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
             const result = await response.json()
 
             if (result.success) {
-                setName('')
-                setDescription('')
-                setColor(PROJECT_COLORS[0])
-                setStartDate('')
-                setDeadline('')
                 onSuccess?.()
                 onClose()
             } else {
@@ -161,15 +189,12 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
 
     return (
         <>
-            {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-black/50 z-40"
                 onClick={onClose}
             />
 
-            {/* Panel */}
-            <div className="fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right">
-                {/* Header */}
+            <div className="fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right border border-gray-800">
                 <div className="flex items-center justify-between p-6 border-b border-gray-800">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
@@ -189,9 +214,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     </button>
                 </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-                    {/* Project Name */}
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             Project Name <span className="text-red-400">*</span>
@@ -201,12 +224,11 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="e.g., Website Redesign"
-                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all"
+                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all font-medium"
                             required
                         />
                     </div>
 
-                    {/* Description */}
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             Description
@@ -216,29 +238,36 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of the project..."
                             rows={3}
-                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none"
+                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none text-sm"
                         />
                     </div>
 
-                    {/* Team Selection */}
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             <Users size={14} className="inline mr-2" />
                             Team <span className="text-red-400">*</span>
                         </label>
-                        <select
-                            value={teamId}
-                            onChange={(e) => setTeamId(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all"
-                            required
-                        >
-                            <option value="">Select a team</option>
-                            {teams.map((team) => (
-                                <option key={team.id} value={team.id}>
-                                    {team.name}
-                                </option>
-                            ))}
-                        </select>
+                        <Select value={teamId} onValueChange={setTeamId}>
+                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all data-[placeholder]:text-gray-500">
+                                <SelectValue placeholder="Select a team" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
+                                {teams.map((team) => (
+                                    <SelectItem
+                                        key={team.id}
+                                        value={team.id}
+                                        className="focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            {team.color && (
+                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }} />
+                                            )}
+                                            {team.name}
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         {teams.length === 0 && (
                             <p className="text-xs text-gray-500 mt-2">
                                 No teams available. Create a team first.
@@ -246,29 +275,41 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                         )}
                     </div>
 
-                    {/* Industry Template */}
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             🏢 Industry Template
                         </label>
-                        <select
-                            value={industryTemplateId}
-                            onChange={(e) => setIndustryTemplateId(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all"
-                        >
-                            <option value="">No template (custom stages)</option>
-                            {templates.map((template) => (
-                                <option key={template.id} value={template.id}>
-                                    {template.icon} {template.name}
-                                </option>
-                            ))}
-                        </select>
+                        <Select value={industryTemplateId} onValueChange={setIndustryTemplateId}>
+                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all">
+                                <SelectValue placeholder="Select template" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
+                                <SelectItem value="no_template" className="focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white font-medium">
+                                    No template (custom stages)
+                                </SelectItem>
+                                {templates.map((template) => (
+                                    <SelectItem
+                                        key={template.id}
+                                        value={template.id}
+                                        className="focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white"
+                                    >
+                                        <div className="flex flex-col items-start gap-1">
+                                            <span className="font-medium flex items-center gap-2"> {template.icon} {template.name}</span>
+                                            {template.description && (
+                                                <span className="text-xs text-gray-500 truncate max-w-[280px]">
+                                                    {template.description}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         <p className="text-xs text-gray-500 mt-2">
                             Templates provide predefined stages for your workflow
                         </p>
                     </div>
 
-                    {/* Project Color */}
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             <Palette size={14} className="inline mr-2" />
@@ -290,7 +331,6 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                         </div>
                     </div>
 
-                    {/* Dates */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -316,7 +356,6 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                         </div>
                     </div>
 
-                    {/* Error Message */}
                     {error && (
                         <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                             {error}
@@ -324,7 +363,6 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     )}
                 </form>
 
-                {/* Footer */}
                 <div className="p-6 border-t border-gray-800 flex gap-3">
                     <button
                         type="button"

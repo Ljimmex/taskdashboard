@@ -1,10 +1,17 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { signUp, signIn } from '@/lib/auth'
-import { apiFetch } from '@/lib/api'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 export const Route = createFileRoute('/register')({
     component: RegisterPage,
@@ -72,11 +79,76 @@ function RegisterPage() {
         const params = new URLSearchParams(window.location.search)
         const workspaceSlug = params.get('workspace')
         const teamSlug = params.get('team')
+        const inviteId = params.get('invite')
 
-        if (workspaceSlug && teamSlug) {
+        if (inviteId) {
+            handleInviteJoin(inviteId)
+        } else if (workspaceSlug && teamSlug) {
             handleAutoJoin(workspaceSlug, teamSlug)
         } else {
             setStep(3)
+        }
+    }
+
+    const handleInviteJoin = async (inviteId: string) => {
+        setLoading(true)
+        setError('')
+
+        try {
+            // 1. Register User
+            const birthDateStr = birthYear && birthMonth && birthDay
+                ? `${birthYear}-${birthMonth.toString().padStart(2, '0')}-${birthDay.toString().padStart(2, '0')}`
+                : undefined
+
+            const signUpResult = await signUp.email({
+                email,
+                password,
+                name: `${firstName} ${lastName}`.trim(),
+                position,
+                gender,
+                birthDate: birthDateStr,
+            } as any)
+
+            if (signUpResult.error) {
+                setError(signUpResult.error.message || 'Błąd rejestracji')
+                setLoading(false)
+                return
+            }
+
+            // 2. Login User
+            const signInResult = await signIn.email({ email, password })
+            if (signInResult.error) {
+                setError('Konto utworzone, ale błąd logowania. Spróbuj się zalogować.')
+                navigate({ to: '/login' })
+                setLoading(false)
+                return
+            }
+
+            const activeUserId = signInResult.data?.user.id
+
+            // 3. Accept Invite
+            const acceptResponse = await apiFetchJson<any>(`/api/workspaces/invites/accept/${inviteId}`, {
+                method: 'POST',
+                headers: {
+                    'x-user-id': activeUserId || ''
+                }
+            })
+
+            if (!acceptResponse || acceptResponse.error) {
+                console.error('Invite acceptance failed', acceptResponse?.error)
+                // Maybe redirect to dashboard anyway?
+                navigate({ to: '/dashboard' })
+                return
+            }
+
+            const targetSlug = acceptResponse.workspaceSlug || acceptResponse.data?.workspaceSlug || 'dashboard'
+            navigate({ to: `/${targetSlug}` })
+
+        } catch (err) {
+            console.error(err)
+            setError('Wystąpił nieoczekiwany błąd podczas rejestracji z zaproszenia')
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -452,89 +524,84 @@ function RegisterPage() {
                             <div className="space-y-2">
                                 <Label className="text-gray-400 text-sm">Data urodzenia</Label>
                                 <div className="grid grid-cols-3 gap-3">
-                                    <select
-                                        value={birthDay}
-                                        onChange={(e) => setBirthDay(e.target.value)}
-                                        className="bg-transparent text-white px-3 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
-                                        required
-                                    >
-                                        <option value="">Dzień</option>
-                                        {Array.from({ length: 31 }, (_, i) => (
-                                            <option key={i + 1} value={i + 1}>{i + 1}</option>
-                                        ))}
-                                    </select>
-                                    <select
-                                        value={birthMonth}
-                                        onChange={(e) => setBirthMonth(e.target.value)}
-                                        className="bg-transparent text-white px-3 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
-                                        required
-                                    >
-                                        <option value="">Miesiąc</option>
-                                        {['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'].map((month, i) => (
-                                            <option key={i + 1} value={i + 1}>{month}</option>
-                                        ))}
-                                    </select>
-                                    <select
-                                        value={birthYear}
-                                        onChange={(e) => setBirthYear(e.target.value)}
-                                        className="bg-transparent text-white px-3 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
-                                        required
-                                    >
-                                        <option value="">Rok</option>
-                                        {Array.from({ length: 100 }, (_, i) => {
-                                            const year = new Date().getFullYear() - i - 10
-                                            return <option key={year} value={year}>{year}</option>
-                                        })}
-                                    </select>
+                                    <Select value={birthDay} onValueChange={setBirthDay}>
+                                        <SelectTrigger className="bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
+                                            <SelectValue placeholder="Dzień" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[#12121a] border-gray-800 text-white">
+                                            {Array.from({ length: 31 }, (_, i) => (
+                                                <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" key={i + 1} value={String(i + 1)}>{i + 1}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select value={birthMonth} onValueChange={setBirthMonth}>
+                                        <SelectTrigger className="bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
+                                            <SelectValue placeholder="Miesiąc" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[#12121a] border-gray-800 text-white">
+                                            {['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'].map((month, i) => (
+                                                <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" key={i + 1} value={String(i + 1)}>{month}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select value={birthYear} onValueChange={setBirthYear}>
+                                        <SelectTrigger className="bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
+                                            <SelectValue placeholder="Rok" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[#12121a] border-gray-800 text-white">
+                                            {Array.from({ length: 100 }, (_, i) => {
+                                                const year = new Date().getFullYear() - i - 10
+                                                return <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" key={year} value={String(year)}>{year}</SelectItem>
+                                            })}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
 
                             {/* Gender */}
                             <div className="space-y-2">
                                 <Label htmlFor="gender" className="text-gray-400 text-sm">Płeć</Label>
-                                <select
-                                    id="gender"
-                                    value={gender}
-                                    onChange={(e) => setGender(e.target.value)}
-                                    className="w-full bg-transparent text-white px-4 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
-                                    required
-                                >
-                                    <option value="">Wybierz płeć</option>
-                                    <option value="female">Kobieta</option>
-                                    <option value="male">Mężczyzna</option>
-                                    <option value="other">Inna</option>
-                                    <option value="prefer_not_to_say">Wolę nie podawać</option>
-                                </select>
+                                <Select value={gender} onValueChange={setGender}>
+                                    <SelectTrigger className="w-full bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
+                                        <SelectValue placeholder="Wybierz płeć" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#12121a] border-gray-800 text-white">
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="female">Kobieta</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="male">Mężczyzna</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="other">Inna</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="prefer_not_to_say">Wolę nie podawać</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             {/* Position (Replaced Phone) */}
                             <div className="space-y-2">
                                 <Label htmlFor="position" className="text-gray-400 text-sm">Stanowisko</Label>
-                                <select
-                                    id="position"
-                                    value={position}
-                                    onChange={(e) => setPosition(e.target.value)}
-                                    className="w-full bg-transparent text-white px-4 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
-                                    required
-                                >
-                                    <option value="">Wybierz stanowisko</option>
-                                    <option value="Programmer">Programmer</option>
-                                    <option value="Web Designer">Web Designer</option>
-                                    <option value="Project Manager">Project Manager</option>
-                                    <option value="Marketing Specialist">Marketing Specialist</option>
-                                    <option value="CEO / Founder">CEO / Founder</option>
-                                    <option value="Game Designer">Game Designer</option>
-                                    <option value="Game Developer">Game Developer</option>
-                                    <option value="3D Artist">3D Artist</option>
-                                    <option value="2D Artist">2D Artist / Concept Artist</option>
-                                    <option value="Animator">Animator</option>
-                                    <option value="Level Designer">Level Designer</option>
-                                    <option value="Sound Designer">Sound Designer</option>
-                                    <option value="QA Tester">QA Tester</option>
-                                    <option value="Technical Artist">Technical Artist</option>
-                                    <option value="Producer">Producer</option>
-                                    <option value="Other">Other</option>
-                                </select>
+                                <Select value={position} onValueChange={setPosition}>
+                                    <SelectTrigger className="w-full bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
+                                        <SelectValue placeholder="Wybierz stanowisko" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#12121a] border-gray-800 text-white">
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Programmer">Programmer</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Web Designer">Web Designer</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Project Manager">Project Manager</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Marketing Specialist">Marketing Specialist</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="CEO / Founder">CEO / Founder</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Game Designer">Game Designer</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Game Developer">Game Developer</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="3D Artist">3D Artist</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="2D Artist">2D Artist / Concept Artist</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Animator">Animator</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Level Designer">Level Designer</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Sound Designer">Sound Designer</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="QA Tester">QA Tester</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Technical Artist">Technical Artist</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Producer">Producer</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Other">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="flex gap-4">
@@ -579,38 +646,36 @@ function RegisterPage() {
 
                             <div className="space-y-2">
                                 <Label htmlFor="teamSize" className="text-gray-400 text-sm">Rozmiar Zespołu</Label>
-                                <select
-                                    id="teamSize"
-                                    value={teamSize}
-                                    onChange={(e) => setTeamSize(e.target.value)}
-                                    className="w-full bg-transparent text-white px-4 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
-                                    required
-                                >
-                                    <option value="1-10">1-10 osób</option>
-                                    <option value="11-50">11-50 osób</option>
-                                    <option value="51-200">51-200 osób</option>
-                                    <option value="200+">200+ osób</option>
-                                </select>
+                                <Select value={teamSize} onValueChange={setTeamSize}>
+                                    <SelectTrigger className="w-full bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
+                                        <SelectValue placeholder="Wybierz rozmiar zespołu" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#12121a] border-gray-800 text-white">
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="1-10">1-10 osób</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="11-50">11-50 osób</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="51-200">51-200 osób</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="200+">200+ osób</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="industry" className="text-gray-400 text-sm">Branża</Label>
-                                <select
-                                    id="industry"
-                                    value={industry}
-                                    onChange={(e) => setIndustry(e.target.value)}
-                                    className="w-full bg-transparent text-white px-4 py-3 focus:outline-none focus:ring-0 focus:border-amber-500 transition-colors appearance-none cursor-pointer [&>option]:bg-[#0a0a0f]"
-                                    required
-                                >
-                                    <option value="Technology">Technologia / IT</option>
-                                    <option value="Gamedev">Gamedev / Gry</option>
-                                    <option value="Marketing">Marketing / Agencja</option>
-                                    <option value="Finance">Finanse</option>
-                                    <option value="Education">Edukacja</option>
-                                    <option value="Health">Zdrowie</option>
-                                    <option value="E-commerce">E-commerce</option>
-                                    <option value="Other">Inna</option>
-                                </select>
+                                <Select value={industry} onValueChange={setIndustry}>
+                                    <SelectTrigger className="w-full bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
+                                        <SelectValue placeholder="Wybierz branżę" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#12121a] border-gray-800 text-white">
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Technology">Technologia / IT</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Gamedev">Gamedev / Gry</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Marketing">Marketing / Agencja</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Finance">Finanse</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Education">Edukacja</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Health">Zdrowie</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="E-commerce">E-commerce</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Other">Inna</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="flex gap-4 pt-4">

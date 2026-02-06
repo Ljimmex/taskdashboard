@@ -28,6 +28,7 @@ function LoginPage() {
             const result = await signIn.email({
                 email,
                 password,
+                rememberMe, // Pass the checkbox state
             })
 
             if (result.error) {
@@ -182,7 +183,7 @@ function LoginPage() {
                                         )}
                                     </div>
                                 </div>
-                                Zapamiętaj mnie na 30 dni
+                                Zapamiętaj mnie na 7 dni
                             </label>
                             <Link to="/forgot-password" className="text-sm text-amber-500 hover:underline">
                                 Zapomniałeś hasła?

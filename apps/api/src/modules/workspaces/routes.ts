@@ -1,9 +1,11 @@
 import { Hono } from 'hono'
-// @ts-expect-error -- sql may be used in future queries
-import { eq, or, like, and, sql } from 'drizzle-orm'
+import { eq, or, like, and, sql, inArray } from 'drizzle-orm'
 import { db } from '../../db'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { users } from '../../db/schema/users'
+import { teams, teamMembers } from '../../db/schema/teams'
+import { projects } from '../../db/schema/projects'
+import { tasks } from '../../db/schema/tasks'
 import { auth } from '../../lib/auth'
 import {
     canManageWorkspaceSettings,
@@ -419,7 +421,7 @@ workspacesRoutes.patch('/:id/members/:memberId', async (c) => {
     }
 })
 
-// DELETE /api/workspaces/:id/members/:memberId - Remove member from workspace
+// DELETE /api/workspaces/:id/members/:memberId - Remove member from workspace (Comprehensive cleanup)
 workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
     const workspaceId = c.req.param('id')
     const memberId = c.req.param('memberId')
@@ -435,22 +437,83 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
             return c.json({ error: 'Unauthorized to remove workspace members' }, 403)
         }
 
-        const [deleted] = await db.delete(workspaceMembers)
-            .where(
-                and(
-                    eq(workspaceMembers.workspaceId, workspaceId),
-                    eq(workspaceMembers.userId, memberId)
+        // 1. Fetch member details BEFORE deletion to get the name for the webhook
+        const memberUser = await db.query.users.findFirst({
+            where: (u, { eq }) => eq(u.id, memberId),
+            columns: { name: true, email: true }
+        })
+
+        // 2. Perform comprehensive cleanup in a transaction
+        await db.transaction(async (tx) => {
+            // A. Remove from Team Memberships
+            const workspaceTeams = await tx.select({ id: teams.id }).from(teams).where(eq(teams.workspaceId, workspaceId))
+            const teamIds = workspaceTeams.map(t => t.id)
+
+            if (teamIds.length > 0) {
+                await tx.delete(teamMembers)
+                    .where(and(
+                        eq(teamMembers.userId, memberId),
+                        inArray(teamMembers.teamId, teamIds)
+                    ))
+            }
+
+            // B. Unassign from Tasks
+            let projectIds: string[] = []
+            if (teamIds.length > 0) {
+                const teamProjects = await tx.select({ id: projects.id })
+                    .from(projects)
+                    .where(inArray(projects.teamId, teamIds))
+                projectIds = teamProjects.map(p => p.id)
+            }
+
+            if (projectIds.length > 0) {
+                await tx.update(tasks)
+                    .set({ assigneeId: null })
+                    .where(and(
+                        eq(tasks.assigneeId, memberId),
+                        inArray(tasks.projectId, projectIds)
+                    ))
+            }
+
+            // C. Remove from Conversations (update JSONB)
+            // JSONB operations still best done with raw SQL
+            const scopeCondition = teamIds.length > 0
+                ? sql`(workspace_id = ${workspaceId} OR team_id IN (${sql.join(teamIds.map(id => sql`${id}`))}))`
+                : sql`workspace_id = ${workspaceId}`
+
+            // Postgres array removal: participants - 'userId'
+            // We use standard SQL interpolation for values
+            await tx.execute(sql`
+                UPDATE conversations
+                SET 
+                    participants = participants - ${memberId},
+                    participant_states = participant_states - ${memberId}
+                WHERE ${scopeCondition}
+                AND participants @> ${JSON.stringify([memberId])}::jsonb
+            `)
+
+            // D. Remove from Workspace Members (The main action)
+            await tx.delete(workspaceMembers)
+                .where(
+                    and(
+                        eq(workspaceMembers.workspaceId, workspaceId),
+                        eq(workspaceMembers.userId, memberId)
+                    )
                 )
-            )
-            .returning()
+        })
 
-        // TRIGGER WEBHOOK
-        if (deleted) {
-            triggerWebhook('member.removed', deleted, workspaceId)
-        }
+        // 3. Trigger Webhook with user name
+        triggerWebhook('member.removed', {
+            userId: memberId,
+            workspaceId,
+            userName: memberUser?.name || 'Unknown',
+            userEmail: memberUser?.email || '',
+            removedAt: new Date().toISOString()
+        }, workspaceId)
 
-        return c.json({ message: 'Member removed from workspace' })
+        return c.json({ message: 'Member removed from workspace and all related entities' })
     } catch (error) {
+        console.error('Remove member error:', error)
         return c.json({ error: 'Failed to remove member', details: String(error) }, 500)
     }
 })
