@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useParams } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
+import { useParams, useSearch } from '@tanstack/react-router'
 import { useSession } from '@/lib/auth'
 import { useQuery } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
@@ -9,9 +9,17 @@ import { ChannelSettingsPanel } from '@/components/features/messages/ChannelSett
 
 export function MessagesPage() {
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
+    const search = useSearch({ strict: false }) as { userId?: string }
     const { data: session } = useSession()
-    const [selectedUserId, setSelectedUserId] = useState<string | undefined>()
+    const [selectedUserId, setSelectedUserId] = useState<string | undefined>(search.userId)
     const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false)
+
+    // Sync URL param changes to state
+    useEffect(() => {
+        if (search.userId) {
+            setSelectedUserId(search.userId)
+        }
+    }, [search.userId])
 
     // Fetch workspace by slug to get the real ID
     const { data: workspace } = useQuery({

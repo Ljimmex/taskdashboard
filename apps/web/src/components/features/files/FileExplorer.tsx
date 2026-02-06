@@ -24,6 +24,7 @@ interface FileExplorerProps {
     sortOrder: 'asc' | 'desc'
     onSort: (field: 'name' | 'size' | 'date' | 'type') => void
     userRole?: string | null
+    highlightFileId?: string
 }
 
 export function FileExplorer({
@@ -36,7 +37,8 @@ export function FileExplorer({
     sortBy,
     sortOrder,
     onSort,
-    userRole
+    userRole,
+    highlightFileId
 }: FileExplorerProps) {
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId || null)
@@ -56,6 +58,25 @@ export function FileExplorer({
     const deleteFile = useDeleteFile()
     const deleteFolder = useDeleteFolder()
     const moveFile = useMoveFile()
+
+    // Auto-open highlighted file
+    React.useEffect(() => {
+        if (highlightFileId && files) {
+            const file = files.find(f => f.id === highlightFileId)
+            if (file) {
+                // If found in current folder/view
+                setSelectedFile(file)
+                setIsInfoPanelOpen(true)
+            } else {
+                // If not found in current folder, we might need to search recursively or just show info if we can fetch it individually.
+                // For now, simple implementation assuming it's visible or flat list.
+                // NOTE: Since useFiles is currentFolderId scoped, checking "files" only checks current folder.
+                // If LastResources links to a file in a subfolder, this won't find it unless we are in that folder.
+                // Ideally we'd fetch the specific file or know its folder.
+                // But let's start with simple interaction.
+            }
+        }
+    }, [highlightFileId, files])
 
     // Handle drag-drop file to folder
     const handleFileDrop = async (fileId: string, folderId: string | null) => {

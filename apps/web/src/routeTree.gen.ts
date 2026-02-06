@@ -18,6 +18,7 @@ import { Route as WorkspaceSlugRouteImport } from './routes/$workspaceSlug'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceSlugIndexRouteImport } from './routes/$workspaceSlug/index'
 import { Route as InviteInviteIdRouteImport } from './routes/invite/$inviteId'
+import { Route as WorkspaceSlugCalendarRouteImport } from './routes/$workspaceSlug/calendar'
 import { Route as WorkspaceSlugTeamIndexRouteImport } from './routes/$workspaceSlug/team/index'
 import { Route as WorkspaceSlugProjectsIndexRouteImport } from './routes/$workspaceSlug/projects/index'
 import { Route as WorkspaceSlugMessagesIndexRouteImport } from './routes/$workspaceSlug/messages/index'
@@ -69,6 +70,11 @@ const InviteInviteIdRoute = InviteInviteIdRouteImport.update({
   path: '/invite/$inviteId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceSlugCalendarRoute = WorkspaceSlugCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => WorkspaceSlugRoute,
+} as any)
 const WorkspaceSlugTeamIndexRoute = WorkspaceSlugTeamIndexRouteImport.update({
   id: '/team/',
   path: '/team/',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/$workspaceSlug/calendar': typeof WorkspaceSlugCalendarRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
   '/$workspaceSlug/files': typeof WorkspaceSlugFilesIndexRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/$workspaceSlug/calendar': typeof WorkspaceSlugCalendarRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug': typeof WorkspaceSlugIndexRoute
   '/$workspaceSlug/files': typeof WorkspaceSlugFilesIndexRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/$workspaceSlug/calendar': typeof WorkspaceSlugCalendarRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
   '/$workspaceSlug/files/': typeof WorkspaceSlugFilesIndexRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/$workspaceSlug/calendar'
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
     | '/$workspaceSlug/files'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/$workspaceSlug/calendar'
     | '/invite/$inviteId'
     | '/$workspaceSlug'
     | '/$workspaceSlug/files'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/$workspaceSlug/calendar'
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
     | '/$workspaceSlug/files/'
@@ -272,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteInviteIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$workspaceSlug/calendar': {
+      id: '/$workspaceSlug/calendar'
+      path: '/calendar'
+      fullPath: '/$workspaceSlug/calendar'
+      preLoaderRoute: typeof WorkspaceSlugCalendarRouteImport
+      parentRoute: typeof WorkspaceSlugRoute
+    }
     '/$workspaceSlug/team/': {
       id: '/$workspaceSlug/team/'
       path: '/team'
@@ -311,6 +330,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface WorkspaceSlugRouteChildren {
+  WorkspaceSlugCalendarRoute: typeof WorkspaceSlugCalendarRoute
   WorkspaceSlugIndexRoute: typeof WorkspaceSlugIndexRoute
   WorkspaceSlugFilesIndexRoute: typeof WorkspaceSlugFilesIndexRoute
   WorkspaceSlugMessagesIndexRoute: typeof WorkspaceSlugMessagesIndexRoute
@@ -320,6 +340,7 @@ interface WorkspaceSlugRouteChildren {
 }
 
 const WorkspaceSlugRouteChildren: WorkspaceSlugRouteChildren = {
+  WorkspaceSlugCalendarRoute: WorkspaceSlugCalendarRoute,
   WorkspaceSlugIndexRoute: WorkspaceSlugIndexRoute,
   WorkspaceSlugFilesIndexRoute: WorkspaceSlugFilesIndexRoute,
   WorkspaceSlugMessagesIndexRoute: WorkspaceSlugMessagesIndexRoute,

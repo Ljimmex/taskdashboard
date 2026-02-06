@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, jsonb, pgPolicy } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, text, timestamp, boolean, jsonb, pgPolicy, pgEnum } from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
 import { users } from './users'
 import { teams } from './teams'
@@ -7,6 +7,8 @@ import { tasks } from './tasks'
 // =============================================================================
 // CALENDAR EVENTS TABLE
 // =============================================================================
+
+export const calendarEventTypeEnum = pgEnum('calendar_event_type', ['event', 'task', 'meeting', 'reminder'])
 
 export const calendarEvents = pgTable('calendar_events', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -18,6 +20,7 @@ export const calendarEvents = pgTable('calendar_events', {
     recurrence: jsonb('recurrence'),
     taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'set null' }),
     teamId: uuid('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    type: calendarEventTypeEnum('type').default('event').notNull(),
     createdBy: uuid('created_by').notNull().references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (_table) => [

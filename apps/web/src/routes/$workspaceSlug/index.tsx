@@ -1,56 +1,23 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useNavigate, createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { OverallProgress } from '@/components/dashboard/OverallProgress'
-import { TeamActivity } from '@/components/dashboard/TeamActivity'
+import { LastResources } from '@/components/dashboard/LastResources'
 import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { CalendarSection } from '@/components/dashboard/CalendarSection'
 import { TaskCard, AddTaskCard } from '@/components/features/tasks/components/TaskCard'
 import { ChatSection } from '@/components/dashboard/ChatSection'
-import { apiFetchJson } from '@/lib/api'
+import { apiFetchJson, apiFetch } from '@/lib/api'
 import { CreateTaskPanel } from '@/components/features/tasks/panels/CreateTaskPanel'
+import { useTeamMembers } from '@/hooks/useTeamMembers'
+import { useFiles } from '@/hooks/useFiles'
+import { FileInfoPanel } from '@/components/features/files/FileInfoPanel'
+import { FileRecord } from '@taskdashboard/types'
 
 
 export const Route = createFileRoute('/$workspaceSlug/')({
   component: DashboardHome,
 })
-
-// --- Mock Data ---
-
-const mockActivities = [
-  {
-    id: '1',
-    user: { name: 'Will Loqso', role: 'Backend Developer', avatar: undefined },
-    message: 'How can I buy only the design?',
-    likes: 34,
-    comments: 14,
-    timeAgo: '1h ago'
-  },
-  {
-    id: '2',
-    user: { name: 'Sareh Hosten', role: 'Project Manager', avatar: undefined },
-    message: 'I need react version asap!',
-    likes: 34,
-    comments: 14,
-    timeAgo: '20min ago'
-  },
-  {
-    id: '3',
-    user: { name: 'Will Loqso', role: 'Backend Developer', avatar: undefined },
-    message: "Completed the task 'Fix API endpoint'",
-    likes: 12,
-    comments: 2,
-    timeAgo: '2m ago'
-  }
-]
-
-const mockContacts = [
-  { id: '1', name: 'Tomas', isOnline: true },
-  { id: '2', name: 'Elena', isOnline: false },
-  { id: '3', name: 'Erick', isOnline: true },
-  { id: '4', name: 'Tomas', isOnline: false },
-  { id: '5', name: 'Elena', isOnline: true },
-]
 
 function DashboardHome() {
   const { workspaceSlug } = Route.useParams()
@@ -58,6 +25,24 @@ function DashboardHome() {
   const queryClient = useQueryClient()
   const [projectFilter, setProjectFilter] = useState<'active' | 'pending'>('active')
   const [showMeetingPanel, setShowMeetingPanel] = useState(false)
+
+  // File Modal State
+  const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false)
+
+  // Fetch Team Members for Chat
+  const { members } = useTeamMembers(workspaceSlug)
+
+  // Fetch Recent Files
+  const { data: files } = useFiles(workspaceSlug, null, true)
+
+  // Transform members to ChatSection format (limit to 10 for widget)
+  const chatContacts = members.slice(0, 10).map(m => ({
+    id: m.id,
+    name: m.name,
+    avatar: m.avatar,
+    isOnline: m.isOnline
+  }))
 
   // Fetch Projects
   const { data: projectsRes, isLoading: isLoadingProjects } = useQuery({
@@ -88,12 +73,45 @@ function DashboardHome() {
     return null // CreateTaskPanel will handle the actual creation
   }
 
+  // File Actions
+  const handleFileClick = (fileId: string) => {
+    const file = files?.find(f => f.id === fileId)
+    if (file) {
+      setSelectedFile(file)
+      setIsInfoPanelOpen(true)
+    }
+  }
+
+  const handleDownload = async (id: string) => {
+    try {
+      const json = await apiFetchJson<any>(`/api/files/${id}/download`)
+      const { downloadUrl } = json
+      window.open(downloadUrl, '_blank')
+    } catch (error) {
+      console.error('Download failed:', error)
+    }
+  }
+
+  // NOTE: Rename and Delete are complex to duplicate here fully without hooks logic.
+  // For the dashboard widget, we might purely want to View details. 
+  // If we pass generic handlers that just alert or do nothing for dangerous actions, or we implement them.
+  // Ideally we should extract these handlers to a hook but for now implementing minimal versions or empty handlers.
+  const handleRename = (id: string) => {
+    // TODO: Implement renaming if needed or redirect to files page
+    console.log('Rename requested for', id)
+  }
+
+  const handleDelete = async (id: string) => {
+    // TODO: Implement delete if needed
+    console.log('Delete requested for', id)
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-2">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-2 relative">
 
       {/* Left Column Section (Tasks) - Spans 8 columns visually on large screens, internally split */}
       <div className="lg:col-span-8 flex flex-col gap-6">
-
+        {/* ... Meetings and Projects sections ... */}
         {/* Top Row: Meetings Grid (1,2 / 3,4 pattern) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {isLoadingMeetings ? (
@@ -202,9 +220,22 @@ function DashboardHome() {
       <div className="lg:col-span-4 space-y-6">
         <OverallProgress inProgress={projects.filter((p: any) => p.status === 'active').length} totalProjects={projects.length} upcoming={meetings.length} />
 
-        <ChatSection contacts={mockContacts} />
+        <ChatSection
+          contacts={chatContacts}
+          onSeeAll={() => navigate({ to: `/${workspaceSlug}/messages` })}
+          onContactClick={(userId) => {
+            navigate({
+              to: `/${workspaceSlug}/messages`,
+              search: { userId }
+            })
+          }}
+        />
 
-        <TeamActivity activities={mockActivities} />
+        <LastResources
+          files={files || []}
+          onSeeAll={() => navigate({ to: `/${workspaceSlug}/files` })}
+          onFileClick={handleFileClick}
+        />
       </div>
 
       {/* Meeting Creation Panel */}
@@ -216,6 +247,19 @@ function DashboardHome() {
         defaultProject={projects[0]?.id}
         projects={projects}
         workspaceSlug={workspaceSlug}
+      />
+
+      {/* File Info Panel (Modal-like) */}
+      <FileInfoPanel
+        file={selectedFile}
+        isOpen={isInfoPanelOpen}
+        onClose={() => {
+          setIsInfoPanelOpen(false)
+          setSelectedFile(null)
+        }}
+        onDownload={handleDownload}
+        onRename={handleRename}
+        onDelete={handleDelete}
       />
     </div>
   )

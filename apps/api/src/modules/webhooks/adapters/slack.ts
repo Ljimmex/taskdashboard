@@ -16,6 +16,9 @@ export async function prepareSlackRequest(job: any, config: any) {
         'comment.added': '💬',
         'file.uploaded': '📎',
         'file.deleted': '🗑️',
+        'calendar.created': '📅',
+        'calendar.updated': '✏️',
+        'calendar.deleted': '🗑️',
         'member.added': '👋',
         'member.removed': '👋',
         'webhook.test': '🧪'
@@ -301,6 +304,47 @@ export async function prepareSlackRequest(job: any, config: any) {
                 text: { type: 'mrkdwn', text: payload.userName ? `*${payload.userName}* has ${action === 'added' ? 'joined' : 'left'} the workspace.` : `A member has ${action === 'added' ? 'joined' : 'left'}.` }
             }
         ]
+    } else if (event.startsWith('calendar.')) {
+        const action = event.split('.')[1]
+        text = `${emoji} Event ${action === 'created' ? 'Created' : action === 'updated' ? 'Updated' : 'Deleted'}: ${payload.title}`
+        attachmentColor = action === 'deleted' ? '#EF4444' : '#3B82F6'
+
+        const formatTime = (iso: string) => {
+            if (!iso) return '?'
+            return new Date(iso).toLocaleString('pl-PL', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            })
+        }
+
+        blocks = [
+            {
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} Event ${action === 'created' ? 'Created' : action === 'updated' ? 'Updated' : 'Deleted'}`, emoji: true }
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*${payload.title}*` }
+            },
+            {
+                type: 'section',
+                fields: [
+                    { type: 'mrkdwn', text: `*Start:*\n${formatTime(payload.startAt)}` },
+                    { type: 'mrkdwn', text: `*End:*\n${formatTime(payload.endAt)}` }
+                ]
+            }
+        ]
+
+        if (action !== 'deleted') {
+            // Add Link button accessory potentially, or just link in title
+            // Slack doesn't support links in header
+        }
+
+        if (payload.location) {
+            blocks.push({
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*📍 Location:* ${payload.location}` }
+            })
+        }
     } else {
         // Generic event
         text = `${emoji} ${event.replace(/\./g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}`

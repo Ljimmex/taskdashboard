@@ -8,12 +8,22 @@ import { useQuery } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
 
+interface FilesSearch {
+    fileId?: string
+}
+
 export const Route = createFileRoute('/$workspaceSlug/files/')({
     component: FilesPage,
+    validateSearch: (search: Record<string, unknown>): FilesSearch => {
+        return {
+            fileId: search.fileId as string | undefined,
+        }
+    },
 })
 
 function FilesPage() {
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug/files/' })
+    const search = Route.useSearch()
     const { data: session } = useSession()
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -170,6 +180,7 @@ function FilesPage() {
                     sortOrder={sortOrder}
                     onSort={handleSortChange}
                     userRole={userRole}
+                    highlightFileId={search.fileId}
                 />
             </div>
 

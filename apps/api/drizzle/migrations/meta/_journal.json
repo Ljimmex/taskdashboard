@@ -15,6 +15,20 @@
       "when": 1770208223708,
       "tag": "0001_panoramic_unicorn",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770414559447,
+      "tag": "0002_illegal_susan_delgado",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1770415430251,
+      "tag": "0003_tense_stature",
+      "breakpoints": true
     }
   ]
 }

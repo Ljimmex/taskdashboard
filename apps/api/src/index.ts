@@ -18,6 +18,7 @@ import { projectsRoutes } from './modules/projects/routes'
 import { labelsRoutes } from './modules/labels/routes'
 import { commentsRoutes } from './modules/comments/routes'
 import { timeRoutes } from './modules/time/routes'
+import { calendarRoutes } from './modules/calendar/routes'
 import { industryTemplatesRoutes } from './modules/pipelines/routes'
 import { projectStagesRoutes } from './modules/stages/routes'
 import { workspacesRoutes } from './modules/workspaces/routes'
@@ -187,6 +188,7 @@ app.route('/api/comments', commentsRoutes)
 app.route('/api/files', filesRoutes)
 app.route('/api/folders', foldersRoutes)
 app.route('/api/time', timeRoutes)
+app.route('/api/calendar', calendarRoutes)
 app.route('/api/industry-templates', industryTemplatesRoutes)
 app.route('/api/projects', projectStagesRoutes)  // Adds stages endpoints under /api/projects/:id/stages
 app.route('/api/filters', filtersRoutes)

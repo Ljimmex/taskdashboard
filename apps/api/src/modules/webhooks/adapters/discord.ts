@@ -27,6 +27,9 @@ export async function prepareDiscordRequest(job: any, config: any) {
         'comment.added': '💬',
         'file.uploaded': '📎',
         'file.deleted': '🗑️',
+        'calendar.created': '📅',
+        'calendar.updated': '✏️',
+        'calendar.deleted': '🗑️',
         'member.added': '👋',
         'member.removed': '👋',
         'webhook.test': '🧪'
@@ -176,6 +179,43 @@ export async function prepareDiscordRequest(job: any, config: any) {
         embed.title = `${emoji} Member ${action === 'added' ? 'Joined' : 'Left'}`
         embed.description = payload.userName ? `**${payload.userName}** has ${action === 'added' ? 'joined' : 'left'} the workspace.` : `A member has ${action === 'added' ? 'joined' : 'left'}.`
         embed.color = action === 'added' ? 0x22C55E : 0xEF4444
+    } else if (event === 'member.removed') {
+        // ... (previous block end - member.removed logic is inside member.* block, checking if I need to split or insert after)
+        // I will target insert after member.* or specific block.
+        // Let's replace the member logic + add calendar logic.
+
+        // Actually, easier to insert before "else { // Generic"
+    } else if (event.startsWith('calendar.')) {
+        const action = event.split('.')[1]
+        // Emoji map for calendar is handled by EVENT_EMOJIS or generic fallbacks
+        embed.title = `${emoji} Event ${action === 'created' ? 'Created' : action === 'updated' ? 'Updated' : 'Deleted'}`
+        embed.description = `**${payload.title}**`
+        if (action !== 'deleted') {
+            embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/calendar?date=${payload.startAt.split('T')[0]}`
+        }
+        embed.color = action === 'deleted' ? 0xEF4444 : 0x3B82F6 // Blue for calendar
+
+        const formatTime = (iso: string) => {
+            if (!iso) return '?'
+            return new Date(iso).toLocaleString('pl-PL', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            })
+        }
+
+        embed.fields = [
+            { name: 'Start', value: formatTime(payload.startAt), inline: true },
+            { name: 'End', value: formatTime(payload.endAt), inline: true }
+        ]
+
+        if (payload.location) {
+            embed.fields.push({ name: '📍 Location', value: payload.location, inline: false })
+        }
+        if (payload.description) {
+            // Truncate description
+            const desc = payload.description.length > 200 ? payload.description.substring(0, 200) + '...' : payload.description
+            embed.fields.push({ name: '📝 Description', value: desc, inline: false })
+        }
+
     } else {
         // Generic event
         embed.title = `${emoji} ${event.replace(/\./g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}`

@@ -1,215 +1,357 @@
-import { useState } from 'react'
-import { CalendarIcon, FilterIcon, ScheduleIcon, ArrowLeftIcon, ArrowRightIcon } from './icons'
+import { useState, useEffect } from 'react'
+import { useParams } from '@tanstack/react-router'
+import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, format, parseISO, isWeekend } from 'date-fns'
+import { enUS } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
+import { ChevronLeft, ChevronRight, Filter, SlidersHorizontal } from 'lucide-react'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuItem
+} from "@/components/ui/dropdown-menu"
+import { CalendarEventPanel } from '@/components/features/calendar/CalendarEventPanel'
 
-interface CalendarEvent {
+// Enum mirroring backend
+export enum CalendarEventType {
+    EVENT = 'event',
+    TASK = 'task',
+    MEETING = 'meeting',
+    REMINDER = 'reminder'
+}
+
+interface Event {
     id: string
     title: string
-    color: string // 'amber' | 'blue' | 'green' | 'purple'
+    startAt: string
+    endAt: string
+    teamId: string
+    type?: CalendarEventType
 }
 
-interface CalendarSectionProps {
-    onFilterClick?: () => void
-    onRescheduleClick?: () => void
-    onTodayClick?: () => void
-    events?: Record<number, CalendarEvent[]> // day -> events
-}
+// Custom Checkbox Component matching Teams page style
+const CustomCheckbox = ({ checked, onClick, colorClass = "bg-amber-500 border-amber-500" }: { checked: boolean; onClick?: () => void; colorClass?: string }) => (
+    <div
+        onClick={(e) => { e.stopPropagation(); onClick?.() }}
+        className={cn(
+            "w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer",
+            checked ? colorClass : "border-gray-600 bg-transparent hover:border-gray-500"
+        )}
+    >
+        {checked && (
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+            </svg>
+        )}
+    </div>
+)
 
-// Mock events for demo
-const mockEvents: Record<number, CalendarEvent[]> = {
-    1: [{ id: '1', title: 'Meeting', color: 'amber' }],
-    2: [{ id: '2', title: 'Call', color: 'blue' }],
-    5: [{ id: '3', title: 'Review', color: 'green' }, { id: '4', title: 'Sync', color: 'purple' }],
-    12: [{ id: '5', title: 'Launch', color: 'amber' }],
-    15: [{ id: '6', title: 'Demo', color: 'blue' }],
-    20: [{ id: '7', title: 'Sprint', color: 'green' }],
-    25: [{ id: '8', title: 'Release', color: 'amber' }],
-}
+export function CalendarSection() {
+    const params = useParams({ strict: false }) as any
+    const workspaceSlug = params.workspaceSlug
 
-const eventColors: Record<string, string> = {
-    amber: 'bg-amber-500/80',
-    blue: 'bg-blue-500/80',
-    green: 'bg-green-500/80',
-    purple: 'bg-purple-500/80',
-}
+    const [currentDate, setCurrentDate] = useState(new Date())
+    const [events, setEvents] = useState<Event[]>([])
 
-export function CalendarSection({ onFilterClick, onRescheduleClick, onTodayClick, events = mockEvents }: CalendarSectionProps) {
-    const [currentMonth, setCurrentMonth] = useState(new Date())
-    const [hoveredButton, setHoveredButton] = useState<string | null>(null)
+    // Filter State
+    const [selectedTypes, setSelectedTypes] = useState<CalendarEventType[]>([
+        CalendarEventType.EVENT,
+        CalendarEventType.TASK,
+        CalendarEventType.MEETING,
+        CalendarEventType.REMINDER
+    ])
+    const [showWeekends, setShowWeekends] = useState(true)
+    const [weekStartDay, setWeekStartDay] = useState<'monday' | 'sunday'>('monday')
+    const [isEventPanelOpen, setIsEventPanelOpen] = useState(false)
 
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    useEffect(() => {
+        if (!workspaceSlug) return
 
-    // Generate calendar days
-    const getDaysInMonth = (date: Date) => {
-        const year = date.getFullYear()
-        const month = date.getMonth()
-        const daysInMonth = new Date(year, month + 1, 0).getDate()
-        const firstDayOfMonth = new Date(year, month, 1).getDay()
-        const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1
-
-        const days: (number | null)[] = []
-
-        // Add empty slots for days before the 1st
-        for (let i = 0; i < adjustedFirstDay; i++) {
-            days.push(null)
+        const fetchEvents = async () => {
+            try {
+                const res = await fetch(`/api/calendar?workspaceSlug=${workspaceSlug}`)
+                if (res.ok) {
+                    const data = await res.json()
+                    setEvents(data.data || [])
+                }
+            } catch (error) {
+                console.error('Failed to fetch calendar events', error)
+            }
         }
 
-        // Add actual days
-        for (let i = 1; i <= daysInMonth; i++) {
-            days.push(i)
-        }
+        fetchEvents()
+    }, [workspaceSlug, currentDate])
 
-        return days
+    const monthStart = startOfMonth(currentDate)
+    const monthEnd = endOfMonth(monthStart)
+    const startDate = startOfWeek(monthStart, { locale: enUS, weekStartsOn: weekStartDay === 'monday' ? 1 : 0 })
+    const endDate = endOfWeek(monthEnd, { locale: enUS, weekStartsOn: weekStartDay === 'monday' ? 1 : 0 })
+
+    let calendarDays = eachDayOfInterval({ start: startDate, end: endDate })
+
+    if (!showWeekends) {
+        calendarDays = calendarDays.filter(day => !isWeekend(day))
     }
 
-    const days = getDaysInMonth(currentMonth)
-    const today = new Date().getDate()
-    const isCurrentMonth = currentMonth.getMonth() === new Date().getMonth() && currentMonth.getFullYear() === new Date().getFullYear()
+    const weekDays = weekStartDay === 'monday'
+        ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-    const prevMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))
+    const visibleWeekDays = showWeekends ? weekDays : weekDays.filter(d => d !== 'Sat' && d !== 'Sun')
+
+    const prevMonth = () => setCurrentDate(subMonths(currentDate, 1))
+    const nextMonth = () => setCurrentDate(addMonths(currentDate, 1))
+    const goToToday = () => setCurrentDate(new Date())
+
+    const toggleType = (type: CalendarEventType) => {
+        setSelectedTypes(prev =>
+            prev.includes(type)
+                ? prev.filter(t => t !== type)
+                : [...prev, type]
+        )
     }
 
-    const nextMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))
-    }
-
-    // Split days into weeks
-    const weeks: (number | null)[][] = []
-    for (let i = 0; i < days.length; i += 7) {
-        weeks.push(days.slice(i, i + 7))
+    const clearFilters = () => {
+        setSelectedTypes([])
     }
 
     return (
-        <div className="rounded-2xl bg-[#12121a] p-5">
-            {/* Header Row */}
-            <div className="flex items-center justify-between mb-4">
-                {/* Month/Year with icon */}
-                <div className="flex items-center gap-2">
-                    <CalendarIcon />
-                    <h3 className="text-sm font-semibold text-white">
-                        {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                    </h3>
+        <div className="flex flex-col h-full w-full bg-[#12121a] rounded-2xl p-6 font-sans relative overflow-hidden">
+
+            {/* HEADER KALENDARZA */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                {/* Lewa strona: Ikonka + Miesiąc/Rok */}
+                <div className="flex items-center gap-3 mb-4 md:mb-0">
+                    <h2 className="text-lg font-semibold text-white tracking-wide">
+                        {format(currentDate, 'MMMM yyyy', { locale: enUS })}
+                    </h2>
                 </div>
 
-                {/* Controls */}
-                <div className="flex items-center gap-4">
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={onFilterClick}
-                            onMouseEnter={() => setHoveredButton('filter')}
-                            onMouseLeave={() => setHoveredButton(null)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] uppercase tracking-wider font-medium text-gray-500 hover:text-[#F2CE88] bg-[#1a1a24] rounded-lg transition-colors hover:bg-gray-800"
-                        >
-                            <FilterIcon isHovered={hoveredButton === 'filter'} />
-                            Filter
-                        </button>
-                        <button
-                            onClick={onRescheduleClick}
-                            onMouseEnter={() => setHoveredButton('schedule')}
-                            onMouseLeave={() => setHoveredButton(null)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] uppercase tracking-wider font-medium text-gray-500 hover:text-[#F2CE88] bg-[#1a1a24] rounded-lg transition-colors hover:bg-gray-800"
-                        >
-                            <ScheduleIcon isHovered={hoveredButton === 'schedule'} />
-                            Schedule setting
-                        </button>
-                    </div>
+                {/* Prawa strona: Przyciski Funkcyjne i Nawigacja */}
+                <div className="flex items-center gap-3">
+                    {/* Przycisk Filter */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button className={cn(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all outline-none focus:ring-1 focus:ring-white/10",
+                                selectedTypes.length < 4 ? "bg-[#1E2029] text-white" : "bg-[#1a1a24] text-gray-400 hover:text-white"
+                            )}>
+                                <Filter className="w-3.5 h-3.5" />
+                                <span>Filter</span>
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none">
+                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Type
+                            </div>
 
-                    {/* Navigation */}
+                            <DropdownMenuItem
+                                onClick={(e) => { e.preventDefault(); toggleType(CalendarEventType.EVENT); }}
+                                className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            >
+                                <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.EVENT)} />
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.EVENT) ? "text-white" : "text-gray-400")}>Events</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                                onClick={(e) => { e.preventDefault(); toggleType(CalendarEventType.TASK); }}
+                                className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            >
+                                <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.TASK)} />
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.TASK) ? "text-white" : "text-gray-400")}>Tasks</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                                onClick={(e) => { e.preventDefault(); toggleType(CalendarEventType.REMINDER); }}
+                                className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            >
+                                <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.REMINDER)} />
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.REMINDER) ? "text-white" : "text-gray-400")}>Reminders</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                                onClick={(e) => { e.preventDefault(); toggleType(CalendarEventType.MEETING); }}
+                                className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            >
+                                <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.MEETING)} />
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.MEETING) ? "text-white" : "text-gray-400")}>Meetings</span>
+                            </DropdownMenuItem>
+
+                            <div className="p-2 mt-2">
+                                <button
+                                    onClick={clearFilters}
+                                    className="w-full py-1.5 bg-[#1a1a24] hover:bg-[#20202b] text-gray-400 hover:text-white text-xs font-medium rounded-lg transition-colors border border-white/5"
+                                >
+                                    Clear All Filters
+                                </button>
+                            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Przycisk Schedule setting */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a24] hover:bg-[#20202b] rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all mr-2 outline-none focus:ring-1 focus:ring-white/10">
+                                <SlidersHorizontal className="w-3.5 h-3.5" />
+                                <span>Schedule setting</span>
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-64 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none">
+                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                View Options
+                            </div>
+
+                            <DropdownMenuItem
+                                onClick={(e) => { e.preventDefault(); setShowWeekends(!showWeekends); }}
+                                className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            >
+                                <CustomCheckbox checked={showWeekends} />
+                                <span className="text-gray-300">Show weekends</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator className="bg-gray-800 my-2" />
+
+                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Start of week
+                            </div>
+                            <DropdownMenuRadioGroup value={weekStartDay} onValueChange={(v) => setWeekStartDay(v as 'monday' | 'sunday')}>
+                                <DropdownMenuRadioItem value="monday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
+                                    <div className="flex items-center gap-3 w-full">
+                                        <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'monday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
+                                            {weekStartDay === 'monday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
+                                        </div>
+                                        <span>Monday</span>
+                                    </div>
+                                </DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="sunday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
+                                    <div className="flex items-center gap-3 w-full">
+                                        <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'sunday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
+                                            {weekStartDay === 'sunday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
+                                        </div>
+                                        <span>Sunday</span>
+                                    </div>
+                                </DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Separator */}
+                    <div className="h-6 w-px bg-gray-800 hidden md:block mx-1"></div>
+
+                    {/* Nawigacja */}
                     <div className="flex items-center gap-1">
                         <button
                             onClick={prevMonth}
-                            onMouseEnter={() => setHoveredButton('prev')}
-                            onMouseLeave={() => setHoveredButton(null)}
-                            className="w-8 h-8 flex items-center justify-center transition-all"
+                            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                         >
-                            <ArrowLeftIcon isHovered={hoveredButton === 'prev'} />
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
-
                         <button
-                            onClick={onTodayClick}
-                            className="px-3 py-1 rounded-lg text-[10px] font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors mx-1"
+                            onClick={goToToday}
+                            className="px-3 py-1 text-xs font-medium text-gray-400 hover:text-amber-500 transition-colors"
                         >
                             Today
                         </button>
-
                         <button
                             onClick={nextMonth}
-                            onMouseEnter={() => setHoveredButton('next')}
-                            onMouseLeave={() => setHoveredButton(null)}
-                            className="w-8 h-8 flex items-center justify-center transition-all"
+                            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                         >
-                            <ArrowRightIcon isHovered={hoveredButton === 'next'} />
+                            <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Calendar Grid with "kratki" (grid lines) */}
-            <div className="border border-gray-800 rounded-lg overflow-hidden bg-gray-800/10">
-                {/* Day Names Header */}
-                <div className="grid grid-cols-7 border-b border-gray-800">
-                    {dayNames.map((day, idx) => (
-                        <div
-                            key={day}
-                            className={`text-center text-[10px] text-gray-600 font-medium py-2 ${idx < 6 ? 'border-r border-gray-800' : ''}`}
-                        >
-                            {day}
+            {/* GRID KALENDARZA */}
+            <div className="flex flex-col flex-1 rounded-2xl overflow-hidden bg-[#12121a]">
+                {/* Dni tygodnia */}
+                <div className={`grid grid-cols-${visibleWeekDays.length} border-b border-gray-800/50`}>
+                    {visibleWeekDays.map((day) => (
+                        <div key={day} className="py-3 text-center">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                {day}
+                            </span>
                         </div>
                     ))}
                 </div>
 
-                {/* Days */}
-                <div>
-                    {weeks.map((week, weekIndex) => (
-                        <div key={weekIndex} className={`grid grid-cols-7 ${weekIndex < weeks.length - 1 ? 'border-b border-gray-800' : ''}`}>
-                            {week.map((day, dayIndex) => {
-                                const dayEvents = day ? events[day] || [] : []
-                                const isToday = day === today && isCurrentMonth
+                {/* Siatka dni */}
+                <div className={`grid grid-cols-${visibleWeekDays.length} flex-1 bg-[#12121a]`}>
+                    {calendarDays.map((day, dayIdx) => {
+                        const isCurrentMonth = isSameMonth(day, monthStart)
+                        const isToday = isSameDay(day, new Date())
+                        const isLastRow = dayIdx >= calendarDays.length - visibleWeekDays.length
+                        const dayEvents = events
+                            .filter(e => isSameDay(parseISO(e.startAt), day))
+                            .filter(e => e.type ? selectedTypes.includes(e.type) : true)
 
-                                return (
-                                    <div
-                                        key={dayIndex}
-                                        className={`min-h-[60px] p-1 transition-colors ${dayIndex < 6 ? 'border-r border-gray-800' : ''
-                                            } ${day === null
-                                                ? 'bg-[#15151e]'
-                                                : 'hover:bg-gray-800/30 cursor-pointer group'
-                                            }`}
-                                    >
-                                        {day !== null && (
-                                            <div className="flex flex-col h-full items-center">
-                                                <span className={`text-[10px] font-medium w-5 h-5 flex items-center justify-center rounded-full mb-1 ${isToday
-                                                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
-                                                        : 'text-gray-400 group-hover:text-white'
-                                                    }`}>
-                                                    {day}
-                                                </span>
-
-                                                {/* Event Dots/Indicators */}
-                                                <div className="flex gap-0.5 mt-auto">
-                                                    {dayEvents.map((event) => (
-                                                        <div
-                                                            key={event.id}
-                                                            className={`w-1 h-1 rounded-full ${eventColors[event.color].replace('/80', '')}`}
-                                                            title={event.title}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
+                        return (
+                            <div
+                                key={day.toString()}
+                                className={cn(
+                                    "relative min-h-[100px] p-2 border-r border-gray-800/50 transition-all group hover:bg-[#16161f]",
+                                    !isLastRow && "border-b",
+                                    (dayIdx + 1) % visibleWeekDays.length === 0 && "border-r-0"
+                                )}
+                            >
+                                <div className="flex flex-col h-full" style={{ opacity: !isCurrentMonth ? 0.3 : 1 }}>
+                                    {/* Numer dnia */}
+                                    <div className="flex justify-center mb-2">
+                                        <span className={cn(
+                                            "text-xs font-medium h-7 w-7 flex items-center justify-center rounded-full transition-all",
+                                            isToday
+                                                ? "bg-[#F59E0B] text-black font-bold shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                                                : "text-gray-500 group-hover:text-gray-300"
+                                        )}>
+                                            {format(day, 'd')}
+                                        </span>
                                     </div>
-                                )
-                            })}
 
-                            {/* Fill row if incomplete */}
-                            {week.length < 7 && Array(7 - week.length).fill(null).map((_, i) => (
-                                <div key={`empty-${i}`} className={`bg-[#15151e] ${i < 6 - week.length ? 'border-r border-gray-800' : ''}`} />
-                            ))}
-                        </div>
-                    ))}
+                                    {/* Kontener na eventy */}
+                                    <div className="flex flex-col h-[calc(100%-2rem)]">
+                                        <div className="flex-1 flex flex-col gap-1 px-1 overflow-hidden">
+                                            {dayEvents.slice(0, 3).map((event) => (
+                                                <div
+                                                    key={event.id}
+                                                    className="bg-[#1a1a24] border border-gray-800/50 px-2 py-1.5 rounded-lg hover:border-gray-600 transition-colors cursor-pointer group/card shrink-0"
+                                                >
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] text-gray-300 font-medium truncate">
+                                                            {event.title}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {dayEvents.length > 3 && (
+                                                <span className="text-[9px] text-gray-500 text-center shrink-0">+ {dayEvents.length - 3} more</span>
+                                            )}
+                                        </div>
+
+                                        {/* Add Event Button (visible on hover) - Fixed positioning to avoid overflow */}
+                                        <div className="mt-1 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                            <button
+                                                onClick={() => setIsEventPanelOpen(true)}
+                                                className="w-full py-1 text-[10px] text-gray-500 border border-white/10 border-dashed rounded bg-white/5 hover:bg-white/10 hover:text-gray-300 transition-all flex items-center justify-center gap-1"
+                                            >
+                                                <span>+</span> Add event
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
             </div>
+
+            {/* Side Panel */}
+            <CalendarEventPanel
+                isOpen={isEventPanelOpen}
+                onClose={() => setIsEventPanelOpen(false)}
+            />
         </div>
     )
 }

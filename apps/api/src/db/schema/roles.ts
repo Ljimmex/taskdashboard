@@ -78,6 +78,7 @@ export interface RolePermissions {
     calendar?: {
         createEvents?: boolean
         manageEvents?: boolean
+        view?: boolean
     }
     invitations?: {
         manage?: boolean
@@ -172,6 +173,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: true,
                 manageEvents: true,
+                view: true,
             },
             invitations: {
                 manage: true,
@@ -258,6 +260,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: true,
                 manageEvents: true,
+                view: true,
             },
             invitations: {
                 manage: true,
@@ -344,6 +347,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: true,
                 manageEvents: true,
+                view: true,
             },
             invitations: {
                 manage: false,
@@ -430,6 +434,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: true,
                 manageEvents: true,
+                view: true,
             },
             invitations: {
                 manage: true,
@@ -516,6 +521,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: false,
                 manageEvents: false,
+                view: true,
             },
             invitations: {
                 manage: false,
@@ -600,6 +606,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: true,
                 manageEvents: true,
+                view: true,
             },
             invitations: {
                 manage: false,
@@ -680,6 +687,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: true,
                 manageEvents: false,
+                view: true,
             },
             invitations: {
                 manage: false,
@@ -760,6 +768,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: true,
                 manageEvents: false,
+                view: true,
             },
             invitations: {
                 manage: false,
@@ -840,6 +849,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: true,
                 manageEvents: false,
+                view: true,
             },
             invitations: {
                 manage: false,
@@ -920,6 +930,7 @@ export const SYSTEM_ROLES = {
             calendar: {
                 createEvents: false,
                 manageEvents: false,
+                view: true,
             },
             invitations: {
                 manage: false,

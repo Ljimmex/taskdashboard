@@ -17,6 +17,7 @@ import {
 } from '../../lib/permissions'
 import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema/teams'
+import { syncTaskToCalendar, deleteTaskCalendarEvent } from '../calendar/sync'
 
 export const tasksRoutes = new Hono()
 
@@ -175,7 +176,7 @@ tasksRoutes.get('/', async (c) => {
             return {
                 ...task,
                 subtasksCount: task.subtasks?.length || 0,
-                subtasksCompleted: task.subtasks?.filter(c => c.isCompleted || c.status === 'done').length || 0,
+                subtasksCompleted: task.subtasks?.filter((c: any) => c.isCompleted || c.status === 'done').length || 0,
                 commentsCount: task.comments?.length || 0,
                 attachmentCount: fileCount.length,
                 assignee: task.assignee || null
@@ -431,6 +432,11 @@ tasksRoutes.post('/', async (c) => {
 
         await db.insert(taskActivityLog).values({ taskId: created.id, userId: reporterId, activityType: 'created', newValue: created.title })
 
+        // 📅 Sync to Calendar
+        if (created.dueDate) {
+            await syncTaskToCalendar(created, userId)
+        }
+
         // TRIGGER WEBHOOK
         const workspaceId = await getWorkspaceIdFromProject(created.projectId)
         if (workspaceId) {
@@ -519,6 +525,9 @@ tasksRoutes.patch('/:id', async (c) => {
 
         const [updated] = await db.update(tasks).set(updateData).where(eq(tasks.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // 📅 Sync to Calendar
+        await syncTaskToCalendar(updated, userId)
 
         // TRIGGER WEBHOOKS
         const workspaceId = await getWorkspaceIdFromProject(updated.projectId)
@@ -673,6 +682,9 @@ tasksRoutes.delete('/:id', async (c) => {
 
         const [deleted] = await db.delete(tasks).where(eq(tasks.id, id)).returning()
         if (!deleted) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // 📅 Sync to Calendar
+        await deleteTaskCalendarEvent(id)
 
         // TRIGGER WEBHOOK
         const workspaceId = await getWorkspaceIdFromProject(deleted.projectId)

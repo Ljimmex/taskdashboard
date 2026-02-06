@@ -8,9 +8,10 @@ interface ChatContact {
 interface ChatSectionProps {
     contacts: ChatContact[]
     onSeeAll?: () => void
+    onContactClick?: (contactId: string) => void
 }
 
-export function ChatSection({ contacts, onSeeAll }: ChatSectionProps) {
+export function ChatSection({ contacts, onSeeAll, onContactClick }: ChatSectionProps) {
     return (
         <div className="rounded-2xl bg-[#12121a] p-5">
             {/* Header */}
@@ -29,6 +30,7 @@ export function ChatSection({ contacts, onSeeAll }: ChatSectionProps) {
                 {contacts.map((contact) => (
                     <button
                         key={contact.id}
+                        onClick={() => onContactClick?.(contact.id)}
                         className="flex flex-col items-center gap-1 min-w-fit group"
                     >
                         <div className="relative">

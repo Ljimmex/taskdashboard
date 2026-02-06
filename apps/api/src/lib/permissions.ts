@@ -292,6 +292,10 @@ export function canViewWebhookLogs(workspaceRole: WorkspaceRole | null, teamLeve
 // PERMISSION GUARDS - CALENDAR
 // =============================================================================
 
+export function canViewCalendarEvents(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
+    return hasPermission(workspaceRole, teamLevel, 'calendar', 'view')
+}
+
 export function canCreateCalendarEvents(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
     return hasPermission(workspaceRole, teamLevel, 'calendar', 'createEvents')
 }
@@ -381,6 +385,10 @@ export const permissions = {
     canManageTimeEntries,
     // Analytics
     canViewAnalytics,
+    // Calendar
+    canViewCalendarEvents,
+    canCreateCalendarEvents,
+    canManageCalendarEvents,
     // Hierarchy
     isWorkspaceRoleAtLeast,
     isTeamLevelAtLeast,

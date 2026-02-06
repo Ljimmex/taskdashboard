@@ -46,6 +46,14 @@ const EVENT_GROUPS = [
         ]
     },
     {
+        title: 'KALENDARZ',
+        items: [
+            { id: 'calendar.created', label: 'Dodano wydarzenie' },
+            { id: 'calendar.updated', label: 'Zaktualizowano wydarzenie' },
+            { id: 'calendar.deleted', label: 'Usunięto wydarzenie' },
+        ]
+    },
+    {
         title: 'UŻYTKOWNICY',
         items: [
             { id: 'member.added', label: 'Dołączył nowy członek' },
