@@ -1,7 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { MessagesPage } from '@/pages/MessagesPage'
 
-interface MessagesSearch {
+export interface FilesSearch {
+  fileId?: string
+}
+
+export interface MessagesSearch {
   userId?: string
 }
 

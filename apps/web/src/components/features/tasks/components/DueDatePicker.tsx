@@ -58,6 +58,15 @@ export function DueDatePicker({
         return 0
     })
 
+    // Sync time state with value when it changes
+    useEffect(() => {
+        if (value && showTime) {
+            const d = new Date(value)
+            setHours(d.getHours())
+            setMinutes(d.getMinutes())
+        }
+    }, [value, showTime])
+
     // Calculate dropdown position when opening
     const handleOpen = () => {
         if (disabled) return
@@ -97,9 +106,45 @@ export function DueDatePicker({
         }
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside)
-            return () => document.removeEventListener('mousedown', handleClickOutside)
+
+            const handleScroll = (e: Event) => {
+                // Ignore scroll events originating from inside the dropdown (e.g. time list)
+                if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
+                    return
+                }
+
+                if (buttonRef.current) {
+                    const rect = buttonRef.current.getBoundingClientRect()
+                    const dropdownHeight = showTime ? 400 : 380
+                    const spaceBelow = window.innerHeight - rect.bottom
+                    const openUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight
+
+                    // Determine width (w-80 = 320px, w-72 = 288px)
+                    const width = showTime ? 320 : 288
+
+                    // Calculate left position ensuring it doesn't overflow right edge
+                    // Leave a 16px margin from the right edge
+                    const left = Math.min(rect.left, window.innerWidth - width - 16)
+
+                    setPosition(prev => ({
+                        ...prev,
+                        top: openUp ? rect.top - dropdownHeight - 8 : rect.bottom + 8,
+                        left: left,
+                        openUp
+                    }))
+                }
+            }
+
+            window.addEventListener('scroll', handleScroll, true)
+            window.addEventListener('resize', handleScroll)
+
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside)
+                window.removeEventListener('scroll', handleScroll, true)
+                window.removeEventListener('resize', handleScroll)
+            }
         }
-    }, [isOpen])
+    }, [isOpen, showTime])
 
     const getDaysInMonth = (year: number, month: number) => {
         return new Date(year, month + 1, 0).getDate()
@@ -252,39 +297,7 @@ export function DueDatePicker({
         { label: 'Next Week', date: new Date(Date.now() + 7 * 86400000) },
     ]
 
-    // Handle window resize/scroll to close or reposition
-    useEffect(() => {
-        if (isOpen) {
-            const handleScroll = () => {
-                if (buttonRef.current) {
-                    const rect = buttonRef.current.getBoundingClientRect()
-                    const dropdownHeight = showTime ? 400 : 380
-                    const spaceBelow = window.innerHeight - rect.bottom
-                    const openUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight
 
-                    // Determine width (w-80 = 320px, w-72 = 288px)
-                    const width = showTime ? 320 : 288
-
-                    // Calculate left position ensuring it doesn't overflow right edge
-                    // Leave a 16px margin from the right edge
-                    const left = Math.min(rect.left, window.innerWidth - width - 16)
-
-                    setPosition(prev => ({
-                        ...prev,
-                        top: openUp ? rect.top - dropdownHeight - 8 : rect.bottom + 8,
-                        left: left,
-                        openUp
-                    }))
-                }
-            }
-            window.addEventListener('scroll', handleScroll, true)
-            window.addEventListener('resize', handleScroll)
-            return () => {
-                window.removeEventListener('scroll', handleScroll, true)
-                window.removeEventListener('resize', handleScroll)
-            }
-        }
-    }, [isOpen, showTime])
 
     return (
         <div ref={ref} className={cn('relative', className)}>

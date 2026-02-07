@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
 
-interface FilesSearch {
+export interface FilesSearch {
     fileId?: string
 }
 
