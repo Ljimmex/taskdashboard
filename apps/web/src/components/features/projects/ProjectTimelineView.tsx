@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { Task } from './types'
+import { getDaysInMonth, isSameDay } from './utils'
 
 type TimelineViewMode = 'day' | 'week' | 'month'
 
@@ -32,12 +33,6 @@ const MONTH_NAMES = [
     'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
 ]
 
-function isSameDay(d1: Date, d2: Date) {
-    return d1.getDate() === d2.getDate() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getFullYear() === d2.getFullYear()
-}
-
 // Format date to YYYY-MM-DD in local timezone (avoids UTC shift from toISOString)
 function formatLocalDate(date: Date): string {
     const year = date.getFullYear()
@@ -57,18 +52,6 @@ function getWeekDays(date: Date): Date[] {
         const d = new Date(start)
         d.setDate(start.getDate() + i)
         days.push(d)
-    }
-    return days
-}
-
-function getDaysInMonth(date: Date): Date[] {
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const lastDay = new Date(year, month + 1, 0).getDate()
-
-    const days: Date[] = []
-    for (let i = 1; i <= lastDay; i++) {
-        days.push(new Date(year, month, i))
     }
     return days
 }
@@ -96,7 +79,7 @@ export function ProjectTimelineView({
     onAddTask,
     timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 }: ProjectTimelineViewProps) {
-    const [viewMode, setViewMode] = useState<TimelineViewMode>('day')
+    const [viewMode, setViewMode] = useState<TimelineViewMode>('month') // Default to month to match requested fix
     const [hourRange, setHourRange] = useState<HourRange>(HOUR_RANGES[1].range)
     const [showHourMenu, setShowHourMenu] = useState(false)
     const [currentDate, setCurrentDate] = useState(new Date())
@@ -203,10 +186,17 @@ export function ProjectTimelineView({
         return getDaysInMonth(currentDate)
     }, [viewMode, currentDate])
 
+    // Month View "Now" Line Position Logic
+    const DAY_WIDTH_MONTH = 48 // w-12 = 48px
+    const todayIndex = viewDays.findIndex(d => isSameDay(d, today))
+    const monthNowPosition = todayIndex !== -1
+        ? (todayIndex * DAY_WIDTH_MONTH) + ((currentMinutes / (24 * 60)) * DAY_WIDTH_MONTH)
+        : -1
+
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full w-full">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-shrink-0 px-2">
                 <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold text-white">{headerLabel}</h2>
                 </div>
@@ -283,219 +273,252 @@ export function ProjectTimelineView({
                 </div>
             </div>
 
-            {/* Timeline Grid */}
-            <div className="flex-1 bg-[#16161f] rounded-xl border border-gray-800 overflow-auto">
-                {viewMode === 'day' ? (
-                    /* Day View - Horizontal Timeline */
-                    <div className="min-w-full">
-                        {/* Hour Headers */}
-                        <div className="flex border-b border-gray-800 sticky top-0 bg-[#16161f] z-10">
-                            <div className="w-8 flex-shrink-0 border-r border-gray-800" />
-                            {hours.map(hour => (
-                                <div
-                                    key={hour}
-                                    className="flex-1 min-w-[80px] py-3 text-center text-xs text-gray-500 border-r border-gray-800 last:border-r-0"
-                                >
-                                    {hour}:00
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Task Rows */}
-                        <div className="relative">
-                            {/* Current Time Line */}
-                            {showNowLine && isSameDay(currentDate, today) && (
-                                <div
-                                    className="absolute top-0 bottom-0 border-l-2 border-dashed border-amber-500 z-20 pointer-events-none"
-                                    style={{ left: `calc(2rem + ((100% - 2rem) * ${nowPercentage}) / 100)` }}
-                                />
-                            )}
-
-                            {/* Task Lanes */}
-                            {(() => {
-                                const dateKey = formatLocalDate(currentDate)
-                                const dayTasks = tasksByDate.get(dateKey) || []
-
-                                if (dayTasks.length === 0) {
+            {/* Timeline Content */}
+            <div className="flex-1 overflow-hidden">
+                {viewMode === 'month' ? (
+                    /* Month View - Copied structure from TimelineView.tsx */
+                    <div className="h-full flex flex-col">
+                        <div className="overflow-x-auto custom-gantt-scroll pb-2 pr-4 [mask-image:linear-gradient(to_right,black_90%,transparent_100%)] h-full">
+                            {/* Date Header bar */}
+                            <div className="flex h-12 bg-[#1e1e29] rounded-xl mb-2 mx-2 shadow-sm items-center w-[calc(100%-16px)] min-w-max sticky top-0 z-20">
+                                {viewDays.map((day, idx) => {
+                                    const dayName = day.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
+                                    const isToday = isSameDay(day, today)
                                     return (
-                                        <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
-                                            Brak zadań na ten dzień
+                                        <div
+                                            key={idx}
+                                            className={`w-12 h-full flex-shrink-0 flex flex-col items-center justify-center text-[10px] ${isToday ? 'text-amber-500 font-bold' : 'text-gray-500'}`}
+                                        >
+                                            <span>{dayName}</span>
+                                            <span>{day.getDate()}</span>
                                         </div>
                                     )
-                                }
+                                })}
+                            </div>
 
-                                return dayTasks.map((task) => (
-                                    <div key={task.id} className="flex h-11 border-b border-gray-800 hover:bg-gray-800/20 transition-colors">
-                                        <div className="w-8 flex-shrink-0 border-r border-gray-800" />
-                                        <div className="flex-1 relative px-2 py-1.5">
-                                            <button
-                                                onClick={() => onTaskClick?.(task.id)}
-                                                className={`absolute left-2 right-2 top-1.5 bottom-1.5 rounded-lg border-l-4 px-3 flex items-center justify-between ${getPriorityColor(task.priority || 'medium')}`}
+                            {/* Timeline Grid */}
+                            <div className="flex flex-col mx-2 w-[calc(100%-16px)] min-w-max rounded-xl overflow-hidden border border-gray-700/20 bg-[#13131a] relative min-h-[100px]">
+
+                                {/* Global "Current Time" Line Overlay */}
+                                {monthNowPosition !== -1 && (
+                                    <div
+                                        className="absolute top-0 bottom-0 border-l border-dashed border-amber-500/50 z-30 pointer-events-none"
+                                        style={{ left: `${monthNowPosition}px` }}
+                                    />
+                                )}
+
+                                {/* Indicators Row */}
+                                <div className="flex h-12 relative w-full border-b border-gray-700/20">
+                                    {/* Horizontal Connecting Line */}
+                                    <div
+                                        className="absolute top-1/2 left-0 right-0 h-[2px] -translate-y-1/2 z-0"
+                                        style={{ backgroundColor: `${projectColor}1A` }}
+                                    />
+
+                                    {viewDays.map((day, idx) => {
+                                        const dateKey = formatLocalDate(day)
+                                        const dayTasks = tasksByDate.get(dateKey) || []
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="w-12 flex-shrink-0 border-r border-gray-700/20 flex flex-col items-center justify-center relative z-10"
                                             >
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-xs font-medium text-white truncate">{task.title}</div>
-                                                </div>
-                                                {task.assignee && (
-                                                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[8px] text-black font-bold ml-2 flex-shrink-0">
-                                                        {task.assignee.name?.charAt(0)}
+                                                {dayTasks.length > 0 && (
+                                                    <div
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            // For month view, maybe zoom to day? or just show details of first task if 1?
+                                                            // Original TimelineView: onDayClick(day, dayTasks) or if 1 task click it onTaskClick(id)
+                                                            if (dayTasks.length === 1 && onTaskClick) {
+                                                                onTaskClick(dayTasks[0].id)
+                                                            } else if (onTaskClick && dayTasks.length > 0) {
+                                                                // Could implement day-click-to-list. 
+                                                                // For now keeping simple click first task behaviour or just indicator?
+                                                                // Original logic in TimelineView:
+                                                                // if (dayTasks.length === 1) onTaskClick?.(dayTasks[0].id)
+                                                                // else onDayClick?.(day, dayTasks)
+                                                                // Let's emulate that if onTaskClick passed.
+                                                                onTaskClick(dayTasks[0].id)
+                                                            }
+                                                        }}
+                                                        className="px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm cursor-pointer hover:opacity-80 transition-opacity bg-background border border-gray-700/50"
+                                                        style={{
+                                                            borderColor: projectColor,
+                                                            color: projectColor,
+                                                            backgroundColor: '#13131a'
+                                                        }}
+                                                    >
+                                                        {dayTasks.length}t
                                                     </div>
                                                 )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+
+                                {/* Add Buttons Row */}
+                                <div className="flex h-10 hover:bg-gray-800/20 transition-colors relative z-10">
+                                    {viewDays.map((day, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="w-12 flex-shrink-0 border-r border-gray-700/20 flex items-center justify-center group"
+                                        >
+                                            <button
+                                                onClick={() => onAddTask?.(day)}
+                                                className="w-6 h-6 rounded flex items-center justify-center text-gray-600 group-hover:text-gray-400 group-hover:bg-gray-700/50 transition-colors"
+                                            >
+                                                <Plus size={14} />
                                             </button>
                                         </div>
-                                    </div>
-                                ))
-                            })()}
-
-                            {/* Add Task Row */}
-                            <div className="flex h-10 hover:bg-gray-800/20 transition-colors">
-                                <div className="w-8 flex-shrink-0 border-r border-gray-800" />
-                                <div className="flex-1 flex items-center justify-center">
-                                    <button
-                                        onClick={() => onAddTask?.(currentDate)}
-                                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
-                                    >
-                                        <Plus size={14} />
-                                        Dodaj zadanie
-                                    </button>
+                                    ))}
                                 </div>
                             </div>
                         </div>
                     </div>
-                ) : viewMode === 'week' ? (
-                    /* Week View */
-                    <div className="grid grid-cols-7 h-full relative">
-                        {/* Week View Current Time Line */}
-                        {viewDays.some(d => isSameDay(d, today)) && (
-                            <div
-                                className="absolute top-0 bottom-0 border-l-2 border-dashed border-amber-500 z-20 pointer-events-none"
-                                style={{
-                                    left: `calc((100% / 7) * ${viewDays.findIndex(d => isSameDay(d, today))} + ((100% / 7) * ${currentMinutes / (24 * 60)}))`
-                                }}
-                            />
-                        )}
-                        {viewDays.map((day, idx) => {
-                            const dateKey = formatLocalDate(day)
-                            const dayTasks = tasksByDate.get(dateKey) || []
-                            const isToday = isSameDay(day, today)
-
-                            return (
-                                <div key={idx} className="border-r border-gray-800 last:border-r-0 flex flex-col">
-                                    {/* Day Header */}
-                                    <div className={`py-3 text-center border-b border-gray-800 ${isToday ? 'bg-amber-500/10' : ''}`}>
-                                        <div className="text-xs text-gray-500">
-                                            {day.toLocaleDateString('pl-PL', { weekday: 'short' })}
-                                        </div>
-                                        <div className={`text-sm font-medium ${isToday ? 'text-[#F2CE88]' : 'text-white'}`}>
-                                            {day.getDate()}
-                                        </div>
+                ) : viewMode === 'day' ? (
+                    /* Day View - Horizontal Timeline */
+                    <div className="h-full overflow-auto bg-[#16161f] rounded-xl border border-gray-800">
+                        <div className="min-w-max">
+                            {/* Hour Headers */}
+                            <div className="flex border-b border-gray-800 sticky top-0 bg-[#16161f] z-10">
+                                <div className="w-8 flex-shrink-0 border-r border-gray-800" />
+                                {hours.map(hour => (
+                                    <div
+                                        key={hour}
+                                        className="flex-1 min-w-[60px] py-2 text-center text-[10px] text-gray-500 border-r border-gray-800 last:border-r-0"
+                                    >
+                                        {hour}:00
                                     </div>
+                                ))}
+                            </div>
 
-                                    {/* Tasks */}
-                                    <div className="flex-1 p-2 space-y-2 overflow-y-auto">
-                                        {dayTasks.map(task => (
-                                            <button
-                                                key={task.id}
-                                                onClick={() => onTaskClick?.(task.id)}
-                                                className={`w-full p-2 rounded-lg border-l-4 text-left ${getPriorityColor(task.priority || 'medium')}`}
-                                            >
-                                                <div className="text-xs font-medium text-white truncate">{task.title}</div>
-                                            </button>
-                                        ))}
+                            {/* Task Rows */}
+                            <div className="relative">
+                                {/* Current Time Line */}
+                                {showNowLine && isSameDay(currentDate, today) && (
+                                    <div
+                                        className="absolute top-0 bottom-0 border-l-2 border-dashed border-amber-500 z-20 pointer-events-none"
+                                        style={{ left: `calc(2rem + ((100% - 2rem) * ${nowPercentage}) / 100)` }}
+                                    />
+                                )}
 
-                                        <button
-                                            onClick={() => onAddTask?.(day)}
-                                            className="w-full py-1 text-[10px] text-gray-600 hover:text-gray-400 transition-colors"
-                                        >
-                                            +
-                                        </button>
+                                {/* Task Lanes */}
+                                {(() => {
+                                    const dateKey = formatLocalDate(currentDate)
+                                    const dayTasks = tasksByDate.get(dateKey) || []
+
+                                    if (dayTasks.length === 0) {
+                                        return (
+                                            <div className="flex items-center justify-center h-24 text-gray-500 text-xs">
+                                                Brak zadań na ten dzień
+                                            </div>
+                                        )
+                                    }
+
+                                    return dayTasks.map((task) => (
+                                        <div key={task.id} className="flex h-9 border-b border-gray-800 hover:bg-gray-800/20 transition-colors">
+                                            <div className="w-8 flex-shrink-0 border-r border-gray-800" />
+                                            <div className="flex-1 relative px-1 py-1">
+                                                <button
+                                                    onClick={() => onTaskClick?.(task.id)}
+                                                    className={`absolute left-1 right-1 top-1 bottom-1 rounded border-l-2 px-2 flex items-center justify-between ${getPriorityColor(task.priority || 'medium')}`}
+                                                >
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-[10px] font-medium text-white truncate">{task.title}</div>
+                                                    </div>
+                                                    {task.assignee && (
+                                                        <div className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[8px] text-black font-bold ml-1 flex-shrink-0">
+                                                            {task.assignee.name?.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                })()}
+
+                                {/* Add Task Row */}
+                                <div className="flex h-8 hover:bg-gray-800/20 transition-colors cursor-pointer group" onClick={() => onAddTask?.(currentDate)}>
+                                    <div className="w-8 flex-shrink-0 border-r border-gray-800" />
+                                    <div className="flex-1 flex items-center justify-center text-gray-500 group-hover:text-gray-300 transition-colors">
+                                        <Plus size={14} className="mr-1" />
+                                        <span className="text-[11px]">Dodaj zadanie</span>
                                     </div>
                                 </div>
-                            )
-                        })}
+                            </div>
+                        </div>
                     </div>
                 ) : (
-                    /* Month View - Simple Timeline */
-                    <div className="overflow-x-auto relative">
-                        {/* Month View Current Time Line */}
-                        {viewDays.some(d => isSameDay(d, today)) && (
-                            <div
-                                className="absolute top-0 bottom-0 border-l-2 border-dashed border-amber-500 z-20 pointer-events-none"
-                                style={{
-                                    left: `${(viewDays.findIndex(d => isSameDay(d, today)) * 40) + (40 * (currentMinutes / (24 * 60)))}px`
-                                }}
-                            />
-                        )}
-                        {/* Day Headers */}
-                        <div className="flex border-b border-gray-800 sticky top-0 bg-[#16161f] z-10">
+                    /* Week View - Fitted Grid Style */
+                    <div className="h-full flex flex-col bg-[#16161f] rounded-xl border border-gray-800 overflow-hidden">
+                        {/* Header Row */}
+                        <div className="grid grid-cols-7 border-b border-gray-800 bg-[#16161f]">
                             {viewDays.map((day, idx) => {
                                 const isToday = isSameDay(day, today)
                                 return (
-                                    <div
-                                        key={idx}
-                                        className={`w-10 flex-shrink-0 py-2 text-center text-[10px] border-r border-gray-800 ${isToday ? 'text-[#F2CE88] font-bold' : 'text-gray-500'
-                                            }`}
-                                    >
-                                        {day.getDate()}
+                                    <div key={idx} className={`py-3 text-center border-r border-gray-800 last:border-r-0 ${isToday ? 'bg-amber-500/5' : ''}`}>
+                                        <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1">
+                                            {day.toLocaleDateString('pl-PL', { weekday: 'short' })}
+                                        </div>
+                                        <div className={`text-sm font-bold ${isToday ? 'text-amber-500' : 'text-gray-200'}`}>
+                                            {day.getDate()}
+                                        </div>
                                     </div>
                                 )
                             })}
                         </div>
 
-                        {/* Indicator Row */}
-                        <div className="flex h-12 relative">
-                            <div
-                                className="absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2"
-                                style={{ backgroundColor: `${projectColor}20` }}
-                            />
+                        {/* Grid Body */}
+                        <div className="flex-1 grid grid-cols-7 relative divide-x divide-gray-800 overflow-y-auto custom-gantt-scroll">
+                            {/* Week View Current Time Line */}
+                            {viewDays.some(d => isSameDay(d, today)) && (
+                                <div
+                                    className="absolute top-0 bottom-0 border-l-2 border-dashed border-amber-500 z-20 pointer-events-none opacity-50"
+                                    style={{
+                                        left: `calc((100% / 7) * ${viewDays.findIndex(d => isSameDay(d, today))} + ((100% / 7) * ${currentMinutes / (24 * 60)}))`
+                                    }}
+                                />
+                            )}
+
                             {viewDays.map((day, idx) => {
                                 const dateKey = formatLocalDate(day)
                                 const dayTasks = tasksByDate.get(dateKey) || []
+                                const isToday = isSameDay(day, today)
 
                                 return (
-                                    <div
-                                        key={idx}
-                                        className="w-10 flex-shrink-0 border-r border-gray-800 flex items-center justify-center relative z-10"
-                                    >
-                                        {dayTasks.length > 0 && (
+                                    <div key={idx} className={`h-full flex flex-col min-h-[300px] ${isToday ? 'bg-amber-500/[0.02]' : ''}`}>
+                                        <div className="flex-1 p-2 space-y-2">
+                                            {dayTasks.map(task => (
+                                                <button
+                                                    key={task.id}
+                                                    onClick={() => onTaskClick?.(task.id)}
+                                                    className={`w-full p-2 rounded-lg border-l-2 text-left shadow-sm group hover:scale-[1.02] active:scale-95 transition-all bg-[#1a1a24] hover:bg-[#20202b] border-gray-700/50 hover:border-amber-500/50 ${getPriorityColor(task.priority || 'medium')}`}
+                                                >
+                                                    <div className="text-xs font-medium text-gray-200 truncate leading-tight mb-1">{task.title}</div>
+                                                    {task.assignee && (
+                                                        <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100">
+                                                            <div className="w-3.5 h-3.5 rounded-full bg-gray-600 border border-gray-500" />
+                                                            <span className="text-[10px] text-gray-400">{task.assignee.name.split(' ')[0]}</span>
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            ))}
+
+                                            {/* Add Button - Subtle on hover */}
                                             <button
-                                                onClick={() => {
-                                                    if (dayTasks.length === 1) {
-                                                        onTaskClick?.(dayTasks[0].id)
-                                                    }
-                                                }}
-                                                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#16161f] border"
-                                                style={{ borderColor: projectColor, color: projectColor }}
+                                                onClick={() => onAddTask?.(day)}
+                                                className="w-full h-8 flex items-center justify-center rounded-lg border border-dashed border-gray-800 text-gray-600 hover:text-white hover:bg-gray-800 hover:border-gray-600 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
                                             >
-                                                {dayTasks.length}t
+                                                <Plus size={14} />
                                             </button>
-                                        )}
+                                        </div>
                                     </div>
                                 )
                             })}
-                        </div>
-
-                        {/* Add Row */}
-                        <div className="flex h-8 hover:bg-gray-800/20 transition-colors">
-                            {viewDays.map((day, idx) => (
-                                <div
-                                    key={idx}
-                                    className="w-10 flex-shrink-0 border-r border-gray-800 flex items-center justify-center group"
-                                >
-                                    <button
-                                        onClick={() => onAddTask?.(day)}
-                                        className="w-5 h-5 rounded flex items-center justify-center text-gray-700 group-hover:text-gray-400 transition-colors"
-                                    >
-                                        <Plus size={12} />
-                                    </button>
-                                </div>
-                            ))}
                         </div>
                     </div>
                 )}
             </div>
-
-
-
         </div>
     )
 }

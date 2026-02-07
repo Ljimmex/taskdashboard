@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { X, AlertCircle, Check } from 'lucide-react'
 
 interface WebhookModalProps {
@@ -186,10 +187,10 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#1a1a24] rounded-2xl w-full max-w-lg shadow-2xl border border-gray-800 flex flex-col max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-[#12121a] rounded-2xl w-full max-w-lg shadow-2xl border border-gray-800/50 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+                <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-[#14141b] rounded-t-2xl">
                     <h2 className="text-xl font-bold text-white">
                         {webhook ? 'Edytuj Webhook' : 'Dodaj Webhook'}
                     </h2>
@@ -203,7 +204,7 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
 
                 <div className="p-6 overflow-y-auto space-y-6">
                     {error && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center gap-2">
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
                             <AlertCircle className="w-4 h-4" />
                             {error}
                         </div>
@@ -212,44 +213,50 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                     {/* Platform Selector */}
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">Platforma</label>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="flex bg-[#1a1a24] p-1 rounded-full w-full border border-gray-800/50">
                             <button
                                 onClick={() => setType('discord')}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2 relative ${type === 'discord'
-                                    ? 'bg-amber-500/10 border-amber-500 text-white'
-                                    : 'bg-gray-800/30 border-transparent text-gray-400 hover:bg-gray-800/50 hover:border-gray-700'
-                                    }`}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all",
+                                    type === 'discord'
+                                        ? "bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10"
+                                        : "text-gray-500 hover:text-white"
+                                )}
                             >
-                                <div className={type === 'discord' ? 'text-amber-500' : 'text-current'}>
+                                <div className="scale-75 origin-center">
                                     <DiscordIcon />
                                 </div>
-                                <span className="text-sm font-semibold">Discord</span>
+                                Discord
                             </button>
 
                             <button
                                 onClick={() => setType('slack')}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2 relative ${type === 'slack'
-                                    ? 'bg-amber-500/10 border-amber-500 text-white'
-                                    : 'bg-gray-800/30 border-transparent text-gray-400 hover:bg-gray-800/50 hover:border-gray-700'
-                                    }`}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all",
+                                    type === 'slack'
+                                        ? "bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10"
+                                        : "text-gray-500 hover:text-white"
+                                )}
                             >
-                                <div className={type === 'slack' ? 'text-amber-500' : 'text-current'}>
+                                <div className="scale-75 origin-center">
                                     <SlackIcon />
                                 </div>
-                                <span className="text-sm font-semibold">Slack</span>
+                                Slack
                             </button>
 
                             <button
                                 onClick={() => setType('generic')}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all gap-2 relative ${type === 'generic'
-                                    ? 'bg-amber-500/10 border-amber-500 text-white'
-                                    : 'bg-gray-800/30 border-transparent text-gray-400 hover:bg-gray-800/50 hover:border-gray-700'
-                                    }`}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all",
+                                    type === 'generic'
+                                        ? "bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10"
+                                        : "text-gray-500 hover:text-white"
+                                )}
                             >
-                                <div className={type === 'generic' ? 'text-amber-500' : 'text-current'}>
+                                <div className="scale-75 origin-center">
                                     <GenericIcon />
                                 </div>
-                                <span className="text-sm font-semibold">Inny</span>
+                                Inny
                             </button>
                         </div>
                     </div>
@@ -266,7 +273,7 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                     type === 'slack' ? "https://hooks.slack.com/services/..." :
                                         "https://example.com/webhook"
                             }
-                            className="w-full bg-[#0f0f14] border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-amber-500 focus:bg-[#0a0a0e] focus:outline-none transition-all font-mono text-sm"
+                            className="w-full bg-[#1a1a24] border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-amber-500/50 focus:bg-[#1f1f2e] focus:outline-none transition-all font-mono text-sm"
                         />
                     </div>
 
@@ -284,13 +291,13 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                     type === 'slack' ? "np. Slack #alerts" :
                                         "np. Integracja z CRM"
                             }
-                            className="w-full bg-[#0f0f14] border border-gray-800 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:border-amber-500 focus:bg-[#0a0a0e] focus:outline-none transition-all"
+                            className="w-full bg-[#1a1a24] border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-amber-500/50 focus:bg-[#1f1f2e] focus:outline-none transition-all"
                         />
                     </div>
 
                     {/* Silent Mode */}
                     {type === 'discord' && (
-                        <label className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-lg border border-gray-800 cursor-pointer hover:bg-gray-800/50 transition-colors group">
+                        <label className="flex items-center gap-3 p-4 bg-[#1a1a24] rounded-xl border border-gray-800 cursor-pointer hover:bg-[#1f1f2e] transition-colors group">
                             <div className="relative flex items-center justify-center">
                                 <input
                                     type="checkbox"
@@ -315,7 +322,7 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                     {/* Events Selection */}
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-3">Zdarzenia</label>
-                        <div className="bg-gray-800/30 rounded-lg border border-gray-800 p-2 max-h-[280px] overflow-y-auto custom-scrollbar">
+                        <div className="bg-[#1a1a24] rounded-xl border border-gray-800 p-2 max-h-[280px] overflow-y-auto custom-scrollbar">
                             {EVENT_GROUPS.map(group => (
                                 <div key={group.title} className="mb-2 last:mb-0">
                                     <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 py-2">
@@ -327,8 +334,8 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                             return (
                                                 <label
                                                     key={event.id}
-                                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-all ${isSelected
-                                                        ? 'bg-amber-500/5'
+                                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${isSelected
+                                                        ? 'bg-amber-500/10'
                                                         : 'hover:bg-white/5'
                                                         }`}
                                                 >
@@ -366,17 +373,17 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-5 border-t border-gray-800 flex justify-end gap-3">
+                <div className="p-5 border-t border-gray-800 flex justify-end gap-3 bg-[#14141b]">
                     <button
                         onClick={onClose}
-                        className="px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 font-medium transition-colors text-sm"
+                        className="px-5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 font-medium transition-colors text-sm"
                     >
                         Anuluj
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={mutation.isPending}
-                        className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 active:translate-y-[1px] text-black font-bold rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(245,158,11,0.2)] hover:shadow-[0_6px_16px_rgba(245,158,11,0.3)] text-sm"
+                        className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 active:translate-y-[1px] text-black font-bold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(245,158,11,0.2)] hover:shadow-[0_6px_16px_rgba(245,158,11,0.3)] text-sm"
                     >
                         {mutation.isPending ? 'Zapisywanie...' : 'Zapisz'}
                     </button>

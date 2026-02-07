@@ -105,10 +105,10 @@ export function MessageInput({
     }
 
     return (
-        <div className="bg-[#12121a] p-4">
+        <div className="bg-[#1a1a24] p-4">
             {/* Editing Context Banner */}
             {isEditing && (
-                <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a24] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
+                <div className="flex items-center justify-between px-4 py-2 bg-[#12121a] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
                     <div className="flex items-center gap-2 text-amber-500">
                         <span className="font-medium">Editing message</span>
                     </div>
@@ -128,7 +128,7 @@ export function MessageInput({
 
             {/* Replying Context Banner */}
             {replyTo && (
-                <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a24] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
+                <div className="flex items-center justify-between px-4 py-2 bg-[#12121a] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
                     <div className="flex items-center gap-2 text-gray-300">
                         <span className="text-gray-500">Replying to {replyTo.senderName}:</span>
                         <span className="italic truncate max-w-[200px] opacity-75">{replyTo.content}</span>
@@ -146,7 +146,7 @@ export function MessageInput({
                 </div>
             )}
 
-            <div className="flex items-end gap-3 bg-[#12121a] p-4">
+            <div className="flex items-end gap-3 bg-[#1a1a24] p-4">
                 {/* Attachment Button */}
                 <div className="flex gap-2">
                     <button
@@ -163,7 +163,7 @@ export function MessageInput({
                 </div>
 
                 {/* Input Container */}
-                <div className="flex-1 relative bg-[#1a1a24] rounded-2xl">
+                <div className="flex-1 relative bg-[#12121a] rounded-2xl">
                     <textarea
                         ref={textareaRef}
                         value={message}

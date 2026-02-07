@@ -192,6 +192,7 @@ export function CalendarView() {
             <CalendarEventPanel
                 isOpen={isEventPanelOpen}
                 onClose={() => setIsEventPanelOpen(false)}
+                workspaceSlug={workspaceSlug}
             />
         </div>
     )

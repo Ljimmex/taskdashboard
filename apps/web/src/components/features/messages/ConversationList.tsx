@@ -94,7 +94,7 @@ export function ConversationList({
         }) || []
 
     return (
-        <div className="w-80 bg-[#0d1117] flex flex-col h-full">
+        <div className="w-80 bg-[#12121a] flex flex-col h-full border-r border-[#1a1a24]">
             {/* Header */}
             <div className="p-4">
                 {/* Search + Sort */}
@@ -115,7 +115,7 @@ export function ConversationList({
                             placeholder="Search team..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#0a0a0f] text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 text-sm"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 text-sm"
                         />
                     </div>
 
@@ -123,7 +123,7 @@ export function ConversationList({
                     <div className="relative" ref={sortDropdownRef}>
                         <button
                             onClick={() => setShowSortDropdown(!showSortDropdown)}
-                            className="px-3 py-2.5 rounded-xl bg-[#0a0a0f] text-gray-400 hover:border-amber-500/50 transition-colors text-sm flex items-center gap-1.5 whitespace-nowrap"
+                            className="px-3 py-2.5 rounded-xl bg-[#1a1a24] text-gray-400 hover:border-amber-500/50 transition-colors text-sm flex items-center gap-1.5 whitespace-nowrap"
                         >
                             <span className="text-gray-500">Sort by:</span>
                             <span className="text-amber-500">{sortBy === 'date' ? 'Date' : 'Name'}</span>
@@ -213,7 +213,7 @@ export function ConversationList({
                                             {member.name.substring(0, 2).toUpperCase()}
                                         </div>
                                     )}
-                                    <div className={`absolute bottom-0 right-0 w-3 h-3 ${statusColor} border-2 border-[#0d1117] rounded-full transition-all duration-300 ${glowClass}`}></div>
+                                    <div className={`absolute bottom-0 right-0 w-3 h-3 ${statusColor} border-2 border-[#12121a] rounded-full transition-all duration-300 ${glowClass}`}></div>
                                 </div>
 
                                 {/* Content */}

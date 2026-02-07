@@ -351,6 +351,7 @@ export function CalendarSection() {
             <CalendarEventPanel
                 isOpen={isEventPanelOpen}
                 onClose={() => setIsEventPanelOpen(false)}
+                workspaceSlug={workspaceSlug}
             />
         </div>
     )

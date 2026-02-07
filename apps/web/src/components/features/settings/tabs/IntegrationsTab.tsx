@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
-import { Plus, Trash2, Activity, Edit2, Play, FileText } from 'lucide-react'
+import { Plus, Trash2, Activity, Edit2, Play, FileText, LayoutGrid } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { WebhookModal } from '../modals/WebhookModal'
 import { WebhookTestPanel } from '../../webhooks/WebhookTestPanel'
 import { WebhookDeliveryLogs } from '../../webhooks/WebhookDeliveryLogs'
@@ -115,9 +116,9 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                 </div>
                 <button
                     onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold text-sm rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-sm rounded-xl transition-all shadow-lg shadow-amber-500/20 active:translate-y-[1px]"
                 >
-                    <Plus className="w-4 h-4" strokeWidth={2.5} />
+                    <Plus className="w-4 h-4" strokeWidth={3} />
                     New Webhook
                 </button>
             </div>
@@ -125,15 +126,15 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
             {isLoading ? (
                 <div className="text-center py-12 text-gray-500">Loading webhooks...</div>
             ) : webhooks.length === 0 ? (
-                <div className="text-center py-12 rounded-xl bg-[#1a1f2e]">
-                    <div className="w-12 h-12 bg-[#2d3548] rounded-lg flex items-center justify-center mx-auto mb-4">
-                        <Activity className="w-6 h-6 text-gray-500" />
+                <div className="text-center py-16 rounded-2xl bg-[#14141b] border border-gray-800/50">
+                    <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <LayoutGrid className="w-8 h-8 text-amber-500/50" />
                     </div>
-                    <h4 className="text-white font-medium mb-1">No integrations yet</h4>
-                    <p className="text-gray-500 text-sm mb-4">Connect your workspace with external tools like Discord or Slack.</p>
+                    <h4 className="text-white text-lg font-bold mb-2">No integrations yet</h4>
+                    <p className="text-gray-500 text-sm mb-8 max-w-sm mx-auto">Connect your workspace with external tools like Discord or Slack to automate your workflow.</p>
                     <button
                         onClick={() => setIsCreateOpen(true)}
-                        className="text-amber-500 hover:text-amber-400 text-sm font-medium"
+                        className="px-6 py-2.5 bg-[#1a1a24] hover:bg-[#1f1f2e] text-amber-500 rounded-xl text-sm font-bold transition-all border border-amber-500/20"
                     >
                         Create your first webhook
                     </button>
@@ -143,13 +144,16 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                     {webhooks.map((webhook) => (
                         <div
                             key={webhook.id}
-                            className={`bg-[#1a1f2e] rounded-xl p-4 transition-all hover:bg-[#1f2937] ${!webhook.isActive ? 'opacity-60' : ''}`}
+                            className={cn(
+                                "bg-[#14141b] rounded-2xl p-5 transition-all hover:bg-[#1a1a24] border border-gray-800/50 group/card",
+                                !webhook.isActive && "opacity-50 grayscale"
+                            )}
                         >
                             {/* Top Row */}
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-3">
                                     {/* Icon */}
-                                    <div className="w-10 h-10 rounded-lg bg-[#2d3548] flex items-center justify-center flex-shrink-0">
+                                    <div className="w-12 h-12 rounded-xl bg-[#1a1a24] flex items-center justify-center flex-shrink-0 border border-gray-800/50 transition-colors group-hover/card:border-amber-500/20">
                                         {getWebhookIcon(webhook.type)}
                                     </div>
 
@@ -175,14 +179,14 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                 <div className="flex items-center gap-1">
                                     <button
                                         onClick={() => setTestWebhookId(webhook.id)}
-                                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+                                        className="p-2 text-gray-500 hover:text-white hover:bg-[#1a1a24] rounded-lg transition-colors border border-transparent hover:border-gray-800"
                                         title="Test"
                                     >
                                         <Play className="w-[18px] h-[18px]" />
                                     </button>
                                     <button
                                         onClick={() => setLogsWebhookId(webhook.id)}
-                                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+                                        className="p-2 text-gray-500 hover:text-white hover:bg-[#1a1a24] rounded-lg transition-colors border border-transparent hover:border-gray-800"
                                         title="Logs"
                                     >
                                         <FileText className="w-[18px] h-[18px]" />
@@ -192,14 +196,14 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                             setSelectedWebhook(webhook)
                                             setIsCreateOpen(true)
                                         }}
-                                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+                                        className="p-2 text-gray-500 hover:text-white hover:bg-[#1a1a24] rounded-lg transition-colors border border-transparent hover:border-gray-800"
                                         title="Edit"
                                     >
                                         <Edit2 className="w-[18px] h-[18px]" />
                                     </button>
                                     <button
                                         onClick={() => handleDelete(webhook.id)}
-                                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-md transition-colors"
+                                        className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
                                         title="Delete"
                                     >
                                         <Trash2 className="w-[18px] h-[18px]" />
@@ -212,22 +216,22 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                 {/* Event Tags */}
                                 <div className="flex items-center gap-1.5 flex-shrink min-w-0">
                                     {webhook.events.slice(0, 2).map((event: string) => (
-                                        <span key={event} className="px-2 py-1 rounded-md bg-gray-700 text-gray-300 text-[11px] font-medium whitespace-nowrap">
+                                        <span key={event} className="px-2.5 py-1 rounded-lg bg-[#1a1a24] text-gray-300 text-[10px] font-bold border border-gray-800/50 whitespace-nowrap">
                                             {event}
                                         </span>
                                     ))}
                                     {webhook.events.length > 2 && (
-                                        <div className="relative group">
-                                            <span className="px-2 py-1 rounded-md bg-gray-700 text-gray-400 text-[11px] font-medium cursor-pointer hover:bg-gray-600 transition-colors">
+                                        <div className="relative group/events">
+                                            <span className="px-2.5 py-1 rounded-lg bg-[#1a1a24] text-gray-400 text-[10px] font-bold border border-gray-800/50 cursor-pointer hover:bg-[#1f1f2e] transition-colors">
                                                 +{webhook.events.length - 2}
                                             </span>
                                             {/* Hover Dropdown */}
-                                            <div className="absolute left-0 top-full mt-2 hidden group-hover:block z-50">
-                                                <div className="bg-[#1f2937] rounded-lg p-2 shadow-xl min-w-[160px]">
-                                                    <p className="text-[10px] text-gray-500 mb-1.5 font-medium">All events:</p>
+                                            <div className="absolute left-0 top-full mt-2 hidden group-hover/events:block z-50">
+                                                <div className="bg-[#1a1a24] rounded-xl p-2 shadow-2xl border border-gray-800 min-w-[160px] animate-in fade-in slide-in-from-top-1 duration-200">
+                                                    <p className="text-[10px] text-gray-500 mb-1.5 font-bold px-1 uppercase tracking-wider">Wszystkie zdarzenia:</p>
                                                     <div className="flex flex-col gap-1">
                                                         {webhook.events.slice(2).map((event: string) => (
-                                                            <span key={event} className="px-2 py-1 rounded bg-gray-700 text-gray-300 text-[10px]">
+                                                            <span key={event} className="px-2 py-1 rounded-lg bg-[#0f0f14] text-gray-300 text-[10px]">
                                                                 {event}
                                                             </span>
                                                         ))}

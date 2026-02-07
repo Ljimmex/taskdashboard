@@ -220,7 +220,7 @@ export function ChatWindow({
     // EARLY UI RETURN (After all hooks)
     if (!recipientUserId) {
         return (
-            <div className="flex-1 flex items-center justify-center bg-[#13161c] text-gray-500">
+            <div className="flex-1 flex items-center justify-center bg-[#1a1a24] text-gray-500">
                 Select a team member to start chatting
             </div>
         )
@@ -387,9 +387,9 @@ export function ChatWindow({
     }
 
     return (
-        <div className="flex-1 flex flex-col bg-[#13161c]">
+        <div className="flex-1 flex flex-col bg-[#1a1a24]">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-[#13161c] relative z-20">
+            <div className="px-6 py-4 border-b border-[#252530] flex items-center justify-between bg-[#1a1a24] relative z-20">
                 <div className="flex items-center gap-4">
                     {showSearch ? (
                         <div className="flex items-center bg-[#1a1a24] rounded-lg px-3 py-2 border border-gray-700 w-full md:w-64 animate-in fade-in slide-in-from-left duration-200">
@@ -421,7 +421,7 @@ export function ChatWindow({
                                     </div>
                                 )}
                                 {recipient?.isOnline && (
-                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#13161c] rounded-full"></div>
+                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1a1a24] rounded-full"></div>
                                 )}
                             </div>
                             <div>
@@ -639,9 +639,9 @@ export function ChatWindow({
                                         <div className="flex gap-3 max-w-[80%] flex-row relative">
                                             <div className="flex-shrink-0 self-end -mb-1">
                                                 {recipient?.avatar ? (
-                                                    <img src={recipient.avatar} alt={recipient.name} className="w-8 h-8 rounded-full object-cover ring-2 ring-[#13161c]" />
+                                                    <img src={recipient.avatar} alt={recipient.name} className="w-8 h-8 rounded-full object-cover ring-2 ring-[#1a1a24]" />
                                                 ) : (
-                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-2 ring-[#13161c] bg-gradient-to-br from-gray-700 to-gray-600">
+                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-2 ring-[#1a1a24] bg-gradient-to-br from-gray-700 to-gray-600">
                                                         {recipient?.name?.substring(0, 2).toUpperCase()}
                                                     </div>
                                                 )}

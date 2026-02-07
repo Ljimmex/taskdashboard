@@ -101,25 +101,6 @@ export function ProjectSection({
                     )}
                 </div>
             )}
-            <style>{`
-                .custom-gantt-scroll::-webkit-scrollbar {
-                    height: 8px;
-                }
-                .custom-gantt-scroll::-webkit-scrollbar-track {
-                    background: rgba(31, 31, 46, 0.5);
-                    border-radius: 10px;
-                }
-                .custom-gantt-scroll::-webkit-scrollbar-thumb {
-                    background: rgba(156, 163, 175, 0.2);
-                    border-radius: 10px;
-                    border: 2px solid transparent;
-                    background-clip: content-box;
-                }
-                .custom-gantt-scroll::-webkit-scrollbar-thumb:hover {
-                    background: rgba(156, 163, 175, 0.4);
-                    background-clip: content-box;
-                }
-            `}</style>
         </div>
     )
 }
