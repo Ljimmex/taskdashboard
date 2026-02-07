@@ -194,7 +194,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                 onClick={onClose}
             />
 
-            <div className="fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right border border-gray-800">
+            <div className="fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right">
                 <div className="flex items-center justify-between p-6 border-b border-gray-800">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
@@ -224,7 +224,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="e.g., Website Redesign"
-                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all font-medium"
+                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all font-medium"
                             required
                         />
                     </div>
@@ -238,7 +238,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Brief description of the project..."
                             rows={3}
-                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none text-sm"
+                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none text-sm"
                         />
                     </div>
 
@@ -248,10 +248,10 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             Team <span className="text-red-400">*</span>
                         </label>
                         <Select value={teamId} onValueChange={setTeamId}>
-                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all data-[placeholder]:text-gray-500">
+                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border-none text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all data-[placeholder]:text-gray-500">
                                 <SelectValue placeholder="Select a team" />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
+                            <SelectContent className="bg-[#1a1a24] border-none text-white">
                                 {teams.map((team) => (
                                     <SelectItem
                                         key={team.id}
@@ -277,13 +277,13 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
 
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                            🏢 Industry Template
+                            Industry Template
                         </label>
                         <Select value={industryTemplateId} onValueChange={setIndustryTemplateId}>
-                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border border-gray-800 text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all">
+                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border-none text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all">
                                 <SelectValue placeholder="Select template" />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
+                            <SelectContent className="bg-[#1a1a24] border-none text-white">
                                 <SelectItem value="no_template" className="focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white font-medium">
                                     No template (custom stages)
                                 </SelectItem>

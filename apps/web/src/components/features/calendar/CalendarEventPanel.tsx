@@ -1,14 +1,10 @@
-import { useState } from 'react'
-import { format } from 'date-fns'
+import { useState, useEffect } from 'react'
 import { CalendarEventType } from './CalendarView'
-import { X, Clock, Calendar as CalendarIcon, MapPin, AlignLeft, Users, RefreshCw, Video, Building, Monitor } from 'lucide-react'
+import { X, Calendar as CalendarIcon, MapPin, AlignLeft, Users, RefreshCw, Building, Monitor, CheckCircle2, Bell } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { CustomCheckbox } from './CalendarHeader'
+import { DueDatePicker } from '../tasks/components/DueDatePicker'
 
 interface CalendarEventPanelProps {
     isOpen: boolean
@@ -19,59 +15,81 @@ interface CalendarEventPanelProps {
 export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEventType.EVENT }: CalendarEventPanelProps) {
     const [title, setTitle] = useState('')
     const [selectedType, setSelectedType] = useState<CalendarEventType>(defaultType)
-    const [startDate, setStartDate] = useState<Date>(new Date())
+    const [startDate, setStartDate] = useState<string>('')
+    const [endDate, setEndDate] = useState<string>('')
     const [isAllDay, setIsAllDay] = useState(false)
     const [description, setDescription] = useState('')
     const [location, setLocation] = useState('')
+    const [calendarId, setCalendarId] = useState('work')
 
-    // Mock data for dropdowns
-    const timeOptions = Array.from({ length: 48 }).map((_, i) => {
-        const h = Math.floor(i / 2)
-        const m = i % 2 === 0 ? '00' : '30'
-        return `${h}:${m}`
-    })
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedType(defaultType)
+            // Initialize with current date/time if needed
+            const now = new Date()
+            setStartDate(now.toISOString())
+            const end = new Date(now.getTime() + 60 * 60 * 1000) // +1 hour
+            setEndDate(end.toISOString())
+        }
+    }, [isOpen, defaultType])
 
     if (!isOpen) return null
+
+    const getTypeIcon = (type: CalendarEventType) => {
+        switch (type) {
+            case CalendarEventType.EVENT: return <CalendarIcon className="w-5 h-5 text-amber-500" />
+            case CalendarEventType.TASK: return <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            case CalendarEventType.REMINDER: return <Bell className="w-5 h-5 text-blue-500" />
+        }
+    }
 
     return (
         <>
             {/* Backdrop */}
-            <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+            <div
+                className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+                onClick={onClose}
+            />
 
             {/* Panel */}
-            <div className="fixed inset-y-0 right-0 w-[400px] bg-[#16161f] z-50 border-l border-gray-800/50 flex flex-col shadow-2xl overflow-y-auto custom-scrollbar animate-in slide-in-from-right duration-300">
-                {/* Header / Title */}
-                <div className="p-4 space-y-4">
-                    <div className="flex items-center justify-end">
-                        <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-md text-gray-400 hover:text-white transition-colors">
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    <div className="bg-[#1a1a24] rounded-lg p-1 flex items-center gap-2 border border-gray-800/50">
-                        <div className="p-2 text-gray-400">
-                            <span className="sr-only">Title</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+            <div className="fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-[#14141b] rounded-t-2xl">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                            {getTypeIcon(selectedType)}
                         </div>
-                        <Input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Add title"
-                            className="border-none bg-transparent focus-visible:ring-0 text-lg placeholder:text-gray-500 px-0"
-                        />
+                        <div>
+                            <h2 className="text-lg font-semibold text-white">
+                                {selectedType === CalendarEventType.EVENT ? 'Add New Event' :
+                                    selectedType === CalendarEventType.TASK ? 'Add New Task' : 'Add Reminder'}
+                            </h2>
+                            <p className="text-sm text-gray-500">
+                                {selectedType === CalendarEventType.EVENT ? 'Schedule a new event' :
+                                    selectedType === CalendarEventType.TASK ? 'Create a new task' : 'Set a reminder'}
+                            </p>
+                        </div>
                     </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
 
-                    {/* Type Selector (Tabs) */}
-                    <div className="flex items-center gap-1">
+                {/* Tabs for Type Selection */}
+                <div className="px-6  bg-[#14141b]">
+                    <div className="flex gap-4">
                         {[CalendarEventType.EVENT, CalendarEventType.TASK, CalendarEventType.REMINDER].map((type) => (
                             <button
                                 key={type}
                                 onClick={() => setSelectedType(type)}
                                 className={cn(
-                                    "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                    "py-3 text-sm font-medium border-b-2 transition-colors relative",
                                     selectedType === type
-                                        ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                                        : "text-gray-400 hover:text-gray-300 hover:bg-white/5"
+                                        ? "border-amber-500 text-white"
+                                        : "border-transparent text-gray-400 hover:text-white hover:border-gray-700"
                                 )}
                             >
                                 {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -80,59 +98,70 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                     </div>
                 </div>
 
-                <div className="flex-1 p-4 space-y-6">
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+                    {/* Title Input */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Title <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder={selectedType === CalendarEventType.EVENT ? "e.g., Team Sync" : "e.g., Complete Report"}
+                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all font-medium"
+                            autoFocus
+                        />
+                    </div>
+
                     {/* Date & Time Section */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            {/* Start Date */}
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <button className="flex-1 flex items-center justify-start gap-2 bg-[#1a1a24] hover:bg-[#20202b] border border-gray-800/50 rounded-lg px-3 py-2 text-sm text-gray-300 transition-colors">
-                                        <CalendarIcon className="w-4 h-4 text-gray-500" />
-                                        <span>{format(startDate, 'EEE, MMM d')}</span>
-                                    </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-[#16161f] border-gray-800">
-                                    <Calendar mode="single" selected={startDate} onSelect={(d) => d && setStartDate(d)} initialFocus />
-                                </PopoverContent>
-                            </Popover>
-
-                            {/* Start Time */}
-                            <Select>
-                                <SelectTrigger className="w-[100px] bg-[#1a1a24] border-gray-800/50 text-gray-300">
-                                    <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                                    <SelectValue placeholder="Time" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-[#16161f] border-gray-800 text-gray-300">
-                                    {timeOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-
-                            {/* End Time */}
-                            <Select>
-                                <SelectTrigger className="w-[100px] bg-[#1a1a24] border-gray-800/50 text-gray-300">
-                                    <SelectValue placeholder="End" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-[#16161f] border-gray-800 text-gray-300">
-                                    {timeOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="flex items-center gap-3 px-1">
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <label className="block text-sm font-medium text-gray-300">
+                                Date & Time
+                            </label>
                             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsAllDay(!isAllDay)}>
                                 <CustomCheckbox checked={isAllDay} />
                                 <span className="text-sm text-gray-400">All Day</span>
                             </div>
                         </div>
 
+                        <div className="grid grid-cols-2 gap-3">
+                            {/* Start Date */}
+                            <div className="space-y-1">
+                                <span className="text-xs text-gray-500 ml-1 font-medium uppercase">Start</span>
+                                <DueDatePicker
+                                    value={startDate}
+                                    onChange={(date) => setStartDate(date || '')}
+                                    placeholder="Start date"
+                                    showTime={!isAllDay}
+                                    className="w-full"
+                                    triggerClassName="bg-[#1a1a24] text-white hover:bg-[#1a1a24] hover:text-white border-none rounded-xl px-4 py-3 h-auto"
+                                />
+                            </div>
+
+                            {/* End Date */}
+                            <div className="space-y-1">
+                                <span className="text-xs text-gray-500 ml-1 font-medium uppercase">Ends</span>
+                                <DueDatePicker
+                                    value={endDate}
+                                    onChange={(date) => setEndDate(date || '')}
+                                    placeholder="End date"
+                                    showTime={!isAllDay}
+                                    className="w-full"
+                                    triggerClassName="bg-[#1a1a24] text-white hover:bg-[#1a1a24] hover:text-white border-none rounded-xl px-4 py-3 h-auto"
+                                />
+                            </div>
+                        </div>
+
                         {/* Recurrence */}
                         <Select>
-                            <SelectTrigger className="w-full bg-[#1a1a24] border-gray-800/50 text-gray-300 justify-start">
+                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border-none text-white focus:ring-2 focus:ring-amber-500/30 transition-all data-[placeholder]:text-gray-500 justify-start">
                                 <RefreshCw className="w-4 h-4 mr-2 text-gray-500" />
-                                <span className="flex-1 text-left">Does not repeat</span>
+                                <span className="text-sm">Does not repeat</span>
                             </SelectTrigger>
-                            <SelectContent className="bg-[#16161f] border-gray-800 text-gray-300">
+                            <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
                                 <SelectItem value="none">Does not repeat</SelectItem>
                                 <SelectItem value="daily">Daily</SelectItem>
                                 <SelectItem value="weekly">Weekly</SelectItem>
@@ -142,86 +171,111 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                         </Select>
                     </div>
 
-                    {/* People / Category */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <Select>
-                            <SelectTrigger className="w-full bg-[#1a1a24] border-gray-800/50 text-gray-300">
-                                <Users className="w-4 h-4 mr-2 text-gray-500" />
-                                <span className="truncate">Add guests</span>
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#16161f] border-gray-800 text-gray-300">
-                                <SelectItem value="guest1">Guest 1</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        <Select>
-                            <SelectTrigger className="w-full bg-[#1a1a24] border-gray-800/50 text-gray-300">
-                                <div className="w-3 h-3 rounded bg-amber-500 mr-2" />
-                                <span>Work</span>
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#16161f] border-gray-800 text-gray-300">
-                                <SelectItem value="work">
-                                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-amber-500" />Work</div>
-                                </SelectItem>
-                                <SelectItem value="personal">
-                                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-blue-500" />Personal</div>
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Meeting Type */}
-                    <div className="space-y-2">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Meeting Type</label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button className="flex items-center justify-center gap-2 p-2 bg-[#1a1a24] hover:bg-[#20202b] rounded-lg border border-gray-800/50 text-sm text-gray-300 transition-colors">
-                                <Building className="w-4 h-4 text-gray-500" />
-                                Meeting Room
-                            </button>
-                            <button className="flex items-center justify-center gap-2 p-2 bg-[#1a1a24] hover:bg-[#20202b] rounded-lg border border-gray-800/50 text-sm text-gray-300 transition-colors">
-                                <Monitor className="w-4 h-4 text-gray-500" />
-                                Virtual
-                            </button>
+                    {/* Guests & Calendar */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                Guests
+                            </label>
+                            <Select>
+                                <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border-none text-white focus:ring-2 focus:ring-amber-500/30 transition-all">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <Users className="w-4 h-4 text-gray-500 shrink-0" />
+                                        <span className="truncate">Add guests</span>
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
+                                    <SelectItem value="guest1">Guest 1</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <button className="w-full flex items-center gap-3 p-2 bg-[#1a1a24] hover:bg-[#20202b] rounded-lg border border-gray-800/50 text-sm text-gray-300 transition-colors text-left">
-                            <div className="w-6 h-6 rounded bg-blue-500 flex items-center justify-center">
-                                <Video className="w-3.5 h-3.5 text-white" />
-                            </div>
-                            Google Meet video conferencing
-                        </button>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                Calendar
+                            </label>
+                            <Select value={calendarId} onValueChange={setCalendarId}>
+                                <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border-none text-white focus:ring-2 focus:ring-amber-500/30 transition-all">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <div className={`w-3 h-3 rounded-full shrink-0 ${calendarId === 'work' ? 'bg-amber-500' : 'bg-blue-500'}`} />
+                                        <span className="truncate">{calendarId === 'work' ? 'Work' : 'Personal'}</span>
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="bg-[#1a1a24] text-white">
+                                    <SelectItem value="work">
+                                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-amber-500" />Work</div>
+                                    </SelectItem>
+                                    <SelectItem value="personal">
+                                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-500" />Personal</div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
                     {/* Location */}
-                    <div className="relative">
-                        <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-                        <Input
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            placeholder="Add location"
-                            className="pl-9 bg-[#1a1a24] border-gray-800/50 text-gray-300 placeholder:text-gray-500"
-                        />
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Location
+                        </label>
+                        <div className="relative">
+                            <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-gray-500" />
+                            <input
+                                type="text"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                placeholder="Add location"
+                                className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all"
+                            />
+                        </div>
                     </div>
 
                     {/* Description */}
-                    <div className="relative">
-                        <AlignLeft className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Add description"
-                            className="w-full min-h-[100px] pl-9 pr-3 py-2 rounded-md bg-[#1a1a24] border border-gray-800/50 text-sm text-gray-300 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-y"
-                        />
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Description
+                        </label>
+                        <div className="relative">
+                            <div className="absolute left-4 top-3.5 w-5 h-5 text-gray-500 flex items-start justify-center">
+                                <AlignLeft className="w-5 h-5" />
+                            </div>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Add description"
+                                rows={3}
+                                className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Meeting Type Buttons */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <button className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:bg-[#20202b] hover:border-gray-700 transition-all text-sm font-medium">
+                            <Building className="w-4 h-4 text-gray-500" />
+                            Meeting Room
+                        </button>
+                        <button className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:bg-[#20202b] hover:border-gray-700 transition-all text-sm font-medium">
+                            <Monitor className="w-4 h-4 text-gray-500" />
+                            Virtual
+                        </button>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-800/50 flex items-center justify-between bg-[#16161f]">
-                    <button className="text-sm text-gray-400 hover:text-white transition-colors">
-                        More options
+                <div className="p-6 border-t border-gray-800 flex gap-3 bg-[#12121a] rounded-b-2xl">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 px-4 py-3 rounded-xl border border-gray-800 text-gray-300 font-medium hover:bg-gray-800 hover:text-white transition-colors"
+                    >
+                        Cancel
                     </button>
-                    <Button className="bg-amber-500 hover:bg-amber-600 text-black font-medium">
-                        Add Event
-                    </Button>
+                    <button
+                        className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all shadow-lg shadow-amber-500/20"
+                    >
+                        {selectedType === CalendarEventType.EVENT ? 'Add Event' :
+                            selectedType === CalendarEventType.TASK ? 'Add Task' : 'Set Reminder'}
+                    </button>
                 </div>
             </div>
         </>
