@@ -46,7 +46,7 @@ interface TaskDetailsPanelProps {
     activities?: Activity[]
     availableLabels?: Label[]
     onCreateLabel?: (name: string, color: string) => Promise<Label | undefined>
-    stages?: { id: string; name: string; color: string }[]
+    stages?: { id: string; name: string; color: string; position: number }[]
     teamMembers?: { id: string; name: string; avatar?: string }[]
 }
 

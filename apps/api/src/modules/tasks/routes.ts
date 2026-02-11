@@ -296,6 +296,14 @@ tasksRoutes.get('/:id', async (c) => {
             createdAt: formatTimeAgo(c.createdAt)
         }))
 
+        // Fetch project stages for the task's project
+        console.log(`🔍 Fetching stages for task ${id} (project ${task.projectId})`)
+        const stages = await db.query.projectStages.findMany({
+            where: (s, { eq }) => eq(s.projectId, task.projectId),
+            orderBy: (s, { asc }) => [asc(s.position)]
+        })
+        console.log(`✅ Found ${stages.length} stages for project ${task.projectId}`)
+
         return c.json({
             success: true,
             data: {
@@ -304,7 +312,10 @@ tasksRoutes.get('/:id', async (c) => {
                 labels: task.labels || [], // Labels are now stored directly on task as text[]
                 assignees,
                 activities: mappedActivities,
-                comments: mappedComments
+                comments: mappedComments,
+                stages, // Return project stages for status display
+                projectStages: stages, // Duplicate to test if 'stages' key is being overwritten/stripped
+                _debug_ts: new Date().toISOString() // Force new response signature
             }
         })
     } catch (error) {

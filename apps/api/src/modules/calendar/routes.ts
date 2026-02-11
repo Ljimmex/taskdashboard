@@ -199,7 +199,7 @@ calendarRoutes.get('/', async (c) => {
                     columns: { id: true, name: true, image: true }
                 },
                 task: {
-                    columns: { id: true, title: true, status: true, priority: true }
+                    columns: { id: true, title: true, status: true, priority: true, projectId: true, assigneeId: true }
                 }
             }
         })

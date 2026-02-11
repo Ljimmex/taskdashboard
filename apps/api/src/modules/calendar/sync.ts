@@ -44,8 +44,8 @@ export async function syncTaskToCalendar(task: Task, userId: string) {
             allDay: true, // Tasks with due dates are typically "all day" deliverables
             teamIds: [project.teamId],
             taskId: task.id,
-            // type: 'task', // Removed as likely not in schema or defaults to 'event'
-            createdBy: task.reporterId // Or userId of who triggered the sync? Let's use reporter or maybe the user who updated it.
+            type: 'task',
+            createdBy: task.reporterId
         }
 
         if (existingEvent) {
@@ -53,8 +53,6 @@ export async function syncTaskToCalendar(task: Task, userId: string) {
             await db.update(calendarEvents)
                 .set({
                     ...eventData,
-                    ...eventData,
-                    // updatedAt: new Date() // Removed if schema handles it or it's not in type
                 })
                 .where(eq(calendarEvents.id, existingEvent.id))
         } else {

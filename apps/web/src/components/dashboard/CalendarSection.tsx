@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, format, parseISO, isWeekend } from 'date-fns'
 import { enUS } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
-import { apiFetch } from '@/lib/api'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 import { ChevronLeft, ChevronRight, Filter, SlidersHorizontal } from 'lucide-react'
 import {
     DropdownMenu,
@@ -15,6 +15,10 @@ import {
     DropdownMenuItem
 } from "@/components/ui/dropdown-menu"
 import { CalendarEventPanel } from '@/components/features/calendar/CalendarEventPanel'
+import { DayEventListPanel, type CalendarEvent } from '@/components/features/calendar/DayEventListPanel'
+import { ViewEventPanel } from '@/components/features/calendar/ViewEventPanel'
+import { EditEventPanel } from '@/components/features/calendar/EditEventPanel'
+import { TaskDetailsPanel } from '@/components/features/tasks/panels/TaskDetailsPanel'
 
 // Enum mirroring backend
 export enum CalendarEventType {
@@ -27,10 +31,20 @@ export enum CalendarEventType {
 interface Event {
     id: string
     title: string
+    description?: string
     startAt: string
     endAt: string
     teamId: string
+    teamIds?: string[]
     type?: CalendarEventType
+    taskId?: string
+    task?: { id: string; title: string; status: string; priority: string }
+    location?: string
+    meetingLink?: string
+    meetingType?: 'physical' | 'virtual'
+    isAllDay?: boolean
+    createdBy?: string
+    creator?: { id: string; name: string; image?: string }
 }
 
 // Custom Checkbox Component matching Teams page style
@@ -68,23 +82,33 @@ export function CalendarSection() {
     const [weekStartDay, setWeekStartDay] = useState<'monday' | 'sunday'>('monday')
     const [isEventPanelOpen, setIsEventPanelOpen] = useState(false)
 
-    useEffect(() => {
+    // Panel states
+    const [selectedDay, setSelectedDay] = useState<Date | null>(null)
+    const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
+    const [isDayPanelOpen, setIsDayPanelOpen] = useState(false)
+    const [isViewPanelOpen, setIsViewPanelOpen] = useState(false)
+    const [isEditPanelOpen, setIsEditPanelOpen] = useState(false)
+
+    // Task detail panel state
+    const [selectedTask, setSelectedTask] = useState<any | null>(null)
+    const [isTaskPanelOpen, setIsTaskPanelOpen] = useState(false)
+
+    const fetchEvents = useCallback(async () => {
         if (!workspaceSlug) return
-
-        const fetchEvents = async () => {
-            try {
-                const res = await apiFetch(`/api/calendar?workspaceSlug=${workspaceSlug}`)
-                if (res.ok) {
-                    const data = await res.json()
-                    setEvents(data.data || [])
-                }
-            } catch (error) {
-                console.error('Failed to fetch calendar events', error)
+        try {
+            const res = await apiFetch(`/api/calendar?workspaceSlug=${workspaceSlug}`)
+            if (res.ok) {
+                const data = await res.json()
+                setEvents(data.data || [])
             }
+        } catch (error) {
+            console.error('Failed to fetch calendar events', error)
         }
+    }, [workspaceSlug])
 
+    useEffect(() => {
         fetchEvents()
-    }, [workspaceSlug, currentDate])
+    }, [fetchEvents, currentDate])
 
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(monthStart)
@@ -118,6 +142,47 @@ export function CalendarSection() {
     const clearFilters = () => {
         setSelectedTypes([])
     }
+
+    const openEventOrTask = async (event: Event) => {
+        if (event.type === 'task' && event.taskId) {
+            try {
+                const data = await apiFetchJson<any>(`/api/tasks/${event.taskId}`)
+                if (data.success) {
+                    setSelectedTask(data.data)
+                    setIsTaskPanelOpen(true)
+                }
+            } catch (err) {
+                console.error('Failed to fetch task details:', err)
+            }
+        } else {
+            setSelectedEvent(event as CalendarEvent)
+            setIsViewPanelOpen(true)
+        }
+    }
+
+    const handleEventClick = (event: Event, dayEvents: Event[]) => {
+        if (dayEvents.length > 1) {
+            setSelectedDay(parseISO(event.startAt))
+            setIsDayPanelOpen(true)
+        } else {
+            openEventOrTask(event)
+        }
+    }
+
+    const handleDayEventClick = (event: CalendarEvent) => {
+        setIsDayPanelOpen(false)
+        openEventOrTask(event as Event)
+    }
+
+    const handleEditEvent = (event: CalendarEvent) => {
+        setIsViewPanelOpen(false)
+        setSelectedEvent(event)
+        setIsEditPanelOpen(true)
+    }
+
+    const getDayEvents = (day: Date) => events
+        .filter(e => isSameDay(parseISO(e.startAt), day))
+        .filter(e => e.type ? selectedTypes.includes(e.type) : true)
 
     return (
         <div className="flex flex-col h-full w-full bg-[#12121a] rounded-2xl p-6 font-sans relative overflow-hidden">
@@ -285,9 +350,7 @@ export function CalendarSection() {
                         const isCurrentMonth = isSameMonth(day, monthStart)
                         const isToday = isSameDay(day, new Date())
                         const isLastRow = dayIdx >= calendarDays.length - visibleWeekDays.length
-                        const dayEvents = events
-                            .filter(e => isSameDay(parseISO(e.startAt), day))
-                            .filter(e => e.type ? selectedTypes.includes(e.type) : true)
+                        const dayEvents = getDayEvents(day)
 
                         return (
                             <div
@@ -314,10 +377,11 @@ export function CalendarSection() {
                                     {/* Kontener na eventy */}
                                     <div className="flex flex-col h-[calc(100%-2rem)]">
                                         <div className="flex-1 flex flex-col gap-1 px-1 overflow-hidden">
-                                            {dayEvents.slice(0, 3).map((event) => (
+                                            {dayEvents.slice(0, 2).map((event) => (
                                                 <div
                                                     key={event.id}
-                                                    className="bg-[#1a1a24] border border-gray-800/50 px-2 py-1.5 rounded-lg hover:border-gray-600 transition-colors cursor-pointer group/card shrink-0"
+                                                    onClick={(e) => { e.stopPropagation(); handleEventClick(event, dayEvents) }}
+                                                    className="bg-[#1a1a24] px-2 py-1.5 rounded-lg hover:bg-[#22222e] transition-colors cursor-pointer group/card shrink-0"
                                                 >
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] text-gray-300 font-medium truncate">
@@ -326,8 +390,13 @@ export function CalendarSection() {
                                                     </div>
                                                 </div>
                                             ))}
-                                            {dayEvents.length > 3 && (
-                                                <span className="text-[9px] text-gray-500 text-center shrink-0">+ {dayEvents.length - 3} more</span>
+                                            {dayEvents.length > 2 && (
+                                                <span
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedDay(day); setIsDayPanelOpen(true) }}
+                                                    className="text-[9px] text-gray-500 text-center shrink-0 cursor-pointer hover:text-amber-400 transition-colors"
+                                                >
+                                                    + {dayEvents.length - 2} more
+                                                </span>
                                             )}
                                         </div>
 
@@ -348,11 +417,55 @@ export function CalendarSection() {
                 </div>
             </div>
 
-            {/* Side Panel */}
+            {/* Side Panel - Create Event */}
             <CalendarEventPanel
                 isOpen={isEventPanelOpen}
                 onClose={() => setIsEventPanelOpen(false)}
                 workspaceSlug={workspaceSlug}
+                onCreate={fetchEvents}
+            />
+
+            {/* Day Event List Panel */}
+            {isDayPanelOpen && selectedDay && (
+                <DayEventListPanel
+                    date={selectedDay}
+                    events={getDayEvents(selectedDay) as CalendarEvent[]}
+                    isOpen={isDayPanelOpen}
+                    onClose={() => setIsDayPanelOpen(false)}
+                    onEventClick={handleDayEventClick}
+                />
+            )}
+
+            {/* View Event Panel */}
+            {isViewPanelOpen && selectedEvent && (
+                <ViewEventPanel
+                    event={selectedEvent}
+                    isOpen={isViewPanelOpen}
+                    onClose={() => { setIsViewPanelOpen(false); setSelectedEvent(null) }}
+                    onEdit={handleEditEvent}
+                    onDeleted={fetchEvents}
+                />
+            )}
+
+            {/* Edit Event Panel */}
+            {isEditPanelOpen && selectedEvent && (
+                <EditEventPanel
+                    event={selectedEvent}
+                    isOpen={isEditPanelOpen}
+                    onClose={() => { setIsEditPanelOpen(false); setSelectedEvent(null) }}
+                    workspaceSlug={workspaceSlug}
+                    onUpdated={fetchEvents}
+                />
+            )}
+
+            {/* Task Details Panel (for task-type calendar events) */}
+            <TaskDetailsPanel
+                task={selectedTask}
+                isOpen={isTaskPanelOpen}
+                onClose={() => { setIsTaskPanelOpen(false); setSelectedTask(null) }}
+                subtasks={selectedTask?.subtasks}
+                comments={selectedTask?.comments}
+                activities={selectedTask?.activities}
             />
         </div>
     )

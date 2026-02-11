@@ -1,5 +1,6 @@
 import { useNavigate, createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/lib/auth'
 import { OverallProgress } from '@/components/dashboard/OverallProgress'
@@ -27,6 +28,7 @@ function DashboardHome() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [projectFilter, setProjectFilter] = useState<'active' | 'pending'>('active')
+  const [projectPage, setProjectPage] = useState(0)
   const [isEventPanelOpen, setIsEventPanelOpen] = useState(false)
 
   // File Modal State
@@ -98,12 +100,29 @@ function DashboardHome() {
   }, [projectsRes, session?.user?.id])
 
   const filteredProjects = projectFilter === 'active' ? ongoingProjects : pendingProjects
+  const projectsPerPage = 2
+  const totalProjectPages = Math.max(1, Math.ceil(filteredProjects.length / projectsPerPage))
+  const currentProjectPage = Math.min(projectPage, totalProjectPages - 1)
+  const visibleProjects = filteredProjects.slice(currentProjectPage * projectsPerPage, currentProjectPage * projectsPerPage + projectsPerPage)
 
   const projects = projectsRes?.data || []
 
-  // Filter for actual events (exclude tasks/reminders if API returns them mixed)
-  // Assuming API returns { data: [...] } and items have 'type' property
-  const events = (eventsRes?.data || []).filter((e: any) => ['event', 'meeting'].includes(e.type))
+  const events = useMemo(() => {
+    const now = new Date()
+    const userId = session?.user?.id
+    return (eventsRes?.data || []).filter((e: any) => {
+      // 1. Only events and meetings (no tasks/reminders)
+      if (!e.type || !['event', 'meeting'].includes(e.type)) return false
+      // 2. Only upcoming or ongoing (hide past events)
+      if (e.endAt && new Date(e.endAt) < now) return false
+      if (!e.endAt && e.startAt && new Date(e.startAt) < now) return false
+      // 3. Only events the user participates in (is assignee or creator)
+      const isCreator = e.createdBy === userId || e.creator?.id === userId
+      const isAssignee = e.assignees?.some((a: any) => a.id === userId)
+      if (!isCreator && !isAssignee) return false
+      return true
+    })
+  }, [eventsRes, session?.user?.id])
 
   // Handle meeting creation callback
   const handleEventCreated = async () => {
@@ -230,10 +249,40 @@ function DashboardHome() {
         {/* Middle Row: Projects Section */}
         <div className="rounded-2xl bg-[#12121a] p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-semibold text-white">Project</h3>
+            <div className="flex items-center gap-3">
+              <h3 className="font-semibold text-white">Project</h3>
+              {/* Carousel arrows */}
+              {filteredProjects.length > projectsPerPage && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setProjectPage(p => Math.max(0, p - 1))}
+                    disabled={currentProjectPage === 0}
+                    className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div className="flex items-center gap-1 px-1">
+                    {Array.from({ length: totalProjectPages }).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setProjectPage(i)}
+                        className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentProjectPage ? 'bg-amber-500 w-3' : 'bg-gray-600 hover:bg-gray-400'}`}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setProjectPage(p => Math.min(totalProjectPages - 1, p + 1))}
+                    disabled={currentProjectPage >= totalProjectPages - 1}
+                    className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="flex bg-[#1a1a24] p-1 rounded-full">
               <button
-                onClick={() => setProjectFilter('active')}
+                onClick={() => { setProjectFilter('active'); setProjectPage(0) }}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${projectFilter === 'active'
                   ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
                   : 'text-gray-500 hover:text-white'
@@ -242,7 +291,7 @@ function DashboardHome() {
                 Ongoing
               </button>
               <button
-                onClick={() => setProjectFilter('pending')}
+                onClick={() => { setProjectFilter('pending'); setProjectPage(0) }}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${projectFilter === 'pending'
                   ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
                   : 'text-gray-500 hover:text-white'
@@ -259,7 +308,7 @@ function DashboardHome() {
                 <div className="h-[180px] rounded-2xl bg-gray-800/20 animate-pulse" />
               </>
             ) : filteredProjects.length > 0 ? (
-              filteredProjects.slice(0, 2).map((p: any) => (
+              visibleProjects.map((p: any) => (
                 <ProjectCard
                   key={p.id}
                   id={p.id}
@@ -268,9 +317,9 @@ function DashboardHome() {
                   progress={p.status === 'completed' ? 100 : 0}
                   daysLeft={p.deadline ? Math.max(0, Math.ceil((new Date(p.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0}
                   assignees={p.members?.map((m: any) => ({
-                    id: m.user.id,
-                    name: m.user.name,
-                    avatar: m.user.image || undefined
+                    id: m.user?.id || m.id,
+                    name: m.user?.name || m.name,
+                    avatar: m.user?.image || m.image || undefined
                   })) || []}
                   onViewProject={() => navigate({ to: `/${workspaceSlug}/projects/${p.id}` })}
                 />
