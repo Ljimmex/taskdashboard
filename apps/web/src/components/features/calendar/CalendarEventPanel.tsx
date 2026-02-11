@@ -22,6 +22,7 @@ interface CalendarEventPanelProps {
     defaultType?: CalendarEventType
     workspaceSlug?: string
     onCreate?: () => void | Promise<void>
+    initialDate?: Date
 }
 
 interface Project {
@@ -40,7 +41,7 @@ const DEFAULT_LABELS = [
     { id: 'docs', name: 'Dokumentacja', color: '#6b7280' },
 ]
 
-export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEventType.EVENT, workspaceSlug, onCreate }: CalendarEventPanelProps) {
+export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEventType.EVENT, workspaceSlug, onCreate, initialDate }: CalendarEventPanelProps) {
     // Common State
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
@@ -86,9 +87,9 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
         setTitle('')
         setDescription('')
         // selectedType maintained
-        const now = new Date()
-        setStartDate(now.toISOString())
-        setEndDate(new Date(now.getTime() + 60 * 60 * 1000).toISOString())
+        const baseDate = initialDate || new Date()
+        setStartDate(baseDate.toISOString())
+        setEndDate(new Date(baseDate.getTime() + 60 * 60 * 1000).toISOString())
         setIsAllDay(false)
         setLocation('')
         // teamIds maintained if possible, or reset? Let's keep it if user wants to create multiple
@@ -115,9 +116,9 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
     useEffect(() => {
         if (isOpen) {
             setSelectedType(defaultType)
-            const now = new Date()
-            if (!startDate) setStartDate(now.toISOString())
-            if (!endDate) setEndDate(new Date(now.getTime() + 60 * 60 * 1000).toISOString())
+            const baseDate = initialDate || new Date()
+            if (!startDate) setStartDate(baseDate.toISOString())
+            if (!endDate) setEndDate(new Date(baseDate.getTime() + 60 * 60 * 1000).toISOString())
 
             // Focus title
             setTimeout(() => titleInputRef.current?.focus(), 100)

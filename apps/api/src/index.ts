@@ -32,13 +32,10 @@ import { startWebhookWorker } from './modules/webhooks/worker'
 import { runMigrations } from './db'
 
 // Run migrations on startup, then start workers
-runMigrations().then(() => {
-    console.log('🔄 Migrations check complete, starting webhook worker...')
-    startWebhookWorker()
-}).catch((err) => {
-    console.error('Migration error (non-fatal):', err)
-    startWebhookWorker() // Start worker anyway
-})
+// Migrations are handled manually via CLI commands to avoid startup errors
+// runMigrations() code removed as requested
+console.log('🔄 Starting webhook worker...')
+startWebhookWorker()
 
 // Create OpenAPI Hono app
 const app = new OpenAPIHono()

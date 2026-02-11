@@ -12,6 +12,7 @@ import {
     type WorkspaceRole,
     type TeamLevel
 } from '../../lib/permissions'
+import { generateICS } from './ical'
 
 export const calendarRoutes = new Hono()
 
@@ -203,6 +204,9 @@ calendarRoutes.get('/', async (c) => {
                     with: {
                         project: {
                             columns: { id: true, name: true }
+                        },
+                        assignee: {
+                            columns: { id: true, name: true, image: true, email: true }
                         }
                     },
                     columns: { id: true, title: true, status: true, priority: true, projectId: true, assigneeId: true }
@@ -212,51 +216,106 @@ calendarRoutes.get('/', async (c) => {
 
         console.log(`[Calendar GET] Found ${events.length} events`)
 
-        // Populate assignees (team members) for each event
-        if (events.length > 0) {
-            const allTeamIds = [...new Set(events.flatMap(e => e.teamIds || []))]
+        // Fetch team members for non-task events to populate participants
+        const allTeamIds = [...new Set(events.flatMap(e => e.teamIds || []))]
+        const teamMembersByTeam = new Map<string, any[]>()
 
-            if (allTeamIds.length > 0) {
-                // Fetch members for these teams
-                const teamMembers = await db.query.teamMembers.findMany({
-                    where: (tm, { inArray }) => inArray(tm.teamId, allTeamIds),
-                    with: {
-                        user: {
-                            columns: { id: true, name: true, image: true, email: true } // Fetch user details
-                        }
+        if (allTeamIds.length > 0) {
+            const members = await db.query.teamMembers.findMany({
+                where: (tm, { inArray }) => inArray(tm.teamId, allTeamIds),
+                with: {
+                    user: {
+                        columns: { id: true, name: true, image: true }
                     }
-                })
-
-                // Map members by teamId
-                const membersByTeam = new Map<string, any[]>()
-                teamMembers.forEach(tm => {
-                    if (!membersByTeam.has(tm.teamId)) membersByTeam.set(tm.teamId, [])
-                    membersByTeam.get(tm.teamId)?.push(tm.user)
-                })
-
-                // Attach to events
-                // For each event, assignees = unique users from all its teamIds
-                const eventsWithAssignees = events.map(event => {
-                    const eventMembers = new Map<string, any>()
-                        ; (event.teamIds || []).forEach(tid => {
-                            const members = membersByTeam.get(tid) || []
-                            members.forEach(m => eventMembers.set(m.id, m))
-                        })
-                    return {
-                        ...event,
-                        assignees: Array.from(eventMembers.values())
-                    }
-                })
-
-                return c.json({ success: true, data: eventsWithAssignees })
-            }
+                }
+            })
+            members.forEach(m => {
+                if (!teamMembersByTeam.has(m.teamId)) teamMembersByTeam.set(m.teamId, [])
+                teamMembersByTeam.get(m.teamId)?.push(m.user)
+            })
         }
 
-        return c.json({ success: true, data: events })
+        const eventsWithAssignees = events.map(event => {
+            const assigneesMap = new Map<string, any>()
+
+            // Add Creator
+            if (event.creator) {
+                assigneesMap.set(event.creator.id, event.creator)
+            }
+
+            if (event.type === 'task') {
+                // Add Task Assignee if exists
+                const taskAssignee = event.task?.assignee
+                if (taskAssignee) {
+                    assigneesMap.set(taskAssignee.id, taskAssignee)
+                }
+            } else {
+                // For Meetings, Events, Reminders - include all team members
+                (event.teamIds || []).forEach(tid => {
+                    const members = teamMembersByTeam.get(tid) || []
+                    members.forEach(m => assigneesMap.set(m.id, m))
+                })
+            }
+
+            return {
+                ...event,
+                assignees: Array.from(assigneesMap.values())
+            }
+        })
+
+        return c.json({ success: true, data: eventsWithAssignees })
     } catch (error: any) {
         console.error('[Calendar GET] Error:', error?.message || error)
         console.error('[Calendar GET] Stack:', error?.stack)
         return c.json({ success: false, error: 'Failed to fetch events', details: String(error?.message || error) }, 500)
+    }
+})
+
+// GET /api/calendar/export/:workspaceSlug - Export ical
+// Note: This endpoint is public to allow subscription from Google/Apple Calendar.
+// For higher security, we should implement per-user tokens.
+calendarRoutes.get('/export/:workspaceSlug', async (c) => {
+    try {
+        const workspaceSlug = c.req.param('workspaceSlug')
+
+        // Find workspace
+        const workspace = await db.query.workspaces.findFirst({
+            where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
+        })
+
+        if (!workspace) return c.text('Workspace not found', 404)
+
+        // Get all teams in workspace
+        const teams = await db.query.teams.findMany({
+            where: (t, { eq }) => eq(t.workspaceId, workspace.id),
+            columns: { id: true }
+        })
+
+        const teamIds = teams.map(t => t.id)
+        if (teamIds.length === 0) {
+            const ics = generateICS([])
+            return c.text(ics, 200, { 'Content-Type': 'text/calendar' })
+        }
+
+        // Fetch events for these teams
+        // We fetch everything to allow full history/future in external apps
+        const pgArrayLiteral = `{${teamIds.join(',')}}`
+        const overlapCondition = sql`team_ids && ${pgArrayLiteral}::uuid[]`
+
+        const events = await db.query.calendarEvents.findMany({
+            where: overlapCondition
+        })
+
+        const ics = generateICS(events)
+
+        return c.text(ics, 200, {
+            'Content-Type': 'text/calendar; charset=utf-8',
+            'Content-Disposition': `attachment; filename="calendar-${workspaceSlug}.ics"`,
+            'Cache-Control': 'no-cache'
+        })
+    } catch (error: any) {
+        console.error('[Calendar Export] Error:', error)
+        return c.text('Error generating calendar', 500)
     }
 })
 

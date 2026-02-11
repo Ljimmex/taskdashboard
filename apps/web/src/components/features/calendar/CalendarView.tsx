@@ -343,6 +343,7 @@ export function CalendarView() {
                     members={members}
                     filterMemberIds={filterMemberIds}
                     setFilterMemberIds={setFilterMemberIds}
+                    events={events}
                 />
 
                 {/* GRID KALENDARZA */}
@@ -530,8 +531,7 @@ export function CalendarView() {
                                         <div className="mt-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                                             <button
                                                 onClick={() => {
-                                                    // Optionally pre-select date
-                                                    // For now just open panel
+                                                    setSelectedDay(day)
                                                     setIsEventPanelOpen(true)
                                                 }}
                                                 className="w-full py-1 text-[10px] text-gray-500 border border-white/10 border-dashed rounded bg-white/5 hover:bg-white/10 hover:text-gray-300 transition-all flex items-center justify-center gap-1"
@@ -550,9 +550,10 @@ export function CalendarView() {
             {/* Side Panel - Create Event */}
             <CalendarEventPanel
                 isOpen={isEventPanelOpen}
-                onClose={() => setIsEventPanelOpen(false)}
+                onClose={() => { setIsEventPanelOpen(false); setSelectedDay(null); }}
                 workspaceSlug={workspaceSlug}
                 onCreate={handleRefresh}
+                initialDate={selectedDay || undefined}
             />
 
             {/* Day Event List Panel */}

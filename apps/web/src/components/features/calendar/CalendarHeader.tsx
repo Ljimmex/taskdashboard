@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { enUS } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Filter, SlidersHorizontal } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Share2, Clipboard, Check, Calendar as CalendarIcon } from 'lucide-react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
     DropdownMenu,
@@ -12,6 +13,8 @@ import {
     DropdownMenuItem
 } from "@/components/ui/dropdown-menu"
 import { CalendarEventType } from './CalendarView'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export interface ProjectOption {
     id: string
@@ -69,6 +72,8 @@ interface CalendarHeaderProps {
     members?: MemberOption[]
     filterMemberIds?: string[]
     setFilterMemberIds?: (ids: string[]) => void
+
+    events?: any[]
 }
 
 export function CalendarHeader({
@@ -91,7 +96,8 @@ export function CalendarHeader({
     setFilterProjectIds,
     members = [],
     filterMemberIds = [],
-    setFilterMemberIds
+    setFilterMemberIds,
+    events = []
 }: CalendarHeaderProps) {
 
     const toggleProject = (projectId: string) => {
@@ -110,6 +116,94 @@ export function CalendarHeader({
         } else {
             setFilterMemberIds([...filterMemberIds, memberId])
         }
+    }
+
+    const [isExporting, setIsExporting] = useState(false)
+    const [copied, setCopied] = useState(false)
+
+    const workspaceSlug = window.location.pathname.split('/')[1]
+    const apiBaseUrl = import.meta.env.VITE_API_URL || window.location.origin
+    const exportUrl = `${apiBaseUrl}/api/calendar/export/${workspaceSlug}`
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(exportUrl)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
+
+    const handleExportICAL = () => {
+        const link = document.createElement('a')
+        link.href = exportUrl
+        link.download = `calendar-${workspaceSlug}.ics`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+    }
+
+    const handleExportPDF = () => {
+        const doc = new jsPDF({ orientation: 'landscape' })
+
+        // Add current timestamp at top-left
+        const now = new Date()
+        const timestamp = format(now, 'yyyy-MM-dd HH:mm:ss')
+        doc.setFontSize(8)
+        doc.text(timestamp, 14, 10)
+
+        const titleText = `Calendar Export - Zadano.app`
+        doc.setFontSize(16)
+        doc.text(titleText, doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' })
+
+        // Filter and sort events
+        const filteredEvents = events.filter(e => selectedTypes.includes(e.type))
+            .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+
+        const tableData = filteredEvents.map(e => {
+            const start = new Date(e.startAt)
+            const end = new Date(e.endAt)
+            return [
+                format(start, 'yyyy-MM-dd'),
+                format(start, 'HH:mm'),
+                format(end, 'HH:mm'),
+                e.location || e.meetingLink || '-',
+                e.title,
+                e.description || '-',
+                e.type.charAt(0).toUpperCase() + e.type.slice(1)
+            ]
+        })
+
+        autoTable(doc, {
+            startY: 30,
+            head: [['Date', 'Start', 'End', 'Link', 'Title', 'Description', 'Type']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                fontStyle: 'bold',
+                lineWidth: 0.1,
+                lineColor: [0, 0, 0]
+            },
+            styles: {
+                fontSize: 8,
+                cellPadding: 2,
+                overflow: 'linebreak',
+                lineWidth: 0.1,
+                lineColor: [0, 0, 0]
+            },
+            alternateRowStyles: { fillColor: [255, 255, 255] },
+            columnStyles: {
+                0: { cellWidth: 25 }, // Date
+                1: { cellWidth: 15 }, // Start
+                2: { cellWidth: 15 }, // End
+                3: { cellWidth: 40 }, // Link
+                4: { cellWidth: 50 }, // Title
+                5: { cellWidth: 'auto' }, // Description
+                6: { cellWidth: 25 }  // Type
+            },
+            margin: { left: 14, right: 14 }
+        })
+
+        doc.save(`calendar-export-${workspaceSlug}.pdf`)
     }
 
     const hasActiveFilters = filterProjectIds.length > 0 || filterMemberIds.length > 0 || selectedTypes.length < 4
@@ -272,6 +366,91 @@ export function CalendarHeader({
                             >
                                 Clear All Filters
                             </button>
+                        </div>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Przycisk Export */}
+                <DropdownMenu onOpenChange={setIsExporting}>
+                    <DropdownMenuTrigger asChild>
+                        <button className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all outline-none focus:ring-1 focus:ring-white/10",
+                            isExporting ? "bg-[#1E2029] text-white" : "bg-[#1a1a24] text-gray-400 hover:text-white"
+                        )}>
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>Export</span>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80 bg-[#16161f] p-4 text-gray-300 shadow-2xl rounded-xl border-none">
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <h3 className="text-sm font-semibold text-white mb-1">Calendar Export</h3>
+                                <p className="text-[11px] text-gray-500 leading-relaxed">
+                                    Export your workspace calendar to PDF or iCal format.
+                                </p>
+                            </div>
+
+                            {/* Buttons Row */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={(e) => { e.preventDefault(); handleExportPDF(); }}
+                                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#2a2b36] hover:bg-[#32333e] text-white text-xs font-bold rounded-lg transition-all border border-white/5"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><path d="M10 13l2 2 2-2" /><path d="M12 11v4" /></svg>
+                                    PDF
+                                </button>
+                                <button
+                                    onClick={(e) => { e.preventDefault(); handleExportICAL(); }}
+                                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-all shadow-lg shadow-amber-500/10"
+                                >
+                                    <CalendarIcon className="w-3.5 h-3.5" />
+                                    ICAL
+                                </button>
+                            </div>
+
+                            <DropdownMenuSeparator className="bg-gray-800" />
+
+                            <div>
+                                <h3 className="text-sm font-semibold text-white mb-2">Sync with external apps</h3>
+                                <button
+                                    onClick={(e) => { e.preventDefault(); handleCopy(); }}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-black/40 hover:bg-white/5 rounded-xl border border-white/5 transition-all text-xs font-medium text-gray-300 hover:text-white mb-2"
+                                >
+                                    {copied ? (
+                                        <>
+                                            <Check className="w-3.5 h-3.5 text-green-500" />
+                                            <span>Link Copied!</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Clipboard className="w-3.5 h-3.5" />
+                                            <span>Copy Subscription Link</span>
+                                        </>
+                                    )}
+                                </button>
+
+                                <div className="space-y-3 mt-4">
+                                    <p className="text-[11px] text-gray-400 leading-relaxed italic border-l-2 border-amber-500/30 pl-3">
+                                        Synchronize your schedule with an external calendar – e.g. Google Calendar or Apple Calendar.
+                                        After adding the link to your chosen calendar, events will update automatically.
+                                        Keep in mind, however, that changes in the external calendar may be visible with a delay.
+                                        Due to Google and Apple limitations, synchronization can take up to several hours.
+                                    </p>
+
+                                    <div className="flex flex-col gap-1.5 pt-1">
+                                        <p className="text-[10px] text-gray-500 mb-1 font-semibold uppercase tracking-wider">Sync Instructions</p>
+                                        <a href="https://support.google.com/calendar/answer/37100?hl=pl-PL&co=GENIE.Platform%3DDesktop&oco=1" target="_blank" rel="noopener noreferrer" className="text-[11px] text-amber-500/80 hover:text-amber-500 transition-colors flex items-center gap-2">
+                                            <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> Google Calendar Help
+                                        </a>
+                                        <a href="https://support.apple.com/pl-pl/guide/iphone/iph3d1110d4/ios" target="_blank" rel="noopener noreferrer" className="text-[11px] text-amber-500/80 hover:text-amber-500 transition-colors flex items-center gap-2">
+                                            <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> Apple Calendar (iPhone)
+                                        </a>
+                                        <a href="https://support.apple.com/pl-pl/guide/calendar/icl1022/mac" target="_blank" rel="noopener noreferrer" className="text-[11px] text-amber-500/80 hover:text-amber-500 transition-colors flex items-center gap-2">
+                                            <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> Apple Calendar (Mac)
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </DropdownMenuContent>
                 </DropdownMenu>
