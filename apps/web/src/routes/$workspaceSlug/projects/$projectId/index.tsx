@@ -1016,7 +1016,7 @@ function ProjectDetailPage() {
         }}
         onAddComment={handleAddComment}
         onLikeComment={handleLikeComment}
-        stages={(project?.stages || []).map(s => ({ id: s.id, name: s.name, color: s.color || '#6366f1' }))}
+        stages={(project?.stages || []).map((s: any, i: number) => ({ id: s.id, name: s.name, color: s.color || '#6366f1', position: s.position ?? i }))}
         teamMembers={teamMembers}
         activities={selectedTask?.activities}
       />

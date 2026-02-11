@@ -35,7 +35,7 @@ interface Event {
     meetingType?: 'physical' | 'virtual'
     isAllDay?: boolean
     createdBy?: string
-    // creator?: { id: string; name: string; image?: string } // Backend returns 'creator' relation
+    creator?: { id: string; name: string; image?: string } // Backend returns 'creator' relation
     assignees?: { id: string; name: string; image?: string }[] // Backend returns 'assignees' relation
     priority?: string
 }
@@ -77,7 +77,31 @@ export function CalendarView() {
 
     const fetchEvents = useCallback(async () => {
         try {
-            const res = await apiFetch(`/api/calendar?workspaceSlug=${workspaceSlug}`)
+            let start = new Date()
+            let end = new Date()
+
+            const weekOptions = { weekStartsOn: weekStartDay === 'monday' ? 1 : 0 } as const
+
+            if (view === 'month') {
+                start = startOfWeek(startOfMonth(currentDate), weekOptions)
+                end = endOfWeek(endOfMonth(currentDate), weekOptions)
+            } else if (view === 'week') {
+                start = startOfWeek(currentDate, weekOptions)
+                end = endOfWeek(currentDate, weekOptions)
+            } else {
+                start = new Date(currentDate)
+                start.setHours(0, 0, 0, 0)
+                end = new Date(currentDate)
+                end.setHours(23, 59, 59, 999)
+            }
+
+            const queryParams = new URLSearchParams({
+                workspaceSlug,
+                start: start.toISOString(),
+                end: end.toISOString()
+            })
+
+            const res = await apiFetch(`/api/calendar?${queryParams.toString()}`)
             if (res.ok) {
                 const data = await res.json()
                 setEvents(data.data || [])
@@ -85,7 +109,7 @@ export function CalendarView() {
         } catch (error) {
             console.error('Failed to fetch calendar events', error)
         }
-    }, [workspaceSlug])
+    }, [workspaceSlug, currentDate, view, weekStartDay])
 
     const fetchFiltersData = useCallback(async () => {
         try {
@@ -230,7 +254,35 @@ export function CalendarView() {
 
     const getDayEvents = (day: Date) => events
         .filter(e => isSameDay(parseISO(e.startAt), day))
-        .filter(e => e.type ? selectedTypes.includes(e.type) : true)
+        .filter(e => {
+            // Type Filter
+            if (e.type && !selectedTypes.includes(e.type)) return false
+
+            // Project Filter
+            if (filterProjectIds.length > 0) {
+                // If event is a task, check its projectId
+                if (e.type === 'task' && e.task?.projectId) {
+                    if (!filterProjectIds.includes(e.task.projectId)) return false
+                } else {
+                    // For non-tasks, if strict project filter is on, maybe hide them? 
+                    // Or keep them visible? Let's hide them to be strict as requested.
+                    return false
+                }
+            }
+
+            // Member Filter
+            if (filterMemberIds.length > 0) {
+                const assigneeIds = (e.assignees || []).map((a: any) => a.id)
+                const creatorId = e.createdBy
+                // Check if any selected member is an assignee or the creator
+                const hasMatch = filterMemberIds.some(id =>
+                    assigneeIds.includes(id) || id === creatorId
+                )
+                if (!hasMatch) return false
+            }
+
+            return true
+        })
 
     // --- View Logic ---
     let daysToRender: Date[] = []
@@ -438,7 +490,7 @@ export function CalendarView() {
 
                                         {/* Events Container */}
                                         <div className="flex flex-col flex-1 gap-1 px-1">
-                                            {(view === 'month' ? dayEvents.slice(0, 3) : dayEvents).map((event) => (
+                                            {(view === 'month' ? dayEvents.slice(0, 2) : dayEvents).map((event) => (
                                                 <div
                                                     key={event.id}
                                                     onClick={(e) => { e.stopPropagation(); handleEventClick(event, dayEvents) }}
@@ -463,12 +515,12 @@ export function CalendarView() {
                                             ))}
 
                                             {/* "More" button for Month View */}
-                                            {view === 'month' && dayEvents.length > 3 && (
+                                            {view === 'month' && dayEvents.length > 2 && (
                                                 <span
                                                     onClick={(e) => { e.stopPropagation(); handleDayClick(day, dayEvents) }}
                                                     className="text-[9px] text-gray-500 text-center shrink-0 cursor-pointer hover:text-amber-400 transition-colors"
                                                 >
-                                                    + {dayEvents.length - 3} more
+                                                    + {dayEvents.length - 2} more
                                                 </span>
                                             )}
                                         </div>

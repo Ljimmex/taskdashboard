@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { calendarEvents, type NewCalendarEvent } from '../../db/schema/calendar'
+import { RRule } from 'rrule'
 import { auth } from '../../lib/auth'
 import { eq, sql } from 'drizzle-orm'
 import { triggerWebhook } from '../webhooks/trigger'
@@ -199,6 +200,11 @@ calendarRoutes.get('/', async (c) => {
                     columns: { id: true, name: true, image: true }
                 },
                 task: {
+                    with: {
+                        project: {
+                            columns: { id: true, name: true }
+                        }
+                    },
                     columns: { id: true, title: true, status: true, priority: true, projectId: true, assigneeId: true }
                 }
             }
@@ -294,7 +300,7 @@ calendarRoutes.post('/', async (c) => {
             return c.json({ error: 'Forbidden: Cannot create events in selected teams' }, 403)
         }
 
-        const newEvent: NewCalendarEvent = {
+        const baseEvent: NewCalendarEvent = {
             title: body.title,
             description: body.description,
             teamIds: body.teamIds,
@@ -304,16 +310,89 @@ calendarRoutes.post('/', async (c) => {
             meetingLink: body.meetingLink, // Save meeting link
             taskId: body.taskId || null,
             createdBy: userId,
-            allDay: body.isAllDay || false
+            allDay: body.isAllDay || false,
+            recurrence: body.recurrence || null
         }
 
-        const [created] = await db.insert(calendarEvents).values(newEvent).returning()
+        const eventsToInsert: NewCalendarEvent[] = []
 
-        // Webhook (trigger for first team or all?)
-        // Triggering for first team for now
-        await triggerWebhookWithWorkspace('calendar.created', created, created.teamIds[0])
+        // Recurrence Handling (Materialization)
+        if (body.recurrence) {
+            try {
+                // Defensive RRule usage to handle different module formats
+                const RRuleToUse = (RRule as any).RRule || RRule
 
-        return c.json({ success: true, data: created })
+                // Limit infinite recurrence to avoid DB explosion
+                const MAX_OCCURRENCES = 100
+                const MAX_DATE = new Date()
+                MAX_DATE.setFullYear(MAX_DATE.getFullYear() + 2)
+
+                const ruleOptions = body.recurrence
+                const dtstart = new Date(body.startAt)
+
+                // Ensure until date is inclusive of the whole day if provided
+                let until = MAX_DATE
+                if (ruleOptions.until) {
+                    until = new Date(ruleOptions.until)
+                    // If time is not specified (00:00), set to end of day
+                    if (until.getHours() === 0 && until.getMinutes() === 0) {
+                        until.setHours(23, 59, 59, 999)
+                    }
+                }
+
+                let freq = RRuleToUse.DAILY
+                if (ruleOptions.frequency === 'weekly') freq = RRuleToUse.WEEKLY
+                else if (ruleOptions.frequency === 'monthly') freq = RRuleToUse.MONTHLY
+                else if (ruleOptions.frequency === 'yearly') freq = RRuleToUse.YEARLY
+
+                const rule = new RRuleToUse({
+                    freq,
+                    dtstart,
+                    until,
+                    count: ruleOptions.count || (ruleOptions.until ? undefined : MAX_OCCURRENCES),
+                    interval: ruleOptions.interval || 1,
+                })
+
+                const durationMs = new Date(body.endAt).getTime() - new Date(body.startAt).getTime()
+                const occurrences = rule.all()
+
+                occurrences.forEach((date: Date, index: number) => {
+                    if (index === 0) {
+                        // First event is the "Master" - keep recurrence rule
+                        eventsToInsert.push(baseEvent)
+                    } else {
+                        // Subsequent events - No recurrence rule, just instances
+                        eventsToInsert.push({
+                            ...baseEvent,
+                            startAt: date,
+                            endAt: new Date(date.getTime() + durationMs),
+                            recurrence: null // Clear recurrence for instances
+                        })
+                    }
+                })
+            } catch (expansionError) {
+                console.error('[Calendar] Recurrence expansion failed:', expansionError)
+            }
+        }
+
+        // Fallback: if no recurrence specified or expansion produced no results
+        if (eventsToInsert.length === 0) {
+            eventsToInsert.push(baseEvent)
+        }
+
+        // Insert all events
+        const createdEvents = await db.insert(calendarEvents).values(eventsToInsert).returning()
+
+        // Webhook (trigger for the first created event)
+        if (createdEvents.length > 0) {
+            await triggerWebhookWithWorkspace('calendar.created', createdEvents[0], createdEvents[0].teamIds[0])
+        }
+
+        return c.json({
+            success: true,
+            data: createdEvents[0],
+            count: createdEvents.length
+        })
     } catch (error: any) {
         console.error('Create event error:', error)
         return c.json({ success: false, error: error.message }, 500)
@@ -353,6 +432,7 @@ calendarRoutes.patch('/:id', async (c) => {
         if (body.startAt) updateData.startAt = new Date(body.startAt)
         if (body.endAt) updateData.endAt = new Date(body.endAt)
         if (body.meetingLink !== undefined) updateData.meetingLink = body.meetingLink
+        if (body.recurrence !== undefined) updateData.recurrence = body.recurrence
 
         const [updated] = await db.update(calendarEvents)
             .set(updateData)

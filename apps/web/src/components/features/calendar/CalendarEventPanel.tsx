@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { CalendarEventType } from './CalendarView'
-import { X, Calendar as CalendarIcon, MapPin, Building, Monitor, CheckCircle2, Bell, FolderOpen, Link as LinkIcon } from 'lucide-react'
+import { X, Calendar as CalendarIcon, MapPin, Building, Monitor, CheckCircle2, Bell, FolderOpen, Link as LinkIcon, RotateCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { CustomCheckbox } from './CalendarHeader'
@@ -56,7 +56,8 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
     const [location, setLocation] = useState('')
     const [teamIds, setTeamIds] = useState<string[]>([])
     const [meetingType, setMeetingType] = useState<'physical' | 'virtual'>('physical')
-    // const [recurrence, setRecurrence] = useState('none') // Future implementation
+    const [recurrence, setRecurrence] = useState<string>('none')
+    const [recurrenceEnd, setRecurrenceEnd] = useState<string>('')
 
     // Task State
     const [projectId, setProjectId] = useState<string>('')
@@ -93,7 +94,8 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
         // teamIds maintained if possible, or reset? Let's keep it if user wants to create multiple
         // setTeamIds([]) 
         setMeetingType('physical')
-        // setRecurrence('none')
+        setRecurrence('none')
+        setRecurrenceEnd('')
 
         // Task resets
         // projectId maintained
@@ -258,6 +260,13 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                     startAt: startDate,
                     endAt: selectedType === CalendarEventType.REMINDER ? startDate : endDate, // Reminders are point-in-time
                     location: location,
+                    recurrence: recurrence !== 'none' ? {
+                        frequency: recurrence === 'biweekly' || recurrence === 'quarterly'
+                            ? (recurrence === 'biweekly' ? 'weekly' : 'monthly')
+                            : recurrence,
+                        interval: recurrence === 'biweekly' ? 2 : recurrence === 'quarterly' ? 3 : 1,
+                        until: recurrenceEnd || undefined
+                    } : null,
 
                     // Add meeting link if present
                     meetingLink: meetingLink.trim(),
@@ -268,6 +277,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                     assigneeIds: Array.from(memberIds)
                 }
 
+                console.log('Sending payload:', payload)
                 const res = await apiFetch('/api/calendar', {
                     method: 'POST',
                     headers: { 'x-user-id': session?.user?.id || '' },
@@ -592,6 +602,53 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                     )}
                                 </div>
                             </div>
+
+                            {/* Recurrence Selector */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Repeat
+                                </label>
+                                <Select value={recurrence} onValueChange={(val) => { console.log('Selected recurrence:', val); setRecurrence(val) }}>
+                                    <SelectTrigger className="w-full h-11 px-4 rounded-xl bg-[#1a1a24] border-none text-gray-300 hover:text-white hover:bg-[#20202b] transition-colors focus:ring-0">
+                                        <div className="flex items-center gap-3">
+                                            <RotateCw size={18} className="text-gray-500" />
+                                            <span>
+                                                {recurrence === 'none' ? 'Does not repeat' :
+                                                    recurrence === 'daily' ? 'Daily' :
+                                                        recurrence === 'weekly' ? 'Weekly' :
+                                                            recurrence === 'biweekly' ? 'Bi-weekly' :
+                                                                recurrence === 'monthly' ? 'Monthly' :
+                                                                    recurrence === 'quarterly' ? 'Quarterly' :
+                                                                        recurrence === 'yearly' ? 'Yearly' : 'Custom'}
+                                            </span>
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
+                                        <SelectItem value="none" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Does not repeat</SelectItem>
+                                        <SelectItem value="daily" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Daily</SelectItem>
+                                        <SelectItem value="weekly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Weekly</SelectItem>
+                                        <SelectItem value="biweekly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Bi-weekly</SelectItem>
+                                        <SelectItem value="monthly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Monthly</SelectItem>
+                                        <SelectItem value="quarterly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Quarterly</SelectItem>
+                                        <SelectItem value="yearly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Yearly</SelectItem>
+                                        <SelectItem value="custom" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Custom...</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Recurrence End Date (Until) */}
+                            {recurrence !== 'none' && (
+                                <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">Until (Optional)</span>
+                                    <DueDatePicker
+                                        value={recurrenceEnd}
+                                        onChange={(date) => setRecurrenceEnd(date || '')}
+                                        placeholder="Forever"
+                                        className="w-full"
+                                        triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
+                                    />
+                                </div>
+                            )}
 
                             {/* Team Selection (Multi-select) */}
                             <div>

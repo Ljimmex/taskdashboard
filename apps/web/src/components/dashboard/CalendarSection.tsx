@@ -466,6 +466,7 @@ export function CalendarSection() {
                 subtasks={selectedTask?.subtasks}
                 comments={selectedTask?.comments}
                 activities={selectedTask?.activities}
+                stages={selectedTask?.stages}
             />
         </div>
     )
