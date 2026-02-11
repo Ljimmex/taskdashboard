@@ -68,7 +68,7 @@ export async function prepareDiscordRequest(job: any, config: any) {
     } else if (event === 'task.created') {
         embed.title = `${emoji} Task Created`
         embed.description = `**${payload.title}**`
-        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.id}`
+        embed.description = `**${payload.title}**`
 
         const priorityColor = parseColor(payload.priorityColor)
         if (priorityColor) embed.color = priorityColor
@@ -84,7 +84,6 @@ export async function prepareDiscordRequest(job: any, config: any) {
     } else if (event === 'task.priority_changed') {
         embed.title = `${emoji} Priority Changed`
         embed.description = `Priority for **${payload.title}** was updated.`
-        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
 
         const newPriorityColor = parseColor(payload.newPriorityColor)
         if (newPriorityColor) embed.color = newPriorityColor
@@ -96,7 +95,6 @@ export async function prepareDiscordRequest(job: any, config: any) {
     } else if (event === 'task.status_changed') {
         embed.title = `${emoji} Status Changed`
         embed.description = `Status for **${payload.title}** was updated.`
-        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
 
         embed.fields = [
             { name: 'From', value: payload.oldStatus, inline: true },
@@ -105,7 +103,6 @@ export async function prepareDiscordRequest(job: any, config: any) {
     } else if (event === 'task.updated') {
         embed.title = `${emoji} Task Updated`
         embed.description = `**${payload.title}** was updated.`
-        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
 
         const changes = []
         if (payload.updatedFields?.includes('title')) changes.push('Title')
@@ -119,12 +116,10 @@ export async function prepareDiscordRequest(job: any, config: any) {
     } else if (event === 'task.assigned') {
         embed.title = `${emoji} Assignee Changed`
         embed.description = `Assignee for **${payload.title}** was updated.`
-        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
         embed.fields = [{ name: 'Change', value: `${payload.oldAssignee} ➡️ ${payload.newAssignee}`, inline: true }]
     } else if (event === 'task.due_date_changed') {
         embed.title = `${emoji} Due Date Changed`
         embed.description = `Due date for **${payload.title}** was updated.`
-        embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/tasks/${payload.taskId}`
         const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
         const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
         embed.fields = [{ name: 'Change', value: `${oldDate} ➡️ ${newDate}`, inline: true }]
@@ -190,9 +185,7 @@ export async function prepareDiscordRequest(job: any, config: any) {
         // Emoji map for calendar is handled by EVENT_EMOJIS or generic fallbacks
         embed.title = `${emoji} Event ${action === 'created' ? 'Created' : action === 'updated' ? 'Updated' : 'Deleted'}`
         embed.description = `**${payload.title}**`
-        if (action !== 'deleted') {
-            embed.url = `${config.appUrl}/workspaces/${job.workspaceId}/calendar?date=${payload.startAt.split('T')[0]}`
-        }
+        embed.description = `**${payload.title}**`
         embed.color = action === 'deleted' ? 0xEF4444 : 0x3B82F6 // Blue for calendar
 
         const formatTime = (iso: string) => {

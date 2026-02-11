@@ -38,10 +38,10 @@ async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLev
 projectsRoutes.get('/', async (c) => {
     try {
         const { workspaceSlug } = c.req.query()
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        // const userId = c.req.header('x-user-id') || 'temp-user-id'
 
         let workspaceId: string | null = null
-        let userWorkspaceRole: WorkspaceRole | null = null
+        // let userWorkspaceRole: WorkspaceRole | null = null
 
         if (workspaceSlug) {
             const ws = await db.query.workspaces.findFirst({
@@ -49,7 +49,7 @@ projectsRoutes.get('/', async (c) => {
             })
             if (!ws) return c.json({ success: true, data: [] })
             workspaceId = ws.id
-            userWorkspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+            // userWorkspaceRole = await getUserWorkspaceRole(userId, workspaceId)
         }
 
         let teamIds: string[] = []
@@ -61,27 +61,27 @@ projectsRoutes.get('/', async (c) => {
             if (teamIds.length === 0) return c.json({ success: true, data: [] })
         }
 
-        const isProjectManagerOrHigher = userWorkspaceRole && ['owner', 'admin', 'project_manager'].includes(userWorkspaceRole)
+
 
         const result = await db.query.projects.findMany({
-            where: (p, { inArray, and, exists }) => {
+            where: (p, { inArray, and }) => {
                 const wheres: any[] = []
 
                 if (teamIds.length > 0) {
                     wheres.push(inArray(p.teamId, teamIds))
                 }
 
-                // If not project manager or higher, only show projects where user is a member
-                if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
-                    wheres.push(exists(
-                        db.select()
-                            .from(projectMembers)
-                            .where(and(
-                                eq(projectMembers.projectId, p.id),
-                                eq(projectMembers.userId, userId)
-                            ))
-                    ))
-                }
+                // Removed strict membership check to allow users to see all projects in workspace for assignment
+                // if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
+                //     wheres.push(exists(
+                //         db.select()
+                //             .from(projectMembers)
+                //             .where(and(
+                //                 eq(projectMembers.projectId, p.id),
+                //                 eq(projectMembers.userId, userId)
+                //             ))
+                //     ))
+                // }
 
                 return wheres.length > 0 ? and(...wheres) : undefined
             },

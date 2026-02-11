@@ -42,7 +42,7 @@ export async function syncTaskToCalendar(task: Task, userId: string) {
             startAt: startAt,
             endAt: endAt,
             allDay: true, // Tasks with due dates are typically "all day" deliverables
-            teamId: project.teamId,
+            teamIds: [project.teamId],
             taskId: task.id,
             // type: 'task', // Removed as likely not in schema or defaults to 'event'
             createdBy: task.reporterId // Or userId of who triggered the sync? Let's use reporter or maybe the user who updated it.
@@ -66,7 +66,7 @@ export async function syncTaskToCalendar(task: Task, userId: string) {
                 title: eventData.title!,
                 startAt: eventData.startAt!,
                 endAt: eventData.endAt!,
-                teamId: eventData.teamId!,
+                teamIds: eventData.teamIds!,
             } as NewCalendarEvent)
         }
 

@@ -5,6 +5,7 @@ import { enUS } from 'date-fns/locale'
 import { CalendarHeader } from './CalendarHeader'
 import { CalendarEventPanel } from './CalendarEventPanel'
 import { cn } from '@/lib/utils'
+import { apiFetch } from '@/lib/api'
 
 // Enum mirroring backend - Exported so CalendarHeader can use it
 export enum CalendarEventType {
@@ -42,7 +43,7 @@ export function CalendarView() {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const res = await fetch(`/api/calendar?workspaceSlug=${workspaceSlug}`)
+                const res = await apiFetch(`/api/calendar?workspaceSlug=${workspaceSlug}`)
                 if (res.ok) {
                     const data = await res.json()
                     setEvents(data.data || [])

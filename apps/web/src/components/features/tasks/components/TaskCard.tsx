@@ -49,7 +49,9 @@ export interface TaskCardProps {
     status: string // Can be any column ID
     assignees?: TaskAssignee[]
     labels?: TaskLabel[]
-    dueDate?: string | null
+    dueDate?: string | Date
+    meetingLink?: string // New prop
+    isOverdue?: boolean
     subtaskCount?: number
     subtaskCompleted?: number
     commentCount?: number
@@ -76,16 +78,17 @@ export function TaskCard({
     id: _id, // Available for use but not currently needed
     title,
     description,
+    type = 'task',
     priority,
     assignees = [],
     labels = [],
     dueDate,
+    meetingLink,
     subtaskCount = 0,
     subtaskCompleted = 0,
     commentCount = 0,
     attachmentCount = 0,
     onClick,
-    onEdit,
     onFullEdit,
     onDelete,
     onDuplicate,
@@ -157,7 +160,7 @@ export function TaskCard({
     const isOverdue = dueDate ? new Date(dueDate) < new Date() : false
 
     // Format date
-    const formatDate = (dateStr: string) => {
+    const formatDate = (dateStr: string | Date) => {
         const date = new Date(dateStr)
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     }
@@ -234,31 +237,37 @@ export function TaskCard({
                 )}
             </div>
 
-            {/* Header: Title + Priority Badge + Edit pencil on hover */}
+            {/* Header: Title + Priority Badge */}
             <div className="flex items-center gap-2 mb-3 pr-8 group/title">
                 <h3 className="font-semibold text-white truncate flex-1">{title}</h3>
-                {/* Pencil edit icon - shows on hover */}
-                <button
-                    onClick={(e) => { e.stopPropagation(); onEdit?.() }}
-                    className="opacity-0 group-hover/title:opacity-100 w-5 h-5 flex items-center justify-center text-gray-500 hover:text-[#F2CE88] transition-all"
-                    title="Quick edit"
-                >
-                    <svg width="12" height="12" viewBox="0 0 32 32" fill="none">
-                        <path d="M22.5 4.5L27.5 9.5L12 25L7 20L22.5 4.5Z" fill="currentColor" />
-                        <path d="M12 25L7 20L4 28L12 25Z" fill="currentColor" />
-                    </svg>
-                </button>
-                <span
-                    className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5"
-                    style={{
-                        backgroundColor: `${currentPriority.color}33`,
-                        color: currentPriority.color,
-                        borderColor: `${currentPriority.color}4D`
-                    }}
-                >
-                    <PriorityIcon size={12} />
-                    {currentPriority.name}
-                </span>
+
+                {/* Priority / Date Badge */}
+                {type === 'meeting' ? (
+                    dueDate ? (
+                        <span className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5 bg-[#2a2b36] text-gray-300 border border-gray-700/50">
+                            {/* Calendar Icon */}
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            {formatDate(dueDate)}
+                        </span>
+                    ) : null
+                ) : (
+                    <span
+                        className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5"
+                        style={{
+                            backgroundColor: `${currentPriority.color}33`,
+                            color: currentPriority.color,
+                            borderColor: `${currentPriority.color}4D`
+                        }}
+                    >
+                        <PriorityIcon size={12} />
+                        {currentPriority.name}
+                    </span>
+                )}
             </div>
 
             {/* Description */}
@@ -281,8 +290,8 @@ export function TaskCard({
                 </div>
             )}
 
-            {/* Due Date / Progress (like Project Card) */}
-            {(dueDate || subtaskCount > 0) && (
+            {/* Due Date / Progress (like Project Card) - Only for tasks */}
+            {type !== 'meeting' && (dueDate || subtaskCount > 0) && (
                 <div className="mt-3">
                     <div className="flex items-center justify-between mb-2">
                         {dueDate && (
@@ -302,7 +311,7 @@ export function TaskCard({
                 </div>
             )}
 
-            {/* Footer: Avatars + Action Icons - like Meeting Card */}
+            {/* Footer: Avatars + Action Icons */}
             <div className="flex items-center justify-between mt-4">
                 {/* Assignees */}
                 <div className="flex -space-x-2">
@@ -327,34 +336,54 @@ export function TaskCard({
                     )}
                 </div>
 
-                {/* Action Icons with counts - like Meeting Card */}
+                {/* Actions */}
                 <div className="flex items-center gap-2">
-                    {subtaskCount > 0 && (
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${subtaskCompleted}/${subtaskCount} subtasks`}>
-                            {/* Document Icon for Subtasks - Grey */}
-                            <div className="group-hover/btn:hidden"><DocumentIcon /></div>
-                            {/* Document Icon for Subtasks - Gold */}
-                            <div className="hidden group-hover/btn:block"><DocumentIconGold /></div>
-                            <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{subtaskCompleted}/{subtaskCount}</span>
-                        </div>
-                    )}
-                    {commentCount > 0 && (
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${commentCount} comments`}>
-                            {/* Comment Icon - Grey */}
-                            <div className="group-hover/btn:hidden"><CommentIcon /></div>
-                            {/* Comment Icon - Gold */}
-                            <div className="hidden group-hover/btn:block"><CommentIconGold /></div>
-                            <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{commentCount}</span>
-                        </div>
-                    )}
-                    {attachmentCount > 0 && (
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${attachmentCount} attachments`}>
-                            {/* Paperclip Icon - Grey */}
-                            <div className="group-hover/btn:hidden"><PaperclipIcon /></div>
-                            {/* Paperclip Icon - Gold */}
-                            <div className="hidden group-hover/btn:block"><PaperclipIconGold /></div>
-                            <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{attachmentCount}</span>
-                        </div>
+                    {type === 'meeting' ? (
+                        meetingLink ? (
+                            <button
+                                className="w-8 h-8 rounded-full bg-[#2a2b36] flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    window.open(meetingLink, '_blank')
+                                }}
+                                title="Join Meeting"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                                </svg>
+                            </button>
+                        ) : null
+                    ) : (
+                        <>
+                            {subtaskCount > 0 && (
+                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${subtaskCompleted}/${subtaskCount} subtasks`}>
+                                    {/* Document Icon for Subtasks - Grey */}
+                                    <div className="group-hover/btn:hidden"><DocumentIcon /></div>
+                                    {/* Document Icon for Subtasks - Gold */}
+                                    <div className="hidden group-hover/btn:block"><DocumentIconGold /></div>
+                                    <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{subtaskCompleted}/{subtaskCount}</span>
+                                </div>
+                            )}
+                            {commentCount > 0 && (
+                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${commentCount} comments`}>
+                                    {/* Comment Icon - Grey */}
+                                    <div className="group-hover/btn:hidden"><CommentIcon /></div>
+                                    {/* Comment Icon - Gold */}
+                                    <div className="hidden group-hover/btn:block"><CommentIconGold /></div>
+                                    <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{commentCount}</span>
+                                </div>
+                            )}
+                            {attachmentCount > 0 && (
+                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${attachmentCount} attachments`}>
+                                    {/* Paperclip Icon - Grey */}
+                                    <div className="group-hover/btn:hidden"><PaperclipIcon /></div>
+                                    {/* Paperclip Icon - Gold */}
+                                    <div className="hidden group-hover/btn:block"><PaperclipIconGold /></div>
+                                    <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{attachmentCount}</span>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -364,7 +393,7 @@ export function TaskCard({
 }
 
 // Add New Task Card - matching existing AddNewTaskCard style
-export function AddTaskCard({ onClick }: { onClick?: () => void }) {
+export function AddTaskCard({ onClick, label = "Add New Task" }: { onClick?: () => void, label?: string }) {
     return (
         <button
             onClick={onClick}
@@ -373,7 +402,7 @@ export function AddTaskCard({ onClick }: { onClick?: () => void }) {
             <div className="w-12 h-12 rounded-full bg-gray-800 group-hover:bg-amber-500/20 flex items-center justify-center mb-3 transition-colors">
                 <span className="text-2xl text-gray-500 group-hover:text-amber-400">+</span>
             </div>
-            <span className="text-gray-400 group-hover:text-amber-400 font-medium transition-colors">Add New Task</span>
+            <span className="text-gray-400 group-hover:text-amber-400 font-medium transition-colors">{label}</span>
         </button>
     )
 }

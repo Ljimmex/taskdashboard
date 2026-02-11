@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
-import { conversations, workspaces, workspaceMembers } from '../../db/schema'
+import { conversations, workspaces } from '../../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import type { ConversationMessage } from '@taskdashboard/types'
 import { triggerWebhook } from '../webhooks/trigger'

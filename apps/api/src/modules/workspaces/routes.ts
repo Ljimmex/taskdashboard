@@ -27,20 +27,33 @@ workspacesRoutes.route('/', workspaceDefaultsRoutes)
 
 // Helper: Get user's workspace role (blocks suspended members)
 export async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
+    // First try with 'active' status
     const [member] = await db.select({
-        role: workspaceMembers.role
+        role: workspaceMembers.role,
+        status: workspaceMembers.status
     })
         .from(workspaceMembers)
         .where(
             and(
                 eq(workspaceMembers.userId, userId),
-                eq(workspaceMembers.workspaceId, workspaceId),
-                eq(workspaceMembers.status, 'active')
+                eq(workspaceMembers.workspaceId, workspaceId)
             )
         )
         .limit(1)
 
-    return (member?.role as WorkspaceRole) || null
+    if (!member) {
+        console.log(`[getUserWorkspaceRole] No membership found for user=${userId} workspace=${workspaceId}`)
+        return null
+    }
+
+    // Only block suspended members
+    if (member.status === 'suspended') {
+        console.log(`[getUserWorkspaceRole] User ${userId} is suspended in workspace ${workspaceId}`)
+        return null
+    }
+
+    console.log(`[getUserWorkspaceRole] Found role=${member.role} status=${member.status} for user=${userId}`)
+    return (member.role as WorkspaceRole) || null
 }
 
 // GET /api/workspaces - Get user's workspaces
@@ -64,7 +77,7 @@ workspacesRoutes.get('/', async (c) => {
             .where(
                 and(
                     eq(workspaceMembers.userId, userId),
-                    eq(workspaceMembers.status, 'active') // Filter out suspended/invited
+                    sql`${workspaceMembers.status} IS DISTINCT FROM 'suspended'`
                 )
             )
 
@@ -306,7 +319,7 @@ workspacesRoutes.post('/:id/members', async (c) => {
 
 // GET /api/workspaces/:id/members - List members of workspace (with search)
 workspacesRoutes.get('/:id/members', async (c) => {
-    const workspaceId = c.req.param('id')
+    let workspaceId = c.req.param('id')
     console.log(`[DEBUG] GET /api/workspaces/${workspaceId}/members called`)
     const query = c.req.query('q')?.toLowerCase()
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
@@ -316,6 +329,16 @@ workspacesRoutes.get('/:id/members', async (c) => {
     }
 
     try {
+        // Resolve slug to ID if needed (slugs don't look like UUIDs)
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workspaceId)
+        if (!isUUID) {
+            const ws = await db.query.workspaces.findFirst({
+                where: (w, { eq }) => eq(w.slug, workspaceId)
+            })
+            if (!ws) return c.json({ error: 'Workspace not found' }, 404)
+            workspaceId = ws.id
+        }
+
         // 1. Verify membership
         const workspaceRole = await getUserWorkspaceRole(session.user.id, workspaceId)
         if (!workspaceRole) {

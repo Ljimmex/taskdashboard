@@ -1,18 +1,20 @@
 import { useNavigate, createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSession } from '@/lib/auth'
 import { OverallProgress } from '@/components/dashboard/OverallProgress'
 import { LastResources } from '@/components/dashboard/LastResources'
 import { ProjectCard } from '@/components/dashboard/ProjectCard'
-import { CalendarSection } from '@/components/dashboard/CalendarSection'
+import { CalendarSection, CalendarEventType } from '@/components/dashboard/CalendarSection'
 import { TaskCard, AddTaskCard } from '@/components/features/tasks/components/TaskCard'
 import { ChatSection } from '@/components/dashboard/ChatSection'
-import { apiFetchJson } from '@/lib/api'
-import { CreateTaskPanel } from '@/components/features/tasks/panels/CreateTaskPanel'
+import { apiFetchJson, apiFetch } from '@/lib/api'
+import { CalendarEventPanel } from '@/components/features/calendar/CalendarEventPanel'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { useFiles } from '@/hooks/useFiles'
 import { FileInfoPanel } from '@/components/features/files/FileInfoPanel'
 import { FileRecord } from '@taskdashboard/types'
+
 
 
 export const Route = createFileRoute('/$workspaceSlug/')({
@@ -21,10 +23,11 @@ export const Route = createFileRoute('/$workspaceSlug/')({
 
 function DashboardHome() {
   const { workspaceSlug } = Route.useParams()
+  const { data: session } = useSession() // Real session
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [projectFilter, setProjectFilter] = useState<'active' | 'pending'>('active')
-  const [showMeetingPanel, setShowMeetingPanel] = useState(false)
+  const [isEventPanelOpen, setIsEventPanelOpen] = useState(false)
 
   // File Modal State
   const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
@@ -52,25 +55,60 @@ function DashboardHome() {
     }
   })
 
-  // Fetch Meetings (tasks with type 'meeting')
-  const { data: meetingsRes, isLoading: isLoadingMeetings } = useQuery({
-    queryKey: ['meetings', workspaceSlug],
+  // Fetch Calendar Events (events only, not tasks)
+  const { data: eventsRes, isLoading: isLoadingEvents } = useQuery({
+    queryKey: ['calendar_events', workspaceSlug],
     queryFn: async () => {
-      return apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}&type=meeting`)
+      return apiFetchJson<any>(`/api/calendar?workspaceSlug=${workspaceSlug}`)
     }
   })
 
-  const projects = projectsRes?.data || []
-  const meetings = meetingsRes?.data || []
+  // Filter and group projects
+  const { ongoingProjects, pendingProjects } = useMemo(() => {
+    if (!projectsRes?.data) return { ongoingProjects: [], pendingProjects: [] }
 
-  // Filter projects based on switch
-  const filteredProjects = projects.filter((p: any) => p.status === projectFilter)
+    const allProjects = projectsRes.data
+    const userId = session?.user?.id
+
+    // 1. Filter by participation (user must be a member or owner)
+    const myProjects = allProjects.filter((p: any) =>
+      p.members?.some((m: any) => m.user?.id === userId) || p.ownerId === userId
+    )
+
+    const now = new Date()
+
+    // 2. Separate into Ongoing and Pending
+    // A project is PENDING if:
+    // - Status is 'pending'
+    // - OR Status is 'active' but startDate is in the future
+    const pending = myProjects.filter((p: any) =>
+      p.status === 'pending' ||
+      (p.status === 'active' && p.startDate && new Date(p.startDate) > now)
+    )
+
+    const ongoing = myProjects.filter((p: any) =>
+      p.status === 'active' &&
+      (!p.startDate || new Date(p.startDate) <= now)
+    )
+
+    return {
+      ongoingProjects: ongoing,
+      pendingProjects: pending
+    }
+  }, [projectsRes, session?.user?.id])
+
+  const filteredProjects = projectFilter === 'active' ? ongoingProjects : pendingProjects
+
+  const projects = projectsRes?.data || []
+
+  // Filter for actual events (exclude tasks/reminders if API returns them mixed)
+  // Assuming API returns { data: [...] } and items have 'type' property
+  const events = (eventsRes?.data || []).filter((e: any) => ['event', 'meeting'].includes(e.type))
 
   // Handle meeting creation callback
-  const handleMeetingCreated = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['meetings', workspaceSlug] })
-    setShowMeetingPanel(false)
-    return null // CreateTaskPanel will handle the actual creation
+  const handleEventCreated = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['calendar_events', workspaceSlug] })
+    setIsEventPanelOpen(false)
   }
 
   // File Actions
@@ -114,28 +152,65 @@ function DashboardHome() {
         {/* ... Meetings and Projects sections ... */}
         {/* Top Row: Meetings Grid (1,2 / 3,4 pattern) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {isLoadingMeetings ? (
+          {isLoadingEvents ? (
             <>
               <div className="h-[140px] rounded-2xl bg-gray-800/20 animate-pulse" />
               <div className="h-[140px] rounded-2xl bg-gray-800/20 animate-pulse" />
             </>
-          ) : meetings.length > 0 ? (
+          ) : events.length > 0 ? (
             <>
-              {meetings.slice(0, 4).map((meeting: any) => (
+              {events.slice(0, 4).map((event: any) => (
                 <TaskCard
-                  key={meeting.id}
-                  id={meeting.id}
-                  title={meeting.title}
-                  description={meeting.description || 'Brak opisu spotkania.'}
-                  priority={meeting.priority || 'medium'}
-                  status={meeting.status || 'scheduled'}
-                  assignees={meeting.assignee ? [meeting.assignee] : []}
+                  key={event.id}
+                  id={event.id}
+                  title={event.title}
+                  description={event.description}
                   type="meeting"
+                  priority="medium" // Events don't have priority, default to medium to satisfy prop
+                  status="todo" // Events don't have status
+                  dueDate={event.startAt}
+                  meetingLink={event.meetingLink} // Pass meeting link
+                  assignees={event.assignees || []}
+                  onClick={() => { /* Open details? */ }}
+                  // Actions mainly handled via onFullEdit usually, but here we pass direct handlers for the menu
+                  onDuplicate={async () => {
+                    if (confirm('Duplicate this event?')) {
+                      try {
+                        const payload = {
+                          ...event,
+                          id: undefined,
+                          title: `${event.title} (Copy)`,
+                          startAt: new Date(new Date(event.startAt).getTime() + 24 * 60 * 60 * 1000).toISOString(),
+                          endAt: new Date(new Date(event.endAt).getTime() + 24 * 60 * 60 * 1000).toISOString()
+                        }
+                        await apiFetch('/api/calendar', {
+                          method: 'POST',
+                          body: JSON.stringify(payload)
+                        })
+                        window.location.reload()
+                      } catch (e) {
+                        console.error(e)
+                        alert('Failed to duplicate')
+                      }
+                    }
+                  }}
+                  onArchive={() => {
+                    if (confirm('Archive this event?')) {
+                      apiFetch(`/api/calendar/${event.id}`, { method: 'DELETE' }).then(() => window.location.reload())
+                    }
+                  }}
+                  onDelete={async () => {
+                    if (confirm('Delete this event?')) {
+                      await apiFetch(`/api/calendar/${event.id}`, { method: 'DELETE' })
+                      window.location.reload()
+                    }
+                  }}
                 />
               ))}
-              {meetings.length < 4 && (
+              {events.length < 4 && (
                 <AddTaskCard
-                  onClick={() => setShowMeetingPanel(true)}
+                  label="Add New Meeting"
+                  onClick={() => setIsEventPanelOpen(true)}
                 />
               )}
             </>
@@ -145,7 +220,8 @@ function DashboardHome() {
                 <p className="text-gray-500 text-sm">Brak nadchodzących spotkań</p>
               </div>
               <AddTaskCard
-                onClick={() => setShowMeetingPanel(true)}
+                label="Add New Meeting"
+                onClick={() => setIsEventPanelOpen(true)}
               />
             </>
           )}
@@ -183,7 +259,7 @@ function DashboardHome() {
                 <div className="h-[180px] rounded-2xl bg-gray-800/20 animate-pulse" />
               </>
             ) : filteredProjects.length > 0 ? (
-              filteredProjects.map((p: any) => (
+              filteredProjects.slice(0, 2).map((p: any) => (
                 <ProjectCard
                   key={p.id}
                   id={p.id}
@@ -218,7 +294,7 @@ function DashboardHome() {
 
       {/* Right Column Section (Widgets) - Spans 4 columns */}
       <div className="lg:col-span-4 space-y-6">
-        <OverallProgress inProgress={projects.filter((p: any) => p.status === 'active').length} totalProjects={projects.length} upcoming={meetings.length} />
+        <OverallProgress inProgress={projects.filter((p: any) => p.status === 'active').length} totalProjects={projects.length} upcoming={events.length} />
 
         <ChatSection
           contacts={chatContacts}
@@ -238,14 +314,12 @@ function DashboardHome() {
         />
       </div>
 
-      {/* Meeting Creation Panel */}
-      <CreateTaskPanel
-        isOpen={showMeetingPanel}
-        onClose={() => setShowMeetingPanel(false)}
-        onCreate={handleMeetingCreated}
-        defaultType="meeting"
-        defaultProject={projects[0]?.id}
-        projects={projects}
+      {/* Meeting Creation Panel (CalendarEventPanel) */}
+      <CalendarEventPanel
+        isOpen={isEventPanelOpen}
+        onClose={() => setIsEventPanelOpen(false)}
+        onCreate={handleEventCreated}
+        defaultType={CalendarEventType.EVENT}
         workspaceSlug={workspaceSlug}
       />
 

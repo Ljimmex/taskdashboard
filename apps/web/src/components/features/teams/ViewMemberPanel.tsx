@@ -160,35 +160,34 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                         {/* Teams */}
                         <div>
                             <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-3 block">Teams</Label>
-                            <div className="flex flex-wrap gap-2">
-                                {displayTeams.length > 0 ? displayTeams.map((team, i) => (
-                                    <div key={i} className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#1f1f2e] text-gray-300 text-xs border border-gray-700">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                                        {team}
-                                    </div>
-                                )) : (
-                                    <span className="text-gray-600 text-xs italic">No teams</span>
-                                )}
+                            <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24]">
+                                <div className="flex flex-wrap gap-2">
+                                    {displayTeams.length > 0 ? displayTeams.map((team, i) => (
+                                        <div key={i} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-2.5 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                            {team}
+                                        </div>
+                                    )) : (
+                                        <span className="text-gray-500 text-xs py-1">No teams</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
                         {/* Projects */}
                         <div>
                             <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-3 block">Active Projects</Label>
-                            <div className="space-y-2">
-                                {(member.projects && member.projects.length > 0) ? member.projects.map((proj, i) => (
-                                    <div key={i} className="flex items-center justify-between p-2.5 bg-[#1f1f2e] rounded-lg border border-gray-800 hover:border-gray-700 transition-colors group cursor-pointer text-sm">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-6 h-6 rounded flex items-center justify-center text-gray-400 font-bold text-[10px] border border-gray-700 bg-gray-800">
-                                                {proj.slice(0, 1)}
+                            <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24]">
+                                {(member.projects && member.projects.length > 0) ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {member.projects.map((proj, i) => (
+                                            <div key={i} className="flex items-center gap-1 bg-[#2a2b36] px-2.5 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50">
+                                                {proj}
                                             </div>
-                                            <span className="text-gray-300 group-hover:text-white transition-colors">{proj}</span>
-                                        </div>
+                                        ))}
                                     </div>
-                                )) : (
-                                    <div className="p-3 text-center border border-dashed border-gray-800 rounded-lg">
-                                        <p className="text-xs text-gray-600">No active projects</p>
-                                    </div>
+                                ) : (
+                                    <p className="text-xs text-gray-500 py-1">No active projects</p>
                                 )}
                             </div>
                         </div>

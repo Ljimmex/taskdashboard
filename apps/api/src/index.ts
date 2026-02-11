@@ -29,9 +29,16 @@ import foldersRoutes from './modules/folders/routes'
 import conversationsRoutes from './modules/conversations/routes'
 import { webhooksRoutes } from './modules/webhooks/routes'
 import { startWebhookWorker } from './modules/webhooks/worker'
+import { runMigrations } from './db'
 
-// Start async worker for processing webhook queue
-startWebhookWorker()
+// Run migrations on startup, then start workers
+runMigrations().then(() => {
+    console.log('🔄 Migrations check complete, starting webhook worker...')
+    startWebhookWorker()
+}).catch((err) => {
+    console.error('Migration error (non-fatal):', err)
+    startWebhookWorker() // Start worker anyway
+})
 
 // Create OpenAPI Hono app
 const app = new OpenAPIHono()

@@ -21,6 +21,7 @@ interface CalendarEventPanelProps {
     onClose: () => void
     defaultType?: CalendarEventType
     workspaceSlug?: string
+    onCreate?: () => void | Promise<void>
 }
 
 interface Project {
@@ -39,10 +40,11 @@ const DEFAULT_LABELS = [
     { id: 'docs', name: 'Dokumentacja', color: '#6b7280' },
 ]
 
-export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEventType.EVENT, workspaceSlug }: CalendarEventPanelProps) {
+export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEventType.EVENT, workspaceSlug, onCreate }: CalendarEventPanelProps) {
     // Common State
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
+    const [meetingLink, setMeetingLink] = useState('')
     const [selectedType, setSelectedType] = useState<CalendarEventType>(defaultType)
     const { data: session } = useSession()
     const [loading, setLoading] = useState(false)
@@ -236,18 +238,34 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
 
             } else {
                 // Create Event or Reminder
+                // Auto-add members from selected teams
+                const selectedTeamsData = teams.filter(t => teamIds.includes(t.id))
+                const memberIds = new Set<string>()
+
+                selectedTeamsData.forEach((team: any) => {
+                    if (team.members) {
+                        team.members.forEach((m: any) => memberIds.add(m.userId))
+                    }
+                })
+
+                // For Reminder, we can treat it as an event with specific type or maybe 0 duration if simpler
                 // For Reminder, we can treat it as an event with specific type or maybe 0 duration if simpler
                 const payload = {
-                    teamIds, // Send array of IDs
-                    // teamId: teamIds[0], // Fallback if backend strictly requires teamId
+                    teamIds: teamIds, // Send array of teamIds
                     title: title.trim(),
                     description: description.trim(),
                     type: selectedType, // 'event' or 'reminder'
                     startAt: startDate,
                     endAt: selectedType === CalendarEventType.REMINDER ? startDate : endDate, // Reminders are point-in-time
                     location: location,
-                    meetingType: selectedType === CalendarEventType.EVENT ? meetingType : undefined,
-                    isAllDay
+
+                    // Add meeting link if present
+                    meetingLink: meetingLink.trim(),
+
+                    meetingType: (selectedType === CalendarEventType.EVENT || selectedType === CalendarEventType.MEETING) ? meetingType : undefined,
+                    isAllDay,
+                    assignees: Array.from(memberIds).map(id => ({ id })),
+                    assigneeIds: Array.from(memberIds)
                 }
 
                 const res = await apiFetch('/api/calendar', {
@@ -260,10 +278,11 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
             }
 
             resetForm()
-            onClose()
-            // Ideally trigger refresh here
-            window.location.reload() // Simple reload for now, better would be react-query invalidation
+            if (onCreate) {
+                await onCreate()
+            }
 
+            onClose()
         } catch (error) {
             console.error('Error creating item:', error)
             alert('Failed to create item')
@@ -361,7 +380,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                 {/* Tabs for Type Selection */}
                 <div className="px-6 bg-[#14141b]">
                     <div className="flex gap-4">
-                        {[CalendarEventType.EVENT, CalendarEventType.TASK, CalendarEventType.REMINDER].map((type) => (
+                        {[CalendarEventType.EVENT, CalendarEventType.MEETING, CalendarEventType.TASK, CalendarEventType.REMINDER].map((type) => (
                             <button
                                 key={type}
                                 onClick={() => setSelectedType(type)}
@@ -373,7 +392,8 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                 )}
                             >
                                 {type === CalendarEventType.EVENT ? 'Event' :
-                                    type === CalendarEventType.TASK ? 'Task' : 'Reminder'}
+                                    type === CalendarEventType.MEETING ? 'Meeting' :
+                                        type === CalendarEventType.TASK ? 'Task' : 'Reminder'}
                             </button>
                         ))}
                     </div>
@@ -520,8 +540,8 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                         </div>
                     )}
 
-                    {/* ==================== EVENT / REMINDER FORM ==================== */}
-                    {(selectedType === CalendarEventType.EVENT || selectedType === CalendarEventType.REMINDER) && (
+                    {/* ==================== EVENT / REMINDER / MEETING FORM ==================== */}
+                    {(selectedType === CalendarEventType.EVENT || selectedType === CalendarEventType.REMINDER || selectedType === CalendarEventType.MEETING) && (
                         <div className="space-y-6">
                             {/* Date & Time */}
                             <div className="space-y-4">
@@ -599,10 +619,10 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                                     e.preventDefault()
                                                                     e.stopPropagation()
                                                                     setTeamIds(teamIds.filter(t => t !== id))
-                                                                }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 hover:border-red-500/50 hover:bg-red-500/10 group/tag transition-colors z-50 relative">
+                                                                }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
                                                                     <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.color || '#666' }} />
                                                                     {team.name}
-                                                                    <X size={12} className="ml-1 opacity-50 group-hover/tag:opacity-100 group-hover/tag:text-red-400" />
+                                                                    <X size={12} className="ml-1 text-gray-500 group-hover/tag:text-red-400 transition-colors" />
                                                                 </div>
                                                             )
                                                         })
@@ -643,7 +663,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             </div>
 
                             {/* Meeting Type & Location (Event Only) */}
-                            {selectedType === CalendarEventType.EVENT && (
+                            {(selectedType === CalendarEventType.EVENT || selectedType === CalendarEventType.MEETING) && (
                                 <div className="space-y-4">
                                     <div className="flex bg-[#1a1a24] p-1 rounded-full w-full">
                                         <button
@@ -690,8 +710,8 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                             )}
                                             <input
                                                 type="text"
-                                                value={location}
-                                                onChange={(e) => setLocation(e.target.value)}
+                                                value={meetingType === 'physical' ? location : meetingLink}
+                                                onChange={(e) => meetingType === 'physical' ? setLocation(e.target.value) : setMeetingLink(e.target.value)}
                                                 placeholder={meetingType === 'physical' ? "Add location address..." : "Add meeting URL (e.g. Zoom, Meet)..."}
                                                 className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:bg-[#1f1f2e] transition-all"
                                             />

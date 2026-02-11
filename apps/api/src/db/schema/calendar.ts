@@ -1,7 +1,6 @@
 import { pgTable, uuid, varchar, text, timestamp, boolean, jsonb, pgPolicy, pgEnum } from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
 import { users } from './users'
-import { teams } from './teams'
 import { tasks } from './tasks'
 
 // =============================================================================
@@ -19,18 +18,20 @@ export const calendarEvents = pgTable('calendar_events', {
     allDay: boolean('all_day').default(false).notNull(),
     recurrence: jsonb('recurrence'),
     taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'set null' }),
-    teamId: uuid('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    teamIds: uuid('team_ids').array().notNull(), // List of team IDs
     type: calendarEventTypeEnum('type').default('event').notNull(),
+    meetingLink: varchar('meeting_link', { length: 512 }),
     createdBy: uuid('created_by').notNull().references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (_table) => [
     pgPolicy("Team members can view events", {
         for: "select",
-        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+        // Check if event's teamIds overlap with user's teamIds
+        using: sql`team_ids && ARRAY(SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
     }),
     pgPolicy("Team members can create events", {
         for: "insert",
-        withCheck: sql`created_by = auth.uid()::text AND team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+        withCheck: sql`created_by = auth.uid()::text`,
     }),
     pgPolicy("Creator can update events", {
         for: "update",
@@ -48,7 +49,6 @@ export const calendarEvents = pgTable('calendar_events', {
 
 export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
     task: one(tasks, { fields: [calendarEvents.taskId], references: [tasks.id] }),
-    team: one(teams, { fields: [calendarEvents.teamId], references: [teams.id] }),
     creator: one(users, { fields: [calendarEvents.createdBy], references: [users.id] }),
 }))
 
@@ -58,3 +58,5 @@ export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
 
 export type CalendarEvent = typeof calendarEvents.$inferSelect
 export type NewCalendarEvent = typeof calendarEvents.$inferInsert
+
+

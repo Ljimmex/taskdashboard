@@ -78,7 +78,7 @@ function SortableTask({
                     task={{
                         ...task,
                         priority: task.priority || 'medium',
-                        dueDate: task.dueDate || undefined,
+                        dueDate: task.dueDate instanceof Date ? task.dueDate.toISOString() : task.dueDate || undefined,
                         assignees: task.assignees || []
                     }}
                     members={members}

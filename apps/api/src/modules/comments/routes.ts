@@ -3,7 +3,7 @@ import { db } from '../../db'
 import { taskComments, type NewTaskComment, tasks } from '../../db/schema/tasks'
 import { projects } from '../../db/schema/projects'
 import { teams } from '../../db/schema/teams'
-import { workspaceMembers } from '../../db/schema/workspaces'
+// workspaceMembers accessed via db.query, no direct import needed
 import { eq } from 'drizzle-orm'
 import {
     canCreateComments,

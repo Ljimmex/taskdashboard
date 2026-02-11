@@ -4,7 +4,7 @@ import { zValidator } from '@hono/zod-validator'
 import { eq, and, desc, sql, ilike } from 'drizzle-orm'
 import { db } from '../../db'
 import { files, NewFileRecord } from '../../db/schema/files'
-import { workspaceMembers } from '../../db/schema/workspaces'
+// workspaceMembers accessed via db.query, no direct import needed
 
 import { getUploadUrl, getDownloadUrl, deleteFile } from '../../lib/r2'
 import { authMiddleware } from '@/middleware/auth'

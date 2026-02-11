@@ -39,7 +39,7 @@ interface CreateTaskPanelProps {
 interface NewTaskData {
     title: string
     description: string
-    type: 'task' | 'meeting'
+    type: 'task'
     status: string
     priority: string
     assignees: string[]
@@ -114,7 +114,6 @@ export function CreateTaskPanel({
     onCreate,
     defaultStatus = 'todo',
     defaultProject,
-    defaultType = 'task',
     defaultDueDate,
     workspaceSlug,
     userId,
@@ -141,14 +140,8 @@ export function CreateTaskPanel({
     const [currentStages, setCurrentStages] = useState<any[]>([])
     const [showMore, setShowMore] = useState(false)
 
-    // Meeting type support
-    const [itemType, setItemType] = useState<'task' | 'meeting'>(defaultType)
-    const [meetingLink, setMeetingLink] = useState('')
-
-    // Sync itemType when defaultType changes
-    useEffect(() => {
-        setItemType(defaultType)
-    }, [defaultType])
+    // Item type is always 'task' now
+    const itemType = 'task'
 
     // Use props if provided, otherwise fall back to local state
     const [localAvailableLabels, setLocalAvailableLabels] = useState<Label[]>(DEFAULT_LABELS)
@@ -256,8 +249,8 @@ export function CreateTaskPanel({
         setShowMore(false)
         setAttachments([])
         setEditingSubtaskIndex(null)
-        setItemType('task')
-        setMeetingLink('')
+        setAttachments([])
+        setEditingSubtaskIndex(null)
     }
 
     // Handle create
@@ -268,15 +261,14 @@ export function CreateTaskPanel({
             title: title.trim(),
             description: description.trim(),
             type: itemType,
-            status: itemType === 'meeting' ? 'scheduled' : status,
+            status: status,
             priority,
             assignees: assignees.map(a => a.id),
             dueDate: dueDate || undefined,
             startDate: startDate || undefined,
-            meetingLink: itemType === 'meeting' && meetingLink ? meetingLink : undefined,
-            labels: labels as any,
             projectId: projectId || undefined,
-            subtasks: itemType === 'task' ? subtasks.filter(s => s.title.trim()) : [],
+            labels: labels as any,
+            subtasks: subtasks.filter(s => s.title.trim()),
         })
 
         // Upload files if task was created successfully
@@ -468,49 +460,12 @@ export function CreateTaskPanel({
                             </div>
                         )}
 
-                        {/* Type Toggle - Task / Meeting */}
-                        <div className="flex bg-[#1a1a24] p-1 rounded-full">
-                            <button
-                                type="button"
-                                onClick={() => setItemType('task')}
-                                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs transition-all ${itemType === 'task'
-                                    ? 'bg-[#F2CE88] text-[#0a0a0f] font-bold shadow-lg shadow-amber-500/10'
-                                    : 'text-gray-500 hover:text-white font-medium'
-                                    }`}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
-                                    <path d="M8 6C8 4.89543 8.89543 4 10 4H18L24 10V26C24 27.1046 23.1046 28 22 28H10C8.89543 28 8 27.1046 8 26V6Z" fill={itemType === 'task' ? '#0a0a0f' : '#9E9E9E'} />
-                                    <path d="M18 4V8C18 9.10457 18.8954 10 20 10H24" fill={itemType === 'task' ? '#545454' : '#545454'} />
-                                    <path d="M12 14H20" stroke={itemType === 'task' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
-                                    <path d="M12 18H20" stroke={itemType === 'task' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
-                                    <path d="M12 22H16" stroke={itemType === 'task' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
-                                </svg>
-                                Zadanie
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setItemType('meeting')}
-                                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs transition-all ${itemType === 'meeting'
-                                    ? 'bg-[#F2CE88] text-[#0a0a0f] font-bold shadow-lg shadow-amber-500/10'
-                                    : 'text-gray-500 hover:text-white font-medium'
-                                    }`}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
-                                    <path d="M6 10C6 7.79 7.79 6 10 6H22C24.21 6 26 7.79 26 10V24C26 26.21 24.21 28 22 28H10C7.79 28 6 26.21 6 24V10Z" fill={itemType === 'meeting' ? '#0a0a0f' : '#9E9E9E'} />
-                                    <path d="M6 12H26" stroke={itemType === 'meeting' ? '#545454' : '#545454'} strokeWidth="2" />
-                                    <path d="M11 4V8" stroke={itemType === 'meeting' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
-                                    <path d="M21 4V8" stroke={itemType === 'meeting' ? '#545454' : '#545454'} strokeWidth="2" strokeLinecap="round" />
-                                </svg>
-                                Spotkanie
-                            </button>
-                        </div>
-
                         <h2 className="text-lg font-semibold text-white flex-1">
-                            {itemType === 'task' ? 'Nowe zadanie' : 'Nowe spotkanie'}
+                            Nowe zadanie
                         </h2>
 
                         {/* Template Selector - for tasks */}
-                        {itemType === 'task' && workspaceSlug && (
+                        {workspaceSlug && (
                             <TemplateSelector
                                 workspaceSlug={workspaceSlug}
                                 userId={userId}
@@ -522,9 +477,7 @@ export function CreateTaskPanel({
                                     if (templateData.description) {
                                         setDescription(templateData.description)
                                     }
-                                    if (templateData.type) {
-                                        setItemType(templateData.type)
-                                    }
+                                    // Ignore type from template as we only support tasks
                                     if (templateData.priority) {
                                         setPriority(templateData.priority)
                                     }
@@ -606,7 +559,7 @@ export function CreateTaskPanel({
                                 availableAssignees={teamMembers as any}
                                 onSelect={setAssignees}
                                 maxVisible={2}
-                                placeholder={itemType === 'meeting' ? 'Zaproś osoby...' : 'Przypisz osobę...'}
+                                placeholder={'Przypisz osobę...'}
                             />
                         </div>
 
@@ -621,7 +574,7 @@ export function CreateTaskPanel({
                                     value={startDate}
                                     onChange={(date) => setStartDate(date || '')}
                                     placeholder="Start"
-                                    showTime={itemType === 'meeting'}
+                                    showTime={false}
                                 />
                             </div>
                             <div className="flex flex-col gap-0.5">
@@ -630,25 +583,13 @@ export function CreateTaskPanel({
                                     value={dueDate}
                                     onChange={(date) => setDueDate(date || '')}
                                     placeholder="Termin"
-                                    showTime={itemType === 'meeting'}
+                                    showTime={false}
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* Meeting Link - only for meetings, separate section */}
-                    {itemType === 'meeting' && (
-                        <div className="mb-6">
-                            <label className="text-[10px] text-gray-500 font-bold uppercase block mb-2">Link do spotkania</label>
-                            <input
-                                type="url"
-                                value={meetingLink}
-                                onChange={(e) => setMeetingLink(e.target.value)}
-                                placeholder="https://meet.google.com/... lub https://zoom.us/..."
-                                className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:ring-1 focus:ring-amber-500/50 transition-colors"
-                            />
-                        </div>
-                    )}
+
 
                     {/* Labels Section - Full Width Below */}
                     <div className="mb-4">

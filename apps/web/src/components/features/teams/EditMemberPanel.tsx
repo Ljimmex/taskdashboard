@@ -1,10 +1,18 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { usePanelStore } from '../../../lib/panelStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import { CheckCircle2 } from 'lucide-react'
 import { TeamMember, TeamLevel } from './types'
+
+interface TeamOption {
+    name: string
+    color: string
+}
 
 interface EditMemberPanelProps {
     isOpen: boolean
@@ -14,6 +22,7 @@ interface EditMemberPanelProps {
     onDelete: (id: string) => Promise<void>
     currentTeamName?: string
     availableTeams?: string[]
+    availableTeamObjects?: TeamOption[]
     availableProjects?: string[]
 }
 
@@ -25,6 +34,7 @@ export function EditMemberPanel({
     onDelete,
     currentTeamName,
     availableTeams = [],
+    availableTeamObjects = [],
     availableProjects = []
 }: EditMemberPanelProps) {
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
@@ -46,15 +56,11 @@ export function EditMemberPanel({
     const [teams, setTeams] = useState<string[]>([])
     const [projectNames, setProjectNames] = useState<string[]>([])
 
-    // Adding state
-    const [isAddingTeam, setIsAddingTeam] = useState(false)
-    const [isAddingProject, setIsAddingProject] = useState(false)
+    // Track latest availableProjects without triggering form reset
+    const availableProjectsRef = useRef(availableProjects)
+    availableProjectsRef.current = availableProjects
 
-    // Refs for click outside
-    const addTeamWrapperRef = useRef<HTMLDivElement>(null)
-    const addProjectWrapperRef = useRef<HTMLDivElement>(null)
-
-    // Update form when member changes
+    // Update form when member changes (NOT when availableProjects changes)
     useEffect(() => {
         if (member) {
             // Split name if first/last not available separately
@@ -67,11 +73,15 @@ export function EditMemberPanel({
             setCity(member.city || '')
             setCountry(member.country || '')
             setTeamLevel(member.teamLevel || '')
-            // If currentTeamName is provided, ensure it's in the list, otherwise defaults
-            const initialTeams = currentTeamName ? [currentTeamName] : (member.teams || [])
-            // Ensure unique
+            // Use all teams from member data, fallback to currentTeamName only if member has no teams
+            const initialTeams = member.teams?.length ? member.teams : (currentTeamName ? [currentTeamName] : [])
             setTeams(Array.from(new Set(initialTeams)))
-            setProjectNames(member.projects || [])
+            // Filter member projects to only include ones that exist in workspace
+            const ap = availableProjectsRef.current
+            const validProjects = (member.projects || []).filter(
+                p => ap.length === 0 || ap.includes(p)
+            )
+            setProjectNames(validProjects)
         }
     }, [member, currentTeamName])
 
@@ -91,19 +101,6 @@ export function EditMemberPanel({
         }
     }, [isOpen, onClose])
 
-    // Click outside for dropdowns
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (addTeamWrapperRef.current && !addTeamWrapperRef.current.contains(event.target as Node)) {
-                setIsAddingTeam(false)
-            }
-            if (addProjectWrapperRef.current && !addProjectWrapperRef.current.contains(event.target as Node)) {
-                setIsAddingProject(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
 
     const handleSave = async () => {
         if (!member) return
@@ -117,6 +114,7 @@ export function EditMemberPanel({
                 city: city || undefined,
                 country: country || undefined,
                 teamLevel: teamLevel || undefined,
+                teams, // Added teams to payload
                 projects: projectNames,
             } as any)
             onClose()
@@ -143,12 +141,10 @@ export function EditMemberPanel({
 
     const addTeam = (teamToAdd: string) => {
         setTeams([...teams, teamToAdd])
-        setIsAddingTeam(false)
     }
 
     const addProject = (projectToAdd: string) => {
         setProjectNames([...projectNames, projectToAdd])
-        setIsAddingProject(false)
     }
 
     const removeTeam = (teamToRemove: string) => {
@@ -159,9 +155,14 @@ export function EditMemberPanel({
         setProjectNames(projectNames.filter(p => p !== projectToRemove))
     }
 
-    // Filter available options
-    const unselectedTeams = availableTeams.filter(t => !teams.includes(t))
-    const unselectedProjects = availableProjects.filter(p => !projectNames.includes(p))
+
+    // Build team color map from available team objects
+    const teamColorMap = useMemo(() => {
+        const map: Record<string, string> = {}
+        availableTeamObjects.forEach(t => { map[t.name] = t.color })
+        return map
+    }, [availableTeamObjects])
+
 
     if (!isOpen) return null
 
@@ -223,7 +224,7 @@ export function EditMemberPanel({
                             <Input
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
-                                className="bg-[#1a1a24] border-gray-800 text-white rounded-lg focus:border-amber-500/50"
+                                className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
                             />
                         </div>
                         <div className="space-y-2">
@@ -231,7 +232,7 @@ export function EditMemberPanel({
                             <Input
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
-                                className="bg-[#1a1a24] border-gray-800 text-white rounded-lg focus:border-amber-500/50"
+                                className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
                             />
                         </div>
                     </div>
@@ -242,7 +243,7 @@ export function EditMemberPanel({
                         <Input
                             value={position}
                             onChange={(e) => setPosition(e.target.value)}
-                            className="bg-[#1a1a24] border-gray-800 text-white rounded-lg focus:border-amber-500/50"
+                            className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
                             placeholder="e.g. Product Designer"
                         />
                     </div>
@@ -253,7 +254,7 @@ export function EditMemberPanel({
                         <select
                             value={teamLevel}
                             onChange={(e) => setTeamLevel(e.target.value as TeamLevel | '')}
-                            className="w-full px-3 py-2 bg-[#1a1a24] border border-gray-800 text-white rounded-lg focus:border-amber-500/50 focus:outline-none text-sm"
+                            className="w-full px-3 py-2 bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50 focus:outline-none text-sm"
                         >
                             <option value="">Select level...</option>
                             <option value="team_lead">Team Lead</option>
@@ -271,7 +272,7 @@ export function EditMemberPanel({
                             <Input
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
-                                className="bg-[#1a1a24] border-gray-800 text-white rounded-lg focus:border-amber-500/50"
+                                className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
                                 placeholder="e.g. Warsaw"
                             />
                         </div>
@@ -280,7 +281,7 @@ export function EditMemberPanel({
                             <Input
                                 value={country}
                                 onChange={(e) => setCountry(e.target.value)}
-                                className="bg-[#1a1a24] border-gray-800 text-white rounded-lg focus:border-amber-500/50"
+                                className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
                                 placeholder="e.g. Poland"
                             />
                         </div>
@@ -294,99 +295,133 @@ export function EditMemberPanel({
                         <Input
                             value={email}
                             readOnly
-                            className="bg-[#1a1a24] border-gray-800 text-gray-400 rounded-lg cursor-not-allowed"
+                            className="bg-[#1a1a24] border-none text-gray-400 rounded-lg cursor-not-allowed"
                         />
                     </div>
 
                     {/* Team Groups */}
-                    <div className="space-y-2 z-20 relative">
-                        <Label className="text-gray-400 text-xs">Team groups</Label>
-                        <div className="flex flex-wrap gap-2 min-h-[42px] p-2 bg-[#1a1a24] border border-gray-800 rounded-lg">
-                            {teams.map((team, index) => (
-                                <div key={index} className="flex items-center gap-1 px-2 py-1 rounded bg-amber-500/10 text-amber-500 text-xs border border-amber-500/20 group">
-                                    <span>{team}</span>
-                                    <button onClick={() => removeTeam(team)} className="hover:text-amber-300 ml-1 opacity-50 group-hover:opacity-100">×</button>
-                                </div>
-                            ))}
-
-                            {/* Add Team Dropdown Trigger */}
-                            <div className="relative" ref={addTeamWrapperRef}>
-                                <button
-                                    onClick={() => setIsAddingTeam(!isAddingTeam)}
-                                    className="text-xs text-gray-500 hover:text-gray-300 px-2 py-1 hover:bg-gray-800 rounded transition-colors"
-                                >
-                                    + Add
-                                </button>
-
-                                {isAddingTeam && (
-                                    <div className="absolute top-full left-0 mt-1 w-48 bg-[#1f1f2e] border border-gray-700 rounded-lg shadow-xl overflow-hidden z-50">
-                                        {unselectedTeams.length > 0 ? (
-                                            <div className="max-h-48 overflow-y-auto py-1">
-                                                {unselectedTeams.map(team => (
-                                                    <button
-                                                        key={team}
-                                                        onClick={() => addTeam(team)}
-                                                        className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                                                    >
+                    <div className="space-y-2.5 z-20 relative">
+                        <Label className="text-gray-400 text-xs font-medium tracking-wide uppercase">Team Groups</Label>
+                        <div className="relative group">
+                            <div className={cn(
+                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                teams.length === 0 && "text-gray-500"
+                            )}>
+                                <Select value="" onValueChange={(val) => {
+                                    if (!teams.includes(val)) {
+                                        addTeam(val)
+                                    }
+                                }}>
+                                    <SelectTrigger className="w-full h-full border-none bg-transparent p-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0 focus:outline-none shadow-none text-sm font-normal">
+                                        <div className="flex flex-wrap gap-2 w-full">
+                                            {teams.length > 0 ? (
+                                                teams.map((team, index) => (
+                                                    <div key={index} onPointerDown={(e) => {
+                                                        e.preventDefault()
+                                                        e.stopPropagation()
+                                                        removeTeam(team)
+                                                    }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
+                                                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: teamColorMap[team] || '#F59E0B' }} />
                                                         {team}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="px-3 py-2 text-xs text-gray-500 italic">No available teams</div>
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-0.5 text-gray-500 group-hover/tag:text-red-400 transition-colors">
+                                                            <line x1="18" y1="6" x2="6" y2="18" />
+                                                            <line x1="6" y1="6" x2="18" y2="18" />
+                                                        </svg>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span className="text-gray-500 text-xs py-1">Select teams...</span>
+                                            )}
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#1a1a24] border-gray-800 text-white z-[9999]">
+                                        {availableTeams.map((team) => (
+                                            <SelectItem
+                                                key={team}
+                                                value={team}
+                                                className={cn(
+                                                    "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
+                                                    teams.includes(team) && "opacity-50 pointer-events-none"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: teamColorMap[team] || '#F59E0B' }} />
+                                                    {team}
+                                                    {teams.includes(team) && <CheckCircle2 className="w-3 h-3 text-amber-500 ml-auto" />}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                        {availableTeams.length === 0 && (
+                                            <div className="p-3 text-xs text-gray-500 text-center">No teams found</div>
                                         )}
-                                    </div>
-                                )}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </div>
 
                     {/* Projects */}
-                    <div className="space-y-2 z-10 relative">
-                        <Label className="text-gray-400 text-xs">Projects</Label>
-                        <div className="flex flex-wrap gap-2 min-h-[42px] p-2 bg-[#1a1a24] border border-gray-800 rounded-lg">
-                            {projectNames.map((proj, index) => (
-                                <div key={index} className="flex items-center gap-1 px-2 py-1 rounded bg-blue-500/10 text-blue-400 text-xs border border-blue-500/20 group">
-                                    <span>{proj}</span>
-                                    <button onClick={() => removeProject(proj)} className="hover:text-blue-300 ml-1 opacity-50 group-hover:opacity-100">×</button>
-                                </div>
-                            ))}
-
-                            {/* Add Project Dropdown Trigger */}
-                            <div className="relative" ref={addProjectWrapperRef}>
-                                <button
-                                    onClick={() => setIsAddingProject(!isAddingProject)}
-                                    className="text-xs text-gray-500 hover:text-gray-300 px-2 py-1 hover:bg-gray-800 rounded transition-colors"
-                                >
-                                    + Add Project
-                                </button>
-
-                                {isAddingProject && (
-                                    <div className="absolute top-full left-0 mt-1 w-48 bg-[#1f1f2e] border border-gray-700 rounded-lg shadow-xl overflow-hidden z-50">
-                                        {unselectedProjects.length > 0 ? (
-                                            <div className="max-h-48 overflow-y-auto py-1">
-                                                {unselectedProjects.map(proj => (
-                                                    <button
-                                                        key={proj}
-                                                        onClick={() => addProject(proj)}
-                                                        className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                                                    >
+                    <div className="space-y-2.5 z-10 relative">
+                        <Label className="text-gray-400 text-xs font-medium tracking-wide uppercase">Projects</Label>
+                        <div className="relative group">
+                            <div className={cn(
+                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                projectNames.length === 0 && "text-gray-500"
+                            )}>
+                                <Select value="" onValueChange={(val) => {
+                                    if (!projectNames.includes(val)) {
+                                        addProject(val)
+                                    }
+                                }}>
+                                    <SelectTrigger className="w-full h-full border-none bg-transparent p-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0 focus:outline-none shadow-none text-sm font-normal">
+                                        <div className="flex flex-wrap gap-2 w-full">
+                                            {projectNames.length > 0 ? (
+                                                projectNames.map((proj, index) => (
+                                                    <div key={index} onPointerDown={(e) => {
+                                                        e.preventDefault()
+                                                        e.stopPropagation()
+                                                        removeProject(proj)
+                                                    }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
                                                         {proj}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="px-3 py-2 text-xs text-gray-500 italic">No available projects</div>
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-0.5 text-gray-500 group-hover/tag:text-red-400 transition-colors">
+                                                            <line x1="18" y1="6" x2="6" y2="18" />
+                                                            <line x1="6" y1="6" x2="18" y2="18" />
+                                                        </svg>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span className="text-gray-500 text-xs py-1">Select projects...</span>
+                                            )}
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#1a1a24] border-gray-800 text-white z-[9999]">
+                                        {availableProjects.map((proj) => (
+                                            <SelectItem
+                                                key={proj}
+                                                value={proj}
+                                                className={cn(
+                                                    "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
+                                                    projectNames.includes(proj) && "opacity-50 pointer-events-none"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {proj}
+                                                    {projectNames.includes(proj) && <CheckCircle2 className="w-3 h-3 text-amber-500 ml-auto" />}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                        {availableProjects.length === 0 && (
+                                            <div className="p-3 text-xs text-gray-500 text-center">No projects found</div>
                                         )}
-                                    </div>
-                                )}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </div>
-                </div>
+                </div >
 
                 {/* Footer */}
-                <div className="flex-none p-6 border-t border-gray-800 flex items-center justify-between bg-[#12121a] rounded-b-2xl">
+                < div className="flex-none p-6 border-t border-gray-800 flex items-center justify-between bg-[#12121a] rounded-b-2xl" >
                     <Button
                         onClick={() => setShowDeleteConfirm(true)}
                         variant="ghost"
@@ -411,8 +446,8 @@ export function EditMemberPanel({
                             {isLoading ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Delete Confirmation Modal - Refined */}
             {showDeleteConfirm && (

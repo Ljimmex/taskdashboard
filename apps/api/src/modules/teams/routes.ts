@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { eq, and, inArray } from 'drizzle-orm'
+import { eq, and, inArray, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { auth } from '../../lib/auth'
 import { teams, teamMembers } from '../../db/schema/teams'
@@ -133,7 +133,11 @@ teamsRoutes.get('/', async (c) => {
             })
                 .from(projectMembers)
                 .innerJoin(projects, eq(projectMembers.projectId, projects.id))
-                .where(inArray(projectMembers.userId, userIds))
+                .innerJoin(teams, eq(projects.teamId, teams.id))
+                .where(and(
+                    inArray(projectMembers.userId, userIds),
+                    workspaceId ? eq(teams.workspaceId, workspaceId as string) : undefined
+                ))
 
             // Attach to members
             result.forEach(team => {
@@ -537,7 +541,8 @@ teamsRoutes.patch('/:id/members/:memberId', async (c) => {
     const teamId = c.req.param('id')
     const memberId = c.req.param('memberId')
     const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const { firstName, lastName, position, city, country, teamLevel: newTeamLevel, projects: projectNames } = await c.req.json()
+    const body = await c.req.json()
+    const { firstName, lastName, position, city, country, teamLevel: newTeamLevel, projects: projectNames } = body
 
     console.log('PATCH member', { teamId, memberId, firstName, lastName, position, city, country, newTeamLevel })
 
@@ -598,37 +603,77 @@ teamsRoutes.patch('/:id/members/:memberId', async (c) => {
                 .where(eq(users.id, memberId))
         }
 
-        // Update Projects
+        // Update Teams (Workspace-wide sync)
+        if (Array.isArray(body.teams)) {
+            const requestedTeamNames = body.teams as string[]
+            console.log('Syncing user teams across workspace', requestedTeamNames)
+
+            // 1. Get all teams in this workspace
+            const workspaceTeams = await db.select().from(teams).where(eq(teams.workspaceId, team.workspaceId))
+            const workspaceTeamIds = workspaceTeams.map(t => t.id)
+
+            // 2. Resolve requested names to IDs
+            const targetTeamIds = workspaceTeams
+                .filter(t => requestedTeamNames.includes(t.name))
+                .map(t => t.id)
+
+            // 3. Remove from workspace teams not in target list
+            await db.delete(teamMembers).where(and(
+                eq(teamMembers.userId, memberId),
+                inArray(teamMembers.teamId, workspaceTeamIds),
+                targetTeamIds.length > 0 ? sql`team_id NOT IN (${sql.join(targetTeamIds.map(t => sql`${t}`), sql`, `)})` : sql`true`
+            ))
+
+            // 4. Add to teams not currently in
+            const currentMemberships = await db.select().from(teamMembers).where(and(
+                eq(teamMembers.userId, memberId),
+                inArray(teamMembers.teamId, targetTeamIds)
+            ))
+            const currentTeamIds = currentMemberships.map(m => m.teamId)
+            const teamsToAdd = targetTeamIds.filter(tid => !currentTeamIds.includes(tid))
+
+            if (teamsToAdd.length > 0) {
+                await db.insert(teamMembers).values(
+                    teamsToAdd.map(tid => ({
+                        teamId: tid,
+                        userId: memberId,
+                        teamLevel: newTeamLevel || 'mid'
+                    }))
+                )
+            }
+        }
+
+        // Update Projects (Workspace-wide sync)
         if (projectNames && Array.isArray(projectNames)) {
-            console.log('Updating user projects', projectNames)
+            console.log('Syncing user projects across workspace', projectNames)
 
-            // 1. Get all projects belonging to this team
-            const teamProjects = await db.select().from(projects).where(eq(projects.teamId, teamId))
-            const teamProjectIds = teamProjects.map(p => p.id)
+            // 1. Get all project IDs in this workspace (by joining with teams)
+            const workspaceProjectData = await db.select({ id: projects.id, name: projects.name })
+                .from(projects)
+                .innerJoin(teams, eq(projects.teamId, teams.id))
+                .where(eq(teams.workspaceId, team.workspaceId))
 
-            if (teamProjectIds.length > 0) {
-                // 2. Resolve requested names to IDs (must belong to this team)
-                const targetProjectIds = teamProjects
-                    .filter(p => projectNames.includes(p.name))
-                    .map(p => p.id)
+            const workspaceProjectIds = workspaceProjectData.map(p => p.id)
 
-                // 3. Remove user from ALL team projects first
-                // (Safest way to ensure "sync" behavior without complex diffs)
-                await db.delete(projectMembers)
-                    .where(and(
-                        eq(projectMembers.userId, memberId),
-                        inArray(projectMembers.projectId, teamProjectIds)
-                    ))
+            // 2. Resolve requested names to IDs
+            const targetProjectIds = workspaceProjectData
+                .filter(p => projectNames.includes(p.name))
+                .map(p => p.id)
 
-                // 4. Insert new memberships
-                if (targetProjectIds.length > 0) {
-                    await db.insert(projectMembers).values(
-                        targetProjectIds.map(pid => ({
-                            projectId: pid,
-                            userId: memberId
-                        }))
-                    )
-                }
+            // 3. Remove user from all workspace projects first (or filter like teams)
+            await db.delete(projectMembers).where(and(
+                eq(projectMembers.userId, memberId),
+                inArray(projectMembers.projectId, workspaceProjectIds)
+            ))
+
+            // 4. Insert new memberships
+            if (targetProjectIds.length > 0) {
+                await db.insert(projectMembers).values(
+                    targetProjectIds.map(pid => ({
+                        projectId: pid,
+                        userId: memberId
+                    }))
+                )
             }
         }
 

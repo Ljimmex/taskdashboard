@@ -29,6 +29,27 @@
       "when": 1770415430251,
       "tag": "0003_tense_stature",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770758115639,
+      "tag": "0004_mean_jackal",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770758264479,
+      "tag": "0005_calm_penance",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770759999999,
+      "tag": "0006_fix_missing_meeting_link",
+      "breakpoints": true
     }
   ]
 }

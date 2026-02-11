@@ -379,16 +379,26 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                             <td className="p-3 text-sm text-gray-400">{member.email}</td>
                                             <td className="p-3 text-sm text-gray-300">{member.role}</td>
                                             <td className="p-3">
-                                                <div className="flex items-center gap-2">
-                                                    {member.projects.slice(0, 1).map((proj: string, i: number) => (
-                                                        <span key={i} className="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 max-w-[120px] truncate">
-                                                            {proj}
+                                                <div className="flex items-center gap-1.5">
+                                                    {member.projects.slice(0, 2).map((proj: string, i: number) => (
+                                                        <span key={i} className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium text-gray-200 bg-[#2a2b36] border border-gray-700/50 max-w-[120px]">
+                                                            <span className="truncate">{proj}</span>
                                                         </span>
                                                     ))}
-                                                    {member.projects.length > 1 && (
-                                                        <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                                                            +{member.projects.length - 1}
-                                                        </span>
+                                                    {member.projects.length > 2 && (
+                                                        <div className="relative group/more">
+                                                            <span className="px-1.5 py-0.5 rounded-lg text-[10px] font-medium bg-[#2a2b36] border border-gray-700/50 text-gray-400 cursor-default">
+                                                                +{member.projects.length - 2}
+                                                            </span>
+                                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/more:block z-50">
+                                                                <div className="bg-[#1a1a24] border border-gray-700/80 rounded-lg shadow-xl shadow-black/40 px-3 py-2 whitespace-nowrap">
+                                                                    {member.projects.slice(2).map((proj: string, i: number) => (
+                                                                        <div key={i} className="text-[11px] text-gray-300 py-0.5">{proj}</div>
+                                                                    ))}
+                                                                </div>
+                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1a24] border-r border-b border-gray-700/80 transform rotate-45 -mt-1" />
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </td>

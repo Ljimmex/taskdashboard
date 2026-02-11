@@ -67,6 +67,21 @@ export default function TeamPage() {
         enabled: !!workspaceSlug && !!session?.user?.id
     })
 
+    // 4. Fetch Projects for this Workspace (for dropdowns)
+    const { data: projectsData } = useQuery({
+        queryKey: ['projects', workspaceSlug, session?.user?.id],
+        queryFn: async () => {
+            if (!workspaceSlug) return []
+            const json = await apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`, {
+                headers: {
+                    'x-user-id': session?.user?.id || ''
+                }
+            })
+            return json.data
+        },
+        enabled: !!workspaceSlug && !!session?.user?.id
+    })
+
     // 3. Map API Data to UI Types
     const teams: Team[] = (teamsData || []).map((t: any) => ({
         id: t.id,
@@ -134,13 +149,23 @@ export default function TeamPage() {
     }, [teams])
 
     const availableProjects = useMemo(() => {
-        const projects = new Set<string>()
-        teams.forEach(t => {
-            // Add projects from the team itself (fetched from API)
-            t.projects?.forEach((p: any) => projects.add(p.name))
-            // Also keep existing logic just in case (optional, but cleaner to rely on team.projects)
+        return (projectsData || []).map((p: any) => p.name).sort()
+    }, [projectsData])
+
+    // Get a map of which teams each user belongs to
+    const memberTeamsMap = useMemo(() => {
+        const map: Record<string, string[]> = {}
+        teams.forEach(team => {
+            team.members.forEach(member => {
+                if (!map[member.id]) {
+                    map[member.id] = []
+                }
+                if (!map[member.id].includes(team.name)) {
+                    map[member.id].push(team.name)
+                }
+            })
         })
-        return Array.from(projects).sort()
+        return map
     }, [teams])
 
     // 5. Apply Filters and Search
@@ -412,8 +437,22 @@ export default function TeamPage() {
                         team={team}
                         userRole={workspaceData?.userRole}
                         onInvite={handleInviteClick}
-                        onEditMember={(member) => setEditingSession({ member, teamName: team.name })}
-                        onViewMember={(member) => setViewingSession({ member, teamName: team.name })}
+                        onEditMember={(member) => {
+                            // Inject all teams this member belongs to
+                            const allTeams = memberTeamsMap[member.id] || []
+                            setEditingSession({
+                                member: { ...member, teams: allTeams },
+                                teamName: team.name
+                            })
+                        }}
+                        onViewMember={(member) => {
+                            // Inject all teams this member belongs to
+                            const allTeams = memberTeamsMap[member.id] || []
+                            setViewingSession({
+                                member: { ...member, teams: allTeams },
+                                teamName: team.name
+                            })
+                        }}
                         onEditTeam={handleEditTeam}
                         onDeleteTeam={handleDeleteTeam}
                         onDeleteMember={(member) => handleDeleteMember(member.id, team.id)}
@@ -442,6 +481,7 @@ export default function TeamPage() {
                 member={editingSession?.member || null}
                 currentTeamName={editingSession?.teamName}
                 availableTeams={teams.map(t => t.name)}
+                availableTeamObjects={teams.map(t => ({ name: t.name, color: t.color }))}
                 availableProjects={availableProjects}
                 onSave={handleSaveMember}
                 onDelete={handleDeleteMember}

@@ -3,6 +3,7 @@ import { useParams } from '@tanstack/react-router'
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, format, parseISO, isWeekend } from 'date-fns'
 import { enUS } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { apiFetch } from '@/lib/api'
 import { ChevronLeft, ChevronRight, Filter, SlidersHorizontal } from 'lucide-react'
 import {
     DropdownMenu,
@@ -72,7 +73,7 @@ export function CalendarSection() {
 
         const fetchEvents = async () => {
             try {
-                const res = await fetch(`/api/calendar?workspaceSlug=${workspaceSlug}`)
+                const res = await apiFetch(`/api/calendar?workspaceSlug=${workspaceSlug}`)
                 if (res.ok) {
                     const data = await res.json()
                     setEvents(data.data || [])
