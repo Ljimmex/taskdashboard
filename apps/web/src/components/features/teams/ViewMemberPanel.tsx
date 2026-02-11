@@ -67,7 +67,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                     <div className="flex items-center gap-4">
                         {/* Avatar 48x48 */}
                         <div className="relative">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-lg font-bold text-white overflow-hidden shadow-sm border border-gray-700">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white overflow-hidden shadow-sm border border-gray-700 ${member.avatar ? 'bg-transparent' : 'bg-gradient-to-br from-gray-700 to-gray-600'}`}>
                                 {member.avatar ? (
                                     <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
                                 ) : (

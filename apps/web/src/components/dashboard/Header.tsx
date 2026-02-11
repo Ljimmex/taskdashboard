@@ -3,11 +3,13 @@ import { useParams } from '@tanstack/react-router'
 import { useSession, signOut } from '@/lib/auth'
 import { DropdownArrowUp, DropdownArrowDown } from './icons'
 import { NotificationPanel } from '@/components/features/notifications/NotificationPanel'
+import { UserSettingsPanel } from '@/components/features/settings/panels/UserSettingsPanel'
 
 export function Header() {
     const { data: session } = useSession()
     const [showUserMenu, setShowUserMenu] = useState(false)
     const [showNotifications, setShowNotifications] = useState(false)
+    const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false)
 
     // Refs for click outside
     const userMenuRef = useRef<HTMLDivElement>(null)
@@ -105,8 +107,12 @@ export function Header() {
                         onClick={() => setShowUserMenu(!showUserMenu)}
                         className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-800 transition-colors group"
                     >
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black font-bold">
-                            {user?.name?.charAt(0) || user?.email?.charAt(0) || '?'}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-black font-bold text-xs ring-2 ring-[#1a1a24] overflow-hidden ${user?.image ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}>
+                            {user?.image ? (
+                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                            ) : (
+                                user?.name?.charAt(0) || user?.email?.charAt(0) || '?'
+                            )}
                         </div>
                         <div className="text-left hidden md:block">
                             <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
@@ -177,7 +183,13 @@ export function Header() {
                                     </div>
                                     <span>Tasks</span>
                                 </a>
-                                <a href={baseUrl} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
+                                <button
+                                    onClick={() => {
+                                        setIsUserSettingsOpen(true)
+                                        setShowUserMenu(false)
+                                    }}
+                                    className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group text-left"
+                                >
                                     {/* Settings icon */}
                                     <div className="w-5 h-5 flex items-center justify-center">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
@@ -190,7 +202,7 @@ export function Header() {
                                         </svg>
                                     </div>
                                     <span>Settings</span>
-                                </a>
+                                </button>
 
                                 <button
                                     onClick={async () => {
@@ -219,6 +231,11 @@ export function Header() {
                     )}
                 </div>
             </div>
+            {/* User Settings Panel */}
+            <UserSettingsPanel
+                isOpen={isUserSettingsOpen}
+                onClose={() => setIsUserSettingsOpen(false)}
+            />
         </header>
     )
 }

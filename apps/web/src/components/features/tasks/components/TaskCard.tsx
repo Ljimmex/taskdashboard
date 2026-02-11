@@ -318,12 +318,12 @@ export function TaskCard({
                     {safeAssignees.slice(0, 4).map((assignee, i) => (
                         <div
                             key={assignee.id}
-                            className="w-8 h-8 rounded-full border-2 border-[#12121a] bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black text-xs font-bold"
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-black border border-[#1a1a24] overflow-hidden ${assignee.avatar ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}
                             style={{ zIndex: safeAssignees.length - i }}
                             title={assignee.name}
                         >
                             {assignee.avatar ? (
-                                <img src={assignee.avatar} alt={assignee.name} className="w-full h-full rounded-full object-cover" />
+                                <img src={assignee.avatar} alt={assignee.name} className="w-full h-full object-cover" />
                             ) : (
                                 assignee.name.charAt(0)
                             )}

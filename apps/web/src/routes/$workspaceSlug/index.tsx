@@ -110,7 +110,7 @@ function DashboardHome() {
   const events = useMemo(() => {
     const now = new Date()
     const userId = session?.user?.id
-    return (eventsRes?.data || []).filter((e: any) => {
+    const filtered = (eventsRes?.data || []).filter((e: any) => {
       // 1. Only events and meetings (no tasks/reminders)
       if (!e.type || !['event', 'meeting'].includes(e.type)) return false
       // 2. Only upcoming or ongoing (hide past events)
@@ -122,6 +122,9 @@ function DashboardHome() {
       if (!isCreator && !isAssignee) return false
       return true
     })
+
+    // Sort by start date ASC (nearest first)
+    return filtered.sort((a: any, b: any) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
   }, [eventsRes, session?.user?.id])
 
   // Handle meeting creation callback
@@ -189,7 +192,7 @@ function DashboardHome() {
                   status="todo" // Events don't have status
                   dueDate={event.startAt}
                   meetingLink={event.meetingLink} // Pass meeting link
-                  assignees={event.assignees || []}
+                  assignees={(event.assignees || []).map((a: any) => ({ ...a, avatar: a.image || a.avatar }))}
                   onClick={() => { /* Open details? */ }}
                   // Actions mainly handled via onFullEdit usually, but here we pass direct handlers for the menu
                   onDuplicate={async () => {

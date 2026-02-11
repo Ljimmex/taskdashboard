@@ -82,10 +82,12 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
         }
     })
 
-    const filteredMembers = members.filter((m: Member) =>
-        m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.email.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filteredMembers = members.filter((m: Member) => {
+        const name = m.name || ''
+        const email = m.email || ''
+        const query = searchQuery.toLowerCase()
+        return name.toLowerCase().includes(query) || email.toLowerCase().includes(query)
+    })
 
     const handleRemove = (memberId: string) => {
         if (confirm('Are you sure you want to remove this member from the organization?')) {
@@ -205,13 +207,13 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                 <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-white font-medium text-xs">
-                                                    {member.name.substring(0, 2).toUpperCase()}
+                                                    {(member.name || member.email || '?').substring(0, 2).toUpperCase()}
                                                 </div>
                                             )}
                                         </div>
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <h4 className="text-sm font-medium text-white truncate">{member.name}</h4>
+                                                <h4 className="text-sm font-medium text-white truncate">{member.name || member.email || 'Unknown'}</h4>
                                                 {member.status === 'suspended' && (
                                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 uppercase tracking-tight">
                                                         Suspended

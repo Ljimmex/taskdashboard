@@ -21,11 +21,13 @@ export const users = pgTable('users', {
     // Custom fields
     firstName: varchar('first_name', { length: 100 }),
     lastName: varchar('last_name', { length: 100 }),
+    description: text('description'),
     birthDate: timestamp('birth_date'),
     gender: varchar('gender', { length: 50 }),
     position: varchar('position', { length: 100 }), // e.g. "Web Designer", "Programmer"
     city: varchar('city', { length: 100 }), // Location - City
     country: varchar('country', { length: 100 }), // Location - Country
+    timezone: varchar('timezone', { length: 100 }),
     role: userRoleEnum('role').default('member').notNull(),
     status: userStatusEnum('status').default('pending').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

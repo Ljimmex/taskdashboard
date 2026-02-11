@@ -200,8 +200,8 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
                         onClick={handleSave}
                         disabled={isSaving}
                         className={`px-4 py-2 font-medium rounded-lg text-sm transition-colors ${isSaving
-                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                : 'bg-[#F2CE88] hover:bg-[#d9b877] text-black'
+                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                            : 'bg-[#F2CE88] hover:bg-[#d9b877] text-black'
                             }`}
                     >
                         {isSaving ? 'Zapisywanie...' : 'Zapisz zmiany'}
@@ -278,15 +278,14 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
             </section>
 
             {/* Section: Danger Zone */}
-            <section className="space-y-4 pt-4 border-t border-gray-800/50">
-                <h3 className="text-lg font-semibold text-red-500">Strefa Niebezpieczna</h3>
-                <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-6">
-                    <h4 className="text-white font-medium mb-1">Usuń organizację</h4>
-                    <p className="text-sm text-gray-500 mb-4">Ta operacja jest nieodwracalna. Wszystkie dane zostaną trwale usunięte.</p>
-                    <button className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-sm transition-colors">
-                        Usuń organizację
-                    </button>
-                </div>
+            <section className="pt-8 border-t border-gray-800">
+                <button
+                    type="button"
+                    className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors"
+                    onClick={() => alert('This feature is coming soon.')}
+                >
+                    Usuń organizację
+                </button>
             </section>
         </div>
     )

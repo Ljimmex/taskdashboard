@@ -366,7 +366,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                             )}
                                             <td className="p-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white overflow-hidden ${member.avatar ? 'bg-transparent' : 'bg-gradient-to-br from-gray-700 to-gray-600'}`}>
                                                         {member.avatar ? (
                                                             <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
                                                         ) : (
