@@ -378,12 +378,14 @@ workspacesRoutes.get('/:id/members', async (c) => {
         }
 
         const members = rows.map(row => ({
-            id: row.userId,
-            name: row.userName,
-            email: row.userEmail,
-            image: row.userImage,
-            position: row.userPosition,
-            workspaceRole: row.memberRole,
+            user: {
+                id: row.userId,
+                name: row.userName,
+                email: row.userEmail,
+                image: row.userImage,
+                position: row.userPosition,
+            },
+            role: row.memberRole,
             status: row.memberStatus,
             joinedAt: row.memberJoinedAt,
         }))

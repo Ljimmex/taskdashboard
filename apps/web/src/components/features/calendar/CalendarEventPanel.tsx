@@ -149,10 +149,10 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                     })
                     if (membersRes.data) {
                         const members = membersRes.data.map((m: any) => ({
-                            id: m.user.id,
-                            name: m.user.name,
-                            avatar: m.user.image
-                        }))
+                            id: m.user?.id || m.id || m.userId,
+                            name: m.user?.name || m.name || m.userName,
+                            avatar: m.user?.image || m.image || m.userImage
+                        })).filter((m: any) => m.id)
                         setTeamMembers(members)
                     }
 

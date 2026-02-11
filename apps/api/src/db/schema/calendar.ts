@@ -21,7 +21,7 @@ export const calendarEvents = pgTable('calendar_events', {
     teamIds: uuid('team_ids').array().notNull(), // List of team IDs
     type: calendarEventTypeEnum('type').default('event').notNull(),
     meetingLink: varchar('meeting_link', { length: 512 }),
-    createdBy: uuid('created_by').notNull().references(() => users.id),
+    createdBy: text('created_by').notNull().references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (_table) => [
     pgPolicy("Team members can view events", {

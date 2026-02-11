@@ -94,6 +94,8 @@ calendarRoutes.get('/', async (c) => {
         const userId = session.user.id
         const { start, end, teamId, type, workspaceSlug } = c.req.query()
 
+        console.log(`[Calendar GET] userId=${userId} workspaceSlug=${workspaceSlug} teamId=${teamId}`)
+
         let allowedTeamIds: string[] = []
 
         if (teamId) {
@@ -104,11 +106,22 @@ calendarRoutes.get('/', async (c) => {
             }
             allowedTeamIds = [teamId]
         } else if (workspaceSlug) {
-            // ... existing workspace logic ...
             const workspace = await db.query.workspaces.findFirst({
                 where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
             })
-            if (!workspace) return c.json({ success: true, data: [] })
+            if (!workspace) {
+                console.log(`[Calendar GET] Workspace not found: ${workspaceSlug}`)
+                return c.json({ success: true, data: [] })
+            }
+
+            console.log(`[Calendar GET] Found workspace: ${workspace.id}`)
+
+            // Get workspace role first
+            const wsMember = await db.query.workspaceMembers.findFirst({
+                where: (wm, { and, eq }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspace.id))
+            })
+            const wsRole = (wsMember?.role || null) as WorkspaceRole | null
+            console.log(`[Calendar GET] Workspace role: ${wsRole}`)
 
             const members = await db.query.teamMembers.findMany({
                 where: (tm, { eq }) => eq(tm.userId, userId),
@@ -116,18 +129,23 @@ calendarRoutes.get('/', async (c) => {
             })
 
             // Filter user's teams in this workspace
-            const workspaceMembers = members.filter(m => m.team.workspaceId === workspace.id)
+            const wsTeamMembers = members.filter(m => m.team.workspaceId === workspace.id)
+            console.log(`[Calendar GET] Teams in workspace: ${wsTeamMembers.length}`)
 
-            // Re-fetch workspace role
-            const wsMember = await db.query.workspaceMembers.findFirst({
-                where: (wm, { and, eq }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspace.id))
-            })
-            const wsRole = (wsMember?.role || null) as WorkspaceRole | null
-
-            allowedTeamIds = workspaceMembers.filter(m => {
-                const teamLevel = (m.teamLevel || null) as TeamLevel | null
-                return canViewCalendarEvents(wsRole, teamLevel)
-            }).map(m => m.teamId)
+            if (wsTeamMembers.length === 0 && (wsRole === 'owner' || wsRole === 'admin')) {
+                // Owners/admins with no team memberships can still see all events
+                const allTeams = await db.query.teams.findMany({
+                    where: (t, { eq }) => eq(t.workspaceId, workspace.id),
+                    columns: { id: true }
+                })
+                allowedTeamIds = allTeams.map(t => t.id)
+                console.log(`[Calendar GET] Owner/admin fallback - ${allowedTeamIds.length} teams`)
+            } else {
+                allowedTeamIds = wsTeamMembers.filter(m => {
+                    const teamLevel = (m.teamLevel || null) as TeamLevel | null
+                    return canViewCalendarEvents(wsRole, teamLevel)
+                }).map(m => m.teamId)
+            }
 
         } else {
             // All teams logic... (simplified for brevity, assume similar to before)
@@ -154,12 +172,16 @@ calendarRoutes.get('/', async (c) => {
             }).map(m => m.teamId)
         }
 
+        console.log(`[Calendar GET] allowedTeamIds: ${JSON.stringify(allowedTeamIds)}`)
+
         if (allowedTeamIds.length === 0) {
             return c.json({ success: true, data: [] })
         }
 
-        // Find events where event.teamIds OVERLAPS with allowedTeamIds
-        // Drizzle array overlaps: sql`team_ids && ${allowedTeamIds}`
+        // Build overlap condition using Postgres array literal string
+        const pgArrayLiteral = `{${allowedTeamIds.join(',')}}`
+        const overlapCondition = sql`team_ids && ${pgArrayLiteral}::uuid[]`
+
         const events = await db.query.calendarEvents.findMany({
             where: (e, { and, gte, lte, eq }) => {
                 const wheres: any[] = []
@@ -168,8 +190,7 @@ calendarRoutes.get('/', async (c) => {
                 if (end) wheres.push(lte(e.endAt, new Date(end)))
                 if (type) wheres.push(eq(e.type, type as any))
 
-                // Overlap check
-                wheres.push(sql`team_ids && ${allowedTeamIds}`)
+                wheres.push(overlapCondition)
 
                 return and(...wheres)
             },
@@ -183,10 +204,11 @@ calendarRoutes.get('/', async (c) => {
             }
         })
 
+        console.log(`[Calendar GET] Found ${events.length} events`)
+
         // Populate assignees (team members) for each event
         if (events.length > 0) {
-            // Collect all unique team IDs involved in these events
-            const allTeamIds = [...new Set(events.flatMap(e => e.teamIds))]
+            const allTeamIds = [...new Set(events.flatMap(e => e.teamIds || []))]
 
             if (allTeamIds.length > 0) {
                 // Fetch members for these teams
@@ -210,10 +232,10 @@ calendarRoutes.get('/', async (c) => {
                 // For each event, assignees = unique users from all its teamIds
                 const eventsWithAssignees = events.map(event => {
                     const eventMembers = new Map<string, any>()
-                    event.teamIds.forEach(tid => {
-                        const members = membersByTeam.get(tid) || []
-                        members.forEach(m => eventMembers.set(m.id, m))
-                    })
+                        ; (event.teamIds || []).forEach(tid => {
+                            const members = membersByTeam.get(tid) || []
+                            members.forEach(m => eventMembers.set(m.id, m))
+                        })
                     return {
                         ...event,
                         assignees: Array.from(eventMembers.values())
@@ -225,9 +247,10 @@ calendarRoutes.get('/', async (c) => {
         }
 
         return c.json({ success: true, data: events })
-    } catch (error) {
-        console.error('Error fetching calendar events:', error)
-        return c.json({ success: false, error: 'Failed to fetch events' }, 500)
+    } catch (error: any) {
+        console.error('[Calendar GET] Error:', error?.message || error)
+        console.error('[Calendar GET] Stack:', error?.stack)
+        return c.json({ success: false, error: 'Failed to fetch events', details: String(error?.message || error) }, 500)
     }
 })
 

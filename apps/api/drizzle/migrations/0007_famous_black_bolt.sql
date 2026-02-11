@@ -1,0 +1,1 @@
+ALTER TABLE "calendar_events" ALTER COLUMN "created_by" SET DATA TYPE text;
