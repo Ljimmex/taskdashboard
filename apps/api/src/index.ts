@@ -28,14 +28,6 @@ import filesRoutes from './modules/files/routes'
 import foldersRoutes from './modules/folders/routes'
 import conversationsRoutes from './modules/conversations/routes'
 import { webhooksRoutes } from './modules/webhooks/routes'
-import { startWebhookWorker } from './modules/webhooks/worker'
-import { runMigrations } from './db'
-
-// Run migrations on startup, then start workers
-// Migrations are handled manually via CLI commands to avoid startup errors
-// runMigrations() code removed as requested
-console.log('🔄 Starting webhook worker...')
-startWebhookWorker()
 
 // Create OpenAPI Hono app
 const app = new OpenAPIHono()

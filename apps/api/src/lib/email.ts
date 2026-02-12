@@ -1,11 +1,12 @@
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 
-const FROM_EMAIL = 'noreply@zadano.app'
+const FROM_EMAIL = 'noreply@contact.zadanoapp.com'
 
-// Hardcoded Mailtrap credentials (will be overridden by ENV in production)
-const DEFAULT_MAILTRAP_USER = '078d72e0e25160'
-const DEFAULT_MAILTRAP_PASS = '6e7a6ad6cf532f'
+// Resend SMTP Configuration
+const RESEND_HOST = 'smtp.resend.com'
+const RESEND_PORT = 465
+const RESEND_USER = 'resend'
 
 // Lazy-loaded transporter
 let transporter: Transporter | null = null
@@ -13,17 +14,22 @@ let transporter: Transporter | null = null
 function getTransporter(): Transporter {
     if (transporter) return transporter
 
-    const user = process.env.MAILTRAP_USER || DEFAULT_MAILTRAP_USER
-    const pass = process.env.MAILTRAP_PASS || DEFAULT_MAILTRAP_PASS
-    const host = process.env.MAILTRAP_HOST || 'sandbox.smtp.mailtrap.io'
-    const port = Number(process.env.MAILTRAP_PORT) || 2525
+    const apiKey = process.env.RESEND_API_KEY
 
-    console.log('📬 Creating Mailtrap transporter:', { host, port, user: user.slice(0, 6) + '...' })
+    if (!apiKey) {
+        console.warn('⚠️ RESEND_API_KEY is missing. Emails will not be sent.')
+    }
+
+    console.log('📬 Creating Resend transporter')
 
     transporter = nodemailer.createTransport({
-        host,
-        port,
-        auth: { user, pass },
+        host: RESEND_HOST,
+        port: RESEND_PORT,
+        secure: true, // true for 465, false for other ports
+        auth: {
+            user: RESEND_USER,
+            pass: apiKey,
+        },
     })
 
     return transporter
