@@ -31,6 +31,9 @@ export function AccountSettingsTab() {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [isUploading, setIsUploading] = useState(false)
 
+    // Get list of all timezones
+    const supportedTimezones = (Intl as any).supportedValuesOf ? (Intl as any).supportedValuesOf('timeZone') : ['Europe/Warsaw', 'UTC']
+
     // Fetch full user profile
     const { data: user, isLoading } = useQuery({
         queryKey: ['user', 'me'],
@@ -134,173 +137,211 @@ export function AccountSettingsTab() {
                 <p className="text-sm text-gray-400">Manage your profile and account preferences.</p>
             </div>
 
-            {/* Profile Picture */}
-            <div>
-                <Label className="text-gray-400 text-xs mb-2 block">Photo</Label>
-                <div className="flex items-center gap-4">
-                    <div
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-black overflow-hidden shadow-lg border-2 border-[#1a1a24] cursor-pointer hover:opacity-80 transition-opacity ${user?.image ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}
-                    >
-                        {user?.image ? (
-                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                        ) : (
-                            user?.name?.charAt(0) || user?.email?.charAt(0) || '?'
+            {/* Photo Section */}
+            <section className="space-y-4">
+                <h3 className="text-lg font-semibold text-white">Photo</h3>
+                <div className="bg-[#1a1a24] rounded-xl p-6 flex items-center gap-6">
+                    <div className="relative group">
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className={`w-20 h-20 rounded-xl flex items-center justify-center text-2xl font-bold text-black overflow-hidden shadow-lg border-2 border-[#1a1a24] cursor-pointer hover:opacity-80 transition-opacity ${user?.image ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}
+                        >
+                            {user?.image ? (
+                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                            ) : (
+                                user?.name?.charAt(0) || user?.email?.charAt(0) || '?'
+                            )}
+                        </div>
+                        {isUploading && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            </div>
                         )}
                     </div>
 
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileChange}
-                    />
-
-                    <div>
-                        <div className="flex gap-2 text-sm">
+                    <div className="flex-1">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleFileChange}
+                        />
+                        <div className="flex gap-2">
                             <button
                                 onClick={() => fileInputRef.current?.click()}
-                                className="text-gray-300 hover:text-white font-medium text-xs"
+                                disabled={isUploading}
+                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
                             >
                                 {isUploading ? 'Uploading...' : 'Change photo'}
                             </button>
-                            <span className="text-gray-600">·</span>
                             <button
                                 onClick={() => {
                                     if (confirm('Are you sure you want to remove your profile picture?')) {
                                         deleteAvatarMutation.mutate()
                                     }
                                 }}
-                                className="text-gray-500 hover:text-white font-medium text-xs"
+                                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-sm transition-colors"
                             >
                                 Remove photo
                             </button>
                         </div>
-                        <p className="text-gray-500 text-[10px] mt-1">Pick a photo up to 4MB.</p>
+                        <p className="text-xs text-gray-500 mt-2">Pick a photo up to 4MB.</p>
                     </div>
                 </div>
-            </div>
+            </section>
 
             {/* Profile Form */}
-            <form onSubmit={form.handleSubmit((data: AccountFormValues) => updateProfileMutation.mutate(data))} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* First Name */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">First Name</label>
-                        <input
-                            {...form.register('firstName')}
-                            className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#F2CE88] transition-colors"
-                            placeholder="John"
-                        />
-                        {form.formState.errors.firstName && (
-                            <p className="text-xs text-red-500">{form.formState.errors.firstName.message}</p>
-                        )}
-                    </div>
-
-                    {/* Last Name */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Last Name</label>
-                        <input
-                            {...form.register('lastName')}
-                            className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#F2CE88] transition-colors"
-                            placeholder="Doe"
-                        />
-                        {form.formState.errors.lastName && (
-                            <p className="text-xs text-red-500">{form.formState.errors.lastName.message}</p>
-                        )}
-                    </div>
-
-                    {/* Position */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Position</label>
-                        <input
-                            {...form.register('position')}
-                            className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#F2CE88] transition-colors"
-                            placeholder="e.g. Product Designer"
-                        />
-                    </div>
-
-                    {/* Gender */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Gender</label>
-                        <select
-                            {...form.register('gender')}
-                            className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#F2CE88] transition-colors appearance-none"
+            <form onSubmit={form.handleSubmit((data: AccountFormValues) => updateProfileMutation.mutate(data))} className="space-y-8">
+                {/* Personal Information */}
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-white">Personal Information</h3>
+                        <button
+                            type="submit"
+                            disabled={updateProfileMutation.isPending}
+                            className={`px-4 py-2 font-medium rounded-lg text-sm transition-colors ${updateProfileMutation.isPending
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-[#F2CE88] hover:bg-[#d9b877] text-black'
+                                }`}
                         >
-                            <option value="">Select Gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
-                            <option value="prefer_not_to_say">Prefer not to say</option>
-                        </select>
+                            {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                        </button>
                     </div>
 
-                    {/* Date of Birth */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Date of Birth</label>
-                        <div className="relative">
-                            <input
-                                type="date"
-                                {...form.register('birthDate')}
-                                className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#F2CE88] transition-colors [color-scheme:dark]"
-                            />
-                            {/* <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} /> */}
+                    <div className="bg-[#1a1a24] rounded-xl p-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* First Name */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-400">First Name</label>
+                                <input
+                                    {...form.register('firstName')}
+                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                    placeholder="John"
+                                />
+                                {form.formState.errors.firstName && (
+                                    <p className="text-xs text-red-500">{form.formState.errors.firstName.message}</p>
+                                )}
+                            </div>
+
+                            {/* Last Name */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-400">Last Name</label>
+                                <input
+                                    {...form.register('lastName')}
+                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                    placeholder="Doe"
+                                />
+                                {form.formState.errors.lastName && (
+                                    <p className="text-xs text-red-500">{form.formState.errors.lastName.message}</p>
+                                )}
+                            </div>
+
+                            {/* Date of Birth */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-400">Date of Birth</label>
+                                <div className="relative">
+                                    <input
+                                        type="date"
+                                        {...form.register('birthDate')}
+                                        className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] [color-scheme:dark]"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Gender */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-400">Gender</label>
+                                <select
+                                    {...form.register('gender')}
+                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] appearance-none"
+                                >
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                    <option value="prefer_not_to_say">Prefer not to say</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
+                </section>
 
-                    {/* Timezone */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Timezone</label>
-                        <input // Or select with list of timezones
-                            {...form.register('timezone')}
-                            className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#F2CE88] transition-colors"
-                            placeholder="e.g. Europe/Warsaw"
-                        />
+                {/* Professional Details */}
+                <section className="space-y-4">
+                    <h3 className="text-lg font-semibold text-white">Professional Details</h3>
+                    <div className="bg-[#1a1a24] rounded-xl p-6 space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-400">Position</label>
+                            <input
+                                {...form.register('position')}
+                                className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                placeholder="e.g. Product Designer"
+                            />
+                        </div>
+
+                        {/* Description */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-400">Description</label>
+                            <textarea
+                                {...form.register('description')}
+                                rows={4}
+                                className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] min-h-[100px]"
+                                placeholder="Tell us a bit about yourself..."
+                            />
+                        </div>
                     </div>
+                </section>
 
-                    {/* Country */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Country</label>
-                        <input
-                            {...form.register('country')}
-                            className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#F2CE88] transition-colors"
-                            placeholder="e.g. Poland"
-                        />
+                {/* Location & Preferences */}
+                <section className="space-y-4">
+                    <h3 className="text-lg font-semibold text-white">Location & Preferences</h3>
+                    <div className="bg-[#1a1a24] rounded-xl p-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Country */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-400">Country</label>
+                                <input
+                                    {...form.register('country')}
+                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                    placeholder="e.g. Poland"
+                                />
+                            </div>
+
+                            {/* City */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-400">City</label>
+                                <input
+                                    {...form.register('city')}
+                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                    placeholder="e.g. Warsaw"
+                                />
+                            </div>
+
+                            {/* Timezone */}
+                            <div className="space-y-2 col-span-1 md:col-span-2">
+                                <label className="text-sm font-medium text-gray-400">Timezone</label>
+                                <select
+                                    {...form.register('timezone')}
+                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] appearance-none"
+                                >
+                                    {supportedTimezones.map((tz: string) => {
+                                        const offset = new Intl.DateTimeFormat('en-US', {
+                                            timeZone: tz,
+                                            timeZoneName: 'longOffset'
+                                        }).format(new Date()).split(', ')[1] || 'UTC'
+
+                                        return (
+                                            <option key={tz} value={tz}>
+                                                {tz} ({offset})
+                                            </option>
+                                        )
+                                    })}
+                                </select>
+                            </div>
+                        </div>
                     </div>
-
-                    {/* City */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">City</label>
-                        <input
-                            {...form.register('city')}
-                            className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#F2CE88] transition-colors"
-                            placeholder="e.g. Warsaw"
-                        />
-                    </div>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-400">Description</label>
-                    <textarea
-                        {...form.register('description')}
-                        rows={4}
-                        className="w-full px-4 py-2.5 bg-[#0a0a0f] border border-gray-800 rounded-lg text-white focus:outline-none focus:border-[#F2CE88] transition-colors resize-none"
-                        placeholder="Tell us a bit about yourself..."
-                    />
-                </div>
-
-                {/* Save Button */}
-                <div className="flex justify-end pt-4">
-                    <button
-                        type="submit"
-                        disabled={updateProfileMutation.isPending}
-                        className="px-6 py-2.5 bg-[#F2CE88] hover:bg-[#ffe0a3] text-black font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
-                    </button>
-                </div>
+                </section>
             </form>
 
             {/* Danger Zone */}

@@ -503,17 +503,23 @@ tasksRoutes.patch('/:id', async (c) => {
         }
 
         // Get permissions
+        let workspaceRole: WorkspaceRole | null = null
+        const workspaceId = await getWorkspaceIdFromProject(task.projectId)
+        if (workspaceId) {
+            workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+        }
+
         const teamLevel = await getUserTeamLevel(userId, teamId)
 
         // Allow if: has update permission OR is assignee
         const isAssignee = task.assigneeId === userId
-        if (!canUpdateTasks(null, teamLevel) && !isAssignee) {
+        if (!canUpdateTasks(workspaceRole, teamLevel) && !isAssignee) {
             return c.json({ success: false, error: 'Unauthorized to update task' }, 403)
         }
 
         // Check if trying to assign - requires assign permission
         if (body.assigneeId !== undefined && body.assigneeId !== task.assigneeId) {
-            if (!canAssignTasks(null, teamLevel)) {
+            if (!canAssignTasks(workspaceRole, teamLevel)) {
                 return c.json({ success: false, error: 'Unauthorized to assign tasks' }, 403)
             }
         }
@@ -541,7 +547,6 @@ tasksRoutes.patch('/:id', async (c) => {
         await syncTaskToCalendar(updated, userId)
 
         // TRIGGER WEBHOOKS
-        const workspaceId = await getWorkspaceIdFromProject(updated.projectId)
         if (workspaceId) {
             // Status Change - fetch stage names for display
             if (body.status !== undefined && body.status !== task.status) {
@@ -685,9 +690,15 @@ tasksRoutes.delete('/:id', async (c) => {
         }
 
         // Get permissions
+        let workspaceRole: WorkspaceRole | null = null
+        const workspaceId = await getWorkspaceIdFromProject(task.projectId)
+        if (workspaceId) {
+            workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+        }
+
         const teamLevel = await getUserTeamLevel(userId, teamId)
 
-        if (!canDeleteTasks(null, teamLevel)) {
+        if (!canDeleteTasks(workspaceRole, teamLevel)) {
             return c.json({ success: false, error: 'Unauthorized to delete task' }, 403)
         }
 
@@ -698,7 +709,6 @@ tasksRoutes.delete('/:id', async (c) => {
         await deleteTaskCalendarEvent(id)
 
         // TRIGGER WEBHOOK
-        const workspaceId = await getWorkspaceIdFromProject(deleted.projectId)
         if (workspaceId) {
             triggerWebhook('task.deleted', deleted, workspaceId)
         }
@@ -734,11 +744,17 @@ tasksRoutes.patch('/:id/move', async (c) => {
         }
 
         // Get permissions
+        let workspaceRole: WorkspaceRole | null = null
+        const workspaceId = await getWorkspaceIdFromProject(task.projectId)
+        if (workspaceId) {
+            workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+        }
+
         const teamLevel = await getUserTeamLevel(userId, teamId)
 
         // Allow move if can update tasks or is assignee
         const isAssignee = task.assigneeId === userId
-        if (!canUpdateTasks(null, teamLevel) && !isAssignee) {
+        if (!canUpdateTasks(workspaceRole, teamLevel) && !isAssignee) {
             return c.json({ success: false, error: 'Unauthorized to move task' }, 403)
         }
 
@@ -750,7 +766,6 @@ tasksRoutes.patch('/:id/move', async (c) => {
         if (!updated) return c.json({ success: false, error: 'Task not found' }, 404)
 
         // TRIGGER WEBHOOK - only for status change (drag-drop move)
-        const workspaceId = await getWorkspaceIdFromProject(updated.projectId)
         if (workspaceId && body.status && body.status !== task.status) {
             // Lookup stage names
             const [oldStage, newStage] = await Promise.all([

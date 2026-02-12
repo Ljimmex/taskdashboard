@@ -32,7 +32,20 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
         queryKey: ['workspace-members', workspace.id],
         queryFn: async () => {
             const res = await apiFetchJson<any>(`/api/workspaces/${workspace.id}/members`)
-            return res.data || []
+            const rawData = res.data || []
+
+            // Map API response (nested user object) to flat structure expected by UI
+            return rawData.map((item: any) => ({
+                id: item.user.id,
+                name: item.user.name,
+                email: item.user.email,
+                image: item.user.image,
+                position: item.user.position,
+                role: item.role,
+                workspaceRole: item.role,
+                status: item.status,
+                joinedAt: item.joinedAt
+            }))
         },
         enabled: !!workspace?.id
     })

@@ -82,6 +82,8 @@ export const auth = betterAuth({
         'https://taskdashboard.pages.dev',
         'https://taskdashboard-api.onrender.com',
         'https://taskdashboard-web.onrender.com',
+        'https://zadanoapp.com',
+        'https://www.zadanoapp.com',
     ],
 
     // Plugins
