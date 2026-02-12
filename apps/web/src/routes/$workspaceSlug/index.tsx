@@ -15,6 +15,7 @@ import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { useFiles } from '@/hooks/useFiles'
 import { FileInfoPanel } from '@/components/features/files/FileInfoPanel'
 import { FileRecord } from '@taskdashboard/types'
+import { useTranslation } from 'react-i18next'
 
 
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute('/$workspaceSlug/')({
 })
 
 function DashboardHome() {
+  const { t } = useTranslation()
   const { workspaceSlug } = Route.useParams()
   const { data: session } = useSession() // Real session
   const navigate = useNavigate()
@@ -167,13 +169,13 @@ function DashboardHome() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-2 relative">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-2 relative animate-fade-in">
 
       {/* Left Column Section (Tasks) - Spans 8 columns visually on large screens, internally split */}
       <div className="lg:col-span-8 flex flex-col gap-6">
         {/* ... Meetings and Projects sections ... */}
         {/* Top Row: Meetings Grid (1,2 / 3,4 pattern) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           {isLoadingEvents ? (
             <>
               <div className="h-[140px] rounded-2xl bg-gray-800/20 animate-pulse" />
@@ -231,7 +233,7 @@ function DashboardHome() {
               ))}
               {events.length < 4 && (
                 <AddTaskCard
-                  label="Add New Meeting"
+                  label={t('dashboard.addMeeting')}
                   onClick={() => setIsEventPanelOpen(true)}
                 />
               )}
@@ -239,10 +241,10 @@ function DashboardHome() {
           ) : (
             <>
               <div className="h-[140px] rounded-2xl bg-[#12121a] flex items-center justify-center border-2 border-dashed border-gray-800">
-                <p className="text-gray-500 text-sm">Brak nadchodzących spotkań</p>
+                <p className="text-gray-500 text-sm">{t('dashboard.noMeetings')}</p>
               </div>
               <AddTaskCard
-                label="Add New Meeting"
+                label={t('dashboard.addMeeting')}
                 onClick={() => setIsEventPanelOpen(true)}
               />
             </>
@@ -250,10 +252,10 @@ function DashboardHome() {
         </div>
 
         {/* Middle Row: Projects Section */}
-        <div className="rounded-2xl bg-[#12121a] p-6">
+        <div className="rounded-2xl bg-[#12121a] p-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <h3 className="font-semibold text-white">Project</h3>
+              <h3 className="font-semibold text-white">{t('dashboard.projects')}</h3>
               {/* Carousel arrows */}
               {filteredProjects.length > projectsPerPage && (
                 <div className="flex items-center gap-1">
@@ -291,7 +293,7 @@ function DashboardHome() {
                   : 'text-gray-500 hover:text-white'
                   }`}
               >
-                Ongoing
+                {t('dashboard.ongoing')}
               </button>
               <button
                 onClick={() => { setProjectFilter('pending'); setProjectPage(0) }}
@@ -300,7 +302,7 @@ function DashboardHome() {
                   : 'text-gray-500 hover:text-white'
                   }`}
               >
-                Pending
+                {t('dashboard.pending')}
               </button>
             </div>
           </div>
@@ -316,7 +318,7 @@ function DashboardHome() {
                   key={p.id}
                   id={p.id}
                   title={p.name}
-                  timeRange={p.deadline ? `Do ${new Date(p.deadline).toLocaleDateString()}` : `Bez terminu`}
+                  timeRange={p.deadline ? `${t('dashboard.until')} ${new Date(p.deadline).toLocaleDateString()}` : t('dashboard.noDeadline')}
                   progress={p.status === 'completed' ? 100 : 0}
                   daysLeft={p.deadline ? Math.max(0, Math.ceil((new Date(p.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0}
                   assignees={p.members?.map((m: any) => ({
@@ -329,9 +331,9 @@ function DashboardHome() {
               ))
             ) : (
               <div className="col-span-2 py-12 flex flex-col items-center justify-center border-2 border-dashed border-gray-800 rounded-2xl">
-                <p className="text-gray-500 mb-4">{projectFilter === 'active' ? 'Brak aktywnych projektów' : 'Brak oczekujących projektów'}</p>
+                <p className="text-gray-500 mb-4">{projectFilter === 'active' ? t('dashboard.noProjectsActive') : t('dashboard.noProjectsPending')}</p>
                 {projectFilter === 'active' && (
-                  <button className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">Utwórz pierwszy projekt</button>
+                  <button className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">{t('dashboard.createProject')}</button>
                 )}
               </div>
             )}
@@ -339,13 +341,13 @@ function DashboardHome() {
         </div>
 
         {/* Bottom Row: Calendar component */}
-        <div className="w-full">
+        <div className="w-full animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <CalendarSection />
         </div>
       </div>
 
       {/* Right Column Section (Widgets) - Spans 4 columns */}
-      <div className="lg:col-span-4 space-y-6">
+      <div className="lg:col-span-4 space-y-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
         <OverallProgress inProgress={projects.filter((p: any) => p.status === 'active').length} totalProjects={projects.length} upcoming={events.length} />
 
         <ChatSection

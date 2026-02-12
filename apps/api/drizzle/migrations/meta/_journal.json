@@ -5,64 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770206954674,
-      "tag": "0000_dapper_red_hulk",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1770208223708,
-      "tag": "0001_panoramic_unicorn",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1770414559447,
-      "tag": "0002_illegal_susan_delgado",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1770415430251,
-      "tag": "0003_tense_stature",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1770758115639,
-      "tag": "0004_mean_jackal",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1770758264479,
-      "tag": "0005_calm_penance",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1770759999999,
-      "tag": "0006_fix_missing_meeting_link",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1770805100362,
-      "tag": "0007_famous_black_bolt",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1770846819856,
-      "tag": "0008_add_user_profile_fields",
+      "when": 1770898903991,
+      "tag": "0000_cute_albert_cleary",
       "breakpoints": true
     }
   ]

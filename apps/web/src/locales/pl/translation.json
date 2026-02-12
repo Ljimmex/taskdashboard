@@ -1,0 +1,288 @@
+{
+    "auth": {
+        "title": "Zaloguj się do swojego konta",
+        "title2FA": "Weryfikacja dwuetapowa",
+        "email": "E-mail",
+        "password": "Hasło",
+        "rememberMe": "Zapamiętaj mnie na 7 dni",
+        "submit": "Zaloguj się",
+        "verifying": "Logowanie...",
+        "forgotPassword": "Zapomniałeś hasła?",
+        "noAccount": "Nie masz jeszcze konta?",
+        "register": "Zarejestruj się",
+        "loginWith": "Zaloguj się przez",
+        "code2FA": "Kod 2FA z aplikacji",
+        "verify2FA": "Zaloguj się",
+        "backToLogin": "Powrót do logowania",
+        "marketingTitle": "Designed For",
+        "marketingTitleStrong": "Task",
+        "marketingTitle2": "Management",
+        "marketingDesc": "Zarządzaj swoimi projektami i zadaniami z dowolnego miejsca. Analizuj postępy i rozwijaj swój zespół!",
+        "dashboardPreview": "Dashboard Preview",
+        "error": {
+            "default": "Wystąpił nieoczekiwany błąd",
+            "login": "Błąd logowania",
+            "provider": "Błąd logowania przez {{provider}}"
+        }
+    },
+    "dashboard": {
+        "title": "Panel główny",
+        "team": "Zespół",
+        "projects": "Projekty",
+        "messages": "Wiadomości",
+        "calendar": "Kalendarz",
+        "files": "Pliki",
+        "contact": "Kontakt",
+        "settings": "Ustawienia Org.",
+        "logout": "Wyloguj się",
+        "dayMode": "Jasny motyw",
+        "nightMode": "Ciemny motyw",
+        "ongoing": "Trwające",
+        "pending": "Oczekujące",
+        "noProjectsActive": "Brak aktywnych projektów",
+        "noProjectsPending": "Brak oczekujących projektów",
+        "createProject": "Utwórz pierwszy projekt",
+        "noDeadline": "Bez terminu",
+        "noMeetings": "Brak nadchodzących spotkań",
+        "addMeeting": "Dodaj nowe spotkanie",
+        "until": "Do",
+        "chat": "Czat",
+        "lastResources": "Ostatnie zasoby",
+        "seeAll": "Zobacz wszystko",
+        "noFiles": "Brak przesłanych plików",
+        "overallProgress": "Całkowity postęp",
+        "last7Days": "Ostatnie 7 dni",
+        "inProgress": "W trakcie",
+        "totalProjects": "Wszystkie projekty",
+        "upcoming": "Nadchodzące",
+        "filter": "Filtruj",
+        "type": "Typ",
+        "eventType": {
+            "event": "Wydarzenia",
+            "task": "Zadania",
+            "reminder": "Przypomnienia",
+            "meeting": "Spotkania"
+        },
+        "clearFilters": "Wyczyść filtry",
+        "scheduleSetting": "Ustawienia harmonogramu",
+        "viewOptions": "Opcje widoku",
+        "showWeekends": "Pokaż weekendy",
+        "startOfWeek": "Początek tygodnia",
+        "monday": "Poniedziałek",
+        "sunday": "Niedziela",
+        "today": "Dzisiaj",
+        "addEvent": "Dodaj",
+        "moreEvents": "+ {{count}} więcej"
+    },
+    "register": {
+        "title": "Utwórz swoje konto",
+        "step1": "Konto",
+        "step2": "Dane osobowe",
+        "step3": "Konfiguracja Workspace",
+        "email": "E-mail",
+        "password": "Hasło",
+        "confirmPassword": "Powtórz hasło",
+        "passwordPlaceholder": "8+ znaków",
+        "firstName": "Imię",
+        "firstNamePlaceholder": "Jan",
+        "lastName": "Nazwisko",
+        "lastNamePlaceholder": "Kowalski",
+        "birthDate": "Data urodzenia",
+        "day": "Dzień",
+        "month": "Miesiąc",
+        "year": "Rok",
+        "gender": "Płeć",
+        "genderPlaceholder": "Wybierz płeć",
+        "genderOptions": {
+            "female": "Kobieta",
+            "male": "Mężczyzna",
+            "other": "Inna",
+            "prefer_not_to_say": "Wolę nie podawać"
+        },
+        "position": "Stanowisko",
+        "positionPlaceholder": "Wybierz stanowisko",
+        "workspaceName": "Nazwa Workspace",
+        "workspacePlaceholder": "Moja Firma",
+        "teamSize": "Rozmiar Zespołu",
+        "teamSizePlaceholder": "Wybierz rozmiar zespołu",
+        "teamSizeOptions": {
+            "1-10": "1-10 osób",
+            "11-50": "11-50 osób",
+            "51-200": "51-200 osób",
+            "200+": "200+ osób"
+        },
+        "industry": "Branża",
+        "industryPlaceholder": "Wybierz branżę",
+        "industryOptions": {
+            "Technology": "Technologia / IT",
+            "Gamedev": "Gamedev / Gry",
+            "Marketing": "Marketing / Agencja",
+            "Finance": "Finanse",
+            "Education": "Edukacja",
+            "Health": "Zdrowie",
+            "E-commerce": "E-commerce",
+            "Other": "Inna"
+        },
+        "next": "Dalej →",
+        "back": "← Wstecz",
+        "start": "Rozpocznij",
+        "verifying": "Konfigurowanie...",
+        "haveAccount": "Masz już konto?",
+        "login": "Zaloguj się",
+        "registerWith": "Zarejestruj się przez",
+        "error": {
+            "passwordLength": "Hasło musi mieć minimum 8 znaków",
+            "passwordMismatch": "Hasła nie są identyczne",
+            "registration": "Błąd rejestracji",
+            "loginAfterRegister": "Konto utworzone, ale błąd logowania. Spróbuj się zalogować.",
+            "unexpected": "Wystąpił nieoczekiwany błąd podczas rejestracji",
+            "provider": "Błąd rejestracji przez {{provider}}"
+        }
+    },
+    "landing": {
+        "nav": {
+            "features": "Funkcje",
+            "pricing": "Cennik",
+            "faq": "FAQ",
+            "login": "Zaloguj się",
+            "startFree": "Rozpocznij za darmo"
+        },
+        "hero": {
+            "newVersion": "Nowa wersja dostępna",
+            "title": "Kompleksowe",
+            "titleHighlight": "zarządzanie",
+            "title2": "projektami",
+            "desc": "Upraszczaj spotkania, efektywnie zarządzaj projektami i optymalizuj workflow – wszystko w jednym miejscu.",
+            "start": "Rozpocznij",
+            "viewFeatures": "Zobacz funkcje"
+        },
+        "features": {
+            "tasks": {
+                "title": "Efektywne zarządzanie zadaniami",
+                "desc": "Organizuj, priorytetyzuj i śledź postępy dzięki precyzyjnym narzędziom.",
+                "item1": "Analiza rynku",
+                "item2": "Projektowanie UI",
+                "item3": "Review logotypu"
+            },
+            "calendar": {
+                "title": "Bądź na bieżąco",
+                "month": "MAJ 2024",
+                "projects": "45 Projektów",
+                "subtitle": "Bądź na bieżąco",
+                "desc": "Synchronizuj z kalendarzem, aby nie przegapić żadnego deadline'a."
+            },
+            "analytics": {
+                "title": "Insightful Analytics",
+                "desc": "Szczegółowe raporty pomagają mierzyć wydajność i optymalizować produktywność."
+            }
+        },
+        "efficiency": {
+            "title": "Uwolnij efektywność w",
+            "title2": "zarządzaniu projektami",
+            "desc": "Planuj i organizuj cały projekt od początku do końca. Komunikuj się i współpracuj ze swoim zespołem.",
+            "workflow": {
+                "title": "Usprawnij Workflow",
+                "desc": "Uprość zarządzanie projektami dzięki intuicyjnym narzędziom."
+            },
+            "collaboration": {
+                "title": "Bezproblemowa współpraca",
+                "desc": "Aktualizacje w czasie rzeczywistym i narzędzia komunikacyjne."
+            },
+            "management": {
+                "title": "Optymalizuj zarządzanie",
+                "desc": "Priorytetyzuj zadania i zapewnij terminową realizację."
+            },
+            "team": {
+                "title": "Zwiększ wydajność zespołu",
+                "desc": "Jasne cele, usprawnione procesy i insightful analytics."
+            },
+            "progress": {
+                "title": "Monitoruj postępy",
+                "desc": "Śledź postępy projektów w czasie rzeczywistym."
+            }
+        },
+        "pricing": {
+            "title": "Wybierz idealny plan",
+            "title2": "dla swojego workflow",
+            "desc": "Niezależnie od tego, czy jesteś freelancerem, startupem czy enterprise - mamy plan dla Ciebie.",
+            "free": {
+                "name": "Free",
+                "price": "0 zł",
+                "period": "na zawsze",
+                "desc": "Idealny na start dla małych zespołów",
+                "features": [
+                    "Do 5 projektów",
+                    "Do 3 członków zespołu",
+                    "Podstawowa analityka",
+                    "Wsparcie email"
+                ]
+            },
+            "pro": {
+                "name": "Pro",
+                "price": "49 zł",
+                "period": "miesięcznie",
+                "desc": "Dla rosnących zespołów i startupów",
+                "features": [
+                    "Nielimitowane projekty",
+                    "Do 50 członków zespołu",
+                    "Zaawansowana analityka",
+                    "Priorytetowe wsparcie",
+                    "Integracje API"
+                ]
+            },
+            "enterprise": {
+                "name": "Enterprise",
+                "price": "Kontakt",
+                "period": "",
+                "desc": "Dla dużych organizacji",
+                "features": [
+                    "Wszystko z Pro",
+                    "Nielimitowani użytkownicy",
+                    "SSO / SAML",
+                    "Dedykowany manager",
+                    "SLA 99.99%"
+                ],
+                "contact": "Skontaktuj się"
+            },
+            "popular": "Najpopularniejszy"
+        },
+        "faq": {
+            "title": "Masz pytania?",
+            "title2": "Mamy odpowiedzi.",
+            "desc": "Jeśli nie znajdziesz odpowiedzi na swoje pytanie, napisz do nas - chętnie pomożemy.",
+            "contact": "Skontaktuj się z nami →",
+            "q1": {
+                "question": "Czy mogę anulować subskrypcję w każdej chwili?",
+                "answer": "Tak, możesz anulować subskrypcję w dowolnym momencie. Nie ma żadnych ukrytych opłat ani kar za wcześniejsze zakończenie."
+            },
+            "q2": {
+                "question": "Jak zainstalować oprogramowanie?",
+                "answer": "Zadano.app działa w przeglądarce - wystarczy się zarejestrować i możesz zacząć korzystać od razu. Nie wymaga instalacji."
+            },
+            "q3": {
+                "question": "Czy mogę zacząć korzystać za darmo?",
+                "answer": "Absolutnie! Nasz plan Free jest darmowy na zawsze i zawiera wszystkie podstawowe funkcje potrzebne do zarządzania projektami."
+            },
+            "q4": {
+                "question": "Jakie integracje są dostępne?",
+                "answer": "Obsługujemy integracje z ponad 50 narzędziami, w tym Slack, GitHub, Jira, Notion, Google Drive i wiele więcej."
+            }
+        },
+        "cta": {
+            "title": "Uprość swój workflow z",
+            "desc": "Zacznij bezpłatnie i przekonaj się, dlaczego tysiące zespołów wybrało Zadano.app jako swoje narzędzie do zarządzania projektami.",
+            "button": "Rozpocznij za darmo →"
+        },
+        "footer": {
+            "desc": "Zarządzaj projektami efektywniej dzięki narzędziom zaprojektowanym dla Twojego zespołu.",
+            "overview": "Przegląd",
+            "resources": "Zasoby",
+            "blog": "Blog",
+            "support": "Wsparcie",
+            "newsletter": "Newsletter",
+            "newsletterDesc": "Otrzymuj najnowsze wiadomości i porady.",
+            "subscribe": "Sub",
+            "rights": "© 2024 Zadano.app. Wszystkie prawa zastrzeżone."
+        }
+    }
+}

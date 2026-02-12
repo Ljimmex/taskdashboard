@@ -73,6 +73,28 @@ export const verifications = pgTable('verifications', {
     }),
 ])
 
+export const twoFactors = pgTable('two_factors', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    secret: text('secret').notNull(),
+    backupCodes: text('backup_codes').notNull(), // stored as comma-separated or JSON string usually
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (_table) => [
+    pgPolicy("Users can view own two factor", {
+        for: "select",
+        using: sql`user_id = auth.uid()::text`,
+    }),
+    pgPolicy("Users can update own two factor", {
+        for: "update",
+        using: sql`user_id = auth.uid()::text`,
+    }),
+    pgPolicy("Users can insert own two factor", {
+        for: "insert",
+        withCheck: sql`user_id = auth.uid()::text`,
+    }),
+])
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -83,3 +105,5 @@ export type Account = typeof accounts.$inferSelect
 export type NewAccount = typeof accounts.$inferInsert
 export type Verification = typeof verifications.$inferSelect
 export type NewVerification = typeof verifications.$inferInsert
+export type TwoFactor = typeof twoFactors.$inferSelect
+export type NewTwoFactor = typeof twoFactors.$inferInsert

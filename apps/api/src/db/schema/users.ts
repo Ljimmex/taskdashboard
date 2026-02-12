@@ -19,6 +19,9 @@ export const users = pgTable('users', {
     name: varchar('name', { length: 255 }),
     image: text('image'),
     // Custom fields
+    phoneNumber: varchar('phone_number', { length: 20 }),
+    phoneNumberVerified: boolean('phone_number_verified').default(false).notNull(),
+    twoFactorEnabled: boolean('two_factor_enabled').default(false).notNull(),
     firstName: varchar('first_name', { length: 100 }),
     lastName: varchar('last_name', { length: 100 }),
     description: text('description'),

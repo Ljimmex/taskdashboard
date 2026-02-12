@@ -12,6 +12,7 @@ CREATE TYPE "public"."task_priority" AS ENUM('low', 'medium', 'high', 'urgent');
 CREATE TYPE "public"."task_status" AS ENUM('todo', 'in_progress', 'review', 'done');--> statement-breakpoint
 CREATE TYPE "public"."task_type" AS ENUM('task', 'meeting');--> statement-breakpoint
 CREATE TYPE "public"."conversation_type" AS ENUM('direct', 'group', 'channel');--> statement-breakpoint
+CREATE TYPE "public"."calendar_event_type" AS ENUM('event', 'task', 'meeting', 'reminder');--> statement-breakpoint
 CREATE TYPE "public"."webhook_queue_status" AS ENUM('pending', 'processing', 'failed', 'completed');--> statement-breakpoint
 CREATE TYPE "public"."webhook_type" AS ENUM('generic', 'discord', 'slack');--> statement-breakpoint
 CREATE TABLE "accounts" (
@@ -44,6 +45,16 @@ CREATE TABLE "sessions" (
 );
 --> statement-breakpoint
 ALTER TABLE "sessions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "two_factors" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"secret" text NOT NULL,
+	"backup_codes" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "two_factors" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "verifications" (
 	"id" text PRIMARY KEY NOT NULL,
 	"identifier" text NOT NULL,
@@ -60,13 +71,18 @@ CREATE TABLE "users" (
 	"email_verified" boolean DEFAULT false NOT NULL,
 	"name" varchar(255),
 	"image" text,
+	"phone_number" varchar(20),
+	"phone_number_verified" boolean DEFAULT false NOT NULL,
+	"two_factor_enabled" boolean DEFAULT false NOT NULL,
 	"first_name" varchar(100),
 	"last_name" varchar(100),
+	"description" text,
 	"birth_date" timestamp,
 	"gender" varchar(50),
 	"position" varchar(100),
 	"city" varchar(100),
 	"country" varchar(100),
+	"timezone" varchar(100),
 	"role" "user_role" DEFAULT 'member' NOT NULL,
 	"status" "user_status" DEFAULT 'pending' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -339,8 +355,10 @@ CREATE TABLE "calendar_events" (
 	"all_day" boolean DEFAULT false NOT NULL,
 	"recurrence" jsonb,
 	"task_id" uuid,
-	"team_id" uuid NOT NULL,
-	"created_by" uuid NOT NULL,
+	"team_ids" uuid[] NOT NULL,
+	"type" "calendar_event_type" DEFAULT 'event' NOT NULL,
+	"meeting_link" varchar(512),
+	"created_by" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -418,6 +436,7 @@ CREATE TABLE "webhooks" (
 	"secret" text NOT NULL,
 	"events" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL,
+	"silent_mode" boolean DEFAULT false NOT NULL,
 	"description" text,
 	"failure_count" integer DEFAULT 0 NOT NULL,
 	"created_by" text NOT NULL,
@@ -460,7 +479,6 @@ ALTER TABLE "conversations" ADD CONSTRAINT "conversations_team_id_teams_id_fk" F
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "encryption_keys" ADD CONSTRAINT "encryption_keys_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "saved_filters" ADD CONSTRAINT "saved_filters_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "saved_filters" ADD CONSTRAINT "saved_filters_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -476,6 +494,9 @@ CREATE POLICY "Users can view own accounts" ON "accounts" AS PERMISSIVE FOR SELE
 CREATE POLICY "Users can delete own accounts" ON "accounts" AS PERMISSIVE FOR DELETE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Users can view own sessions" ON "sessions" AS PERMISSIVE FOR SELECT TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Users can delete own sessions" ON "sessions" AS PERMISSIVE FOR DELETE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Users can view own two factor" ON "two_factors" AS PERMISSIVE FOR SELECT TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Users can update own two factor" ON "two_factors" AS PERMISSIVE FOR UPDATE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Users can insert own two factor" ON "two_factors" AS PERMISSIVE FOR INSERT TO public WITH CHECK (user_id = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Backend can manage verifications" ON "verifications" AS PERMISSIVE FOR ALL TO public USING (true);--> statement-breakpoint
 CREATE POLICY "Users can view own profile" ON "users" AS PERMISSIVE FOR SELECT TO public USING (auth.uid()::text = id);--> statement-breakpoint
 CREATE POLICY "Users can update own profile" ON "users" AS PERMISSIVE FOR UPDATE TO public USING (auth.uid()::text = id);--> statement-breakpoint
@@ -576,8 +597,8 @@ CREATE POLICY "Workspace owners can manage encryption keys" ON "encryption_keys"
             SELECT workspace_id FROM workspace_members 
             WHERE user_id = auth.uid()::text AND role = 'owner'
         ));--> statement-breakpoint
-CREATE POLICY "Team members can view events" ON "calendar_events" AS PERMISSIVE FOR SELECT TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
-CREATE POLICY "Team members can create events" ON "calendar_events" AS PERMISSIVE FOR INSERT TO public WITH CHECK (created_by = auth.uid()::text AND team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Team members can view events" ON "calendar_events" AS PERMISSIVE FOR SELECT TO public USING (team_ids && ARRAY(SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Team members can create events" ON "calendar_events" AS PERMISSIVE FOR INSERT TO public WITH CHECK (created_by = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Creator can update events" ON "calendar_events" AS PERMISSIVE FOR UPDATE TO public USING (created_by = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Creator can delete events" ON "calendar_events" AS PERMISSIVE FOR DELETE TO public USING (created_by = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Users can view own filters or shared filters" ON "saved_filters" AS PERMISSIVE FOR SELECT TO public USING (user_id = auth.uid()::text OR is_shared = true);--> statement-breakpoint

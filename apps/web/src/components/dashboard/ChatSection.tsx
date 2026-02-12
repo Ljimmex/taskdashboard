@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 interface ChatContact {
     id: string
     name: string
@@ -12,16 +14,17 @@ interface ChatSectionProps {
 }
 
 export function ChatSection({ contacts, onSeeAll, onContactClick }: ChatSectionProps) {
+    const { t } = useTranslation()
     return (
         <div className="rounded-2xl bg-[#12121a] p-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-white">Chat</h3>
+                <h3 className="font-semibold text-white">{t('dashboard.chat')}</h3>
                 <button
                     onClick={onSeeAll}
                     className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
                 >
-                    See all
+                    {t('dashboard.seeAll')}
                 </button>
             </div>
 

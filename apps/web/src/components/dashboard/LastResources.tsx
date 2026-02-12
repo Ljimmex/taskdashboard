@@ -1,4 +1,5 @@
 import { FileRecord } from '@taskdashboard/types'
+import { useTranslation } from 'react-i18next'
 import { FileText, Image, Film, Music } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -9,6 +10,7 @@ interface LastResourcesProps {
 }
 
 export function LastResources({ files, onSeeAll, onFileClick }: LastResourcesProps) {
+    const { t } = useTranslation()
     const getFileIcon = (mimeType: string | null) => {
         if (!mimeType) return <FileText className="w-4 h-4 text-gray-400" />
         if (mimeType.startsWith('image/')) return <Image className="w-4 h-4 text-blue-400" />
@@ -29,12 +31,12 @@ export function LastResources({ files, onSeeAll, onFileClick }: LastResourcesPro
         <div className="rounded-2xl bg-[#12121a] p-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-white">Last resources</h3>
+                <h3 className="font-semibold text-white">{t('dashboard.lastResources')}</h3>
                 <button
                     onClick={onSeeAll}
                     className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
                 >
-                    See all
+                    {t('dashboard.seeAll')}
                 </button>
             </div>
 
@@ -42,7 +44,7 @@ export function LastResources({ files, onSeeAll, onFileClick }: LastResourcesPro
             <div className="space-y-3">
                 {files.length === 0 ? (
                     <div className="text-center py-6 text-gray-500 text-sm">
-                        No files uploaded yet
+                        {t('dashboard.noFiles')}
                     </div>
                 ) : (
                     files.slice(0, 5).map((file) => (

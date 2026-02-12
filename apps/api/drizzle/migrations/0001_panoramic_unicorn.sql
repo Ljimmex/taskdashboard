@@ -1,1 +1,0 @@
-ALTER TABLE "webhooks" ADD COLUMN "silent_mode" boolean DEFAULT false NOT NULL;

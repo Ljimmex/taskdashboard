@@ -1,12 +1,15 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useSession } from '@/lib/auth'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from '@/components/language-switcher'
 
 export const Route = createFileRoute('/')({
     component: HomePage,
 })
 
 function HomePage() {
+    const { t } = useTranslation()
     const { data: session, isPending } = useSession()
     const navigate = useNavigate()
 
@@ -30,23 +33,24 @@ function HomePage() {
                             <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-8" />
                         </Link>
                         <div className="hidden md:flex items-center gap-6">
-                            <a href="#features" className="text-sm text-gray-400 hover:text-white transition-colors">Funkcje</a>
-                            <a href="#pricing" className="text-sm text-gray-400 hover:text-white transition-colors">Cennik</a>
-                            <a href="#faq" className="text-sm text-gray-400 hover:text-white transition-colors">FAQ</a>
+                            <a href="#features" className="text-sm text-gray-400 hover:text-white transition-colors">{t('landing.nav.features')}</a>
+                            <a href="#pricing" className="text-sm text-gray-400 hover:text-white transition-colors">{t('landing.nav.pricing')}</a>
+                            <a href="#faq" className="text-sm text-gray-400 hover:text-white transition-colors">{t('landing.nav.faq')}</a>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
+                        <LanguageSwitcher />
                         <Link
                             to="/login"
                             className="text-sm text-gray-400 hover:text-white transition-colors"
                         >
-                            Zaloguj się
+                            {t('landing.nav.login')}
                         </Link>
                         <Link
                             to="/register"
                             className="rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-2.5 text-sm font-medium text-black hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/25"
                         >
-                            Rozpocznij za darmo
+                            {t('landing.nav.startFree')}
                         </Link>
                     </div>
                 </div>
@@ -66,21 +70,20 @@ function HomePage() {
                             <div className="text-left">
                                 <span className="inline-flex items-center gap-2 mb-8 rounded-full bg-amber-500/10 border border-amber-500/20 px-4 py-1.5 text-sm text-amber-400">
                                     <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                                    Nowa wersja dostępna
+                                    {t('landing.hero.newVersion')}
                                 </span>
 
                                 <h1 className="mb-8 text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight">
-                                    Kompleksowe{' '}
+                                    {t('landing.hero.title')}{' '}
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500">
-                                        zarządzanie
+                                        {t('landing.hero.titleHighlight')}
                                     </span>
                                     <br />
-                                    projektami
+                                    {t('landing.hero.title2')}
                                 </h1>
 
                                 <p className="mb-10 text-xl text-gray-400 max-w-xl">
-                                    Upraszczaj spotkania, efektywnie zarządzaj projektami
-                                    i optymalizuj workflow – wszystko w jednym miejscu.
+                                    {t('landing.hero.desc')}
                                 </p>
 
                                 <div className="flex flex-wrap gap-4">
@@ -88,13 +91,13 @@ function HomePage() {
                                         to="/register"
                                         className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-10 py-5 text-lg font-semibold text-black hover:from-amber-400 hover:to-amber-500 transition-all shadow-2xl shadow-amber-500/30"
                                     >
-                                        Rozpocznij
+                                        {t('landing.hero.start')}
                                     </Link>
                                     <a
                                         href="#features"
                                         className="rounded-xl bg-gray-800/50 px-10 py-5 text-lg font-semibold text-gray-300 hover:bg-gray-800 transition-all"
                                     >
-                                        Zobacz funkcje
+                                        {t('landing.hero.viewFeatures')}
                                     </a>
                                 </div>
                             </div>
@@ -102,7 +105,7 @@ function HomePage() {
                             {/* Right side - Dashboard Wireframe */}
                             <div className="relative">
                                 <div className="rounded-2xl bg-gray-900/80 p-4 backdrop-blur-xl shadow-2xl">
-                                    <DashboardWireframe />
+                                    <DashboardWireframe t={t} />
                                 </div>
                             </div>
                         </div>
@@ -113,24 +116,24 @@ function HomePage() {
                 <section id="features" className="grid md:grid-cols-3 gap-4">
                     {/* Card 1 - Manage Tasks */}
                     <div className="rounded-3xl bg-[#12121a] p-6">
-                        <h3 className="text-lg font-semibold mb-2">Efektywne zarządzanie zadaniami</h3>
+                        <h3 className="text-lg font-semibold mb-2">{t('landing.features.tasks.title')}</h3>
                         <p className="text-gray-400 text-sm mb-4">
-                            Organizuj, priorytetyzuj i śledź postępy dzięki precyzyjnym narzędziom.
+                            {t('landing.features.tasks.desc')}
                         </p>
                         <div className="bg-[#0a0a0f] rounded-xl p-4 space-y-2">
                             <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                                 <div className="w-4 h-4 rounded bg-amber-500" />
-                                <span className="text-sm">Analiza rynku</span>
+                                <span className="text-sm">{t('landing.features.tasks.item1')}</span>
                                 <span className="ml-auto text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400">Done</span>
                             </div>
                             <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50">
                                 <div className="w-4 h-4 rounded bg-blue-500" />
-                                <span className="text-sm">Projektowanie UI</span>
+                                <span className="text-sm">{t('landing.features.tasks.item2')}</span>
                                 <span className="ml-auto text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-400">In Progress</span>
                             </div>
                             <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50">
                                 <div className="w-4 h-4 rounded bg-purple-500" />
-                                <span className="text-sm">Review logotypu</span>
+                                <span className="text-sm">{t('landing.features.tasks.item3')}</span>
                                 <span className="ml-auto text-xs px-2 py-0.5 rounded bg-gray-500/20 text-gray-400">Pending</span>
                             </div>
                         </div>
@@ -139,8 +142,8 @@ function HomePage() {
                     {/* Card 2 - Calendar */}
                     <div className="rounded-3xl bg-[#12121a] p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <span className="text-lg font-semibold">MAJ 2024</span>
-                            <span className="text-sm text-gray-400">45 Projektów</span>
+                            <span className="text-lg font-semibold">{t('landing.features.calendar.month')}</span>
+                            <span className="text-sm text-gray-400">{t('landing.features.calendar.projects')}</span>
                         </div>
                         <div className="bg-[#0a0a0f] rounded-xl p-4">
                             <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-2">
@@ -158,15 +161,15 @@ function HomePage() {
                             </div>
                         </div>
                         <div className="mt-4">
-                            <h4 className="font-medium mb-1">Bądź na bieżąco</h4>
-                            <p className="text-gray-400 text-sm">Synchronizuj z kalendarzem, aby nie przegapić żadnego deadline'a.</p>
+                            <h4 className="font-medium mb-1">{t('landing.features.calendar.subtitle')}</h4>
+                            <p className="text-gray-400 text-sm">{t('landing.features.calendar.desc')}</p>
                         </div>
                     </div>
 
                     {/* Card 3 - Analytics */}
                     <div className="rounded-3xl bg-[#12121a] p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold">Insightful Analytics</h3>
+                            <h3 className="text-lg font-semibold">{t('landing.features.analytics.title')}</h3>
                             <div className="flex items-center gap-2">
                                 <div className="w-12 h-12 rounded-full border-4 border-amber-500 border-t-transparent relative flex items-center justify-center">
                                     <span className="text-xs font-bold">68%</span>
@@ -174,7 +177,7 @@ function HomePage() {
                             </div>
                         </div>
                         <p className="text-gray-400 text-sm mb-4">
-                            Szczegółowe raporty pomagają mierzyć wydajność i optymalizować produktywność.
+                            {t('landing.features.analytics.desc')}
                         </p>
                         <div className="bg-[#0a0a0f] rounded-xl p-4 h-24 flex items-end gap-1">
                             {[40, 60, 35, 80, 50, 70, 45].map((h, i) => (
@@ -188,45 +191,44 @@ function HomePage() {
                 <section className="rounded-3xl bg-[#12121a] p-8">
                     <div className="text-center mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            Uwolnij efektywność w
+                            {t('landing.efficiency.title')}
                             <br />
-                            zarządzaniu projektami
+                            {t('landing.efficiency.title2')}
                         </h2>
                         <p className="text-gray-400 max-w-2xl mx-auto">
-                            Planuj i organizuj cały projekt od początku do końca.
-                            Komunikuj się i współpracuj ze swoim zespołem.
+                            {t('landing.efficiency.desc')}
                         </p>
                     </div>
 
                     {/* Feature Images Grid */}
                     <div className="grid md:grid-cols-3 gap-4 mb-4">
                         <FeatureImageCard
-                            title="Usprawnij Workflow"
-                            description="Uprość zarządzanie projektami dzięki intuicyjnym narzędziom."
+                            title={t('landing.efficiency.workflow.title')}
+                            description={t('landing.efficiency.workflow.desc')}
                             gradient="from-purple-500/30 to-blue-500/30"
                         />
                         <FeatureImageCard
-                            title="Bezproblemowa współpraca"
-                            description="Aktualizacje w czasie rzeczywistym i narzędzia komunikacyjne."
+                            title={t('landing.efficiency.collaboration.title')}
+                            description={t('landing.efficiency.collaboration.desc')}
                             gradient="from-pink-500/30 to-orange-500/30"
                         />
                         <FeatureImageCard
-                            title="Optymalizuj zarządzanie"
-                            description="Priorytetyzuj zadania i zapewnij terminową realizację."
+                            title={t('landing.efficiency.management.title')}
+                            description={t('landing.efficiency.management.desc')}
                             gradient="from-cyan-500/30 to-green-500/30"
                         />
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
                         <FeatureImageCard
-                            title="Zwiększ wydajność zespołu"
-                            description="Jasne cele, usprawnione procesy i insightful analytics."
+                            title={t('landing.efficiency.team.title')}
+                            description={t('landing.efficiency.team.desc')}
                             gradient="from-amber-500/30 to-red-500/30"
                             large
                         />
                         <FeatureImageCard
-                            title="Monitoruj postępy"
-                            description="Śledź postępy projektów w czasie rzeczywistym."
+                            title={t('landing.efficiency.progress.title')}
+                            description={t('landing.efficiency.progress.desc')}
                             gradient="from-green-500/30 to-teal-500/30"
                             large
                         />
@@ -237,54 +239,41 @@ function HomePage() {
                 <section id="pricing" className="rounded-3xl bg-[#12121a] p-8">
                     <div className="text-center mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            Wybierz idealny plan
+                            {t('landing.pricing.title')}
                             <br />
-                            dla swojego workflow
+                            {t('landing.pricing.title2')}
                         </h2>
                         <p className="text-gray-400 max-w-2xl mx-auto">
-                            Niezależnie od tego, czy jesteś freelancerem, startupem czy enterprise - mamy plan dla Ciebie.
+                            {t('landing.pricing.desc')}
                         </p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                         <PricingCard
-                            name="Free"
-                            price="0 zł"
-                            period="na zawsze"
-                            description="Idealny na start dla małych zespołów"
-                            features={[
-                                "Do 5 projektów",
-                                "Do 3 członków zespołu",
-                                "Podstawowa analityka",
-                                "Wsparcie email"
-                            ]}
+                            name={t('landing.pricing.free.name')}
+                            price={t('landing.pricing.free.price')}
+                            period={t('landing.pricing.free.period')}
+                            description={t('landing.pricing.free.desc')}
+                            features={t('landing.pricing.free.features', { returnObjects: true }) as string[]}
+                            buttonText={t('landing.pricing.free.name') === 'Enterprise' ? t('landing.pricing.enterprise.contact') : t('landing.hero.start')}
                         />
                         <PricingCard
-                            name="Pro"
-                            price="49 zł"
-                            period="miesięcznie"
-                            description="Dla rosnących zespołów i startupów"
-                            features={[
-                                "Nielimitowane projekty",
-                                "Do 50 członków zespołu",
-                                "Zaawansowana analityka",
-                                "Priorytetowe wsparcie",
-                                "Integracje API"
-                            ]}
+                            name={t('landing.pricing.pro.name')}
+                            price={t('landing.pricing.pro.price')}
+                            period={t('landing.pricing.pro.period')}
+                            description={t('landing.pricing.pro.desc')}
+                            features={t('landing.pricing.pro.features', { returnObjects: true }) as string[]}
                             popular
+                            popularText={t('landing.pricing.popular')}
+                            buttonText={t('landing.hero.start')}
                         />
                         <PricingCard
-                            name="Enterprise"
-                            price="Kontakt"
-                            period=""
-                            description="Dla dużych organizacji"
-                            features={[
-                                "Wszystko z Pro",
-                                "Nielimitowani użytkownicy",
-                                "SSO / SAML",
-                                "Dedykowany manager",
-                                "SLA 99.99%"
-                            ]}
+                            name={t('landing.pricing.enterprise.name')}
+                            price={t('landing.pricing.enterprise.price')}
+                            period={t('landing.pricing.enterprise.period')}
+                            description={t('landing.pricing.enterprise.desc')}
+                            features={t('landing.pricing.enterprise.features', { returnObjects: true }) as string[]}
+                            buttonText={t('landing.pricing.enterprise.contact')}
                         />
                     </div>
                 </section>
@@ -294,38 +283,37 @@ function HomePage() {
                     <div className="grid lg:grid-cols-2 gap-12">
                         <div>
                             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                                Masz pytania?
+                                {t('landing.faq.title')}
                                 <br />
-                                Mamy odpowiedzi.
+                                {t('landing.faq.title2')}
                             </h2>
                             <p className="text-gray-400 mb-8">
-                                Jeśli nie znajdziesz odpowiedzi na swoje pytanie,
-                                napisz do nas - chętnie pomożemy.
+                                {t('landing.faq.desc')}
                             </p>
                             <a
                                 href="mailto:support@zadano.app"
                                 className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors"
                             >
-                                Skontaktuj się z nami →
+                                {t('landing.faq.contact')}
                             </a>
                         </div>
 
                         <div className="space-y-4">
                             <FAQItem
-                                question="Czy mogę anulować subskrypcję w każdej chwili?"
-                                answer="Tak, możesz anulować subskrypcję w dowolnym momencie. Nie ma żadnych ukrytych opłat ani kar za wcześniejsze zakończenie."
+                                question={t('landing.faq.q1.question')}
+                                answer={t('landing.faq.q1.answer')}
                             />
                             <FAQItem
-                                question="Jak zainstalować oprogramowanie?"
-                                answer="Zadano.app działa w przeglądarce - wystarczy się zarejestrować i możesz zacząć korzystać od razu. Nie wymaga instalacji."
+                                question={t('landing.faq.q2.question')}
+                                answer={t('landing.faq.q2.answer')}
                             />
                             <FAQItem
-                                question="Czy mogę zacząć korzystać za darmo?"
-                                answer="Absolutnie! Nasz plan Free jest darmowy na zawsze i zawiera wszystkie podstawowe funkcje potrzebne do zarządzania projektami."
+                                question={t('landing.faq.q3.question')}
+                                answer={t('landing.faq.q3.answer')}
                             />
                             <FAQItem
-                                question="Jakie integracje są dostępne?"
-                                answer="Obsługujemy integracje z ponad 50 narzędziami, w tym Slack, GitHub, Jira, Notion, Google Drive i wiele więcej."
+                                question={t('landing.faq.q4.question')}
+                                answer={t('landing.faq.q4.answer')}
                             />
                         </div>
                     </div>
@@ -336,19 +324,18 @@ function HomePage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-amber-500/10 to-orange-500/5" />
                     <div className="relative">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            Uprość swój workflow z
+                            {t('landing.cta.title')}
                             <br />
                             <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="inline-block h-10 md:h-12 mt-2" />
                         </h2>
                         <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-                            Zacznij bezpłatnie i przekonaj się, dlaczego tysiące zespołów
-                            wybrało Zadano.app jako swoje narzędzie do zarządzania projektami.
+                            {t('landing.cta.desc')}
                         </p>
                         <Link
                             to="/register"
                             className="inline-flex rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-8 py-4 font-semibold text-black hover:from-amber-400 hover:to-amber-500 transition-all shadow-2xl shadow-amber-500/30"
                         >
-                            Rozpocznij za darmo →
+                            {t('landing.cta.button')}
                         </Link>
                     </div>
                 </section>
@@ -361,28 +348,28 @@ function HomePage() {
                         <div>
                             <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-6 mb-4" />
                             <p className="text-gray-500 text-sm">
-                                Zarządzaj projektami efektywniej dzięki narzędziom zaprojektowanym dla Twojego zespołu.
+                                {t('landing.footer.desc')}
                             </p>
                         </div>
                         <div>
-                            <h4 className="font-medium mb-4">Przegląd</h4>
+                            <h4 className="font-medium mb-4">{t('landing.footer.overview')}</h4>
                             <ul className="space-y-2 text-sm text-gray-400">
-                                <li><a href="#features" className="hover:text-white transition-colors">Funkcje</a></li>
-                                <li><a href="#pricing" className="hover:text-white transition-colors">Cennik</a></li>
+                                <li><a href="#features" className="hover:text-white transition-colors">{t('landing.nav.features')}</a></li>
+                                <li><a href="#pricing" className="hover:text-white transition-colors">{t('landing.nav.pricing')}</a></li>
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-medium mb-4">Zasoby</h4>
+                            <h4 className="font-medium mb-4">{t('landing.footer.resources')}</h4>
                             <ul className="space-y-2 text-sm text-gray-400">
-                                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                                <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
-                                <li><a href="#" className="hover:text-white transition-colors">Wsparcie</a></li>
+                                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.blog')}</a></li>
+                                <li><a href="#faq" className="hover:text-white transition-colors">{t('landing.nav.faq')}</a></li>
+                                <li><a href="#" className="hover:text-white transition-colors">{t('landing.footer.support')}</a></li>
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-medium mb-4">Newsletter</h4>
+                            <h4 className="font-medium mb-4">{t('landing.footer.newsletter')}</h4>
                             <p className="text-gray-400 text-sm mb-4">
-                                Otrzymuj najnowsze wiadomości i porady.
+                                {t('landing.footer.newsletterDesc')}
                             </p>
                             <div className="flex gap-2">
                                 <input
@@ -391,14 +378,14 @@ function HomePage() {
                                     className="flex-1 px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-sm focus:outline-none focus:border-amber-500"
                                 />
                                 <button className="px-4 py-2 rounded-lg bg-amber-500 text-black font-medium text-sm hover:bg-amber-400 transition-colors">
-                                    Sub
+                                    {t('landing.footer.subscribe')}
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
                         <p className="text-gray-500 text-sm">
-                            © 2024 Zadano.app. Wszystkie prawa zastrzeżone.
+                            {t('landing.footer.rights')}
                         </p>
                         <div className="flex items-center gap-6">
                             <a href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -416,7 +403,7 @@ function HomePage() {
 }
 
 // Dashboard Wireframe Component
-function DashboardWireframe() {
+function DashboardWireframe({ t }: { t: any }) {
     return (
         <div className="rounded-xl overflow-hidden bg-[#0a0a0f] p-4">
             {/* Top bar */}
@@ -432,7 +419,7 @@ function DashboardWireframe() {
                 <div className="col-span-3 bg-gray-800/50 rounded-lg p-3 space-y-2">
                     <div className="flex items-center gap-2 text-amber-400 text-sm font-medium mb-4">
                         <div className="w-6 h-6 rounded bg-amber-500/20 flex items-center justify-center text-xs">📊</div>
-                        Projekty
+                        {t('auth.dashboard.projects')}
                     </div>
                     <div className="h-2 bg-gray-700 rounded w-full" />
                     <div className="h-2 bg-gray-700 rounded w-3/4" />
@@ -511,6 +498,8 @@ function PricingCard({
     description,
     features,
     popular = false,
+    popularText,
+    buttonText,
 }: {
     name: string
     price: string
@@ -518,12 +507,14 @@ function PricingCard({
     description: string
     features: string[]
     popular?: boolean
+    popularText?: string
+    buttonText: string
 }) {
     return (
         <div className={`relative rounded-2xl p-6 ${popular ? 'bg-gradient-to-b from-amber-500/10 to-transparent' : 'bg-gray-900/80'}`}>
             {popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold">
-                    Najpopularniejszy
+                    {popularText}
                 </div>
             )}
             <h3 className="text-xl font-bold mb-2">{name}</h3>
@@ -547,7 +538,7 @@ function PricingCard({
                     : 'border border-gray-700 text-gray-300 hover:bg-gray-800 hover:border-gray-600'
                     }`}
             >
-                {price === 'Kontakt' ? 'Skontaktuj się' : 'Rozpocznij'}
+                {buttonText}
             </Link>
         </div>
     )

@@ -5,6 +5,8 @@ import { apiFetch, apiFetchJson } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import {
     Select,
     SelectContent,
@@ -20,6 +22,7 @@ export const Route = createFileRoute('/register')({
 type Step = 1 | 2 | 3
 
 function RegisterPage() {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const [step, setStep] = useState<Step>(1)
     const [error, setError] = useState('')
@@ -60,12 +63,12 @@ function RegisterPage() {
         setError('')
 
         if (password.length < 8) {
-            setError('Hasło musi mieć minimum 8 znaków')
+            setError(t('register.error.passwordLength'))
             return
         }
 
         if (password !== confirmPassword) {
-            setError('Hasła nie są identyczne')
+            setError(t('register.error.passwordMismatch'))
             return
         }
 
@@ -110,7 +113,7 @@ function RegisterPage() {
             } as any)
 
             if (signUpResult.error) {
-                setError(signUpResult.error.message || 'Błąd rejestracji')
+                setError(signUpResult.error.message || t('register.error.registration'))
                 setLoading(false)
                 return
             }
@@ -118,7 +121,7 @@ function RegisterPage() {
             // 2. Login User
             const signInResult = await signIn.email({ email, password })
             if (signInResult.error) {
-                setError('Konto utworzone, ale błąd logowania. Spróbuj się zalogować.')
+                setError(t('register.error.loginAfterRegister'))
                 navigate({ to: '/login' })
                 setLoading(false)
                 return
@@ -146,7 +149,7 @@ function RegisterPage() {
 
         } catch (err) {
             console.error(err)
-            setError('Wystąpił nieoczekiwany błąd podczas rejestracji z zaproszenia')
+            setError(t('register.error.unexpected'))
         } finally {
             setLoading(false)
         }
@@ -172,7 +175,7 @@ function RegisterPage() {
             } as any)
 
             if (signUpResult.error) {
-                setError(signUpResult.error.message || 'Błąd rejestracji')
+                setError(signUpResult.error.message || t('register.error.registration'))
                 setLoading(false)
                 return
             }
@@ -180,7 +183,7 @@ function RegisterPage() {
             // 2. Login User
             const signInResult = await signIn.email({ email, password })
             if (signInResult.error) {
-                setError('Konto utworzone, ale błąd logowania. Spróbuj się zalogować.')
+                setError(t('register.error.loginAfterRegister'))
                 navigate({ to: '/login' })
                 setLoading(false)
                 return
@@ -209,7 +212,7 @@ function RegisterPage() {
 
         } catch (err) {
             console.error(err)
-            setError('Wystąpił nieoczekiwany błąd podczas rejestracji')
+            setError(t('register.error.unexpected'))
         } finally {
             setLoading(false)
         }
@@ -237,11 +240,11 @@ function RegisterPage() {
 
             if (result?.error) {
                 console.error(`[OAuth] Error:`, result.error)
-                setError(`Błąd rejestracji przez ${provider}: ${result.error.message || 'Unknown error'}`)
+                setError(t('register.error.provider', { provider }))
             }
         } catch (err: any) {
             console.error(`[OAuth] Exception:`, err)
-            setError(`Błąd rejestracji przez ${provider}: ${err?.message || 'Unknown error'}`)
+            setError(t('register.error.provider', { provider }))
         } finally {
             setLoading(false)
         }
@@ -270,7 +273,7 @@ function RegisterPage() {
             } as any)
 
             if (signUpResult.error) {
-                setError(signUpResult.error.message || 'Błąd rejestracji')
+                setError(signUpResult.error.message || t('register.error.registration'))
                 setLoading(false)
                 return
             }
@@ -284,7 +287,7 @@ function RegisterPage() {
             })
 
             if (signInResult.error) {
-                setError('Konto utworzone, ale błąd logowania. Spróbuj się zalogować.')
+                setError(t('register.error.loginAfterRegister'))
                 navigate({ to: '/login' })
                 setLoading(false)
                 return
@@ -318,7 +321,7 @@ function RegisterPage() {
 
         } catch (err) {
             console.error(err)
-            setError('Wystąpił nieoczekiwany błąd podczas rejestracji')
+            setError(t('register.error.unexpected'))
         } finally {
             setLoading(false)
         }
@@ -334,7 +337,7 @@ function RegisterPage() {
                         <h1 className="text-3xl font-bold text-white">
                             <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-8" />
                         </h1>
-                        <p className="mt-2 text-gray-400">Utwórz swoje konto</p>
+                        <p className="mt-2 text-gray-400">{t('register.title')}</p>
                     </div>
 
                     {/* Step indicator */}
@@ -361,7 +364,7 @@ function RegisterPage() {
                     {step === 1 && (
                         <form onSubmit={handleStep1} className="space-y-5">
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-gray-400 text-sm">E-mail</Label>
+                                <Label htmlFor="email" className="text-gray-400 text-sm">{t('register.email')}</Label>
                                 <div className="relative">
                                     <Input
                                         id="email"
@@ -377,7 +380,7 @@ function RegisterPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password" className="text-gray-400 text-sm">Hasło</Label>
+                                <Label htmlFor="password" className="text-gray-400 text-sm">{t('register.password')}</Label>
                                 <div className="relative">
                                     <Input
                                         id="password"
@@ -385,7 +388,7 @@ function RegisterPage() {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
-                                        placeholder="8+ znaków"
+                                        placeholder={t('register.passwordPlaceholder')}
                                         required
                                         minLength={8}
                                     />
@@ -409,7 +412,7 @@ function RegisterPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="confirmPassword" className="text-gray-400 text-sm">Powtórz hasło</Label>
+                                <Label htmlFor="confirmPassword" className="text-gray-400 text-sm">{t('register.confirmPassword')}</Label>
                                 <div className="relative">
                                     <Input
                                         id="confirmPassword"
@@ -417,7 +420,7 @@ function RegisterPage() {
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
-                                        placeholder="8+ znaków"
+                                        placeholder={t('register.passwordPlaceholder')}
                                         required
                                         minLength={8}
                                     />
@@ -445,12 +448,12 @@ function RegisterPage() {
                                 type="submit"
                                 className="w-full bg-amber-500 py-6 text-black font-medium hover:bg-amber-400 rounded-full"
                             >
-                                Dalej →
+                                {t('register.next')}
                             </Button>
 
                             {/* OAuth buttons - inline layout */}
                             <div className="mt-6 flex items-center gap-4">
-                                <span className="text-sm text-gray-400">Zarejestruj się przez</span>
+                                <span className="text-sm text-gray-400">{t('register.registerWith')}</span>
                                 <div className="flex gap-2">
                                     {/* GitHub */}
                                     <button
@@ -483,9 +486,9 @@ function RegisterPage() {
                             </div>
 
                             <p className="mt-6 text-center text-gray-400">
-                                Masz już konto?{' '}
+                                {t('register.haveAccount')}{' '}
                                 <Link to="/login" className="text-amber-500 hover:underline font-medium">
-                                    Zaloguj się
+                                    {t('register.login')}
                                 </Link>
                             </p>
                         </form>
@@ -495,38 +498,38 @@ function RegisterPage() {
                     {step === 2 && (
                         <form onSubmit={handleStep2} className="space-y-5">
                             <div className="space-y-2">
-                                <Label htmlFor="firstName" className="text-gray-400 text-sm">Imię</Label>
+                                <Label htmlFor="firstName" className="text-gray-400 text-sm">{t('register.firstName')}</Label>
                                 <Input
                                     id="firstName"
                                     type="text"
                                     value={firstName}
                                     onChange={(e) => setFirstName(e.target.value)}
                                     className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
-                                    placeholder="Jan"
+                                    placeholder={t('register.firstNamePlaceholder')}
                                     required
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="lastName" className="text-gray-400 text-sm">Nazwisko</Label>
+                                <Label htmlFor="lastName" className="text-gray-400 text-sm">{t('register.lastName')}</Label>
                                 <Input
                                     id="lastName"
                                     type="text"
                                     value={lastName}
                                     onChange={(e) => setLastName(e.target.value)}
                                     className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
-                                    placeholder="Kowalski"
+                                    placeholder={t('register.lastNamePlaceholder')}
                                     required
                                 />
                             </div>
 
                             {/* Date of Birth */}
                             <div className="space-y-2">
-                                <Label className="text-gray-400 text-sm">Data urodzenia</Label>
+                                <Label className="text-gray-400 text-sm">{t('register.birthDate')}</Label>
                                 <div className="grid grid-cols-3 gap-3">
                                     <Select value={birthDay} onValueChange={setBirthDay}>
                                         <SelectTrigger className="bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
-                                            <SelectValue placeholder="Dzień" />
+                                            <SelectValue placeholder={t('register.day')} />
                                         </SelectTrigger>
                                         <SelectContent className="bg-[#12121a] border-gray-800 text-white">
                                             {Array.from({ length: 31 }, (_, i) => (
@@ -537,10 +540,10 @@ function RegisterPage() {
 
                                     <Select value={birthMonth} onValueChange={setBirthMonth}>
                                         <SelectTrigger className="bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
-                                            <SelectValue placeholder="Miesiąc" />
+                                            <SelectValue placeholder={t('register.month')} />
                                         </SelectTrigger>
                                         <SelectContent className="bg-[#12121a] border-gray-800 text-white">
-                                            {['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'].map((month, i) => (
+                                            {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((month, i) => (
                                                 <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" key={i + 1} value={String(i + 1)}>{month}</SelectItem>
                                             ))}
                                         </SelectContent>
@@ -548,7 +551,7 @@ function RegisterPage() {
 
                                     <Select value={birthYear} onValueChange={setBirthYear}>
                                         <SelectTrigger className="bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
-                                            <SelectValue placeholder="Rok" />
+                                            <SelectValue placeholder={t('register.year')} />
                                         </SelectTrigger>
                                         <SelectContent className="bg-[#12121a] border-gray-800 text-white">
                                             {Array.from({ length: 100 }, (_, i) => {
@@ -562,26 +565,26 @@ function RegisterPage() {
 
                             {/* Gender */}
                             <div className="space-y-2">
-                                <Label htmlFor="gender" className="text-gray-400 text-sm">Płeć</Label>
+                                <Label htmlFor="gender" className="text-gray-400 text-sm">{t('register.gender')}</Label>
                                 <Select value={gender} onValueChange={setGender}>
                                     <SelectTrigger className="w-full bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
-                                        <SelectValue placeholder="Wybierz płeć" />
+                                        <SelectValue placeholder={t('register.genderPlaceholder')} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#12121a] border-gray-800 text-white">
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="female">Kobieta</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="male">Mężczyzna</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="other">Inna</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="prefer_not_to_say">Wolę nie podawać</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="female">{t('register.genderOptions.female')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="male">{t('register.genderOptions.male')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="other">{t('register.genderOptions.other')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="prefer_not_to_say">{t('register.genderOptions.prefer_not_to_say')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             {/* Position (Replaced Phone) */}
                             <div className="space-y-2">
-                                <Label htmlFor="position" className="text-gray-400 text-sm">Stanowisko</Label>
+                                <Label htmlFor="position" className="text-gray-400 text-sm">{t('register.position')}</Label>
                                 <Select value={position} onValueChange={setPosition}>
                                     <SelectTrigger className="w-full bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
-                                        <SelectValue placeholder="Wybierz stanowisko" />
+                                        <SelectValue placeholder={t('register.positionPlaceholder')} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#12121a] border-gray-800 text-white">
                                         <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Programmer">Programmer</SelectItem>
@@ -611,13 +614,13 @@ function RegisterPage() {
                                     variant="ghost"
                                     className="flex-1 py-6 rounded-full bg-gray-800 text-white hover:bg-gray-700 hover:text-gray-200"
                                 >
-                                    ← Wstecz
+                                    {t('register.back')}
                                 </Button>
                                 <Button
                                     type="submit"
                                     className="flex-1 bg-amber-500 py-6 text-black font-medium hover:bg-amber-400 rounded-full"
                                 >
-                                    Dalej →
+                                    {t('register.next')}
                                 </Button>
                             </div>
                         </form>
@@ -627,53 +630,53 @@ function RegisterPage() {
                     {step === 3 && (
                         <form onSubmit={handleStep3} className="space-y-5">
                             <div className="text-center mb-6">
-                                <h2 className="text-xl font-semibold text-white">Skonfiguruj Workspace</h2>
+                                <h2 className="text-xl font-semibold text-white">{t('register.step3')}</h2>
                                 <p className="text-sm text-gray-400">Stwórz przestrzeń dla swojego zespołu</p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="workspaceName" className="text-gray-400 text-sm">Nazwa Workspace</Label>
+                                <Label htmlFor="workspaceName" className="text-gray-400 text-sm">{t('register.workspaceName')}</Label>
                                 <Input
                                     id="workspaceName"
                                     type="text"
                                     value={workspaceName}
                                     onChange={(e) => setWorkspaceName(e.target.value)}
                                     className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
-                                    placeholder="Moja Firma"
+                                    placeholder={t('register.workspacePlaceholder')}
                                     required
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="teamSize" className="text-gray-400 text-sm">Rozmiar Zespołu</Label>
+                                <Label htmlFor="teamSize" className="text-gray-400 text-sm">{t('register.teamSize')}</Label>
                                 <Select value={teamSize} onValueChange={setTeamSize}>
                                     <SelectTrigger className="w-full bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
-                                        <SelectValue placeholder="Wybierz rozmiar zespołu" />
+                                        <SelectValue placeholder={t('register.teamSizePlaceholder')} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#12121a] border-gray-800 text-white">
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="1-10">1-10 osób</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="11-50">11-50 osób</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="51-200">51-200 osób</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="200+">200+ osób</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="1-10">{t('register.teamSizeOptions.1-10')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="11-50">{t('register.teamSizeOptions.11-50')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="51-200">{t('register.teamSizeOptions.51-200')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="200+">{t('register.teamSizeOptions.200+')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="industry" className="text-gray-400 text-sm">Branża</Label>
+                                <Label htmlFor="industry" className="text-gray-400 text-sm">{t('register.industry')}</Label>
                                 <Select value={industry} onValueChange={setIndustry}>
                                     <SelectTrigger className="w-full bg-transparent text-white border-0 border-b-2 border-gray-700 rounded-none focus:ring-0 focus:ring-offset-0 focus:border-amber-500 px-0 h-auto py-3">
-                                        <SelectValue placeholder="Wybierz branżę" />
+                                        <SelectValue placeholder={t('register.industryPlaceholder')} />
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#12121a] border-gray-800 text-white">
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Technology">Technologia / IT</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Gamedev">Gamedev / Gry</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Marketing">Marketing / Agencja</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Finance">Finanse</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Education">Edukacja</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Health">Zdrowie</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="E-commerce">E-commerce</SelectItem>
-                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Other">Inna</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Technology">{t('register.industryOptions.Technology')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Gamedev">{t('register.industryOptions.Gamedev')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Marketing">{t('register.industryOptions.Marketing')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Finance">{t('register.industryOptions.Finance')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Education">{t('register.industryOptions.Education')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Health">{t('register.industryOptions.Health')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="E-commerce">{t('register.industryOptions.E-commerce')}</SelectItem>
+                                        <SelectItem className="text-white focus:bg-gray-800 focus:text-white cursor-pointer" value="Other">{t('register.industryOptions.Other')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -685,14 +688,14 @@ function RegisterPage() {
                                     variant="ghost"
                                     className="flex-1 py-6 rounded-full bg-gray-800 text-white hover:bg-gray-700 hover:text-gray-200"
                                 >
-                                    ← Wstecz
+                                    {t('register.back')}
                                 </Button>
                                 <Button
                                     type="submit"
                                     disabled={loading}
                                     className="flex-1 bg-amber-500 py-6 text-black font-medium hover:bg-amber-400 rounded-full"
                                 >
-                                    {loading ? 'Konfigurowanie...' : 'Rozpocznij'}
+                                    {loading ? t('register.verifying') : t('register.start')}
                                 </Button>
                             </div>
                         </form>
@@ -700,16 +703,18 @@ function RegisterPage() {
                 </div>
             </div>
 
+            <div className="absolute top-4 right-4 z-50">
+                <LanguageSwitcher />
+            </div>
             {/* Right side - Marketing */}
             <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 bg-[#0d0d12]">
                 <div className="max-w-lg">
                     <h2 className="text-5xl font-bold text-white leading-tight">
-                        Designed For <span className="text-amber-500">Task</span><br />
-                        Management
+                        {t('auth.marketingTitle')} <span className="text-amber-500">{t('auth.marketingTitleStrong')}</span><br />
+                        {t('auth.marketingTitle2')}
                     </h2>
                     <p className="mt-6 text-lg text-gray-400">
-                        Zarządzaj swoimi projektami i zadaniami z dowolnego miejsca.
-                        Analizuj postępy i rozwijaj swój zespół!
+                        {t('auth.marketingDesc')}
                     </p>
 
                     {/* App Preview Image Placeholder */}
@@ -717,7 +722,7 @@ function RegisterPage() {
                         <div className="aspect-video rounded-xl bg-[#0a0a0f] flex items-center justify-center border border-gray-800">
                             <div className="text-center">
                                 <div className="text-6xl mb-4">📊</div>
-                                <p className="text-gray-500">Dashboard Preview</p>
+                                <p className="text-gray-500">{t('auth.dashboardPreview')}</p>
                             </div>
                         </div>
                     </div>

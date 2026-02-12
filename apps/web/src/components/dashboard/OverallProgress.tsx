@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChecklistIcon, HistoryIcon, FoldersIcon, CalendarSmallIcon } from './icons'
 
 interface OverallProgressProps {
@@ -16,6 +17,7 @@ export function OverallProgress({
     totalProjects = 45,
     upcoming = 12
 }: OverallProgressProps) {
+    const { t } = useTranslation()
     const [hoveredPoint, setHoveredPoint] = useState<number | null>(9) // Show tooltip by default
 
     // Calculate chart dimensions - BIGGER
@@ -56,16 +58,16 @@ export function OverallProgress({
         <div className="rounded-2xl bg-[#12121a] p-5 h-[296px] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-white">Overall Progress</h3>
+                <h3 className="font-semibold text-white">{t('dashboard.overallProgress')}</h3>
                 <a href="#" className="text-xs text-gray-500 hover:text-[#F2CE88] transition-colors">
-                    See all
+                    {t('dashboard.seeAll')}
                 </a>
             </div>
 
             {/* Dropdown with calendar icon */}
             <button className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-4 w-fit px-2 py-1 rounded bg-gray-800/30 hover:bg-gray-800/50 transition-colors">
                 <CalendarSmallIcon />
-                Last 7 days
+                {t('dashboard.last7Days')}
                 <span className="ml-1 text-[8px]">▼</span>
             </button>
 
@@ -77,19 +79,19 @@ export function OverallProgress({
                         <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
                             <ChecklistIcon />
                         </div>
-                        <span className="text-xs text-gray-400">{inProgress} In Progress</span>
+                        <span className="text-xs text-gray-400">{inProgress} {t('dashboard.inProgress')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-gray-800/50 flex items-center justify-center">
                             <HistoryIcon />
                         </div>
-                        <span className="text-xs text-gray-400">{totalProjects} Total Project</span>
+                        <span className="text-xs text-gray-400">{totalProjects} {t('dashboard.totalProjects')}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-gray-800/50 flex items-center justify-center">
                             <FoldersIcon />
                         </div>
-                        <span className="text-xs text-gray-400">{upcoming} Upcoming</span>
+                        <span className="text-xs text-gray-400">{upcoming} {t('dashboard.upcoming')}</span>
                     </div>
                 </div>
 

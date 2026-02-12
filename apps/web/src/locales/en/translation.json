@@ -1,0 +1,288 @@
+{
+    "auth": {
+        "title": "Log in to your account",
+        "title2FA": "Two-Factor Verification",
+        "email": "Email",
+        "password": "Password",
+        "rememberMe": "Remember me for 7 days",
+        "submit": "Log in",
+        "verifying": "Log in...",
+        "forgotPassword": "Forgot password?",
+        "noAccount": "Don't have an account?",
+        "register": "Register",
+        "loginWith": "Log in with",
+        "code2FA": "2FA code from app",
+        "verify2FA": "Verify",
+        "backToLogin": "Back to login",
+        "marketingTitle": "Designed For",
+        "marketingTitleStrong": "Task",
+        "marketingTitle2": "Management",
+        "marketingDesc": "Manage your projects and tasks from anywhere. Analyze progress and grow your team!",
+        "dashboardPreview": "Dashboard Preview",
+        "error": {
+            "default": "An unexpected error occurred",
+            "login": "Login error",
+            "provider": "Login error via {{provider}}"
+        }
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "team": "Team",
+        "projects": "Projects",
+        "messages": "Messages",
+        "calendar": "Calendar",
+        "files": "Files",
+        "contact": "Contact",
+        "settings": "Org. Settings",
+        "logout": "Log Out",
+        "dayMode": "Day mode",
+        "nightMode": "Night mode",
+        "ongoing": "Ongoing",
+        "pending": "Pending",
+        "noProjectsActive": "No active projects",
+        "noProjectsPending": "No pending projects",
+        "createProject": "Create first project",
+        "noDeadline": "No deadline",
+        "noMeetings": "No upcoming meetings",
+        "addMeeting": "Add New Meeting",
+        "until": "Until",
+        "chat": "Chat",
+        "lastResources": "Last resources",
+        "seeAll": "See all",
+        "noFiles": "No files uploaded yet",
+        "overallProgress": "Overall Progress",
+        "last7Days": "Last 7 days",
+        "inProgress": "In Progress",
+        "totalProjects": "Total Project",
+        "upcoming": "Upcoming",
+        "filter": "Filter",
+        "type": "Type",
+        "eventType": {
+            "event": "Events",
+            "task": "Tasks",
+            "reminder": "Reminders",
+            "meeting": "Meetings"
+        },
+        "clearFilters": "Clear All Filters",
+        "scheduleSetting": "Schedule setting",
+        "viewOptions": "View Options",
+        "showWeekends": "Show weekends",
+        "startOfWeek": "Start of week",
+        "monday": "Monday",
+        "sunday": "Sunday",
+        "today": "Today",
+        "addEvent": "Add event",
+        "moreEvents": "+ {{count}} more"
+    },
+    "register": {
+        "title": "Create your account",
+        "step1": "Account",
+        "step2": "Personal Info",
+        "step3": "Workspace Setup",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Confirm Password",
+        "passwordPlaceholder": "8+ characters",
+        "firstName": "First Name",
+        "firstNamePlaceholder": "John",
+        "lastName": "Last Name",
+        "lastNamePlaceholder": "Doe",
+        "birthDate": "Date of Birth",
+        "day": "Day",
+        "month": "Month",
+        "year": "Year",
+        "gender": "Gender",
+        "genderPlaceholder": "Select gender",
+        "genderOptions": {
+            "female": "Female",
+            "male": "Male",
+            "other": "Other",
+            "prefer_not_to_say": "Prefer not to say"
+        },
+        "position": "Position",
+        "positionPlaceholder": "Select position",
+        "workspaceName": "Workspace Name",
+        "workspacePlaceholder": "My Company",
+        "teamSize": "Team Size",
+        "teamSizePlaceholder": "Select team size",
+        "teamSizeOptions": {
+            "1-10": "1-10 people",
+            "11-50": "11-50 people",
+            "51-200": "51-200 people",
+            "200+": "200+ people"
+        },
+        "industry": "Industry",
+        "industryPlaceholder": "Select industry",
+        "industryOptions": {
+            "Technology": "Technology / IT",
+            "Gamedev": "Gamedev / Games",
+            "Marketing": "Marketing / Agency",
+            "Finance": "Finance",
+            "Education": "Education",
+            "Health": "Health",
+            "E-commerce": "E-commerce",
+            "Other": "Other"
+        },
+        "next": "Next →",
+        "back": "← Back",
+        "start": "Start",
+        "verifying": "Configuring...",
+        "haveAccount": "Already have an account?",
+        "login": "Log in",
+        "registerWith": "Register with",
+        "error": {
+            "passwordLength": "Password must be at least 8 characters",
+            "passwordMismatch": "Passwords do not match",
+            "registration": "Registration error",
+            "loginAfterRegister": "Account created, but login failed. Please try logging in.",
+            "unexpected": "An unexpected error occurred during registration",
+            "provider": "Registration error via {{provider}}"
+        }
+    },
+    "landing": {
+        "nav": {
+            "features": "Features",
+            "pricing": "Pricing",
+            "faq": "FAQ",
+            "login": "Log in",
+            "startFree": "Start for free"
+        },
+        "hero": {
+            "newVersion": "New version available",
+            "title": "Comprehensive",
+            "titleHighlight": "management",
+            "title2": "projects",
+            "desc": "Simplify meetings, manage projects efficiently and optimize workflow - all in one place.",
+            "start": "Start",
+            "viewFeatures": "View features"
+        },
+        "features": {
+            "tasks": {
+                "title": "Efficient task management",
+                "desc": "Organize, prioritize and track progress with precise tools.",
+                "item1": "Market Analysis",
+                "item2": "UI Design",
+                "item3": "Logo Review"
+            },
+            "calendar": {
+                "title": "Stay up to date",
+                "month": "MAY 2024",
+                "projects": "45 Projects",
+                "subtitle": "Stay up to date",
+                "desc": "Sync with calendar to never miss a deadline."
+            },
+            "analytics": {
+                "title": "Insightful Analytics",
+                "desc": "Detailed reports help measure performance and optimize productivity."
+            }
+        },
+        "efficiency": {
+            "title": "Unleash efficiency in",
+            "title2": "project management",
+            "desc": "Plan and organize the entire project from start to finish. Communicate and collaborate with your team.",
+            "workflow": {
+                "title": "Improve Workflow",
+                "desc": "Simplify project management with intuitive tools."
+            },
+            "collaboration": {
+                "title": "Seamless collaboration",
+                "desc": "Real-time updates and communication tools."
+            },
+            "management": {
+                "title": "Optimize management",
+                "desc": "Prioritize tasks and ensure timely delivery."
+            },
+            "team": {
+                "title": "Increase team efficiency",
+                "desc": "Clear goals, streamlined processes and insightful analytics."
+            },
+            "progress": {
+                "title": "Monitor progress",
+                "desc": "Track project progress in real time."
+            }
+        },
+        "pricing": {
+            "title": "Choose the perfect plan",
+            "title2": "for your workflow",
+            "desc": "Whether you are a freelancer, startup or enterprise - we have a plan for you.",
+            "free": {
+                "name": "Free",
+                "price": "$0",
+                "period": "forever",
+                "desc": "Perfect for small teams to start",
+                "features": [
+                    "Up to 5 projects",
+                    "Up to 3 team members",
+                    "Basic analytics",
+                    "Email support"
+                ]
+            },
+            "pro": {
+                "name": "Pro",
+                "price": "$49",
+                "period": "monthly",
+                "desc": "For growing teams and startups",
+                "features": [
+                    "Unlimited projects",
+                    "Up to 50 team members",
+                    "Advanced analytics",
+                    "Priority support",
+                    "API integrations"
+                ]
+            },
+            "enterprise": {
+                "name": "Enterprise",
+                "price": "Contact",
+                "period": "",
+                "desc": "For large organizations",
+                "features": [
+                    "Everything in Pro",
+                    "Unlimited users",
+                    "SSO / SAML",
+                    "Dedicated manager",
+                    "SLA 99.99%"
+                ],
+                "contact": "Contact us"
+            },
+            "popular": "Most popular"
+        },
+        "faq": {
+            "title": "Have questions?",
+            "title2": "We have answers.",
+            "desc": "If you don't find the answer to your question, write to us - we'll be happy to help.",
+            "contact": "Contact us →",
+            "q1": {
+                "question": "Can I cancel my subscription at any time?",
+                "answer": "Yes, you can cancel your subscription at any time. There are no hidden fees or penalties for early termination."
+            },
+            "q2": {
+                "question": "How to install the software?",
+                "answer": "Zadano.app works in the browser - just register and you can start using it right away. No installation required."
+            },
+            "q3": {
+                "question": "Can I start for free?",
+                "answer": "Absolutely! Our Free plan is free forever and includes all the basic features needed for project management."
+            },
+            "q4": {
+                "question": "What integrations are available?",
+                "answer": "We support integrations with over 50 tools, including Slack, GitHub, Jira, Notion, Google Drive and much more."
+            }
+        },
+        "cta": {
+            "title": "Simplify your workflow with",
+            "desc": "Start for free and see why thousands of teams chose Zadano.app as their project management tool.",
+            "button": "Start for free →"
+        },
+        "footer": {
+            "desc": "Manage projects more efficiently with tools designed for your team.",
+            "overview": "Overview",
+            "resources": "Resources",
+            "blog": "Blog",
+            "support": "Support",
+            "newsletter": "Newsletter",
+            "newsletterDesc": "Get the latest news and tips.",
+            "subscribe": "Sub",
+            "rights": "© 2024 Zadano.app. All rights reserved."
+        }
+    }
+}

@@ -4,6 +4,7 @@ import { useSession, signOut } from '@/lib/auth'
 import { DropdownArrowUp, DropdownArrowDown } from './icons'
 import { NotificationPanel } from '@/components/features/notifications/NotificationPanel'
 import { UserSettingsPanel } from '@/components/features/settings/panels/UserSettingsPanel'
+import { LanguageSwitcher } from '@/components/language-switcher'
 
 export function Header() {
     const { data: session } = useSession()
@@ -57,24 +58,8 @@ export function Header() {
 
             {/* Right Side */}
             <div className="flex items-center gap-4">
-                {/* Language Selector with Globe SVG */}
-                <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 transition-colors group">
-                    <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                        <circle cx="16" cy="16" r="11" fill="#9E9E9E" />
-                        <circle cx="16" cy="16" r="11" stroke="#545454" strokeWidth="3" />
-                        <path d="M5 16H27" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
-                        <path d="M16 5V27" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
-                        <ellipse cx="16" cy="16" rx="6" ry="11" stroke="#545454" strokeWidth="3" />
-                    </svg>
-                    <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                        <circle cx="16" cy="16" r="11" fill="#F2CE88" />
-                        <circle cx="16" cy="16" r="11" stroke="#7A664E" strokeWidth="3" />
-                        <path d="M5 16H27" stroke="#7A664E" strokeWidth="3" strokeLinecap="round" />
-                        <path d="M16 5V27" stroke="#7A664E" strokeWidth="3" strokeLinecap="round" />
-                        <ellipse cx="16" cy="16" rx="6" ry="11" stroke="#7A664E" strokeWidth="3" />
-                    </svg>
-                    <span className="text-sm group-hover:text-[#F2CE88]">EN</span>
-                </button>
+                {/* Language Selector */}
+                <LanguageSwitcher />
 
                 {/* Notifications with SVG icon */}
                 <div className="relative" ref={notifRef}>

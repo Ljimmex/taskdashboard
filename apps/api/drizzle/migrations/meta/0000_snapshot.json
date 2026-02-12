@@ -1,5 +1,5 @@
 {
-  "id": "beb63a27-b66f-46b1-9fc3-811f8607ad09",
+  "id": "d06fc292-c9dc-4a1e-a6f1-8f43ff36d17b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -206,6 +206,85 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.two_factors": {
+      "name": "two_factors",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "secret": {
+          "name": "secret",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "backup_codes": {
+          "name": "backup_codes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "Users can view own two factor": {
+          "name": "Users can view own two factor",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "user_id = auth.uid()::text"
+        },
+        "Users can update own two factor": {
+          "name": "Users can update own two factor",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "user_id = auth.uid()::text"
+        },
+        "Users can insert own two factor": {
+          "name": "Users can insert own two factor",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "user_id = auth.uid()::text"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.verifications": {
       "name": "verifications",
       "schema": "",
@@ -302,6 +381,26 @@
           "primaryKey": false,
           "notNull": false
         },
+        "phone_number": {
+          "name": "phone_number",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_number_verified": {
+          "name": "phone_number_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "two_factor_enabled": {
+          "name": "two_factor_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "first_name": {
           "name": "first_name",
           "type": "varchar(100)",
@@ -311,6 +410,12 @@
         "last_name": {
           "name": "last_name",
           "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -340,6 +445,12 @@
         },
         "country": {
           "name": "country",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timezone": {
+          "name": "timezone",
           "type": "varchar(100)",
           "primaryKey": false,
           "notNull": false
@@ -2704,15 +2815,29 @@
           "primaryKey": false,
           "notNull": false
         },
-        "team_id": {
-          "name": "team_id",
-          "type": "uuid",
+        "team_ids": {
+          "name": "team_ids",
+          "type": "uuid[]",
           "primaryKey": false,
           "notNull": true
         },
+        "type": {
+          "name": "type",
+          "type": "calendar_event_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'event'"
+        },
+        "meeting_link": {
+          "name": "meeting_link",
+          "type": "varchar(512)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_by": {
           "name": "created_by",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -2739,19 +2864,6 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "calendar_events_team_id_teams_id_fk": {
-          "name": "calendar_events_team_id_teams_id_fk",
-          "tableFrom": "calendar_events",
-          "tableTo": "teams",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "calendar_events_created_by_users_id_fk": {
           "name": "calendar_events_created_by_users_id_fk",
           "tableFrom": "calendar_events",
@@ -2776,7 +2888,7 @@
           "to": [
             "public"
           ],
-          "using": "team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)"
+          "using": "team_ids && ARRAY(SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)"
         },
         "Team members can create events": {
           "name": "Team members can create events",
@@ -2785,7 +2897,7 @@
           "to": [
             "public"
           ],
-          "withCheck": "created_by = auth.uid()::text AND team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)"
+          "withCheck": "created_by = auth.uid()::text"
         },
         "Creator can update events": {
           "name": "Creator can update events",
@@ -3456,6 +3568,13 @@
           "notNull": true,
           "default": true
         },
+        "silent_mode": {
+          "name": "silent_mode",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "description": {
           "name": "description",
           "type": "text",
@@ -3692,6 +3811,16 @@
         "direct",
         "group",
         "channel"
+      ]
+    },
+    "public.calendar_event_type": {
+      "name": "calendar_event_type",
+      "schema": "public",
+      "values": [
+        "event",
+        "task",
+        "meeting",
+        "reminder"
       ]
     },
     "public.webhook_queue_status": {

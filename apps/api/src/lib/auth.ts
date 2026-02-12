@@ -1,7 +1,8 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { db } from '@/db'
+import { twoFactor } from 'better-auth/plugins'
 import { emailOTP } from 'better-auth/plugins'
-import { db } from '../db'
 import * as schema from '../db/schema'
 import { eq } from 'drizzle-orm'
 import { sendOTPEmail } from './email'
@@ -22,6 +23,7 @@ export const auth = betterAuth({
             session: schema.sessions,
             account: schema.accounts,
             verification: schema.verifications,
+            twoFactor: schema.twoFactors,
         },
     }),
 
@@ -102,6 +104,17 @@ export const auth = betterAuth({
                 })
             },
         }),
+        twoFactor({
+            issuer: 'Zadano.app',
+        }),
+
+        // phoneNumber({
+        //     sendOTP: async ({ phoneNumber, code }: { phoneNumber: string; code: string }) => {
+        //         // INFORMATIONAL ONLY: Stub OTP to avoid actual sending.
+        //         // User requested phone number to be informational for now.
+        //         console.log(`📱 SMS OTP for ${phoneNumber}: ${code}`)
+        //     },
+        // }),
     ],
 
     // User hooks - parse name into first_name and last_name
@@ -136,6 +149,10 @@ export const auth = betterAuth({
                 type: 'string',
                 required: false,
                 defaultValue: 'pending',
+            },
+            phoneNumber: {
+                type: 'string',
+                required: false,
             },
         },
     },

@@ -1,1 +1,0 @@
-ALTER TABLE "calendar_events" ADD COLUMN "type" varchar(50) DEFAULT 'event' NOT NULL;

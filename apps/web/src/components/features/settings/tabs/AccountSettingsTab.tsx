@@ -5,7 +5,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
-
+import { format } from "date-fns"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 // Icons
 // import { Trash2, Upload } from 'lucide-react' 
@@ -238,15 +242,47 @@ export function AccountSettingsTab() {
                             </div>
 
                             {/* Date of Birth */}
-                            <div className="space-y-2">
+                            <div className="space-y-2 flex flex-col">
                                 <label className="text-sm font-medium text-gray-400">Date of Birth</label>
-                                <div className="relative">
-                                    <input
-                                        type="date"
-                                        {...form.register('birthDate')}
-                                        className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] [color-scheme:dark]"
-                                    />
-                                </div>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <button
+                                            type="button"
+                                            className={cn(
+                                                "w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-left text-sm transition-colors flex items-center gap-2 outline-none focus:border-[#F2CE88]",
+                                                !form.watch('birthDate') ? "text-gray-500" : "text-white"
+                                            )}
+                                        >
+                                            <CalendarIcon className="w-4 h-4 text-gray-400" />
+                                            {form.watch('birthDate') ? (
+                                                format(new Date(form.watch('birthDate')!), "PPP")
+                                            ) : (
+                                                <span>Pick a date</span>
+                                            )}
+                                        </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0 bg-[#12121a] border-gray-800 text-white" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={form.watch('birthDate') ? new Date(form.watch('birthDate')!) : undefined}
+                                            onSelect={(date) => {
+                                                if (date) {
+                                                    // Adjust for timezone offset to ensure the date string is correct local date
+                                                    const offset = date.getTimezoneOffset()
+                                                    const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000))
+                                                    form.setValue('birthDate', adjustedDate.toISOString().split('T')[0], { shouldDirty: true })
+                                                } else {
+                                                    form.setValue('birthDate', undefined, { shouldDirty: true })
+                                                }
+                                            }}
+                                            disabled={(date) =>
+                                                date > new Date() || date < new Date("1900-01-01")
+                                            }
+                                            initialFocus
+                                            className="bg-[#12121a]"
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
 
                             {/* Gender */}

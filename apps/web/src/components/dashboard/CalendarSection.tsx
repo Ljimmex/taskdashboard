@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, format, parseISO, isWeekend } from 'date-fns'
-import { enUS } from 'date-fns/locale'
+import { enUS, pl } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { ChevronLeft, ChevronRight, Filter, SlidersHorizontal } from 'lucide-react'
@@ -65,6 +66,8 @@ const CustomCheckbox = ({ checked, onClick, colorClass = "bg-amber-500 border-am
 )
 
 export function CalendarSection() {
+    const { t, i18n } = useTranslation()
+    const dateLocale = i18n.language === 'pl' ? pl : enUS
     const params = useParams({ strict: false }) as any
     const workspaceSlug = params.workspaceSlug
 
@@ -112,8 +115,8 @@ export function CalendarSection() {
 
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(monthStart)
-    const startDate = startOfWeek(monthStart, { locale: enUS, weekStartsOn: weekStartDay === 'monday' ? 1 : 0 })
-    const endDate = endOfWeek(monthEnd, { locale: enUS, weekStartsOn: weekStartDay === 'monday' ? 1 : 0 })
+    const startDate = startOfWeek(monthStart, { locale: dateLocale, weekStartsOn: weekStartDay === 'monday' ? 1 : 0 })
+    const endDate = endOfWeek(monthEnd, { locale: dateLocale, weekStartsOn: weekStartDay === 'monday' ? 1 : 0 })
 
     let calendarDays = eachDayOfInterval({ start: startDate, end: endDate })
 
@@ -121,11 +124,20 @@ export function CalendarSection() {
         calendarDays = calendarDays.filter(day => !isWeekend(day))
     }
 
-    const weekDays = weekStartDay === 'monday'
-        ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-    const visibleWeekDays = showWeekends ? weekDays : weekDays.filter(d => d !== 'Sat' && d !== 'Sun')
+
+    // Adjust weekDays for showWeekends logic
+    // If showWeekends is false, we need to filter out Sat/Sun from the generated array
+    // However, the generated array index relies on 7 days.
+    // Better way: Generate the 7 days, then filter if needed.
+    const allWeekDays = eachDayOfInterval({
+        start: startOfWeek(currentDate, { weekStartsOn: weekStartDay === 'monday' ? 1 : 0 }),
+        end: endOfWeek(currentDate, { weekStartsOn: weekStartDay === 'monday' ? 1 : 0 })
+    })
+
+    const visibleWeekDaysObj = allWeekDays.filter(d => showWeekends || !isWeekend(d))
+    const visibleWeekDays = visibleWeekDaysObj.map(d => format(d, 'EEE', { locale: dateLocale }))
+
 
     const prevMonth = () => setCurrentDate(subMonths(currentDate, 1))
     const nextMonth = () => setCurrentDate(addMonths(currentDate, 1))
@@ -191,8 +203,8 @@ export function CalendarSection() {
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                 {/* Lewa strona: Ikonka + Miesiąc/Rok */}
                 <div className="flex items-center gap-3 mb-4 md:mb-0">
-                    <h2 className="text-lg font-semibold text-white tracking-wide">
-                        {format(currentDate, 'MMMM yyyy', { locale: enUS })}
+                    <h2 className="text-lg font-semibold text-white tracking-wide capitalize">
+                        {format(currentDate, 'MMMM yyyy', { locale: dateLocale })}
                     </h2>
                 </div>
 
@@ -206,12 +218,12 @@ export function CalendarSection() {
                                 selectedTypes.length < 4 ? "bg-[#1E2029] text-white" : "bg-[#1a1a24] text-gray-400 hover:text-white"
                             )}>
                                 <Filter className="w-3.5 h-3.5" />
-                                <span>Filter</span>
+                                <span>{t('dashboard.filter')}</span>
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none">
                             <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Type
+                                {t('dashboard.type')}
                             </div>
 
                             <DropdownMenuItem
@@ -219,7 +231,7 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.EVENT)} />
-                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.EVENT) ? "text-white" : "text-gray-400")}>Events</span>
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.EVENT) ? "text-white" : "text-gray-400")}>{t('dashboard.eventType.event')}</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
@@ -227,7 +239,7 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.TASK)} />
-                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.TASK) ? "text-white" : "text-gray-400")}>Tasks</span>
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.TASK) ? "text-white" : "text-gray-400")}>{t('dashboard.eventType.task')}</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
@@ -235,7 +247,7 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.REMINDER)} />
-                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.REMINDER) ? "text-white" : "text-gray-400")}>Reminders</span>
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.REMINDER) ? "text-white" : "text-gray-400")}>{t('dashboard.eventType.reminder')}</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
@@ -243,7 +255,7 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.MEETING)} />
-                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.MEETING) ? "text-white" : "text-gray-400")}>Meetings</span>
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.MEETING) ? "text-white" : "text-gray-400")}>{t('dashboard.eventType.meeting')}</span>
                             </DropdownMenuItem>
 
                             <div className="p-2 mt-2">
@@ -251,7 +263,7 @@ export function CalendarSection() {
                                     onClick={clearFilters}
                                     className="w-full py-1.5 bg-[#1a1a24] hover:bg-[#20202b] text-gray-400 hover:text-white text-xs font-medium rounded-lg transition-colors border border-white/5"
                                 >
-                                    Clear All Filters
+                                    {t('dashboard.clearFilters')}
                                 </button>
                             </div>
                         </DropdownMenuContent>
@@ -262,12 +274,12 @@ export function CalendarSection() {
                         <DropdownMenuTrigger asChild>
                             <button className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a24] hover:bg-[#20202b] rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all mr-2 outline-none focus:ring-1 focus:ring-white/10">
                                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                                <span>Schedule setting</span>
+                                <span>{t('dashboard.scheduleSetting')}</span>
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-64 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none">
                             <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                View Options
+                                {t('dashboard.viewOptions')}
                             </div>
 
                             <DropdownMenuItem
@@ -275,13 +287,13 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={showWeekends} />
-                                <span className="text-gray-300">Show weekends</span>
+                                <span className="text-gray-300">{t('dashboard.showWeekends')}</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator className="bg-gray-800 my-2" />
 
                             <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Start of week
+                                {t('dashboard.startOfWeek')}
                             </div>
                             <DropdownMenuRadioGroup value={weekStartDay} onValueChange={(v) => setWeekStartDay(v as 'monday' | 'sunday')}>
                                 <DropdownMenuRadioItem value="monday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
@@ -289,7 +301,7 @@ export function CalendarSection() {
                                         <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'monday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
                                             {weekStartDay === 'monday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
                                         </div>
-                                        <span>Monday</span>
+                                        <span>{t('dashboard.monday')}</span>
                                     </div>
                                 </DropdownMenuRadioItem>
                                 <DropdownMenuRadioItem value="sunday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
@@ -297,7 +309,7 @@ export function CalendarSection() {
                                         <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'sunday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
                                             {weekStartDay === 'sunday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
                                         </div>
-                                        <span>Sunday</span>
+                                        <span>{t('dashboard.sunday')}</span>
                                     </div>
                                 </DropdownMenuRadioItem>
                             </DropdownMenuRadioGroup>
@@ -319,7 +331,7 @@ export function CalendarSection() {
                             onClick={goToToday}
                             className="px-3 py-1 text-xs font-medium text-gray-400 hover:text-amber-500 transition-colors"
                         >
-                            Today
+                            {t('dashboard.today')}
                         </button>
                         <button
                             onClick={nextMonth}
@@ -395,7 +407,7 @@ export function CalendarSection() {
                                                     onClick={(e) => { e.stopPropagation(); setSelectedDay(day); setIsDayPanelOpen(true) }}
                                                     className="text-[9px] text-gray-500 text-center shrink-0 cursor-pointer hover:text-amber-400 transition-colors"
                                                 >
-                                                    + {dayEvents.length - 2} more
+                                                    {t('dashboard.moreEvents', { count: dayEvents.length - 2 })}
                                                 </span>
                                             )}
                                         </div>
@@ -406,7 +418,7 @@ export function CalendarSection() {
                                                 onClick={() => setIsEventPanelOpen(true)}
                                                 className="w-full py-1 text-[10px] text-gray-500 border border-white/10 border-dashed rounded bg-white/5 hover:bg-white/10 hover:text-gray-300 transition-all flex items-center justify-center gap-1"
                                             >
-                                                <span>+</span> Add event
+                                                <span>+</span> {t('dashboard.addEvent')}
                                             </button>
                                         </div>
                                     </div>
