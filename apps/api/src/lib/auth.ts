@@ -48,11 +48,12 @@ export const auth = betterAuth({
     // Advanced cookie configuration for cross-origin
     advanced: {
         crossSubDomainCookies: {
-            enabled: false, // Different domains (.onrender.com is shared but subdomains are different)
+            enabled: true, // Enable for subdomains (api.onrender.com vs web.onrender.com)
         },
         defaultCookieAttributes: {
             sameSite: 'none',
-            secure: true,
+            secure: true, // Requires HTTPS
+            domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined // Share cookies across subdomains on Render
         },
     },
 
