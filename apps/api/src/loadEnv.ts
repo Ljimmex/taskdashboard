@@ -10,3 +10,4 @@ console.log('🔐 OAuth config:', {
     github: process.env.GITHUB_CLIENT_ID ? 'CONFIGURED' : 'NOT SET',
     slack: process.env.SLACK_CLIENT_ID ? 'CONFIGURED' : 'NOT SET',
 })
+console.log('🔑 Better Auth Secret:', process.env.BETTER_AUTH_SECRET ? `SET (length: ${process.env.BETTER_AUTH_SECRET.length})` : 'NOT SET')

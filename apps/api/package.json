@@ -13,7 +13,8 @@
         "db:generate": "drizzle-kit generate",
         "db:migrate": "drizzle-kit migrate",
         "db:push": "drizzle-kit push",
-        "db:studio": "drizzle-kit studio"
+        "db:studio": "drizzle-kit studio",
+        "db:reset-2fa": "bun run scripts/reset-2fa.ts"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "^3.962.0",
