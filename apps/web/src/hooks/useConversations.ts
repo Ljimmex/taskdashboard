@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEncryption } from './useEncryption'
-import { encryptHybrid, decryptHybrid, type EncryptedMessagePacket } from '@/lib/crypto'
+import { encryptHybrid, decryptWithFallback, type EncryptedMessagePacket } from '@/lib/crypto'
 import type { Conversation, ConversationMessage } from '@taskdashboard/types'
 import { useEffect } from 'react'
 import { useSession } from '@/lib/auth'
@@ -132,8 +132,13 @@ export function useConversations(workspaceId: string) {
 }
 
 export function useConversationMessages(conversationId: string, workspaceId: string) {
-    const { keys, isLoading: isKeysLoading } = useEncryption(workspaceId)
+    const { keys, historyKeys, isLoading: isKeysLoading } = useEncryption(workspaceId)
     const queryClient = useQueryClient()
+
+    // Helper: Get all available private keys
+    const getAllPrivateKeys = () => {
+        return [keys?.privateKey, ...(historyKeys || []).map(k => k.privateKey)].filter(Boolean) as CryptoKey[]
+    }
 
     const messagesQuery = useQuery({
         queryKey: ['conversations', conversationId, 'messages'],
@@ -161,7 +166,7 @@ export function useConversationMessages(conversationId: string, workspaceId: str
                     }
 
                     try {
-                        const decryptedText = await decryptHybrid(parsed, keys.privateKey)
+                        const decryptedText = await decryptWithFallback(parsed, getAllPrivateKeys())
                         return { ...msg, content: decryptedText }
                     } catch (err) {
                         console.error(`Failed to decrypt message ${msg.id}`, err)
@@ -210,7 +215,7 @@ export function useConversationMessages(conversationId: string, workspaceId: str
                                 if (typeof parsed === 'string') return msg
 
                                 try {
-                                    const decryptedText = await decryptHybrid(parsed, keys.privateKey)
+                                    const decryptedText = await decryptWithFallback(parsed, getAllPrivateKeys())
                                     return { ...msg, content: decryptedText }
                                 } catch (err) {
                                     console.error(`Real-time decrypt failed for message ${msg.id}`, err)

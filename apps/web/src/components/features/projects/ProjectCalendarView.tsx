@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Task } from './types'
 
 type CalendarViewMode = 'month' | 'week'
@@ -12,13 +13,6 @@ interface ProjectCalendarViewProps {
     onTaskClick?: (taskId: string) => void
     onAddTask?: (date?: Date) => void
 }
-
-const MONTH_NAMES = [
-    'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-    'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
-]
-
-const DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz']
 
 function isSameDay(d1: Date, d2: Date) {
     return d1.getDate() === d2.getDate() &&
@@ -95,8 +89,19 @@ export function ProjectCalendarView({
     onTaskClick,
     onAddTask,
 }: ProjectCalendarViewProps) {
+    const { t, i18n } = useTranslation()
     const [viewMode, setViewMode] = useState<CalendarViewMode>('month')
     const today = new Date()
+
+    // Generate day names dynamically for current locale
+    const dayNames = useMemo(() => {
+        const base = new Date(2024, 0, 1) // Monday, Jan 1st 2024
+        return Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(base)
+            d.setDate(base.getDate() + i)
+            return d.toLocaleDateString(i18n.language, { weekday: 'short' })
+        })
+    }, [i18n.language])
 
     // Group tasks by date
     const tasksByDate = new Map<string, Task[]>()
@@ -140,7 +145,7 @@ export function ProjectCalendarView({
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold text-white">
-                        {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                        {currentMonth.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
                     </h2>
                     <button
                         onClick={() => { }}
@@ -158,14 +163,14 @@ export function ProjectCalendarView({
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'month' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
                                 }`}
                         >
-                            Miesiąc
+                            {t('projects.calendar.month')}
                         </button>
                         <button
                             onClick={() => setViewMode('week')}
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'week' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
                                 }`}
                         >
-                            Tydzień
+                            {t('projects.calendar.week')}
                         </button>
                     </div>
 
@@ -173,7 +178,7 @@ export function ProjectCalendarView({
                         onClick={goToToday}
                         className="px-3 py-1.5 text-xs font-medium text-gray-300 bg-[#1e1e29] rounded-lg hover:bg-gray-700 transition-colors"
                     >
-                        Dziś
+                        {t('projects.calendar.today')}
                     </button>
 
                     <div className="flex items-center gap-1">
@@ -191,7 +196,7 @@ export function ProjectCalendarView({
             <div className="flex-1 bg-[#16161f] rounded-xl border border-gray-800 overflow-hidden">
                 {/* Day Headers */}
                 <div className="grid grid-cols-7 border-b border-gray-800">
-                    {DAY_NAMES.map(day => (
+                    {dayNames.map(day => (
                         <div key={day} className="py-3 text-center text-xs font-medium text-gray-500 border-r border-gray-800 last:border-r-0">
                             {day}
                         </div>
@@ -233,7 +238,7 @@ export function ProjectCalendarView({
                                         ))}
                                         {dayTasks.length > 3 && (
                                             <div className="text-xs text-gray-500 px-2">
-                                                +{dayTasks.length - 3} więcej
+                                                {t('projects.calendar.more_tasks', { count: dayTasks.length - 3 })}
                                             </div>
                                         )}
                                     </div>
@@ -288,7 +293,7 @@ export function ProjectCalendarView({
                                             onClick={() => onAddTask?.(day)}
                                             className="w-full py-2 text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 rounded-lg transition-colors"
                                         >
-                                            + Dodaj zadanie
+                                            + {t('projects.calendar.add_task')}
                                         </button>
                                     </div>
                                 </div>

@@ -1,4 +1,5 @@
 import type { TypingUser } from '@/hooks/useTypingIndicator'
+import { useTranslation } from 'react-i18next'
 
 interface TypingIndicatorProps {
     typingUsers: TypingUser[]
@@ -7,14 +8,15 @@ interface TypingIndicatorProps {
 
 export function TypingIndicator({ typingUsers, className = '' }: TypingIndicatorProps) {
     if (typingUsers.length === 0) return null
+    const { t } = useTranslation()
 
     const renderText = () => {
         if (typingUsers.length === 1) {
-            return `${typingUsers[0].userName} is typing...`
+            return `${typingUsers[0].userName} ${t('messages.isTyping')}`
         } else if (typingUsers.length === 2) {
-            return `${typingUsers[0].userName} and ${typingUsers[1].userName} are typing...`
+            return `${typingUsers[0].userName} ${t('messages.and')} ${typingUsers[1].userName} ${t('messages.areTyping')}`
         } else {
-            return `${typingUsers[0].userName} and ${typingUsers.length - 1} others are typing...`
+            return `${typingUsers[0].userName} ${t('messages.and')} ${typingUsers.length - 1} ${t('messages.othersAreTyping')}`
         }
     }
 

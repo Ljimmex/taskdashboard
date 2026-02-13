@@ -1,4 +1,6 @@
 import { formatDistanceToNow } from 'date-fns'
+import { pl, enUS } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
 import { usePresence } from '@/hooks/usePresence'
 import { useUnreadCount } from '@/hooks/useUnreadCount'
 import type { Conversation, ConversationMessage } from '@taskdashboard/types'
@@ -21,10 +23,12 @@ export function ConversationItem({
     const { isOnline } = usePresence(workspaceId)
     const messages = (conversation.messages as ConversationMessage[]) || []
     const { unreadCount } = useUnreadCount(conversation.id, messages)
+    const { t, i18n } = useTranslation()
+    const locale = i18n.language === 'pl' ? pl : enUS
 
     // Get last message
     const lastMessage = messages[messages.length - 1]
-    const lastMessageText = lastMessage?.content?.substring(0, 50) || 'No messages yet'
+    const lastMessageText = lastMessage?.content?.substring(0, 50) || t('messages.noMessagesYet')
 
     // Get other participant (for direct conversations)
     const otherParticipantId = conversation.participants?.find((id: string) => id !== currentUserId)
@@ -52,11 +56,11 @@ export function ConversationItem({
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold text-gray-200 truncate">
-                        {conversation.name || 'Unnamed Conversation'}
+                        {conversation.name || t('messages.unnamedConversation')}
                     </h3>
                     {lastMessage && (
                         <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                            {formatDistanceToNow(new Date(lastMessage.timestamp), { addSuffix: true })}
+                            {formatDistanceToNow(new Date(lastMessage.timestamp), { addSuffix: true, locale })}
                         </span>
                     )}
                 </div>

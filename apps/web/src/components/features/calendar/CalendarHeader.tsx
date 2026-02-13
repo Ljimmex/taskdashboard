@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
-import { enUS } from 'date-fns/locale'
+import { enUS, pl } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Filter, SlidersHorizontal, Share2, Clipboard, Check, Calendar as CalendarIcon } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -99,6 +100,8 @@ export function CalendarHeader({
     setFilterMemberIds,
     events = []
 }: CalendarHeaderProps) {
+    const { i18n } = useTranslation()
+    const locale = i18n.language === 'pl' ? pl : enUS
 
     const toggleProject = (projectId: string) => {
         if (!setFilterProjectIds) return
@@ -213,7 +216,7 @@ export function CalendarHeader({
             {/* Lewa strona: Ikonka + Miesiąc/Rok */}
             <div className="flex items-center gap-3 mb-4 md:mb-0">
                 <h2 className="text-lg font-semibold text-white tracking-wide">
-                    {format(currentDate, 'MMMM yyyy', { locale: enUS })}
+                    {format(currentDate, 'LLLL yyyy', { locale }).replace(/^\w/, c => c.toUpperCase())}
                 </h2>
             </div>
 

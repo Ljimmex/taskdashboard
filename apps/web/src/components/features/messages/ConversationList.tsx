@@ -4,23 +4,27 @@ import { useQuery } from '@tanstack/react-query'
 import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
+import { useTranslation } from 'react-i18next'
 
 interface ConversationListProps {
     workspaceId: string
+    workspaceSlug: string
     selectedConversationId?: string
     onSelectConversation: (userId: string) => void
 }
 
 export function ConversationList({
     workspaceId,
+    workspaceSlug,
     selectedConversationId,
     onSelectConversation
 }: ConversationListProps) {
     const [searchQuery, setSearchQuery] = useState('')
     const [sortBy, setSortBy] = useState<'date' | 'name'>('date')
     const [showSortDropdown, setShowSortDropdown] = useState(false)
-    const { members, isLoading } = useTeamMembers(workspaceId)
+    const { members, isLoading } = useTeamMembers(workspaceSlug)
     const sortDropdownRef = useRef<HTMLDivElement>(null)
+    const { t } = useTranslation()
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -112,7 +116,7 @@ export function ConversationList({
                         </div>
                         <input
                             type="text"
-                            placeholder="Search team..."
+                            placeholder={t('messages.searchTeam')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 text-sm"
@@ -125,8 +129,8 @@ export function ConversationList({
                             onClick={() => setShowSortDropdown(!showSortDropdown)}
                             className="px-3 py-2.5 rounded-xl bg-[#1a1a24] text-gray-400 hover:border-amber-500/50 transition-colors text-sm flex items-center gap-1.5 whitespace-nowrap"
                         >
-                            <span className="text-gray-500">Sort by:</span>
-                            <span className="text-amber-500">{sortBy === 'date' ? 'Date' : 'Name'}</span>
+                            <span className="text-gray-500">{t('messages.sortBy')}</span>
+                            <span className="text-amber-500">{sortBy === 'date' ? t('messages.date') : t('messages.name')}</span>
                             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} />
                         </button>
                         {showSortDropdown && (
@@ -140,7 +144,7 @@ export function ConversationList({
                                         className={`w-full px-3 py-2 text-left text-sm transition-colors ${sortBy === 'date' ? 'bg-amber-500/20 text-amber-500' : 'text-gray-300 hover:bg-gray-800'
                                             }`}
                                     >
-                                        Date
+                                        {t('messages.date')}
                                     </button>
                                     <button
                                         onClick={() => {
@@ -150,7 +154,7 @@ export function ConversationList({
                                         className={`w-full px-3 py-2 text-left text-sm transition-colors ${sortBy === 'name' ? 'bg-amber-500/20 text-amber-500' : 'text-gray-300 hover:bg-gray-800'
                                             }`}
                                     >
-                                        Name
+                                        {t('messages.name')}
                                     </button>
                                 </div>
                             </div>
@@ -163,11 +167,11 @@ export function ConversationList({
             <div className="flex-1 overflow-y-auto">
                 {isLoading ? (
                     <div className="p-4 text-center text-gray-500">
-                        Loading team members...
+                        {t('messages.loadingMembers')}
                     </div>
                 ) : filteredMembers.length === 0 ? (
                     <div className="p-4 text-center text-gray-500">
-                        {searchQuery ? 'No members found' : 'No team members yet'}
+                        {searchQuery ? t('messages.noMembersFound') : t('messages.noTeamMembers')}
                     </div>
                 ) : (
                     filteredMembers.map((member) => {
@@ -233,7 +237,7 @@ export function ConversationList({
                                     <div className="flex justify-between items-center gap-2">
                                         <p className={`text-sm truncate ${unreadCount > 0 ? 'text-gray-200 font-medium' : 'text-gray-400'}`}>
                                             {(() => {
-                                                if (!lastMsg) return <span className="italic opacity-50">Start a conversation</span>
+                                                if (!lastMsg) return <span className="italic opacity-50">{t('messages.startConversationList')}</span>
 
                                                 if (lastMsg.senderId === session?.user?.id) {
                                                     // I sent the last message
@@ -244,14 +248,14 @@ export function ConversationList({
                                                     if (readAt && readAt >= msgTime) {
                                                         // Check if seen recently (< 1 min)
                                                         const diff = Date.now() - readAt.getTime()
-                                                        if (diff < 60000) return 'Seen now'
-                                                        return 'Seen'
+                                                        if (diff < 60000) return t('messages.seenNow')
+                                                        return t('messages.seen')
                                                     }
-                                                    return 'Sent message'
+                                                    return t('messages.sentMessage')
                                                 } else {
                                                     // They sent the last message
-                                                    if (unreadCount > 0) return 'New message'
-                                                    return 'Sent a message'
+                                                    if (unreadCount > 0) return t('messages.newMessage')
+                                                    return t('messages.sentAMessage')
                                                 }
                                             })()}
                                         </p>

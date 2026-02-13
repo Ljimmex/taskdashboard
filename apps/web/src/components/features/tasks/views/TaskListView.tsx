@@ -55,6 +55,7 @@ const Checkbox = ({ checked, onChange, indeterminate = false }: {
 
 // Status badge component - now supports dynamic column-based statuses
 const StatusBadge = ({ status, columns }: { status: string; columns?: { id: string; title: string; color?: string }[] }) => {
+    const { t } = useTranslation()
     // Try to find matching column first
     const column = columns?.find(c => c.id === status)
 
@@ -69,24 +70,25 @@ const StatusBadge = ({ status, columns }: { status: string; columns?: { id: stri
         )
     }
 
-    // Fallback to hardcoded statuses
-    const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
-        todo: { label: 'To-Do', bg: 'bg-indigo-500', text: 'text-white' },
-        in_progress: { label: 'In Progress', bg: 'bg-amber-500', text: 'text-black' },
-        review: { label: 'Review', bg: 'bg-purple-500', text: 'text-white' },
-        done: { label: 'Completed', bg: 'bg-emerald-500', text: 'text-white' },
-        cancelled: { label: 'Cancelled', bg: 'bg-red-500', text: 'text-white' },
+    // Fallback to translated statuses
+    const statusConfig: Record<string, { bg: string; text: string }> = {
+        todo: { bg: 'bg-indigo-500', text: 'text-white' },
+        in_progress: { bg: 'bg-amber-500', text: 'text-black' },
+        review: { bg: 'bg-purple-500', text: 'text-white' },
+        done: { bg: 'bg-emerald-500', text: 'text-white' },
+        cancelled: { bg: 'bg-red-500', text: 'text-white' },
     }
-    const config = statusConfig[status] || { label: status, bg: 'bg-gray-500', text: 'text-white' }
+    const config = statusConfig[status] || { bg: 'bg-gray-500', text: 'text-white' }
     return (
         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-            {config.label}
+            {t(`tasks.status.${status}`)}
         </span>
     )
 }
 
 // Priority badge component - Updated for dynamic priorities
 const PriorityBadge = ({ priority, priorities }: { priority: string; priorities?: { id: string; name: string; color: string }[] }) => {
+    const { t } = useTranslation()
     // 1. Try to find in dynamic priorities
     const dynamicPriority = priorities?.find(p => p.id === priority)
 
@@ -102,18 +104,18 @@ const PriorityBadge = ({ priority, priorities }: { priority: string; priorities?
         )
     }
 
-    // 2. Fallback to hardcoded
-    const priorityConfig: Record<string, { label: string; color: string }> = {
-        urgent: { label: 'Urgent', color: 'text-red-400' },
-        high: { label: 'High', color: 'text-orange-400' },
-        medium: { label: 'Medium', color: 'text-amber-400' },
-        low: { label: 'Low', color: 'text-green-400' },
+    // 2. Fallback to translated
+    const priorityConfig: Record<string, { color: string }> = {
+        urgent: { color: 'text-red-400' },
+        high: { color: 'text-orange-400' },
+        medium: { color: 'text-amber-400' },
+        low: { color: 'text-green-400' },
     }
     const config = priorityConfig[priority] || priorityConfig.medium
     return (
         <span className={`flex items-center gap-1.5 text-xs font-medium ${config.color}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-current" />
-            {config.label}
+            {t(`tasks.priority.${priority}`)}
         </span>
     )
 }

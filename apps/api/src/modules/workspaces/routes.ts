@@ -602,7 +602,7 @@ workspacesRoutes.get('/:id/keys', async (c) => {
                 })
             }
 
-            return { publicKey, privateKey, expiresAt }
+            return { publicKey, privateKey, expiresAt, history: [] as any[] }
         }
 
         // Fetch keys from DB
@@ -611,7 +611,7 @@ workspacesRoutes.get('/:id/keys', async (c) => {
             .where(eq(encryptionKeys.workspaceId, workspaceId))
             .limit(1)
 
-        let keyData: { publicKey: string; privateKey: string; expiresAt: Date | null }
+        let keyData: { publicKey: string; privateKey: string; expiresAt: Date | null; history: any[] }
 
         if (keys.length === 0) {
             console.log(`Keys missing for workspace ${workspaceId}, generating new ones...`)
@@ -620,15 +620,35 @@ workspacesRoutes.get('/:id/keys', async (c) => {
             const keyRecord = keys[0]
             try {
                 const decrypted = decryptPrivateKey(keyRecord.encryptedPrivateKey)
+
+                // Decrypt history too
+                const decryptedHistory = (keyRecord.history || []).map(h => {
+                    try {
+                        return {
+                            publicKey: h.publicKey,
+                            privateKey: decryptPrivateKey(h.encryptedPrivateKey),
+                            rotatedAt: h.rotatedAt
+                        }
+                    } catch (e) {
+                        console.error('Failed to decrypt historical key', e)
+                        return null
+                    }
+                }).filter(Boolean)
+
                 keyData = {
                     publicKey: keyRecord.publicKey,
                     privateKey: decrypted,
-                    expiresAt: keyRecord.expiresAt
+                    expiresAt: keyRecord.expiresAt,
+                    history: decryptedHistory
                 }
             } catch (decError) {
-                console.error('Keys corrupted for workspace', workspaceId, 'regenerating...')
-                // Self-healing: regenerate keys if decryption fails
-                keyData = await generateAndSaveKeys(keyRecord.id)
+                console.error('Keys corrupted for workspace', workspaceId)
+                // STOP: No more self-healing regeneration. This causes permanent data loss if secret changed.
+                return c.json({
+                    error: 'Decryption failed for workspace keys',
+                    message: 'Workspace keys are corrupted or server secret is misconfigured. Cannot proceed to avoid data loss.',
+                    code: 'DECRYPTION_FAILED'
+                }, 500)
             }
         }
 
@@ -637,7 +657,8 @@ workspacesRoutes.get('/:id/keys', async (c) => {
                 workspaceId: workspaceId,
                 publicKey: keyData.publicKey,
                 privateKey: keyData.privateKey,
-                expiresAt: keyData.expiresAt
+                expiresAt: keyData.expiresAt,
+                history: (keyData as any).history || []
             }
         })
     } catch (error) {
@@ -703,11 +724,21 @@ workspacesRoutes.post('/:id/rotate-keys', async (c) => {
         const newExpiresAt = new Date()
         newExpiresAt.setDate(newExpiresAt.getDate() + 90)
 
-        // Update encryption_keys table
+        // Update encryption_keys table: Push current to history and set new
+        const updatedHistory = [
+            ...(oldKeyRecord.history || []),
+            {
+                publicKey: oldKeyRecord.publicKey,
+                encryptedPrivateKey: oldKeyRecord.encryptedPrivateKey,
+                rotatedAt: new Date().toISOString()
+            }
+        ]
+
         await db.update(encryptionKeys)
             .set({
                 publicKey: newPublicKey,
                 encryptedPrivateKey: encryptedNewPrivateKey,
+                history: updatedHistory,
                 rotatedAt: new Date(),
                 expiresAt: newExpiresAt
             })

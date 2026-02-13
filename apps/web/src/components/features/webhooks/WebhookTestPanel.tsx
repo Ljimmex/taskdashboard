@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { X, Play, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { useTranslation, Trans } from 'react-i18next'
 
 interface WebhookTestPanelProps {
     webhookId: string
@@ -11,6 +12,7 @@ interface WebhookTestPanelProps {
 
 export function WebhookTestPanel({ webhookId, onClose }: WebhookTestPanelProps) {
     const { data: session } = useSession()
+    const { t } = useTranslation()
     const userId = session?.user?.id
     const [response, setResponse] = useState<any>(null)
 
@@ -50,8 +52,8 @@ export function WebhookTestPanel({ webhookId, onClose }: WebhookTestPanelProps) 
                             <Play className="w-5 h-5 text-amber-500" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-white">Przetestuj Webhook</h2>
-                            <p className="text-sm text-gray-400">Wyślij przykładowe zdarzenie</p>
+                            <h2 className="text-lg font-bold text-white">{t('settings.organization.integrations.test_panel.title')}</h2>
+                            <p className="text-sm text-gray-400">{t('settings.organization.integrations.test_panel.subtitle')}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white">
@@ -60,13 +62,15 @@ export function WebhookTestPanel({ webhookId, onClose }: WebhookTestPanelProps) 
                 </div>
 
                 <div className="p-6">
-                    <p className="text-sm text-gray-400 mb-6">
-                        To narzędzie wyśle testowe zdarzenie <code>webhook.test</code> na skonfigurowany adres URL.
-                        Pozwoli to zweryfikować czy Twój serwer poprawnie odbiera i przetwarza żądania.
-                    </p>
+                    <div className="text-sm text-gray-400 mb-6">
+                        <Trans
+                            i18nKey="settings.organization.integrations.test_panel.description"
+                            components={[<code className="bg-gray-800 px-1 py-0.5 rounded text-amber-400" key="0" />]}
+                        />
+                    </div>
 
                     <div className="bg-[#0f0f14] rounded-lg border border-gray-800 p-4 mb-6">
-                        <div className="text-xs text-gray-500 mb-2 font-mono">PAYLOAD PREVIEW</div>
+                        <div className="text-xs text-gray-500 mb-2 font-mono">{t('settings.organization.integrations.test_panel.payload_preview')}</div>
                         <pre className="text-xs text-gray-300 font-mono overflow-auto max-h-40 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
                             {JSON.stringify({
                                 event: "webhook.test",
@@ -90,10 +94,10 @@ export function WebhookTestPanel({ webhookId, onClose }: WebhookTestPanelProps) 
                                 )}
                                 <div>
                                     <h4 className={`text-sm font-medium ${response.success ? 'text-green-500' : 'text-red-500'}`}>
-                                        {response.success ? 'Wysłano pomyślnie' : 'Błąd wysyłania'}
+                                        {response.success ? t('settings.organization.integrations.test_panel.success_title') : t('settings.organization.integrations.test_panel.error_title')}
                                     </h4>
                                     <p className={`text-xs mt-1 ${response.success ? 'text-green-400/80' : 'text-red-400/80'}`}>
-                                        {response.success ? JSON.stringify(response.data) : response.error}
+                                        {response.success ? (response.data.message || JSON.stringify(response.data)) : response.error}
                                     </p>
                                 </div>
                             </div>
@@ -105,7 +109,7 @@ export function WebhookTestPanel({ webhookId, onClose }: WebhookTestPanelProps) 
                             onClick={onClose}
                             className="px-4 py-2 text-gray-400 hover:text-white font-medium transition-colors"
                         >
-                            Zamknij
+                            {t('settings.organization.integrations.test_panel.close')}
                         </button>
                         <button
                             onClick={() => testMutation.mutate()}
@@ -115,12 +119,12 @@ export function WebhookTestPanel({ webhookId, onClose }: WebhookTestPanelProps) 
                             {testMutation.isPending ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Wysyłanie...
+                                    {t('settings.organization.integrations.test_panel.sending')}
                                 </>
                             ) : (
                                 <>
                                     <Play className="w-4 h-4" />
-                                    Wyślij test
+                                    {t('settings.organization.integrations.test_panel.send_test')}
                                 </>
                             )}
                         </button>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { apiFetch } from '@/lib/api'
+import { useTranslation } from 'react-i18next'
 
 interface CreateChannelModalProps {
     isOpen: boolean
@@ -20,6 +21,7 @@ export function CreateChannelModal({
     const [type, setType] = useState<'direct' | 'group' | 'channel'>('group')
     const [isPrivate, setIsPrivate] = useState(false)
     const [isCreating, setIsCreating] = useState(false)
+    const { t } = useTranslation()
 
     if (!isOpen) return null
 
@@ -49,7 +51,7 @@ export function CreateChannelModal({
             onClose()
         } catch (error) {
             console.error('Failed to create conversation:', error)
-            alert('Failed to create conversation')
+            alert(t('messages.failedToCreate'))
         } finally {
             setIsCreating(false)
         }
@@ -60,7 +62,7 @@ export function CreateChannelModal({
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-900">Create Conversation</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">{t('messages.createConversation')}</h2>
                     <button
                         onClick={onClose}
                         className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -74,7 +76,7 @@ export function CreateChannelModal({
                     {/* Name */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Name *
+                            {t('messages.name')} *
                         </label>
                         <input
                             type="text"
@@ -89,30 +91,30 @@ export function CreateChannelModal({
                     {/* Description */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Description
+                            {t('messages.description')}
                         </label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={3}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                            placeholder="What is this conversation about?"
+                            placeholder={t('messages.descriptionPlaceholder')}
                         />
                     </div>
 
                     {/* Type */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Type
+                            {t('messages.type')}
                         </label>
                         <select
                             value={type}
                             onChange={(e) => setType(e.target.value as any)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            <option value="direct">Direct Message</option>
-                            <option value="group">Group Chat</option>
-                            <option value="channel">Channel</option>
+                            <option value="direct">{t('messages.directMessage')}</option>
+                            <option value="group">{t('messages.groupChat')}</option>
+                            <option value="channel">{t('messages.channel')}</option>
                         </select>
                     </div>
 
@@ -126,7 +128,7 @@ export function CreateChannelModal({
                             className="w-4 h-4 text-blue-500 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                         />
                         <label htmlFor="isPrivate" className="text-sm text-gray-700">
-                            Private (invite only)
+                            {t('messages.private')}
                         </label>
                     </div>
 
@@ -137,14 +139,14 @@ export function CreateChannelModal({
                             onClick={onClose}
                             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                         >
-                            Cancel
+                            {t('messages.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={isCreating || !name.trim()}
                             className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                         >
-                            {isCreating ? 'Creating...' : 'Create'}
+                            {isCreating ? t('messages.creating') : t('messages.create')}
                         </button>
                     </div>
                 </form>

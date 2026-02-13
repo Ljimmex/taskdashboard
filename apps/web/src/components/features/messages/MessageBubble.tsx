@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { decryptHybrid } from '@/lib/crypto'
+import { decryptWithFallback } from '@/lib/crypto'
 import type { ConversationMessage } from '@taskdashboard/types'
 import { Edit2, Smile, MoreVertical, Check, CheckCheck } from 'lucide-react'
 import { EmojiPicker } from './EmojiPicker'
+import { useTranslation } from 'react-i18next'
+import { pl, enUS } from 'date-fns/locale'
 
 interface MessageBubbleProps {
     message: ConversationMessage
     currentUserId: string
     privateKey?: CryptoKey
+    historyKeys?: CryptoKey[]
     senderAvatar?: string
     senderName?: string
     onReact?: (emoji: string) => void
@@ -28,6 +31,7 @@ export function MessageBubble({
     message,
     currentUserId,
     privateKey,
+    historyKeys,
     senderAvatar,
     senderName,
     onReact,
@@ -47,11 +51,13 @@ export function MessageBubble({
     const [decryptedContent, setDecryptedContent] = useState(message.content)
     const [decryptedReplyContent, setDecryptedReplyContent] = useState<string | null>(null)
     const [systemInfo, setSystemInfo] = useState<{ action: string, actorId: string } | null>(null)
+    const { t, i18n } = useTranslation()
+    const locale = i18n.language === 'pl' ? pl : enUS
 
     // Decrypt main message
     useEffect(() => {
         if (isDeleted) {
-            setDecryptedContent('Usunięto wiadomość')
+            setDecryptedContent(t('messages.messageDeleted'))
             return
         }
 
@@ -68,14 +74,21 @@ export function MessageBubble({
         }
 
         const decrypt = async () => {
-            if (!privateKey) return
+            const allKeys = [privateKey, ...(historyKeys || [])].filter(Boolean) as CryptoKey[]
+            if (allKeys.length === 0) return
 
             try {
                 // Try to parse as encrypted packet
                 const packet = JSON.parse(message.content)
                 if (packet.v === '1' && packet.data && packet.key && packet.iv) {
-                    const plainText = await decryptHybrid(packet, privateKey)
-                    setDecryptedContent(plainText)
+                    decryptWithFallback(packet, allKeys)
+                        .then(plainText => setDecryptedContent(plainText))
+                        .catch(err => {
+                            console.warn('Decryption failed for message (unrecoverable):', message.id, err)
+                            setDecryptedContent(t('messages.decryptionError') || 'Unable to decrypt message')
+                        })
+                } else {
+                    setDecryptedContent(message.content)
                 }
             } catch (e) {
                 // Not a valid JSON or encrypted packet - treat as plain text
@@ -83,11 +96,12 @@ export function MessageBubble({
             }
         }
         decrypt()
-    }, [message.content, privateKey, isDeleted, isSystem])
+    }, [message.content, privateKey, historyKeys, isDeleted, isSystem])
 
     // Decrypt reply content
     useEffect(() => {
-        if (!replyToMessage || !privateKey) {
+        const allKeys = [privateKey, ...(historyKeys || [])].filter(Boolean) as CryptoKey[]
+        if (!replyToMessage || allKeys.length === 0) {
             setDecryptedReplyContent(replyToMessage?.content || null)
             return
         }
@@ -96,7 +110,7 @@ export function MessageBubble({
             try {
                 const packet = JSON.parse(replyToMessage.content)
                 if (packet.v === '1') {
-                    const plainText = await decryptHybrid(packet, privateKey)
+                    const plainText = await decryptWithFallback(packet, allKeys)
                     setDecryptedReplyContent(plainText)
                 } else {
                     setDecryptedReplyContent(replyToMessage.content)
@@ -106,7 +120,7 @@ export function MessageBubble({
             }
         }
         decryptReply()
-    }, [replyToMessage, privateKey])
+    }, [replyToMessage, privateKey, historyKeys])
 
 
     // State for actions
@@ -167,11 +181,11 @@ export function MessageBubble({
 
     if (isSystem && systemInfo) {
         const isMe = systemInfo.actorId === currentUserId
-        const actionText = systemInfo.action === 'pin' ? 'pinned a message.' : 'unpinned a message.'
+        const actionText = systemInfo.action === 'pin' ? t('messages.pinnedAction') : t('messages.unpinnedAction')
         return (
             <div className="flex items-center justify-center gap-1 my-3 text-xs text-gray-400 select-none">
-                <span>{isMe ? 'You' : (recipientName || 'User')} {actionText}</span>
-                <button className="text-blue-500 hover:underline font-medium">View all</button>
+                <span>{isMe ? t('messages.you') : (recipientName || t('messages.unknownUser'))} {actionText}</span>
+                <button className="text-blue-500 hover:underline font-medium">{t('messages.viewAll')}</button>
             </div>
         )
     }
@@ -210,8 +224,8 @@ export function MessageBubble({
                             ${isOwnMessage ? 'bg-[#2b2f3e]/50 text-gray-400 self-end mr-1' : 'bg-[#2b2f3e]/50 text-gray-400 self-start ml-1'}
                          `}>
                             <div className="w-0.5 h-3 bg-amber-500 rounded-full"></div>
-                            <span className="font-medium opacity-75">Replying to:</span>
-                            <span className="truncate max-w-[150px] opacity-90">{decryptedReplyContent || 'original message'}</span>
+                            <span className="font-medium opacity-75">{t('messages.replyingToLabel')}</span>
+                            <span className="truncate max-w-[150px] opacity-90">{decryptedReplyContent || t('messages.originalMessage')}</span>
                         </div>
                     )}
 
@@ -379,9 +393,9 @@ export function MessageBubble({
 
             {/* Timestamp + Edited Label + Status */}
             <div className={`flex items-center gap-2 text-[11px] text-gray-500 mt-1.5 font-medium select-none ${isOwnMessage ? 'mr-12' : 'ml-12'}`}>
-                {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true, locale })}
                 {message.edited && !isDeleted && (
-                    <span className="italic opacity-60">(edited)</span>
+                    <span className="italic opacity-60">{t('messages.edited')}</span>
                 )}
                 {isOwnMessage && !isDeleted && (
                     <span className={`ml-1 transition-colors ${status === 'read' ? 'text-amber-500' : 'text-gray-500'}`}>

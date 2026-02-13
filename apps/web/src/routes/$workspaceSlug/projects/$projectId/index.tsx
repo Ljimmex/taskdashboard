@@ -183,7 +183,7 @@ function ProjectDetailPage() {
     const allMembers = teamsData?.flatMap((team: any) =>
       team.members?.map((m: any) => ({
         id: m.userId || m.user?.id,
-        name: m.user?.name || 'Unknown',
+        name: m.user?.name || t('common.unknown'),
         avatar: m.user?.image
       })) || []
     ) || []
@@ -546,7 +546,7 @@ function ProjectDetailPage() {
         method: 'POST',
         headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({
-          title: `${task.title} (kopia)`,
+          title: `${task.title} (${t('common.copy')})`,
           description: task.description,
           status: task.status,
           priority: task.priority,

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, pgPolicy } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, pgPolicy, jsonb } from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
 import { workspaces } from './workspaces'
 
@@ -19,6 +19,13 @@ export const encryptionKeys = pgTable('encryption_keys', {
 
     // Private key encrypted with workspace master key
     encryptedPrivateKey: text('encrypted_private_key').notNull(),
+
+    // Historical keys for message recovery (JSONB array of {publicKey, encryptedPrivateKey, rotatedAt})
+    history: jsonb('history').default([]).$type<Array<{
+        publicKey: string
+        encryptedPrivateKey: string
+        rotatedAt: string
+    }>>(),
 
     // Metadata
     createdAt: timestamp('created_at').defaultNow().notNull(),

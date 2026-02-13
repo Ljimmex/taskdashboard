@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
@@ -29,6 +30,7 @@ const PRESET_COLORS = [
 
 // Workspace is passed but not currently used - kept for consistency with other tabs
 export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabProps) {
+    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
     const queryClient = useQueryClient()
 
@@ -108,7 +110,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
     }
 
     const handleDelete = (id: string, name: string) => {
-        if (confirm(`Czy na pewno chcesz usunąć etykietę "${name}"?\n\nUwaga: Usunięcie etykiety nie usunie jej z istniejących zadań.`)) {
+        if (confirm(t('settings.organization.labels.delete_confirm', { name }))) {
             deleteMutation.mutate(id)
         }
     }
@@ -126,15 +128,15 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
     }
 
     if (isLoading) {
-        return <div className="text-gray-400">Ładowanie etykiet...</div>
+        return <div className="text-gray-400">{t('settings.organization.labels.loading')}</div>
     }
 
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Etykiety</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">{t('settings.organization.labels.title')}</h3>
                 <p className="text-sm text-gray-400">
-                    Zarządzaj etykietami dla całej przestrzeni roboczej. Zmiany będą widoczne globalnie.
+                    {t('settings.organization.labels.subtitle')}
                 </p>
             </div>
 
@@ -142,7 +144,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
             <div className="space-y-2">
                 {labels.length === 0 && !isCreating && (
                     <div className="text-center py-8 text-gray-500">
-                        Brak etykiet. Utwórz pierwszą etykietę poniżej.
+                        {t('settings.organization.labels.no_labels')}
                     </div>
                 )}
 
@@ -163,7 +165,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
                                     className="flex-1 bg-[#14141b] border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#F2CE88]"
-                                    placeholder="Nazwa etykiety"
+                                    placeholder={t('settings.organization.labels.name_placeholder')}
                                     autoFocus
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') handleUpdate(label.id)
@@ -175,7 +177,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                         onClick={() => handleUpdate(label.id)}
                                         disabled={updateMutation.isPending || !editName.trim()}
                                         className="p-2 text-green-500 hover:bg-green-500/10 rounded transition-colors disabled:opacity-50"
-                                        title="Zapisz"
+                                        title={t('common.save')}
                                     >
                                         <Check className="w-4 h-4" />
                                     </button>
@@ -183,7 +185,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                         onClick={cancelEditing}
                                         disabled={updateMutation.isPending}
                                         className="p-2 text-gray-400 hover:bg-gray-700/50 rounded transition-colors"
-                                        title="Anuluj"
+                                        title={t('common.cancel')}
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
@@ -201,7 +203,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                     <button
                                         onClick={() => startEditing(label)}
                                         className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded transition-colors"
-                                        title="Edytuj"
+                                        title={t('common.edit')}
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
@@ -209,7 +211,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                         onClick={() => handleDelete(label.id, label.name)}
                                         disabled={deleteMutation.isPending}
                                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50"
-                                        title="Usuń"
+                                        title={t('common.delete')}
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
@@ -231,7 +233,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
                             className="flex-1 bg-[#14141b] border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#F2CE88]"
-                            placeholder="Nazwa nowej etykiety"
+                            placeholder={t('settings.organization.labels.new_name_placeholder')}
                             autoFocus
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleCreate()
@@ -246,7 +248,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                 onClick={handleCreate}
                                 disabled={createMutation.isPending || !newName.trim()}
                                 className="p-2 text-green-500 hover:bg-green-500/10 rounded transition-colors disabled:opacity-50"
-                                title="Utwórz"
+                                title={t('settings.organization.labels.create_tooltip')}
                             >
                                 <Check className="w-4 h-4" />
                             </button>
@@ -270,7 +272,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                         className="w-full flex items-center justify-center gap-2 p-3 bg-[#1a1a24] rounded-lg border border-dashed border-gray-700 hover:border-[#F2CE88] text-gray-400 hover:text-white transition-colors"
                     >
                         <Plus className="w-4 h-4" />
-                        <span className="text-sm font-medium">Dodaj nową etykietę</span>
+                        <span className="text-sm font-medium">{t('settings.organization.labels.add_button')}</span>
                     </button>
                 )}
             </div>
@@ -278,7 +280,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
             {/* Info box */}
             <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                 <p className="text-sm text-blue-300">
-                    <strong>Wskazówka:</strong> Zmiany kolorów i nazw etykiet będą natychmiast widoczne we wszystkich zadaniach i projektach używających tych etykiet.
+                    <strong>{t('settings.organization.labels.tip_header')}:</strong> {t('settings.organization.labels.tip_content')}
                 </p>
             </div>
         </div>
@@ -287,6 +289,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
 
 // Color Picker Component
 function ColorPicker({ color, onChange }: { color: string, onChange: (color: string) => void }) {
+    const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
 
     return (
@@ -296,7 +299,7 @@ function ColorPicker({ color, onChange }: { color: string, onChange: (color: str
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-8 h-8 rounded-lg border-2 border-gray-700 hover:border-[#F2CE88] transition-all shadow-md flex-shrink-0"
                 style={{ backgroundColor: color }}
-                title="Wybierz kolor"
+                title={t('settings.organization.labels.color_picker_tooltip')}
             />
 
             {isOpen && (

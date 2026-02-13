@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { useSession } from '@/lib/auth'
@@ -12,58 +13,8 @@ interface WebhookModalProps {
     webhook?: any // If provided, edit mode
 }
 
-const EVENT_GROUPS = [
-    {
-        title: 'ZADANIA',
-        items: [
-            { id: 'task.created', label: 'Zadanie utworzone' },
-            { id: 'task.updated', label: 'Zadanie zaktualizowane (tytuł, opis)' },
-            { id: 'task.status_changed', label: 'Zmieniono status zadania' },
-            { id: 'task.priority_changed', label: 'Zmieniono priorytet zadania' },
-            { id: 'task.assigned', label: 'Przypisano użytkownika' },
-            { id: 'task.due_date_changed', label: 'Zmieniono termin wykonania' },
-            { id: 'task.deleted', label: 'Zadanie usunięte' },
-        ]
-    },
-    {
-        title: 'PODZADANIA',
-        items: [
-            { id: 'subtask.created', label: 'Podzadanie utworzone' },
-            { id: 'subtask.updated', label: 'Podzadanie zaktualizowane' },
-            { id: 'subtask.completed', label: 'Podzadanie ukończone' },
-        ]
-    },
-    {
-        title: 'KOMENTARZE',
-        items: [
-            { id: 'comment.added', label: 'Dodano komentarz' },
-        ]
-    },
-    {
-        title: 'PLIKI',
-        items: [
-            { id: 'file.uploaded', label: 'Przesłano plik' },
-            { id: 'file.deleted', label: 'Usunięto plik' },
-        ]
-    },
-    {
-        title: 'KALENDARZ',
-        items: [
-            { id: 'calendar.created', label: 'Dodano wydarzenie' },
-            { id: 'calendar.updated', label: 'Zaktualizowano wydarzenie' },
-            { id: 'calendar.deleted', label: 'Usunięto wydarzenie' },
-        ]
-    },
-    {
-        title: 'UŻYTKOWNICY',
-        items: [
-            { id: 'member.added', label: 'Dołączył nowy członek' },
-            { id: 'member.removed', label: 'Usunięto członka' },
-        ]
-    }
-]
-
 export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
+    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const queryClient = useQueryClient()
     const { data: session } = useSession()
@@ -75,6 +26,57 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
     const [silentMode, setSilentMode] = useState(false)
     const [type, setType] = useState<'generic' | 'discord' | 'slack'>('generic')
     const [error, setError] = useState('')
+
+    const EVENT_GROUPS = useMemo(() => [
+        {
+            title: t('settings.organization.integrations.webhook_modal.groups.tasks'),
+            items: [
+                { id: 'task.created', label: t('settings.organization.integrations.webhook_modal.events.task_created') },
+                { id: 'task.updated', label: t('settings.organization.integrations.webhook_modal.events.task_updated') },
+                { id: 'task.status_changed', label: t('settings.organization.integrations.webhook_modal.events.task_status_changed') },
+                { id: 'task.priority_changed', label: t('settings.organization.integrations.webhook_modal.events.task_priority_changed') },
+                { id: 'task.assigned', label: t('settings.organization.integrations.webhook_modal.events.task_assigned') },
+                { id: 'task.due_date_changed', label: t('settings.organization.integrations.webhook_modal.events.task_due_date_changed') },
+                { id: 'task.deleted', label: t('settings.organization.integrations.webhook_modal.events.task_deleted') },
+            ]
+        },
+        {
+            title: t('settings.organization.integrations.webhook_modal.groups.subtasks'),
+            items: [
+                { id: 'subtask.created', label: t('settings.organization.integrations.webhook_modal.events.subtask_created') },
+                { id: 'subtask.updated', label: t('settings.organization.integrations.webhook_modal.events.subtask_updated') },
+                { id: 'subtask.completed', label: t('settings.organization.integrations.webhook_modal.events.subtask_completed') },
+            ]
+        },
+        {
+            title: t('settings.organization.integrations.webhook_modal.groups.comments'),
+            items: [
+                { id: 'comment.added', label: t('settings.organization.integrations.webhook_modal.events.comment_added') },
+            ]
+        },
+        {
+            title: t('settings.organization.integrations.webhook_modal.groups.files'),
+            items: [
+                { id: 'file.uploaded', label: t('settings.organization.integrations.webhook_modal.events.file_uploaded') },
+                { id: 'file.deleted', label: t('settings.organization.integrations.webhook_modal.events.file_deleted') },
+            ]
+        },
+        {
+            title: t('settings.organization.integrations.webhook_modal.groups.calendar'),
+            items: [
+                { id: 'calendar.created', label: t('settings.organization.integrations.webhook_modal.events.calendar_created') },
+                { id: 'calendar.updated', label: t('settings.organization.integrations.webhook_modal.events.calendar_updated') },
+                { id: 'calendar.deleted', label: t('settings.organization.integrations.webhook_modal.events.calendar_deleted') },
+            ]
+        },
+        {
+            title: t('settings.organization.integrations.webhook_modal.groups.members'),
+            items: [
+                { id: 'member.added', label: t('settings.organization.integrations.webhook_modal.events.member_added') },
+                { id: 'member.removed', label: t('settings.organization.integrations.webhook_modal.events.member_removed') },
+            ]
+        }
+    ], [t])
 
     // Initialize state when webhook prop changes
     useEffect(() => {
@@ -138,17 +140,17 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
             onClose()
         },
         onError: (err: any) => {
-            setError(err.message || 'Wystąpił błąd podczas zapisywania webhooka')
+            setError(err.message || t('settings.organization.integrations.webhook_modal.error_saving'))
         }
     })
 
     const handleSubmit = () => {
         if (!url) {
-            setError('URL jest wymagany')
+            setError(t('settings.organization.integrations.webhook_modal.error_url_required'))
             return
         }
         if (selectedEvents.length === 0) {
-            setError('Wybierz przynajmniej jedno zdarzenie')
+            setError(t('settings.organization.integrations.webhook_modal.error_no_events'))
             return
         }
 
@@ -192,7 +194,7 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                 {/* Header */}
                 <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-[#14141b] rounded-t-2xl">
                     <h2 className="text-xl font-bold text-white">
-                        {webhook ? 'Edytuj Webhook' : 'Dodaj Webhook'}
+                        {webhook ? t('settings.organization.integrations.webhook_modal.edit_webhook') : t('settings.organization.integrations.webhook_modal.add_webhook')}
                     </h2>
                     <button
                         onClick={onClose}
@@ -212,7 +214,7 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
 
                     {/* Platform Selector */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Platforma</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.integrations.webhook_modal.platform')}</label>
                         <div className="flex bg-[#1a1a24] p-1 rounded-full w-full border border-gray-800/50">
                             <button
                                 onClick={() => setType('discord')}
@@ -256,14 +258,14 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                 <div className="scale-75 origin-center">
                                     <GenericIcon />
                                 </div>
-                                Inny
+                                {t('settings.organization.integrations.webhook_modal.other')}
                             </button>
                         </div>
                     </div>
 
                     {/* URL Input */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Webhook URL</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.integrations.webhook_modal.url_label')}</label>
                         <input
                             type="text"
                             value={url}
@@ -280,16 +282,16 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                     {/* Description */}
                     <div>
                         <label className="block text-sm font-medium text-gray-400 mb-2">
-                            Opis <span className="text-gray-600 font-normal">(opcjonalne)</span>
+                            {t('settings.organization.integrations.webhook_modal.description_label')} <span className="text-gray-600 font-normal">({t('settings.organization.integrations.webhook_modal.optional')})</span>
                         </label>
                         <input
                             type="text"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={
-                                type === 'discord' ? "np. Powiadomienia Discord #general" :
-                                    type === 'slack' ? "np. Slack #alerts" :
-                                        "np. Integracja z CRM"
+                                type === 'discord' ? t('settings.organization.integrations.webhook_modal.description_placeholder_discord') :
+                                    type === 'slack' ? t('settings.organization.integrations.webhook_modal.description_placeholder_slack') :
+                                        t('settings.organization.integrations.webhook_modal.description_placeholder_generic')
                             }
                             className="w-full bg-[#1a1a24] border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-amber-500/50 focus:bg-[#1f1f2e] focus:outline-none transition-all"
                         />
@@ -313,15 +315,15 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                 </div>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white group-hover:text-amber-500 transition-colors">Tryb cichy (@silent)</span>
-                                <span className="text-xs text-gray-500">Wiadomości nie będą wysyłać powiadomień push</span>
+                                <span className="text-sm font-medium text-white group-hover:text-amber-500 transition-colors">{t('settings.organization.integrations.webhook_modal.silent_mode_title')}</span>
+                                <span className="text-xs text-gray-500">{t('settings.organization.integrations.webhook_modal.silent_mode_description')}</span>
                             </div>
                         </label>
                     )}
 
                     {/* Events Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-3">Zdarzenia</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-3">{t('settings.organization.integrations.webhook_modal.events_label')}</label>
                         <div className="bg-[#1a1a24] rounded-xl border border-gray-800 p-2 max-h-[280px] overflow-y-auto custom-scrollbar">
                             {EVENT_GROUPS.map(group => (
                                 <div key={group.title} className="mb-2 last:mb-0">
@@ -378,14 +380,14 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                         onClick={onClose}
                         className="px-5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 font-medium transition-colors text-sm"
                     >
-                        Anuluj
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={mutation.isPending}
                         className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 active:translate-y-[1px] text-black font-bold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(245,158,11,0.2)] hover:shadow-[0_6px_16px_rgba(245,158,11,0.3)] text-sm"
                     >
-                        {mutation.isPending ? 'Zapisywanie...' : 'Zapisz'}
+                        {mutation.isPending ? t('common.saving') : t('common.save')}
                     </button>
                 </div>
             </div>

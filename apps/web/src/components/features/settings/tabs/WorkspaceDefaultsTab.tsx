@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
@@ -36,6 +37,7 @@ const PRESET_COLORS = [
 ]
 
 export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
+    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const queryClient = useQueryClient()
 
@@ -50,10 +52,10 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
 
     // Get priorities from workspace prop and handle default industry template changes
     const priorities: Priority[] = workspace?.priorities || [
-        { id: 'low', name: 'Low', color: '#6b7280', position: 0 },
-        { id: 'medium', name: 'Medium', color: '#3b82f6', position: 1 },
-        { id: 'high', name: 'High', color: '#f59e0b', position: 2 },
-        { id: 'urgent', name: 'Urgent', color: '#ef4444', position: 3 },
+        { id: 'low', name: t('settings.organization.defaults.priority_names.low'), color: '#6b7280', position: 0 },
+        { id: 'medium', name: t('settings.organization.defaults.priority_names.medium'), color: '#3b82f6', position: 1 },
+        { id: 'high', name: t('settings.organization.defaults.priority_names.high'), color: '#f59e0b', position: 2 },
+        { id: 'urgent', name: t('settings.organization.defaults.priority_names.urgent'), color: '#ef4444', position: 3 },
     ]
 
     // Fetch industry templates
@@ -82,8 +84,6 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
             setNewIcon('')
         }
     })
-
-
 
     // Delete priority mutation
     const deletePriorityMutation = useMutation({
@@ -155,7 +155,7 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
     }
 
     const handleDeletePriority = (id: string) => {
-        if (confirm('Are you sure you want to delete this priority?')) {
+        if (confirm(t('settings.organization.defaults.delete_priority_confirm'))) {
             deletePriorityMutation.mutate(id)
         }
     }
@@ -164,13 +164,13 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
         <div className="space-y-8">
             {/* Priorities Section */}
             <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Task Priorities</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">{t('settings.organization.defaults.priorities_title')}</h3>
                 <p className="text-sm text-gray-400 mb-4">
-                    Customize priority levels for your workspace tasks
+                    {t('settings.organization.defaults.priorities_subtitle')}
                 </p>
 
                 {!workspace ? (
-                    <div className="text-center py-8 text-gray-500">Loading priorities...</div>
+                    <div className="text-center py-8 text-gray-500">{t('settings.organization.defaults.loading_priorities')}</div>
                 ) : (
                     <div className="space-y-2">
                         {priorities.map((priority) => (
@@ -245,7 +245,7 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
                                     type="text"
                                     value={newName}
                                     onChange={(e) => setNewName(e.target.value)}
-                                    placeholder="Priority name..."
+                                    placeholder={t('settings.organization.defaults.priority_name_placeholder')}
                                     className="flex-1 bg-[#0f0f14] border border-gray-700 rounded px-3 py-2 text-sm text-white"
                                     autoFocus
                                 />
@@ -285,7 +285,7 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
                                 className="w-full bg-[#1a1a24] border border-gray-800 border-dashed rounded-lg p-4 text-gray-400 hover:text-white hover:border-gray-600 transition-colors flex items-center justify-center gap-2"
                             >
                                 <Plus className="w-4 h-4" />
-                                Add Priority
+                                {t('settings.organization.defaults.add_priority_button')}
                             </button>
                         )}
                     </div>
@@ -294,9 +294,9 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
 
             {/* Default Industry Template Section */}
             <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Default Project Template</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">{t('settings.organization.defaults.default_template_title')}</h3>
                 <p className="text-sm text-gray-400 mb-4">
-                    Select a default industry template for new projects
+                    {t('settings.organization.defaults.default_template_subtitle')}
                 </p>
 
                 <select
@@ -304,7 +304,7 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
                     onChange={(e) => updateDefaultsMutation.mutate({ defaultIndustryTemplateId: e.target.value || undefined })}
                     className="w-full bg-[#1a1a24] border border-gray-800 rounded-lg px-4 py-2 text-white"
                 >
-                    <option value="">No default (manual selection)</option>
+                    <option value="">{t('settings.organization.defaults.no_default_template')}</option>
                     {templates.map((template) => (
                         <option key={template.id} value={template.id}>
                             {template.name} - {template.description}

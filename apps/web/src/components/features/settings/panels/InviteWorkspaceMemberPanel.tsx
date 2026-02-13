@@ -3,6 +3,7 @@ import { ChevronDoubleRightIcon } from '../../tasks/components/TaskIcons'
 import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 interface InviteWorkspaceMemberPanelProps {
     isOpen: boolean
@@ -15,6 +16,7 @@ interface InviteWorkspaceMemberPanelProps {
 }
 
 export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: InviteWorkspaceMemberPanelProps) {
+    const { t } = useTranslation()
     const [activeTab, setActiveTab] = useState<'email' | 'link'>('email')
     const [email, setEmail] = useState('')
     const [role, setRole] = useState<'admin' | 'project_manager' | 'hr_manager' | 'member' | 'guest'>('member')
@@ -93,7 +95,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
         },
         onError: (error) => {
             console.error('❌ Failed to create invite:', error)
-            alert(`Failed to create invitation: ${error instanceof Error ? error.message : 'Unknown error'}`)
+            alert(t('settings.organization.members.invite_panel.create_error', { error: error instanceof Error ? error.message : 'Unknown error' }))
         }
     })
 
@@ -153,8 +155,8 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                             <ChevronDoubleRightIcon />
                         </button>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Invite to {workspace.name}</h2>
-                            <p className="text-xs text-gray-500">Add members to your organization</p>
+                            <h2 className="text-lg font-semibold text-white">{t('settings.organization.members.invite_panel.title', { name: workspace.name })}</h2>
+                            <p className="text-xs text-gray-500">{t('settings.organization.members.invite_panel.subtitle')}</p>
                         </div>
                     </div>
                 </div>
@@ -166,7 +168,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                             onClick={() => setActiveTab('email')}
                             className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'email' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            Invite with email
+                            {t('settings.organization.members.invite_panel.tab_email')}
                             {activeTab === 'email' && (
                                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F2CE88] rounded-t-full" />
                             )}
@@ -178,7 +180,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                             }}
                             className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'link' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            Invite with link
+                            {t('settings.organization.members.invite_panel.tab_link')}
                             {activeTab === 'link' && (
                                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F2CE88] rounded-t-full" />
                             )}
@@ -191,13 +193,13 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                     <div className="space-y-6">
                         {activeTab === 'email' ? (
                             <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-2">Email Address</label>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.members.invite_panel.email_label')}</label>
                                 <input
                                     ref={inputRef}
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="name@company.com"
+                                    placeholder={t('settings.organization.members.invite_panel.email_placeholder')}
                                     className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-gray-800 focus:border-[#F2CE88]/50 transition-colors"
                                 />
                             </div>
@@ -206,7 +208,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                 {/* Recently Generated Invite */}
                                 {generatedInvite && (
                                     <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-[#F2CE88]">✨ Newly Generated Link</label>
+                                        <label className="block text-sm font-medium text-[#F2CE88]">{t('settings.organization.members.invite_panel.newly_generated')}</label>
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
@@ -217,7 +219,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                             <button
                                                 onClick={handleCopyLink}
                                                 className="px-4 py-2 bg-[#F2CE88] text-black border border-[#F2CE88] rounded-xl hover:bg-[#d9b877] transition-colors flex items-center justify-center min-w-[3rem]"
-                                                title="Copy Link"
+                                                title={t('settings.organization.members.invite_panel.copy_link_title')}
                                             >
                                                 {isCopied ? (
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -241,16 +243,16 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                         disabled={isCreating}
                                         className="px-6 py-2.5 bg-[#F2CE88] text-black text-sm font-semibold rounded-xl hover:bg-[#d9b877] transition-all disabled:opacity-50"
                                     >
-                                        {isCreating ? 'Generating...' : '+ Generate New Link'}
+                                        {isCreating ? t('settings.organization.members.invite_panel.generating') : t('settings.organization.members.invite_panel.generate_button')}
                                     </button>
                                 </div>
 
                                 {/* Existing Invites List */}
                                 {isLoadingInvites ? (
-                                    <div className="text-center py-8 text-gray-500 text-sm">Loading invites...</div>
+                                    <div className="text-center py-8 text-gray-500 text-sm">{t('settings.organization.members.invite_panel.loading_invites')}</div>
                                 ) : existingInvites && existingInvites.length > 0 ? (
                                     <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-400">Active Invite Links ({existingInvites.length})</label>
+                                        <label className="block text-sm font-medium text-gray-400">{t('settings.organization.members.invite_panel.active_invites_count', { count: existingInvites.length })}</label>
                                         <div className="space-y-2 max-h-64 overflow-y-auto">
                                             {existingInvites.map((invite: any) => {
                                                 const link = `${origin}/invite/${invite.token}`
@@ -263,10 +265,10 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                                     <div key={invite.id} className="bg-[#1a1a24] border border-gray-800 rounded-lg p-3 space-y-2">
                                                         <div className="flex items-center justify-between text-xs">
                                                             <span className="text-gray-400">
-                                                                Role: <span className="text-white capitalize">{invite.role}</span>
+                                                                {t('settings.organization.members.invite_panel.role_label_with_value', { value: t(`settings.organization.members.roles.${invite.role}`) })}
                                                             </span>
                                                             <span className={`font-medium ${statusColor} ${isExpired ? 'line-through' : ''}`}>
-                                                                {isExpired ? 'Expired' : invite.status}
+                                                                {isExpired ? t('settings.organization.members.invite_panel.status_expired') : invite.status}
                                                             </span>
                                                         </div>
                                                         <div className="flex gap-2">
@@ -283,7 +285,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                                                     setTimeout(() => setIsCopied(false), 2000)
                                                                 }}
                                                                 className="p-2 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
-                                                                title="Copy"
+                                                                title={t('settings.organization.members.invite_panel.copy_link_title')}
                                                             >
                                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
                                                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -292,7 +294,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                                             </button>
                                                         </div>
                                                         <div className="text-xs text-gray-500">
-                                                            Expires: {new Date(invite.expiresAt).toLocaleDateString()}
+                                                            {t('settings.organization.members.invite_panel.expires_label', { date: new Date(invite.expiresAt).toLocaleDateString() })}
                                                         </div>
                                                     </div>
                                                 )
@@ -300,19 +302,21 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="text-center py-4 text-gray-500 text-sm">No active invites yet</div>
+                                    <div className="text-center py-4 text-gray-500 text-sm">
+                                        {t('settings.organization.members.invite_panel.no_active_invites')}
+                                    </div>
                                 )}
                             </div>
                         )}
 
                         <div className="pt-4 border-t border-gray-800">
-                            <label className="block text-sm font-medium text-gray-400 mb-2">Assigned Role</label>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.members.invite_panel.assigned_role_label')}</label>
                             <div className="relative">
                                 <button
                                     onClick={() => setActiveDropdown(!activeDropdown)}
                                     className="w-full flex items-center justify-between bg-[#1a1a24] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white hover:border-gray-700 transition-colors"
                                 >
-                                    <span className="capitalize">{role.replace('_', ' ')}</span>
+                                    <span className="capitalize">{t(`settings.organization.members.roles.${role}`)}</span>
                                     <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" className={`transition-transform ${activeDropdown ? 'rotate-180' : ''}`}>
                                         <path d="M1 1L5 5L9 1" />
                                     </svg>
@@ -331,7 +335,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                                     }}
                                                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors capitalize hover:bg-gray-800 ${role === r ? 'text-[#F2CE88] bg-[#F2CE88]/10' : 'text-gray-300'}`}
                                                 >
-                                                    {r.replace('_', ' ')}
+                                                    {t(`settings.organization.members.roles.${r}`)}
                                                 </button>
                                             ))}
                                         </div>
@@ -341,16 +345,16 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">Expiration</label>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.members.invite_panel.expiration_label')}</label>
                             <select
                                 value={expiresDays}
                                 onChange={(e) => setExpiresDays(Number(e.target.value))}
                                 className="w-full bg-[#1a1a24] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-[#F2CE88]/50"
                             >
-                                <option value={1}>1 day</option>
-                                <option value={7}>7 days</option>
-                                <option value={30}>30 days</option>
-                                <option value={0}>Never (not recommended)</option>
+                                <option value={1}>{t('settings.organization.members.invite_panel.expire_options.1_day')}</option>
+                                <option value={7}>{t('settings.organization.members.invite_panel.expire_options.7_days')}</option>
+                                <option value={30}>{t('settings.organization.members.invite_panel.expire_options.30_days')}</option>
+                                <option value={0}>{t('settings.organization.members.invite_panel.expire_options.never')}</option>
                             </select>
                         </div>
                     </div>
@@ -363,7 +367,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                             onClick={onClose}
                             className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
                         >
-                            Cancel
+                            {t('settings.organization.members.invite_panel.cancel')}
                         </button>
                         {activeTab === 'email' && (
                             <button
@@ -374,7 +378,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                     : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
-                                {isCreating ? 'Sending...' : 'Send Invitation'}
+                                {isCreating ? t('settings.organization.members.invite_panel.sending') : t('settings.organization.members.invite_panel.send_button')}
                             </button>
                         )}
                         {activeTab === 'link' && generatedInvite && (
@@ -382,7 +386,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                 onClick={onClose}
                                 className="px-6 py-2 rounded-lg text-sm font-medium bg-[#F2CE88] text-black hover:bg-[#d9b877] transition-all"
                             >
-                                Done
+                                {t('settings.organization.members.invite_panel.done_button')}
                             </button>
                         )}
                     </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { Plus, Trash2, Activity, Edit2, Play, FileText, LayoutGrid } from 'lucide-react'
@@ -7,7 +8,7 @@ import { WebhookModal } from '../modals/WebhookModal'
 import { WebhookTestPanel } from '../../webhooks/WebhookTestPanel'
 import { WebhookDeliveryLogs } from '../../webhooks/WebhookDeliveryLogs'
 import { format } from 'date-fns'
-import { pl } from 'date-fns/locale'
+import { pl, enUS } from 'date-fns/locale'
 import { useSession } from '@/lib/auth'
 
 // Types
@@ -53,6 +54,8 @@ const ClockIcon = () => (
 )
 
 export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
+    const { t, i18n } = useTranslation()
+    const dateLocale = i18n.language === 'pl' ? pl : enUS
     const queryClient = useQueryClient()
     const { data: session } = useSession()
     const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -90,7 +93,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
     })
 
     const handleDelete = (id: string) => {
-        if (confirm('Are you sure you want to delete this webhook?')) {
+        if (confirm(t('settings.organization.integrations.delete_webhook_confirm'))) {
             deleteMutation.mutate(id)
         }
     }
@@ -111,32 +114,32 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold text-white">Integrations & Webhooks</h3>
-                    <p className="text-sm text-gray-500">Manage external integrations and webhook events</p>
+                    <h3 className="text-lg font-semibold text-white">{t('settings.organization.integrations.title')}</h3>
+                    <p className="text-sm text-gray-500">{t('settings.organization.integrations.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setIsCreateOpen(true)}
                     className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-sm rounded-xl transition-all shadow-lg shadow-amber-500/20 active:translate-y-[1px]"
                 >
                     <Plus className="w-4 h-4" strokeWidth={3} />
-                    New Webhook
+                    {t('settings.organization.integrations.new_webhook_button')}
                 </button>
             </div>
 
             {isLoading ? (
-                <div className="text-center py-12 text-gray-500">Loading webhooks...</div>
+                <div className="text-center py-12 text-gray-500">{t('settings.organization.integrations.loading_webhooks')}</div>
             ) : webhooks.length === 0 ? (
                 <div className="text-center py-16 rounded-2xl bg-[#14141b] border border-gray-800/50">
                     <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                         <LayoutGrid className="w-8 h-8 text-amber-500/50" />
                     </div>
-                    <h4 className="text-white text-lg font-bold mb-2">No integrations yet</h4>
-                    <p className="text-gray-500 text-sm mb-8 max-w-sm mx-auto">Connect your workspace with external tools like Discord or Slack to automate your workflow.</p>
+                    <h4 className="text-white text-lg font-bold mb-2">{t('settings.organization.integrations.no_integrations_title')}</h4>
+                    <p className="text-gray-500 text-sm mb-8 max-w-sm mx-auto">{t('settings.organization.integrations.no_integrations_subtitle')}</p>
                     <button
                         onClick={() => setIsCreateOpen(true)}
                         className="px-6 py-2.5 bg-[#1a1a24] hover:bg-[#1f1f2e] text-amber-500 rounded-xl text-sm font-bold transition-all border border-amber-500/20"
                     >
-                        Create your first webhook
+                        {t('settings.organization.integrations.create_first_webhook_button')}
                     </button>
                 </div>
             ) : (
@@ -161,11 +164,11 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <h4 className="font-semibold text-white text-[15px]">
-                                                {webhook.description || 'Untitled Webhook'}
+                                                {webhook.description || t('settings.organization.integrations.untitled_webhook')}
                                             </h4>
                                             {webhook.silentMode && (
                                                 <span className="px-2 py-0.5 rounded bg-gray-700 text-gray-400 text-[11px] font-medium">
-                                                    Silent
+                                                    {t('settings.organization.integrations.silent_badge')}
                                                 </span>
                                             )}
                                         </div>
@@ -180,14 +183,14 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                     <button
                                         onClick={() => setTestWebhookId(webhook.id)}
                                         className="p-2 text-gray-500 hover:text-white hover:bg-[#1a1a24] rounded-lg transition-colors border border-transparent hover:border-gray-800"
-                                        title="Test"
+                                        title={t('settings.organization.integrations.test_title')}
                                     >
                                         <Play className="w-[18px] h-[18px]" />
                                     </button>
                                     <button
                                         onClick={() => setLogsWebhookId(webhook.id)}
                                         className="p-2 text-gray-500 hover:text-white hover:bg-[#1a1a24] rounded-lg transition-colors border border-transparent hover:border-gray-800"
-                                        title="Logs"
+                                        title={t('settings.organization.integrations.logs_title')}
                                     >
                                         <FileText className="w-[18px] h-[18px]" />
                                     </button>
@@ -197,14 +200,14 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                             setIsCreateOpen(true)
                                         }}
                                         className="p-2 text-gray-500 hover:text-white hover:bg-[#1a1a24] rounded-lg transition-colors border border-transparent hover:border-gray-800"
-                                        title="Edit"
+                                        title={t('common.edit')}
                                     >
                                         <Edit2 className="w-[18px] h-[18px]" />
                                     </button>
                                     <button
                                         onClick={() => handleDelete(webhook.id)}
                                         className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                                        title="Delete"
+                                        title={t('common.delete')}
                                     >
                                         <Trash2 className="w-[18px] h-[18px]" />
                                     </button>
@@ -228,7 +231,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                             {/* Hover Dropdown */}
                                             <div className="absolute left-0 top-full mt-2 hidden group-hover/events:block z-50">
                                                 <div className="bg-[#1a1a24] rounded-xl p-2 shadow-2xl border border-gray-800 min-w-[160px] animate-in fade-in slide-in-from-top-1 duration-200">
-                                                    <p className="text-[10px] text-gray-500 mb-1.5 font-bold px-1 uppercase tracking-wider">Wszystkie zdarzenia:</p>
+                                                    <p className="text-[10px] text-gray-500 mb-1.5 font-bold px-1 uppercase tracking-wider">{t('settings.organization.integrations.all_events_header')}</p>
                                                     <div className="flex flex-col gap-1">
                                                         {webhook.events.slice(2).map((event: string) => (
                                                             <span key={event} className="px-2 py-1 rounded-lg bg-[#0f0f14] text-gray-300 text-[10px]">
@@ -246,9 +249,9 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                 <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-shrink-0">
                                     <div className="flex items-center gap-1.5">
                                         <ClockIcon />
-                                        <span>{webhook.failureCount} fails</span>
+                                        <span>{t('settings.organization.integrations.fails_stat', { count: webhook.failureCount })}</span>
                                     </div>
-                                    <span className="whitespace-nowrap">Created {format(new Date(webhook.createdAt), 'd MMM yyyy', { locale: pl })}</span>
+                                    <span className="whitespace-nowrap">{t('settings.organization.integrations.created_at_stat', { date: format(new Date(webhook.createdAt), 'd MMM yyyy', { locale: dateLocale }) })}</span>
                                 </div>
                             </div>
                         </div>

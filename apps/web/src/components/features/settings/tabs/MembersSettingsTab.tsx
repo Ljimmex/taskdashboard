@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
@@ -21,6 +22,7 @@ interface Member {
 }
 
 export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
+    const { t } = useTranslation()
     const { data: session } = useSession()
     const queryClient = useQueryClient()
     const [searchQuery, setSearchQuery] = useState('')
@@ -70,7 +72,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
         },
         onError: (error) => {
             console.error('Failed to remove member', error)
-            alert('Failed to remove member')
+            alert(t('settings.organization.members.remove_error'))
         }
     })
 
@@ -91,7 +93,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
         },
         onError: (error) => {
             console.error('Failed to update role', error)
-            alert('Failed to update role')
+            alert(t('settings.organization.members.update_role_error'))
         }
     })
 
@@ -103,7 +105,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
     })
 
     const handleRemove = (memberId: string) => {
-        if (confirm('Are you sure you want to remove this member from the organization?')) {
+        if (confirm(t('settings.organization.members.remove_confirm'))) {
             removeMember(memberId)
         }
         setOpenMenuId(null)
@@ -114,7 +116,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
     }
 
     const handleSetOwner = (memberId: string) => {
-        if (confirm('Are you sure you want to transfer Owner role? This action is irreversible.')) {
+        if (confirm(t('settings.organization.members.set_owner_confirm'))) {
             updateRole({ memberId, role: 'owner' })
         }
         setOpenMenuId(null)
@@ -137,13 +139,14 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
         },
         onError: (error) => {
             console.error('Failed to update status', error)
-            alert('Failed to update status')
+            alert(t('settings.organization.members.update_status_error'))
         }
     })
 
     const handleToggleStatus = (memberId: string, currentStatus: string) => {
         const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended'
-        if (confirm(`Are you sure you want to ${newStatus === 'suspended' ? 'suspend' : 'activate'} this member?`)) {
+        const translateKey = newStatus === 'suspended' ? 'suspend_confirm' : 'activate_confirm'
+        if (confirm(t(`settings.organization.members.${translateKey}`))) {
             updateStatus({ memberId, status: newStatus })
         }
         setOpenMenuId(null)
@@ -165,14 +168,14 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold text-white">Members</h3>
-                    <p className="text-sm text-gray-400">Manage organization access</p>
+                    <h3 className="text-lg font-semibold text-white">{t('settings.organization.members.title')}</h3>
+                    <p className="text-sm text-gray-400">{t('settings.organization.members.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setIsInviteModalOpen(true)}
                     className="px-4 py-2 bg-[#F2CE88] hover:bg-[#d9b877] text-black font-medium rounded-lg text-sm transition-colors"
                 >
-                    Invite Member
+                    {t('settings.organization.members.invite_button')}
                 </button>
             </div>
 
@@ -180,7 +183,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
             <div className="relative">
                 <input
                     type="text"
-                    placeholder="Search members..."
+                    placeholder={t('settings.organization.members.search_placeholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-[#1a1a24] rounded-lg pl-10 pr-4 py-2 text-white outline-none focus:border-[#F2CE88]"
@@ -194,15 +197,15 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
             {/* Removed overflow-hidden from container to fix dropdown clipping */}
             <div className="bg-[#1a1a24] rounded-xl ">
                 {isLoading ? (
-                    <div className="p-8 text-center text-gray-500">Loading...</div>
+                    <div className="p-8 text-center text-gray-500">{t('common.loading')}</div>
                 ) : filteredMembers.length > 0 ? (
                     <div className="divide-y divide-gray-800">
                         {/* Header */}
                         <div className="grid grid-cols-12 gap-4 p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-[#14141b] rounded-t-xl">
-                            <div className="col-span-4">User</div>
-                            <div className="col-span-3">Role</div>
-                            <div className="col-span-3">Joined</div>
-                            <div className="col-span-2 text-right">Actions</div>
+                            <div className="col-span-4">{t('settings.organization.members.table.user')}</div>
+                            <div className="col-span-3">{t('settings.organization.members.table.role')}</div>
+                            <div className="col-span-3">{t('settings.organization.members.table.joined')}</div>
+                            <div className="col-span-2 text-right">{t('settings.organization.members.table.actions')}</div>
                         </div>
 
                         {filteredMembers.map((member: Member) => {
@@ -229,7 +232,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                 <h4 className="text-sm font-medium text-white truncate">{member.name || member.email || 'Unknown'}</h4>
                                                 {member.status === 'suspended' && (
                                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 uppercase tracking-tight">
-                                                        Suspended
+                                                        {t('settings.organization.members.status.suspended')}
                                                     </span>
                                                 )}
                                             </div>
@@ -241,7 +244,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                     <div className="col-span-3">
                                         {isOwner ? (
                                             <div className="w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium bg-gray-900/50 text-gray-400 cursor-default">
-                                                Owner
+                                                {t('settings.organization.members.roles.owner')}
                                             </div>
                                         ) : (
                                             <select
@@ -253,11 +256,11 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                     : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
                                                     }`}
                                             >
-                                                <option value="admin">Admin</option>
-                                                <option value="project_manager">Project Manager</option>
-                                                <option value="hr_manager">HR Manager</option>
-                                                <option value="member">Member</option>
-                                                <option value="guest">Guest</option>
+                                                <option value="admin">{t('settings.organization.members.roles.admin')}</option>
+                                                <option value="project_manager">{t('settings.organization.members.roles.project_manager')}</option>
+                                                <option value="hr_manager">{t('settings.organization.members.roles.hr_manager')}</option>
+                                                <option value="member">{t('settings.organization.members.roles.member')}</option>
+                                                <option value="guest">{t('settings.organization.members.roles.guest')}</option>
                                             </select>
                                         )}
                                     </div>
@@ -295,7 +298,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                                                 </svg>
-                                                                Set as Owner
+                                                                {t('settings.organization.members.actions.set_owner')}
                                                             </button>
                                                         )}
 
@@ -307,7 +310,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                                                             </svg>
-                                                            {member.status === 'suspended' ? 'Activate' : 'Suspend'}
+                                                            {member.status === 'suspended' ? t('settings.organization.members.actions.activate') : t('settings.organization.members.actions.suspend')}
                                                         </button>
 
                                                         <div className="h-px bg-gray-800 my-1" />
@@ -321,7 +324,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                             </svg>
-                                                            Remove from Organization
+                                                            {t('settings.organization.members.actions.remove')}
                                                         </button>
                                                     </div>
                                                 )}
@@ -334,7 +337,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                     </div>
                 ) : (
                     <div className="p-8 text-center text-gray-500">
-                        No members found
+                        {t('settings.organization.members.no_members')}
                     </div>
                 )}
             </div>

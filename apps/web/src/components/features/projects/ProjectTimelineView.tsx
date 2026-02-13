@@ -347,7 +347,7 @@ export function ProjectTimelineView({
                                                             backgroundColor: '#13131a'
                                                         }}
                                                     >
-                                                        {dayTasks.length}t
+                                                        {dayTasks.length}{t('projects.timeline.task_abbr')}
                                                     </div>
                                                 )}
                                             </div>

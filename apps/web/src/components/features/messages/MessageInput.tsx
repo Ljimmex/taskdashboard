@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Paperclip } from 'lucide-react'
 import { EmojiPicker } from './EmojiPicker'
+import { useTranslation } from 'react-i18next'
 
 interface MessageInputProps {
     onSendMessage: (content: string, attachments?: any[]) => Promise<void>
@@ -25,6 +26,7 @@ export function MessageInput({
     replyTo,
     onCancelReply
 }: MessageInputProps) {
+    const { t } = useTranslation()
     const [message, setMessage] = useState('')
     const [isSending, setIsSending] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -110,7 +112,7 @@ export function MessageInput({
             {isEditing && (
                 <div className="flex items-center justify-between px-4 py-2 bg-[#12121a] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
                     <div className="flex items-center gap-2 text-amber-500">
-                        <span className="font-medium">Editing message</span>
+                        <span className="font-medium">{t('messages.editingMessage')}</span>
                     </div>
                     <button
                         onClick={() => {
@@ -130,7 +132,7 @@ export function MessageInput({
             {replyTo && (
                 <div className="flex items-center justify-between px-4 py-2 bg-[#12121a] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
                     <div className="flex items-center gap-2 text-gray-300">
-                        <span className="text-gray-500">Replying to {replyTo.senderName}:</span>
+                        <span className="text-gray-500">{t('messages.replyingTo')} {replyTo.senderName}:</span>
                         <span className="italic truncate max-w-[200px] opacity-75">{replyTo.content}</span>
                     </div>
                     <button
@@ -169,7 +171,7 @@ export function MessageInput({
                         value={message}
                         onChange={(e) => handleInputChange(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={placeholder}
+                        placeholder={placeholder === 'Type a message...' ? t('messages.typeMessage') : placeholder}
                         disabled={disabled || isSending}
                         rows={1}
                         className="w-full resize-none bg-transparent border-none rounded-2xl pl-4 pr-10 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-0 max-h-32 overflow-y-auto disabled:cursor-not-allowed"
@@ -186,7 +188,7 @@ export function MessageInput({
                         ? 'bg-blue-600 hover:bg-blue-500' // Blue for Edit Save
                         : 'bg-amber-600 hover:bg-amber-500' // Amber for Send
                         } disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed`}
-                    aria-label={isEditing ? "Save changes" : "Send message"}
+                    aria-label={isEditing ? t('messages.save') : "Send message"}
                 >
                     {isEditing ? (
                         <svg className="w-5 h-5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -25,6 +25,18 @@
             "provider": "Błąd logowania przez {{provider}}"
         }
     },
+    "common": {
+        "loading": "Ładowanie...",
+        "save": "Zapisz",
+        "cancel": "Anuluj",
+        "delete": "Usuń",
+        "edit": "Edytuj",
+        "error": "Wystąpił błąd",
+        "saving": "Zapisywanie...",
+        "uploading": "Przesyłanie...",
+        "save_changes": "Zapisz zmiany",
+        "feature_coming_soon": "Ta funkcja będzie dostępna wkrótce."
+    },
     "dashboard": {
         "title": "Panel główny",
         "team": "Zespół",
@@ -72,7 +84,20 @@
         "sunday": "Niedziela",
         "today": "Dzisiaj",
         "addEvent": "Dodaj",
-        "moreEvents": "+ {{count}} więcej"
+        "moreEvents": "+ {{count}} więcej",
+        "settings_panel": {
+            "title": "Ustawienia organizacji",
+            "subtitle": "Zarządzaj swoją przestrzenią roboczą",
+            "error": "Nie udało się załadować danych organizacji."
+        },
+        "settings_tabs": {
+            "general": "Ogólne",
+            "members": "Członkowie",
+            "labels": "Etykiety",
+            "defaults": "Domyślne",
+            "integrations": "Integracje",
+            "security": "Bezpieczeństwo"
+        }
     },
     "register": {
         "title": "Utwórz swoje konto",
@@ -291,7 +316,232 @@
         "tabs": {
             "account": "Konto",
             "notification": "Powiadomienia",
-            "privacy": "Prywatność i Bezpieczeństwo"
+            "privacy": "Prywatność i Bezpieczeństwo",
+            "security": "Bezpieczeństwo"
+        },
+        "organization": {
+            "security": {
+                "title": "Bezpieczeństwo Przestrzeni",
+                "subtitle": "Zarządzaj szyfrowaniem i kluczami bezpieczeństwa.",
+                "encryptionTitle": "Szyfrowanie End-to-End",
+                "encryptionDesc": "Wiadomości w tym workspace są szyfrowane kluczami RSA/AES. Rotacja kluczy zwiększa bezpieczeństwo bez utraty dostępu do historii.",
+                "statusExpired": "Klucze wygasły",
+                "statusActive": "Klucze aktywne",
+                "rotateButton": "Rotuj klucze i re-szyfruj wiadomości",
+                "rotating": "Rotowanie i re-szyfrowanie...",
+                "success": "Pomyślnie zrotowano klucze i re-zaszyfrowano {{count}} wiadomości.",
+                "confirmRotate": "Czy na pewno chcesz zrotować klucze? Wszystkie wiadomości zostaną ponownie zaszyfrowane nowym kluczem. Może to zająć chwilę w zależności od liczby wiadomości."
+            },
+            "general": {
+                "success": "Ustawienia zostały zapisane",
+                "error": "Błąd podczas zapisywania",
+                "logo_save_error": "Nie udało się zapisać logo w bazie.",
+                "logo_type_error": "Proszę wybrać plik graficzny (PNG, JPG, SVG).",
+                "logo_size_error": "Maksymalny rozmiar pliku to 2MB.",
+                "upload_error": "Wystąpił błąd podczas przesyłania pliku.",
+                "logo_title": "Logo",
+                "change_logo": "Zmień logo",
+                "logo_hint": "Zalecany format: 512x512px, PNG lub SVG. Max 2MB.",
+                "profile_title": "Profil Organizacji",
+                "name_label": "Nazwa organizacji",
+                "name_placeholder": "Moja Organizacja",
+                "slug_label": "URL Workspace",
+                "description_label": "Opis",
+                "description_placeholder": "Krótki opis organizacji...",
+                "location_title": "Lokalizacja",
+                "timezone_label": "Strefa czasowa",
+                "timezone_hint": "Twoja obecna strefa wykryta systemowo: {{tz}}",
+                "delete_workspace": "Usuń organizację"
+            },
+            "members": {
+                "title": "Członkowie",
+                "subtitle": "Zarządzaj dostępem do organizacji",
+                "invite_button": "Zaproś członka",
+                "search_placeholder": "Szukaj członków...",
+                "no_members": "Nie znaleziono członków",
+                "remove_confirm": "Czy na pewno chcesz usunąć tego członka z organizacji?",
+                "set_owner_confirm": "Czy na pewno chcesz przekazać rolę Właściciela? Ta akcja jest nieodwracalna.",
+                "suspend_confirm": "Czy na pewno chcesz zawiesić tego członka?",
+                "activate_confirm": "Czy na pewno chcesz aktywować tego członka?",
+                "remove_error": "Nie udało się usunąć członka",
+                "update_role_error": "Nie udało się zaktualizować roli",
+                "update_status_error": "Nie udało się zaktualizować statusu",
+                "table": {
+                    "user": "Użytkownik",
+                    "role": "Rola",
+                    "joined": "Dołączył(a)",
+                    "actions": "Akcje"
+                },
+                "status": {
+                    "suspended": "Zawieszony"
+                },
+                "roles": {
+                    "owner": "Właściciel",
+                    "admin": "Admin",
+                    "project_manager": "Project Manager",
+                    "hr_manager": "HR Manager",
+                    "member": "Członek",
+                    "guest": "Gość"
+                },
+                "actions": {
+                    "set_owner": "Ustaw jako Właściciela",
+                    "suspend": "Zawieś",
+                    "activate": "Aktywuj",
+                    "remove": "Usuń z organizacji"
+                },
+                "invite_panel": {
+                    "title": "Zaproś do {{name}}",
+                    "subtitle": "Dodaj członków do swojej organizacji",
+                    "tab_email": "Zaproś przez e-mail",
+                    "tab_link": "Zaproś przez link",
+                    "email_label": "Adres E-mail",
+                    "email_placeholder": "imie@firma.pl",
+                    "newly_generated": "✨ Nowo wygenerowany link",
+                    "copy_link_title": "Kopiuj link",
+                    "generating": "Generowanie...",
+                    "generate_button": "+ Generuj nowy link",
+                    "loading_invites": "Ładowanie zaproszeń...",
+                    "active_invites_count": "Aktywne linki zaproszeń ({{count}})",
+                    "role_label_with_value": "Rola: {{value}}",
+                    "status_expired": "Wygasło",
+                    "expires_label": "Wygasa: {{date}}",
+                    "no_active_invites": "Brak aktywnych zaproszeń",
+                    "assigned_role_label": "Przypisana rola",
+                    "expiration_label": "Wygasanie",
+                    "expire_options": {
+                        "1_day": "1 dzień",
+                        "7_days": "7 dni",
+                        "30_days": "30 dni",
+                        "never": "Nigdy (niezalecane)"
+                    },
+                    "cancel": "Anuluj",
+                    "sending": "Wysyłanie...",
+                    "send_button": "Wyślij zaproszenie",
+                    "done_button": "Gotowe",
+                    "create_error": "Nie udało się utworzyć zaproszenia: {{error}}"
+                }
+            },
+            "labels": {
+                "title": "Etykiety",
+                "subtitle": "Zarządzaj etykietami dla całej przestrzeni roboczej. Zmiany będą widoczne globalnie.",
+                "loading": "Ładowanie etykiet...",
+                "no_labels": "Brak etykiet. Utwórz pierwszą etykietę poniżej.",
+                "delete_confirm": "Czy na pewno chcesz usunąć etykietę \"{{name}}\"?\n\nUwaga: Usunięcie etykiety nie usunie jej z istniejących zadań.",
+                "name_placeholder": "Nazwa etykiety",
+                "new_name_placeholder": "Nazwa nowej etykiety",
+                "create_tooltip": "Utwórz",
+                "add_button": "Dodaj nową etykietę",
+                "tip_header": "Wskazówka",
+                "tip_content": "Zmiany kolorów i nazw etykiet będą natychmiast widoczne we wszystkich zadaniach i projektach używających tych etykiet.",
+                "color_picker_tooltip": "Wybierz kolor"
+            },
+            "defaults": {
+                "priorities_title": "Priorytety zadań",
+                "priorities_subtitle": "Dostosuj poziomy priorytetów dla zadań w przestrzeni roboczej",
+                "loading_priorities": "Ładowanie priorytetów...",
+                "priority_name_placeholder": "Nazwa priorytetu...",
+                "add_priority_button": "Dodaj priorytet",
+                "delete_priority_confirm": "Czy na pewno chcesz usunąć ten priorytet?",
+                "priority_names": {
+                    "low": "Niski",
+                    "medium": "Średni",
+                    "high": "Wysoki",
+                    "urgent": "Pilny"
+                },
+                "default_template_title": "Domyślny szablon projektu",
+                "default_template_subtitle": "Wybierz domyślny szablon branżowy dla nowych projektów",
+                "no_default_template": "Brak domyślnego (wybór ręczny)"
+            },
+            "integrations": {
+                "title": "Integracje i Webhooki",
+                "subtitle": "Zarządzaj zewnętrznymi integracjami i zdarzeniami webhooków",
+                "new_webhook_button": "Nowy Webhook",
+                "loading_webhooks": "Ładowanie webhooków...",
+                "no_integrations_title": "Brak integracji",
+                "no_integrations_subtitle": "Połącz swoją przestrzeń roboczą z zewnętrznymi narzędziami, takimi jak Discord lub Slack, aby zautomatyzować swój przepływ pracy.",
+                "create_first_webhook_button": "Utwórz swój pierwszy webhook",
+                "untitled_webhook": "Webhook bez nazwy",
+                "silent_badge": "Cichy",
+                "delete_webhook_confirm": "Czy na pewno chcesz usunąć ten webhook?",
+                "all_events_header": "Wszystkie zdarzenia:",
+                "test_title": "Testuj",
+                "logs_title": "Logi",
+                "fails_stat_one": "{{count}} błąd",
+                "fails_stat_few": "{{count}} błędy",
+                "fails_stat_many": "{{count}} błędów",
+                "fails_stat_other": "{{count}} błędu",
+                "delivery_logs": {
+                    "title": "Logi dostarczeń",
+                    "subtitle": "Historia ostatnich 50 prób dostarczenia",
+                    "loading": "Ładowanie logów...",
+                    "empty": "Brak historii dostarczeń dla tego webhooka",
+                    "table": {
+                        "status": "Status",
+                        "event": "Zdarzenie",
+                        "response": "Odpowiedź",
+                        "time": "Czas",
+                        "date": "Data"
+                    }
+                },
+                "test_panel": {
+                    "title": "Przetestuj Webhook",
+                    "subtitle": "Wyślij przykładowe zdarzenie",
+                    "description": "To narzędzie wyśle testowe zdarzenie <1>webhook.test</1> na skonfigurowany adres URL. Pozwoli to zweryfikować czy Twój serwer poprawnie odbiera i przetwarza żądania.",
+                    "payload_preview": "PODGLĄD DANYCH",
+                    "success_title": "Wysłano pomyślnie",
+                    "error_title": "Błąd wysyłania",
+                    "close": "Zamknij",
+                    "send_test": "Wyślij test",
+                    "sending": "Wysyłanie..."
+                },
+                "created_at_stat": "Utworzono {{date}}",
+                "webhook_modal": {
+                    "edit_webhook": "Edytuj Webhook",
+                    "add_webhook": "Dodaj Webhook",
+                    "platform": "Platforma",
+                    "other": "Inny",
+                    "url_label": "Webhook URL",
+                    "description_label": "Opis",
+                    "optional": "opcjonalne",
+                    "description_placeholder_discord": "np. Powiadomienia Discord #general",
+                    "description_placeholder_slack": "np. Slack #alerts",
+                    "description_placeholder_generic": "np. Integracja z CRM",
+                    "silent_mode_title": "Tryb cichy (@silent)",
+                    "silent_mode_description": "Wiadomości nie będą wysyłać powiadomień push",
+                    "events_label": "Zdarzenia",
+                    "error_saving": "Wystąpił błąd podczas zapisywania webhooka",
+                    "error_url_required": "URL jest wymagany",
+                    "error_no_events": "Wybierz przynajmniej jedno zdarzenie",
+                    "groups": {
+                        "tasks": "ZADANIA",
+                        "subtasks": "PODZADANIA",
+                        "comments": "KOMENTARZE",
+                        "files": "PLIKI",
+                        "calendar": "KALENDARZ",
+                        "members": "UŻYTKOWNICY"
+                    },
+                    "events": {
+                        "task_created": "Zadanie utworzone",
+                        "task_updated": "Zadanie zaktualizowane (tytuł, opis)",
+                        "task_status_changed": "Zmieniono status zadania",
+                        "task_priority_changed": "Zmieniono priorytet zadania",
+                        "task_assigned": "Przypisano użytkownika",
+                        "task_due_date_changed": "Zmieniono termin wykonania",
+                        "task_deleted": "Zadanie usunięte",
+                        "subtask_created": "Podzadanie utworzone",
+                        "subtask_updated": "Podzadanie zaktualizowane",
+                        "subtask_completed": "Podzadanie ukończone",
+                        "comment_added": "Dodano komentarz",
+                        "file_uploaded": "Przesłano plik",
+                        "file_deleted": "Usunięto plik",
+                        "calendar_created": "Dodano wydarzenie",
+                        "calendar_updated": "Zaktualizowano wydarzenie",
+                        "calendar_deleted": "Usunięto wydarzenie",
+                        "member_added": "Dołączył nowy członek",
+                        "member_removed": "Usunięto członka"
+                    }
+                }
+            }
         },
         "account": {
             "title": "Ustawienia Konta",
@@ -673,6 +923,13 @@
                 "assignee": "Przypisany"
             },
             "no_tasks": "Nie znaleziono zadań"
+        },
+        "calendar": {
+            "today": "Dziś",
+            "month": "Miesiąc",
+            "week": "Tydzień",
+            "add_task": "Dodaj zadanie",
+            "more_tasks": "+{{count}} więcej"
         }
     },
     "tasks": {
@@ -692,6 +949,15 @@
             "placeholder": "Przypisz osobę...",
             "no_results": "Nie znaleziono osób",
             "none": "Brak przypisanych"
+        },
+        "card": {
+            "add_task": "Dodaj nowe zadanie",
+            "menu": {
+                "edit": "Edytuj",
+                "duplicate": "Duplikuj",
+                "archive": "Archiwizuj",
+                "delete": "Usuń"
+            }
         },
         "datepicker": {
             "select_date": "Wybierz datę",
@@ -880,5 +1146,95 @@
         "cancel": "Anuluj",
         "placeholder": "np. Błąd, Funkcja, Design",
         "add_labels": "Dodaj etykiety"
+    },
+    "messages": {
+        "decryptionError": "Błąd deszyfrowania wiadomości",
+        "selectMember": "Wybierz członka zespołu, aby rozpocząć czat",
+        "search": "Szukaj wiadomości...",
+        "unknownUser": "Nieznany użytkownik",
+        "pinnedOnly": "Tylko przypięte",
+        "online": "Dostępny",
+        "offline": "Niedostępny",
+        "searchInChat": "Szukaj w czacie",
+        "filesAndMedia": "Pliki i multimedia",
+        "mute": "Wycisz powiadomienia",
+        "pinnedMessages": "Przypięte wiadomości",
+        "showAllMessages": "Pokaż wszystkie wiadomości",
+        "noMessagesFound": "Nie znaleziono wiadomości pasujących do",
+        "you": "Ty",
+        "system": "System",
+        "user": "Użytkownik",
+        "startConversation": "Rozpocznij rozmowę z",
+        "noPinnedMessages": "Brak przypiętych wiadomości",
+        "noMessagesYet": "Brak wiadomości",
+        "startConversationCta": "Rozpocznij rozmowę!",
+        "typeMessage": "Wpisz wiadomość...",
+        "editingMessage": "Edytowanie wiadomości",
+        "replyingTo": "Odpowiedź do",
+        "sortBy": "Sortuj według",
+        "date": "Data",
+        "name": "Nazwa",
+        "searchTeam": "Szukaj w zespole...",
+        "loadingMembers": "Ładowanie członków zespołu...",
+        "noMembersFound": "Nie znaleziono członków",
+        "noTeamMembers": "Brak członków zespołu",
+        "startConversationList": "Rozpocznij konwersację",
+        "seenNow": "Wyświetlono teraz",
+        "seen": "Wyświetlono",
+        "sentMessage": "Wysłano wiadomość",
+        "newMessage": "Nowa wiadomość",
+        "sentAMessage": "Wysłano wiadomość",
+        "failedToSend": "Nie udało się wysłać wiadomości",
+        "confirmDelete": "Czy na pewno chcesz usunąć tę wiadomość?",
+        "failedToDelete": "Nie udało się usunąć wiadomości",
+        "settings": "Ustawienia",
+        "basicInfo": "Podstawowe informacje",
+        "saveChanges": "Zapisz zmiany",
+        "saving": "Zapisywanie...",
+        "saved": "Ustawienia zapisane",
+        "failedToSave": "Nie udało się zapisać ustawień",
+        "security": "Bezpieczeństwo",
+        "e2e": "Szyfrowane end-to-end",
+        "e2eDescription": "Wszystkie wiadomości w tej konwersacji są szyfrowane i mogą być odczytane tylko przez uczestników.",
+        "members": "Członkowie",
+        "memberManagementComingSoon": "Zarządzanie członkami wkrótce...",
+        "dangerZone": "Strefa niebezpieczna",
+        "deleteConversation": "Usuń konwersację",
+        "confirmDeleteConversation": "Czy na pewno chcesz usunąć tę konwersację? Ta operacja jest nieodwracalna.",
+        "createConversation": "Utwórz konwersację",
+        "description": "Opis",
+        "descriptionPlaceholder": "O czym jest ta konwersacja?",
+        "type": "Typ",
+        "directMessage": "Wiadomość bezpośrednia",
+        "groupChat": "Czat grupowy",
+        "channel": "Kanał",
+        "private": "Prywatny (tylko zaproszeni)",
+        "cancel": "Anuluj",
+        "create": "Utwórz",
+        "creating": "Tworzenie...",
+        "failedToCreate": "Nie udało się utworzyć konwersacji",
+        "unnamedConversation": "Konwersacja bez nazwy",
+        "messageDeleted": "Wiadomość usunięta",
+        "pinnedAction": "przypiął/ęła wiadomość.",
+        "unpinnedAction": "odpiął/ęła wiadomość.",
+        "viewAll": "Zobacz wszystkie",
+        "replyingToLabel": "Odpowiedź na:",
+        "originalMessage": "oryginalną wiadomość",
+        "edited": "(edytowano)",
+        "isTyping": "pisze...",
+        "and": "i",
+        "areTyping": "piszą...",
+        "othersAreTyping": "innych pisze...",
+        "emojiCategories": {
+            "smileys": "Uśmieszki",
+            "gestures": "Gesty",
+            "animals": "Zwierzęta",
+            "food": "Jedzenie",
+            "activities": "Aktywności",
+            "travel": "Podróże",
+            "objects": "Obiekty",
+            "symbols": "Symbole",
+            "flags": "Flagi"
+        }
     }
 }

@@ -10,44 +10,82 @@ export interface EncryptionKeys {
     privateKey: CryptoKey
 }
 
+export interface EncryptionState {
+    current: EncryptionKeys
+    history: EncryptionKeys[]
+}
+
 export function useEncryption(workspaceId: string) {
     const { data: session } = useSession()
 
-    const { data: keys, isLoading, error } = useQuery({
+    const { data, isLoading, error } = useQuery({
         queryKey: ['encryptionKeys', workspaceId, session?.user?.id],
-        queryFn: async (): Promise<EncryptionKeys> => {
+        queryFn: async (): Promise<EncryptionState> => {
             if (!workspaceId) throw new Error('Workspace ID is required')
 
-            // 1. Try to load from secure storage (IndexedDB)
+            // Fetch history first (it's local and fast)
+            const historyStore = await keyStorage.getKeyHistory(workspaceId)
+            const history = historyStore.map(h => ({
+                publicKey: h.publicKey,
+                privateKey: h.privateKey
+            }))
+
+            // 1. Try to fetch from API first (Network First)
+            try {
+                const apiData = await apiFetchJson<any>(`/api/workspaces/${workspaceId}/keys`, {
+                    headers: {
+                        'x-user-id': session?.user?.id || ''
+                    }
+                })
+
+                if (apiData?.data) {
+                    // Import PEM keys to CryptoKey objects
+                    const publicKey = await importPublicKey(apiData.data.publicKey)
+                    const privateKey = await importPrivateKey(apiData.data.privateKey)
+
+                    // Import history keys if present
+                    const apiHistory = apiData.data.history || []
+                    const historyKeys = await Promise.all(apiHistory.map(async (h: any) => ({
+                        publicKey: await importPublicKey(h.publicKey),
+                        privateKey: await importPrivateKey(h.privateKey),
+                        rotatedAt: h.rotatedAt
+                    })))
+
+                    // Update secure storage
+                    await keyStorage.saveKeys(workspaceId, publicKey, privateKey)
+
+                    // For the hook return, we merge local and API history
+                    const localHistory = await keyStorage.getKeyHistory(workspaceId)
+                    const mergedHistory = [...historyKeys]
+
+                    // Add local keys that aren't in API history (to be safe)
+                    for (const local of localHistory) {
+                        const exists = mergedHistory.some(m => m.publicKey === local.publicKey) // Simplified comparison
+                        if (!exists) mergedHistory.push(local as any)
+                    }
+
+                    return {
+                        current: { publicKey, privateKey },
+                        history: mergedHistory as any
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to fetch keys from API, trying local storage', err)
+            }
+
+            // 2. Fallback to secure storage (IndexedDB) if API fails
             const stored = await keyStorage.getKeys(workspaceId)
             if (stored) {
-                // Check if keys verify? No easy way, assume valid. 
-                // Could check expiration logic here (Phase 3).
                 return {
-                    publicKey: stored.publicKey,
-                    privateKey: stored.privateKey
+                    current: {
+                        publicKey: stored.publicKey,
+                        privateKey: stored.privateKey
+                    },
+                    history
                 }
             }
 
-            // 2. Fetch from API if not in storage
-            const data = await apiFetchJson<any>(`/api/workspaces/${workspaceId}/keys`, {
-                headers: {
-                    'x-user-id': session?.user?.id || ''
-                }
-            })
-
-            if (!data?.data) {
-                throw new Error('Invalid key response from server')
-            }
-
-            // 3. Import PEM keys to CryptoKey objects
-            const publicKey = await importPublicKey(data.data.publicKey)
-            const privateKey = await importPrivateKey(data.data.privateKey)
-
-            // 4. Save to secure storage
-            await keyStorage.saveKeys(workspaceId, publicKey, privateKey)
-
-            return { publicKey, privateKey }
+            throw new Error('Encryption keys not found (neither on server nor locally)')
         },
         enabled: !!workspaceId,
         staleTime: Infinity, // Keys don't change often (until rotation)
@@ -56,7 +94,8 @@ export function useEncryption(workspaceId: string) {
     })
 
     return {
-        keys,
+        keys: data?.current,
+        historyKeys: data?.history || [],
         isLoading,
         error
     }

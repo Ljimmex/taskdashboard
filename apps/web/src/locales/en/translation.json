@@ -25,6 +25,18 @@
             "provider": "Login error via {{provider}}"
         }
     },
+    "common": {
+        "loading": "Loading...",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "error": "An error occurred",
+        "saving": "Saving...",
+        "uploading": "Uploading...",
+        "save_changes": "Save changes",
+        "feature_coming_soon": "This feature is coming soon."
+    },
     "dashboard": {
         "title": "Dashboard",
         "team": "Team",
@@ -72,7 +84,20 @@
         "sunday": "Sunday",
         "today": "Today",
         "addEvent": "Add event",
-        "moreEvents": "+ {{count}} more"
+        "moreEvents": "+ {{count}} more",
+        "settings_panel": {
+            "title": "Organization Settings",
+            "subtitle": "Manage your workspace",
+            "error": "Failed to load organization data."
+        },
+        "settings_tabs": {
+            "general": "General",
+            "members": "Members",
+            "labels": "Labels",
+            "defaults": "Defaults",
+            "integrations": "Integrations",
+            "security": "Security"
+        }
     },
     "register": {
         "title": "Create your account",
@@ -291,7 +316,230 @@
         "tabs": {
             "account": "Account",
             "notification": "Notification",
-            "privacy": "Privacy & Security"
+            "privacy": "Privacy & Security",
+            "security": "Security"
+        },
+        "organization": {
+            "security": {
+                "title": "Workspace Security",
+                "subtitle": "Manage encryption and security keys.",
+                "encryptionTitle": "End-to-End Encryption",
+                "encryptionDesc": "Messages in this workspace are encrypted with RSA/AES keys. Key rotation increases security without losing access to history.",
+                "statusExpired": "Keys expired",
+                "statusActive": "Keys active",
+                "rotateButton": "Rotate keys and re-encrypt messages",
+                "rotating": "Rotating and re-encrypting...",
+                "success": "Successfully rotated keys and re-encrypted {{count}} messages.",
+                "confirmRotate": "Are you sure you want to rotate keys? All messages will be re-encrypted with a new key. This may take a moment depending on the number of messages."
+            },
+            "general": {
+                "success": "Settings saved successfully",
+                "error": "Error while saving",
+                "logo_save_error": "Failed to save logo in database.",
+                "logo_type_error": "Please select an image file (PNG, JPG, SVG).",
+                "logo_size_error": "Maximum file size is 2MB.",
+                "upload_error": "An error occurred while uploading the file.",
+                "logo_title": "Logo",
+                "change_logo": "Change logo",
+                "logo_hint": "Recommended format: 512x512px, PNG or SVG. Max 2MB.",
+                "profile_title": "Organization Profile",
+                "name_label": "Organization name",
+                "name_placeholder": "My Organization",
+                "slug_label": "Workspace URL",
+                "description_label": "Description",
+                "description_placeholder": "Brief description of the organization...",
+                "location_title": "Location",
+                "timezone_label": "Timezone",
+                "timezone_hint": "Your current system-detected timezone: {{tz}}",
+                "delete_workspace": "Delete organization"
+            },
+            "members": {
+                "title": "Members",
+                "subtitle": "Manage access to organization",
+                "invite_button": "Invite member",
+                "search_placeholder": "Search members...",
+                "no_members": "No members found",
+                "remove_confirm": "Are you sure you want to remove this member from organization?",
+                "set_owner_confirm": "Are you sure you want to hand over the Owner role? This action is irreversible.",
+                "suspend_confirm": "Are you sure you want to suspend this member?",
+                "activate_confirm": "Are you sure you want to activate this member?",
+                "remove_error": "Failed to remove member",
+                "update_role_error": "Failed to update role",
+                "update_status_error": "Failed to update status",
+                "table": {
+                    "user": "User",
+                    "role": "Role",
+                    "joined": "Joined",
+                    "actions": "Actions"
+                },
+                "status": {
+                    "suspended": "Suspended"
+                },
+                "roles": {
+                    "owner": "Owner",
+                    "admin": "Admin",
+                    "project_manager": "Project Manager",
+                    "hr_manager": "HR Manager",
+                    "member": "Member",
+                    "guest": "Guest"
+                },
+                "actions": {
+                    "set_owner": "Set as Owner",
+                    "suspend": "Suspend",
+                    "activate": "Activate",
+                    "remove": "Remove from organization"
+                },
+                "invite_panel": {
+                    "title": "Invite to {{name}}",
+                    "subtitle": "Add members to your organization",
+                    "tab_email": "Invite with email",
+                    "tab_link": "Invite with link",
+                    "email_label": "Email Address",
+                    "email_placeholder": "name@company.com",
+                    "newly_generated": "✨ Newly Generated Link",
+                    "copy_link_title": "Copy Link",
+                    "generating": "Generating...",
+                    "generate_button": "+ Generate New Link",
+                    "loading_invites": "Loading invites...",
+                    "active_invites_count": "Active Invite Links ({{count}})",
+                    "role_label_with_value": "Role: {{value}}",
+                    "status_expired": "Expired",
+                    "expires_label": "Expires: {{date}}",
+                    "no_active_invites": "No active invites yet",
+                    "assigned_role_label": "Assigned Role",
+                    "expiration_label": "Expiration",
+                    "expire_options": {
+                        "1_day": "1 day",
+                        "7_days": "7 days",
+                        "30_days": "30 days",
+                        "never": "Never (not recommended)"
+                    },
+                    "cancel": "Cancel",
+                    "sending": "Sending...",
+                    "send_button": "Send Invitation",
+                    "done_button": "Done",
+                    "create_error": "Failed to create invitation: {{error}}"
+                }
+            },
+            "labels": {
+                "title": "Labels",
+                "subtitle": "Manage labels for the entire workspace. Changes will be visible globally.",
+                "loading": "Loading labels...",
+                "no_labels": "No labels. Create the first label below.",
+                "delete_confirm": "Are you sure you want to delete label \"{{name}}\"?\n\nNote: Deleting a label will not remove it from existing tasks.",
+                "name_placeholder": "Label name",
+                "new_name_placeholder": "New label name",
+                "create_tooltip": "Create",
+                "add_button": "Add new label",
+                "tip_header": "Tip",
+                "tip_content": "Changes to label colors and names will be immediately visible across all tasks and projects using these labels.",
+                "color_picker_tooltip": "Choose color"
+            },
+            "defaults": {
+                "priorities_title": "Task Priorities",
+                "priorities_subtitle": "Customize priority levels for tasks in the workspace",
+                "loading_priorities": "Loading priorities...",
+                "priority_name_placeholder": "Priority name...",
+                "add_priority_button": "Add priority",
+                "delete_priority_confirm": "Are you sure you want to delete this priority?",
+                "priority_names": {
+                    "low": "Low",
+                    "medium": "Medium",
+                    "high": "High",
+                    "urgent": "Urgent"
+                },
+                "default_template_title": "Default Project Template",
+                "default_template_subtitle": "Choose primary industry template for new projects",
+                "no_default_template": "No default (manual selection)"
+            },
+            "integrations": {
+                "title": "Integrations & Webhooks",
+                "subtitle": "Manage external integrations and webhook events",
+                "new_webhook_button": "New Webhook",
+                "loading_webhooks": "Loading webhooks...",
+                "no_integrations_title": "No integrations",
+                "no_integrations_subtitle": "Connect your workspace with external tools like Discord or Slack to automate your workflow.",
+                "create_first_webhook_button": "Create your first webhook",
+                "untitled_webhook": "Untitled Webhook",
+                "silent_badge": "Silent",
+                "delete_webhook_confirm": "Are you sure you want to delete this webhook?",
+                "all_events_header": "All events:",
+                "test_title": "Test",
+                "logs_title": "Logs",
+                "fails_stat_one": "{{count}} error",
+                "fails_stat_other": "{{count}} errors",
+                "delivery_logs": {
+                    "title": "Delivery Logs",
+                    "subtitle": "History of the last 50 delivery attempts",
+                    "loading": "Loading logs...",
+                    "empty": "No delivery history found for this webhook",
+                    "table": {
+                        "status": "Status",
+                        "event": "Event",
+                        "response": "Response",
+                        "time": "Time",
+                        "date": "Date"
+                    }
+                },
+                "test_panel": {
+                    "title": "Test Webhook",
+                    "subtitle": "Send sample event",
+                    "description": "This tool will send a test event <1>webhook.test</1> to the configured URL. This allows you to verify if your server correctly receives and processes requests.",
+                    "payload_preview": "PAYLOAD PREVIEW",
+                    "success_title": "Sent successfully",
+                    "error_title": "Send error",
+                    "close": "Close",
+                    "send_test": "Send test",
+                    "sending": "Sending..."
+                },
+                "created_at_stat": "Created {{date}}",
+                "webhook_modal": {
+                    "edit_webhook": "Edit Webhook",
+                    "add_webhook": "Add Webhook",
+                    "platform": "Platform",
+                    "other": "Other",
+                    "url_label": "Webhook URL",
+                    "description_label": "Description",
+                    "optional": "optional",
+                    "description_placeholder_discord": "e.g., Discord Notifications #general",
+                    "description_placeholder_slack": "e.g., Slack #alerts",
+                    "description_placeholder_generic": "e.g., CRM Integration",
+                    "silent_mode_title": "Silent mode (@silent)",
+                    "silent_mode_description": "Messages will not send push notifications",
+                    "events_label": "Events",
+                    "error_saving": "Error while saving webhook",
+                    "error_url_required": "URL is required",
+                    "error_no_events": "Select at least one event",
+                    "groups": {
+                        "tasks": "TASKS",
+                        "subtasks": "SUBTASKS",
+                        "comments": "COMMENTS",
+                        "files": "FILES",
+                        "calendar": "CALENDAR",
+                        "members": "MEMBERS"
+                    },
+                    "events": {
+                        "task_created": "Task created",
+                        "task_updated": "Task updated (title, description)",
+                        "task_status_changed": "Task status changed",
+                        "task_priority_changed": "Task priority changed",
+                        "task_assigned": "User assigned",
+                        "task_due_date_changed": "Due date changed",
+                        "task_deleted": "Task deleted",
+                        "subtask_created": "Subtask created",
+                        "subtask_updated": "Subtask updated",
+                        "subtask_completed": "Subtask completed",
+                        "comment_added": "Comment added",
+                        "file_uploaded": "File uploaded",
+                        "file_deleted": "File deleted",
+                        "calendar_created": "Event added",
+                        "calendar_updated": "Event updated",
+                        "calendar_deleted": "Event deleted",
+                        "member_added": "New member joined",
+                        "member_removed": "Member removed"
+                    }
+                }
+            }
         },
         "account": {
             "title": "Account Settings",
@@ -396,11 +644,19 @@
             },
             "sessions": {
                 "title": "Active Sessions",
+                "description": "See which devices are used for logging in.",
                 "current": "Current session",
                 "lastActive": "Last active",
                 "revoke": "Log Out",
                 "revokeAll": "Log out from all devices",
-                "confirmRevokeAll": "Are you sure you want to log out from all devices including this one?"
+                "confirmRevokeAll": "Are you sure you want to log out from all devices including this one?",
+                "noActive": "No active sessions found.",
+                "device": {
+                    "mobile": "Mobile",
+                    "desktop": "Desktop",
+                    "browser": "Unknown Browser",
+                    "os": "Unknown OS"
+                }
             },
             "toast": {
                 "passwordSuccess": "Password updated successfully",
@@ -665,6 +921,13 @@
                 "assignee": "Assignee"
             },
             "no_tasks": "No tasks found"
+        },
+        "calendar": {
+            "today": "Today",
+            "month": "Month",
+            "week": "Week",
+            "add_task": "Add task",
+            "more_tasks": "+{{count}} more"
         }
     },
     "tasks": {
@@ -684,6 +947,15 @@
             "placeholder": "Assign person...",
             "no_results": "No people found",
             "none": "No assignees"
+        },
+        "card": {
+            "add_task": "Add new task",
+            "menu": {
+                "edit": "Edit task",
+                "duplicate": "Duplicate",
+                "archive": "Archive",
+                "delete": "Delete"
+            }
         },
         "datepicker": {
             "select_date": "Select date",
@@ -872,5 +1144,95 @@
         "cancel": "Cancel",
         "placeholder": "e.g., Bug, Feature, Design",
         "add_labels": "Add labels"
+    },
+    "messages": {
+        "decryptionError": "Message decryption error",
+        "selectMember": "Select a team member to start chatting",
+        "search": "Search messages...",
+        "unknownUser": "Unknown User",
+        "pinnedOnly": "Pinned Only",
+        "online": "Online",
+        "offline": "Offline",
+        "searchInChat": "Search in chat",
+        "filesAndMedia": "Files & Media",
+        "mute": "Mute notifications",
+        "pinnedMessages": "Pinned messages",
+        "showAllMessages": "Show all messages",
+        "noMessagesFound": "No messages found matching",
+        "you": "You",
+        "system": "System",
+        "user": "User",
+        "startConversation": "Start your conversation with",
+        "noPinnedMessages": "No pinned messages",
+        "noMessagesYet": "No messages yet",
+        "startConversationCta": "Start the conversation!",
+        "typeMessage": "Type a message...",
+        "editingMessage": "Editing message",
+        "replyingTo": "Replying to",
+        "sortBy": "Sort by",
+        "date": "Date",
+        "name": "Name",
+        "searchTeam": "Search team...",
+        "loadingMembers": "Loading team members...",
+        "noMembersFound": "No members found",
+        "noTeamMembers": "No team members yet",
+        "startConversationList": "Start a conversation",
+        "seenNow": "Seen now",
+        "seen": "Seen",
+        "sentMessage": "Sent message",
+        "newMessage": "New message",
+        "sentAMessage": "Sent a message",
+        "failedToSend": "Failed to send message",
+        "confirmDelete": "Are you sure you want to delete this message?",
+        "failedToDelete": "Failed to delete message",
+        "settings": "Settings",
+        "basicInfo": "Basic Information",
+        "saveChanges": "Save Changes",
+        "saving": "Saving...",
+        "saved": "Settings saved",
+        "failedToSave": "Failed to save settings",
+        "security": "Security",
+        "e2e": "End-to-end encrypted",
+        "e2eDescription": "All messages in this conversation are encrypted and can only be read by participants.",
+        "members": "Members",
+        "memberManagementComingSoon": "Member management coming soon...",
+        "dangerZone": "Danger Zone",
+        "deleteConversation": "Delete Conversation",
+        "confirmDeleteConversation": "Are you sure you want to delete this conversation? This cannot be undone.",
+        "createConversation": "Create Conversation",
+        "description": "Description",
+        "descriptionPlaceholder": "What is this conversation about?",
+        "type": "Type",
+        "directMessage": "Direct Message",
+        "groupChat": "Group Chat",
+        "channel": "Channel",
+        "private": "Private (invite only)",
+        "cancel": "Cancel",
+        "create": "Create",
+        "creating": "Creating...",
+        "failedToCreate": "Failed to create conversation",
+        "unnamedConversation": "Unnamed Conversation",
+        "messageDeleted": "Message deleted",
+        "pinnedAction": "pinned a message.",
+        "unpinnedAction": "unpinned a message.",
+        "viewAll": "View all",
+        "replyingToLabel": "Replying to:",
+        "originalMessage": "original message",
+        "edited": "(edited)",
+        "isTyping": "is typing...",
+        "and": "and",
+        "areTyping": "are typing...",
+        "othersAreTyping": "others are typing...",
+        "emojiCategories": {
+            "smileys": "Smileys",
+            "gestures": "Gestures",
+            "animals": "Animals",
+            "food": "Food",
+            "activities": "Activities",
+            "travel": "Travel",
+            "objects": "Objects",
+            "symbols": "Symbols",
+            "flags": "Flags"
+        }
     }
 }

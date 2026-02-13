@@ -177,7 +177,26 @@ export async function decryptHybrid(
         return decoder.decode(decryptedContent)
 
     } catch (e) {
-        console.error("Decryption failed", e)
         throw new Error("Failed to decrypt message")
     }
+}
+
+export async function decryptWithFallback(
+    packet: EncryptedMessagePacket,
+    privateKeys: CryptoKey[]
+): Promise<string> {
+    if (!privateKeys || privateKeys.length === 0) {
+        throw new Error("No private keys provided")
+    }
+
+    let lastError: any
+    for (const key of privateKeys) {
+        try {
+            return await decryptHybrid(packet, key)
+        } catch (e) {
+            lastError = e
+            continue
+        }
+    }
+    throw lastError || new Error("Decryption failed with all provided keys")
 }

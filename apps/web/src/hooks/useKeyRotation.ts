@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { importPublicKey, importPrivateKey, encryptHybrid, decryptHybrid } from '@/lib/crypto'
+import { importPublicKey, importPrivateKey, encryptHybrid, decryptWithFallback } from '@/lib/crypto'
 import { keyStorage } from '@/lib/keyStorage'
 import type { Conversation, ConversationMessage } from '@taskdashboard/types'
 import { apiFetch, apiFetchJson } from '@/lib/api'
@@ -69,8 +69,12 @@ export function useKeyRotation(workspaceId: string) {
                             // Parse encrypted content
                             const parsed = JSON.parse(msg.content)
 
-                            // Decrypt with OLD key
-                            const decrypted = await decryptHybrid(parsed, oldPrivateKeyCrypto)
+                            // Collect all available keys (old current + legacy history)
+                            const historyKeys = await keyStorage.getKeyHistory(workspaceId)
+                            const allAvailableKeys = [oldPrivateKeyCrypto, ...historyKeys.map(h => h.privateKey)]
+
+                            // Decrypt with ALL available keys (Fallback strategy)
+                            const decrypted = await decryptWithFallback(parsed, allAvailableKeys)
 
                             // Encrypt with NEW key
                             const reEncrypted = await encryptHybrid(decrypted, newPublicKeyCrypto)

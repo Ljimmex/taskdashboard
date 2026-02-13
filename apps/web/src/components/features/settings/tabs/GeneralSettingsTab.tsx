@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
@@ -9,6 +10,7 @@ interface GeneralSettingsTabProps {
 }
 
 export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
+    const { t } = useTranslation()
     const { data: session } = useSession()
     const queryClient = useQueryClient()
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -45,7 +47,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
     const { mutate: saveSettings } = useMutation({
         mutationFn: updateWorkspaceMock,
         onSuccess: (data: any) => {
-            setMessage({ type: 'success', text: 'Ustawienia zostały zapisane' })
+            setMessage({ type: 'success', text: t('settings.organization.general.success') })
             queryClient.invalidateQueries({ queryKey: ['workspace', workspace.slug] })
             setIsSaving(false)
 
@@ -57,7 +59,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
             setTimeout(() => setMessage(null), 3000)
         },
         onError: (error) => {
-            setMessage({ type: 'error', text: 'Błąd podczas zapisywania' })
+            setMessage({ type: 'error', text: t('settings.organization.general.error') })
             setIsSaving(false)
             console.error(error)
         }
@@ -71,7 +73,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
         },
         onError: (err) => {
             console.error(err)
-            setUploadError('Nie udało się zapisać logo w bazie.')
+            setUploadError(t('settings.organization.general.logo_save_error'))
             setIsUploading(false)
         }
     })
@@ -92,11 +94,11 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
 
         // Validation
         if (!file.type.startsWith('image/')) {
-            setUploadError('Proszę wybrać plik graficzny (PNG, JPG, SVG).')
+            setUploadError(t('settings.organization.general.logo_type_error'))
             return
         }
         if (file.size > 2 * 1024 * 1024) { // 2MB
-            setUploadError('Maksymalny rozmiar pliku to 2MB.')
+            setUploadError(t('settings.organization.general.logo_size_error'))
             return
         }
 
@@ -125,7 +127,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
 
         } catch (error) {
             console.error('Upload error:', error)
-            setUploadError('Wystąpił błąd podczas przesyłania pliku.')
+            setUploadError(t('settings.organization.general.upload_error'))
             setIsUploading(false)
         }
     }
@@ -144,7 +146,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
 
             {/* Logo Section */}
             <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Logo</h3>
+                <h3 className="text-lg font-semibold text-white">{t('settings.organization.general.logo_title')}</h3>
 
                 {uploadError && (
                     <div className="bg-red-500/10 text-red-500 p-3 rounded-lg text-sm">
@@ -185,9 +187,9 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
                             disabled={isUploading}
                             className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
                         >
-                            {isUploading ? 'Przesyłanie...' : 'Zmień logo'}
+                            {isUploading ? t('common.uploading') : t('settings.organization.general.change_logo')}
                         </button>
-                        <p className="text-xs text-gray-500 mt-2">Zalecany format: 512x512px, PNG lub SVG. Max 2MB.</p>
+                        <p className="text-xs text-gray-500 mt-2">{t('settings.organization.general.logo_hint')}</p>
                     </div>
                 </div>
             </section>
@@ -195,7 +197,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
             {/* Section: Organization Profile */}
             <section className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-white">Profil Organizacji</h3>
+                    <h3 className="text-lg font-semibold text-white">{t('settings.organization.general.profile_title')}</h3>
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
@@ -204,23 +206,23 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
                             : 'bg-[#F2CE88] hover:bg-[#d9b877] text-black'
                             }`}
                     >
-                        {isSaving ? 'Zapisywanie...' : 'Zapisz zmiany'}
+                        {isSaving ? t('common.saving') : t('common.save_changes')}
                     </button>
                 </div>
 
                 <div className="bg-[#1a1a24] rounded-xl p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Nazwa organizacji</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.general.name_label')}</label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
-                            placeholder="Moja Organizacja"
+                            placeholder={t('settings.organization.general.name_placeholder')}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">URL Workspace</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.general.slug_label')}</label>
                         <div className="flex">
                             <span className="inline-flex items-center px-3 rounded-l-lg bg-[#12121a] border border-r-0 border-gray-800 text-gray-500 text-sm">
                                 zadano.app/
@@ -235,12 +237,12 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Opis</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.general.description_label')}</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] min-h-[100px]"
-                            placeholder="Krótki opis organizacji..."
+                            placeholder={t('settings.organization.general.description_placeholder')}
                         />
                     </div>
                 </div>
@@ -248,10 +250,10 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
 
             {/* Section: Timezone */}
             <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Lokalizacja</h3>
+                <h3 className="text-lg font-semibold text-white">{t('settings.organization.general.location_title')}</h3>
                 <div className="bg-[#1a1a24] rounded-xl p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Strefa czasowa</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.general.timezone_label')}</label>
                         <select
                             value={timezone}
                             onChange={(e) => setTimezone(e.target.value)}
@@ -271,7 +273,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
                             })}
                         </select>
                         <p className="text-xs text-gray-500 mt-2">
-                            Twoja obecna strefa wykryta systemowo: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                            {t('settings.organization.general.timezone_hint', { tz: Intl.DateTimeFormat().resolvedOptions().timeZone })}
                         </p>
                     </div>
                 </div>
@@ -282,9 +284,9 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
                 <button
                     type="button"
                     className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors"
-                    onClick={() => alert('This feature is coming soon.')}
+                    onClick={() => alert(t('common.feature_coming_soon'))}
                 >
-                    Usuń organizację
+                    {t('settings.organization.general.delete_workspace')}
                 </button>
             </section>
         </div>

@@ -6,10 +6,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { useEncryption } from '@/hooks/useEncryption'
-import { encryptHybrid, decryptHybrid } from '@/lib/crypto'
+import { encryptHybrid, decryptWithFallback } from '@/lib/crypto'
 import { useSession } from '@/lib/auth'
 import { formatDistanceToNow } from 'date-fns'
-import { pl } from 'date-fns/locale'
+import { pl, enUS } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
 
 interface ChatWindowProps {
     recipientUserId?: string
@@ -27,13 +28,15 @@ export function ChatWindow({
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const [isSending, setIsSending] = useState(false)
     const { data: session } = useSession()
+    const { t, i18n } = useTranslation()
+    const locale = i18n.language === 'pl' ? pl : enUS
 
     // 1. Get recipient details from team members list
     const { members } = useTeamMembers(workspaceSlug)
     const recipient = members.find(m => m.id === recipientUserId)
 
     // 2a. Get Encryption Keys
-    const { keys } = useEncryption(workspaceId)
+    const { keys, historyKeys } = useEncryption(workspaceId)
 
     // 2. Fetch or create conversation for this user pair
     const { data: conversation } = useQuery({
@@ -132,9 +135,18 @@ export function ChatWindow({
 
                     // Encrypted check
                     if (parsed.v === '1' && parsed.data && parsed.key && parsed.iv) {
-                        const decrypted = await decryptHybrid(parsed, keys.privateKey)
-                        newCache[msg.id] = decrypted
-                        hasChanges = true
+                        try {
+                            const allKeys = [keys?.privateKey, ...(historyKeys || []).map(k => k.privateKey)].filter(Boolean) as CryptoKey[]
+                            const decrypted = await decryptWithFallback(parsed, allKeys)
+                            newCache[msg.id] = decrypted
+                            hasChanges = true
+                        } catch (err) {
+                            // Decryption failed (e.g. wrong key), keep original content for search? 
+                            // Or maybe skip indexing this message?
+                            // Let's just use a placeholder so it doesn't crash or spam
+                            newCache[msg.id] = t('messages.decryptionError') || 'Decryption Error'
+                            hasChanges = true
+                        }
                     } else {
                         // Just JSON content?
                         newCache[msg.id] = msg.content
@@ -152,7 +164,7 @@ export function ChatWindow({
         }
 
         decryptAll()
-    }, [messages, keys?.privateKey])
+    }, [messages, keys?.privateKey, historyKeys])
 
     // Mark as read when messages load
     useEffect(() => {
@@ -221,7 +233,7 @@ export function ChatWindow({
     if (!recipientUserId) {
         return (
             <div className="flex-1 flex items-center justify-center bg-[#1a1a24] text-gray-500">
-                Select a team member to start chatting
+                {t('messages.selectMember')}
             </div>
         )
     }
@@ -263,7 +275,7 @@ export function ChatWindow({
                     finalContent = JSON.stringify(packet)
                 } catch (err) {
                     console.error('Encryption failed:', err)
-                    alert('Failed to encrypt message. Security check failed.')
+                    alert(t('messages.failedToSend'))
                     setIsSending(false)
                     return
                 }
@@ -288,7 +300,7 @@ export function ChatWindow({
             refetchMessages()
         } catch (error) {
             console.error('Failed to send message:', error)
-            alert('Failed to send message')
+            alert(t('messages.failedToSend'))
         } finally {
             setIsSending(false)
             setEditingMessage(null) // Reset edit state if it was editing
@@ -371,7 +383,7 @@ export function ChatWindow({
 
     const handleDelete = async (messageId: string) => {
         if (!conversation?.id) return
-        if (!confirm('Are you sure you want to delete this message?')) return
+        if (!confirm(t('messages.confirmDelete'))) return
 
         try {
             const res = await apiFetchJson<any>(`/api/conversations/${conversation.id}/messages/${messageId}`, {
@@ -382,7 +394,7 @@ export function ChatWindow({
             refetchMessages()
         } catch (e: any) {
             console.error('Failed to delete:', e)
-            alert(e.message || 'Failed to delete message')
+            alert(e.message || t('messages.failedToDelete'))
         }
     }
 
@@ -397,7 +409,7 @@ export function ChatWindow({
                             <input
                                 autoFocus
                                 type="text"
-                                placeholder="Search messages..."
+                                placeholder={t('messages.search')}
                                 className="bg-transparent border-none text-sm text-white focus:outline-none w-full placeholder-gray-500"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -426,12 +438,12 @@ export function ChatWindow({
                             </div>
                             <div>
                                 <h2 className="font-semibold text-gray-100">
-                                    {recipient?.name || 'Unknown User'}
-                                    {showPinnedOnly && <span className="ml-2 text-xs bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full border border-amber-500/20">Pinned Only</span>}
+                                    {recipient?.name || t('messages.unknownUser')}
+                                    {showPinnedOnly && <span className="ml-2 text-xs bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full border border-amber-500/20">{t('messages.pinnedOnly')}</span>}
                                 </h2>
                                 <div className="flex items-center gap-2">
                                     <span className={`text-xs ${recipient?.isOnline ? 'text-green-500' : 'text-gray-500'}`}>
-                                        {recipient?.isOnline ? 'Online' : 'Offline'}
+                                        {recipient?.isOnline ? t('messages.online') : t('messages.offline')}
                                     </span>
                                 </div>
                             </div>
@@ -466,21 +478,21 @@ export function ChatWindow({
                                     className="px-4 py-2.5 text-left hover:bg-white/5 text-sm text-gray-300 hover:text-white flex items-center gap-3"
                                 >
                                     <Search className="w-4 h-4" />
-                                    Search in chat
+                                    {t('messages.searchInChat')}
                                 </button>
                                 <button
                                     onClick={() => setIsMenuOpen(false)}
                                     className="px-4 py-2.5 text-left hover:bg-white/5 text-sm text-gray-300 hover:text-white flex items-center gap-3"
                                 >
                                     <FileText className="w-4 h-4" />
-                                    Files & Media
+                                    {t('messages.filesAndMedia')}
                                 </button>
                                 <button
                                     onClick={() => setIsMenuOpen(false)}
                                     className="px-4 py-2.5 text-left hover:bg-white/5 text-sm text-gray-300 hover:text-white flex items-center gap-3"
                                 >
                                     <Bell className="w-4 h-4" />
-                                    Mute notifications
+                                    {t('messages.mute')}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -492,7 +504,7 @@ export function ChatWindow({
                                     className="px-4 py-2.5 text-left hover:bg-white/5 text-sm text-gray-300 hover:text-white flex items-center gap-3 border-t border-gray-700/50 mt-1"
                                 >
                                     <Pin className="w-4 h-4" />
-                                    {showPinnedOnly ? 'Show all messages' : 'Pinned messages'}
+                                    {showPinnedOnly ? t('messages.showAllMessages') : t('messages.pinnedMessages')}
                                 </button>
                             </div>
                         )}
@@ -514,7 +526,7 @@ export function ChatWindow({
                         }).length === 0 ? (
                             <div className="flex flex-col items-center justify-center pt-20 text-gray-500 opacity-50">
                                 <Search className="w-12 h-12 mb-2" />
-                                <p>No messages found matching "{searchQuery}"</p>
+                                <p>{t('messages.noMessagesFound')} "{searchQuery}"</p>
                             </div>
                         ) : (
                             messages.filter((msg: any) => {
@@ -524,7 +536,7 @@ export function ChatWindow({
                             }).map((msg: any) => {
                                 const decryptedContent = decryptedCache[msg.id] || msg.content
                                 const isMe = msg.senderId === currentUserId
-                                const senderName = isMe ? 'You' : (msg.senderId === 'system' ? 'System' : recipient?.name || 'User')
+                                const senderName = isMe ? t('messages.you') : (msg.senderId === 'system' ? t('messages.system') : recipient?.name || t('messages.user'))
                                 const avatar = isMe ? session?.user?.image : recipient?.avatar
 
                                 return (
@@ -566,7 +578,7 @@ export function ChatWindow({
                                                 </span>
                                                 <span className="mx-1.5 text-gray-600">•</span>
                                                 <span className="text-xs text-gray-500">
-                                                    {formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true, locale: pl })}
+                                                    {formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true, locale })}
                                                 </span>
                                             </div>
                                         </div>
@@ -580,7 +592,7 @@ export function ChatWindow({
                     <>
                         {!conversation ? (
                             <div className="flex items-center justify-center h-full">
-                                <p className="text-gray-500">Start your conversation with {recipient?.name}</p>
+                                <p className="text-gray-500">{t('messages.startConversation')} {recipient?.name}</p>
                             </div>
                         ) : filteredMessages.length > 0 ? (
                             <>
@@ -607,6 +619,7 @@ export function ChatWindow({
                                             message={msg}
                                             currentUserId={currentUserId}
                                             privateKey={keys?.privateKey}
+                                            historyKeys={(historyKeys || []).map(k => k.privateKey)}
                                             senderAvatar={
                                                 (msg.senderId === currentUserId
                                                     ? session?.user?.image
@@ -624,7 +637,7 @@ export function ChatWindow({
                                             onReply={(content) => setReplyingTo({
                                                 id: msg.id,
                                                 content: content,
-                                                senderName: msg.senderId === currentUserId ? 'You' : recipient?.name || 'Unknown'
+                                                senderName: msg.senderId === currentUserId ? t('messages.you') : recipient?.name || t('messages.unknownUser')
                                             })}
                                             onPin={() => handlePin(msg.id, !msg.isPinned)}
                                             onDelete={() => handleDelete(msg.id)}
@@ -662,12 +675,12 @@ export function ChatWindow({
                                 {showPinnedOnly ? (
                                     <>
                                         <Pin className="w-12 h-12 mb-2" />
-                                        <p>No pinned messages</p>
+                                        <p>{t('messages.noPinnedMessages')}</p>
                                     </>
                                 ) : (
                                     <>
-                                        <p>No messages yet</p>
-                                        <p className="text-sm">Start the conversation!</p>
+                                        <p>{t('messages.noMessagesYet')}</p>
+                                        <p className="text-sm">{t('messages.startConversationCta')}</p>
                                     </>
                                 )}
                             </div>
