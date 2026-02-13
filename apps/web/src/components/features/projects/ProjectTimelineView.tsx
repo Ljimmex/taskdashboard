@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { Task } from './types'
 import { getDaysInMonth, isSameDay } from './utils'
+import { useTranslation } from 'react-i18next'
 
 type TimelineViewMode = 'day' | 'week' | 'month'
 
@@ -28,10 +29,7 @@ const HOUR_RANGES: { label: string; range: HourRange }[] = [
     { label: '0:00 - 24:00', range: { start: 0, end: 24 } },
 ]
 
-const MONTH_NAMES = [
-    'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-    'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
-]
+
 
 // Format date to YYYY-MM-DD in local timezone (avoids UTC shift from toISOString)
 function formatLocalDate(date: Date): string {
@@ -79,6 +77,7 @@ export function ProjectTimelineView({
     onAddTask,
     timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 }: ProjectTimelineViewProps) {
+    const { t, i18n } = useTranslation()
     const [viewMode, setViewMode] = useState<TimelineViewMode>('month') // Default to month to match requested fix
     const [hourRange, setHourRange] = useState<HourRange>(HOUR_RANGES[1].range)
     const [showHourMenu, setShowHourMenu] = useState(false)
@@ -170,14 +169,14 @@ export function ProjectTimelineView({
 
     const headerLabel = useMemo(() => {
         if (viewMode === 'day') {
-            return `${currentDate.getDate()} ${MONTH_NAMES[currentDate.getMonth()]}`
+            return `${currentDate.getDate()} ${currentDate.toLocaleDateString(i18n.language, { month: 'long' })}`
         } else if (viewMode === 'week') {
             const weekDays = getWeekDays(currentDate)
-            return `${weekDays[0].getDate()} - ${weekDays[6].getDate()} ${MONTH_NAMES[currentDate.getMonth()]}`
+            return `${weekDays[0].getDate()} - ${weekDays[6].getDate()} ${currentDate.toLocaleDateString(i18n.language, { month: 'long' })}`
         } else {
-            return `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`
+            return currentDate.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })
         }
-    }, [viewMode, currentDate])
+    }, [viewMode, currentDate, i18n.language])
 
     // Get days for current view
     const viewDays = useMemo(() => {
@@ -237,21 +236,21 @@ export function ProjectTimelineView({
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'day' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
                                 }`}
                         >
-                            Dzień
+                            {t('projects.timeline.day')}
                         </button>
                         <button
                             onClick={() => setViewMode('week')}
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'week' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
                                 }`}
                         >
-                            Tydzień
+                            {t('projects.timeline.week')}
                         </button>
                         <button
                             onClick={() => setViewMode('month')}
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'month' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'
                                 }`}
                         >
-                            Miesiąc
+                            {t('projects.timeline.month')}
                         </button>
                     </div>
 
@@ -259,7 +258,7 @@ export function ProjectTimelineView({
                         onClick={goToNow}
                         className="px-3 py-1.5 text-xs font-medium text-gray-300 bg-[#1e1e29] rounded-lg hover:bg-gray-700 transition-colors"
                     >
-                        Teraz
+                        {t('projects.timeline.now')}
                     </button>
 
                     <div className="flex items-center gap-1">
@@ -282,7 +281,7 @@ export function ProjectTimelineView({
                             {/* Date Header bar */}
                             <div className="flex h-12 bg-[#1e1e29] rounded-xl mb-2 mx-2 shadow-sm items-center w-[calc(100%-16px)] min-w-max sticky top-0 z-20">
                                 {viewDays.map((day, idx) => {
-                                    const dayName = day.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
+                                    const dayName = day.toLocaleDateString(i18n.language, { weekday: 'short' }).toUpperCase()
                                     const isToday = isSameDay(day, today)
                                     return (
                                         <div
@@ -410,7 +409,7 @@ export function ProjectTimelineView({
                                     if (dayTasks.length === 0) {
                                         return (
                                             <div className="flex items-center justify-center h-24 text-gray-500 text-xs">
-                                                Brak zadań na ten dzień
+                                                {t('projects.timeline.no_tasks_day')}
                                             </div>
                                         )
                                     }
@@ -442,7 +441,7 @@ export function ProjectTimelineView({
                                     <div className="w-8 flex-shrink-0 border-r border-gray-800" />
                                     <div className="flex-1 flex items-center justify-center text-gray-500 group-hover:text-gray-300 transition-colors">
                                         <Plus size={14} className="mr-1" />
-                                        <span className="text-[11px]">Dodaj zadanie</span>
+                                        <span className="text-[11px]">{t('projects.timeline.add_task')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -458,7 +457,7 @@ export function ProjectTimelineView({
                                 return (
                                     <div key={idx} className={`py-3 text-center border-r border-gray-800 last:border-r-0 ${isToday ? 'bg-amber-500/5' : ''}`}>
                                         <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1">
-                                            {day.toLocaleDateString('pl-PL', { weekday: 'short' })}
+                                            {day.toLocaleDateString(i18n.language, { weekday: 'short' })}
                                         </div>
                                         <div className={`text-sm font-bold ${isToday ? 'text-amber-500' : 'text-gray-200'}`}>
                                             {day.getDate()}

@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { TaskCard } from '../tasks/components/TaskCard'
 import { Task } from './types'
 import { usePanelStore } from '../../../lib/panelStore'
@@ -18,6 +19,7 @@ export function DayTaskListPanel({
     onClose,
     onTaskClick,
 }: DayTaskListPanelProps) {
+    const { t, i18n } = useTranslation()
     const panelRef = useRef<HTMLDivElement>(null)
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
 
@@ -55,7 +57,8 @@ export function DayTaskListPanel({
 
     if (!date) return null
 
-    const formattedDate = date.toLocaleDateString('en-US', {
+    // Dynamic date formatting
+    const formattedDate = date.toLocaleDateString(i18n.language, {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -79,7 +82,7 @@ export function DayTaskListPanel({
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-gray-800 rounded-t-2xl bg-[#1e1e29]">
                     <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-xl font-bold text-white">Daily Tasks</h2>
+                        <h2 className="text-xl font-bold text-white">{t('projects.day_list.title')}</h2>
                         <button
                             onClick={onClose}
                             className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
@@ -93,7 +96,7 @@ export function DayTaskListPanel({
                     <p className="text-sm text-gray-400">{formattedDate}</p>
                     <div className="mt-4 flex items-center gap-2">
                         <span className="px-2.5 py-1 rounded-lg bg-gray-800 text-xs font-medium text-gray-300">
-                            {tasks.length} {tasks.length === 1 ? 'Task' : 'Tasks'}
+                            {tasks.length} {tasks.length === 1 ? t('tasks.labels.task_singular') : t('tasks.labels.task_plural')}
                         </span>
                     </div>
                 </div>
@@ -102,7 +105,7 @@ export function DayTaskListPanel({
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                     {tasks.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm">
-                            <p>No tasks scheduled for this day.</p>
+                            <p>{t('projects.day_list.no_tasks')}</p>
                         </div>
                     ) : (
                         tasks.map((task) => (

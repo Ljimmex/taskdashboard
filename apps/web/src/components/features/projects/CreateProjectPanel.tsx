@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Palette, Users, FolderOpen } from 'lucide-react'
 import { DueDatePicker } from '../tasks/components/DueDatePicker'
 import { useSession } from '@/lib/auth'
@@ -56,6 +57,7 @@ const PROJECT_COLORS = [
 ]
 
 export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: CreateProjectPanelProps) {
+    const { t } = useTranslation()
     const { data: session } = useSession()
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
     const [name, setName] = useState('')
@@ -201,8 +203,8 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             <FolderOpen className="w-5 h-5 text-amber-500" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Create New Project</h2>
-                            <p className="text-sm text-gray-500">Add a new project to organize your tasks</p>
+                            <h2 className="text-lg font-semibold text-white">{t('projects.create.title')}</h2>
+                            <p className="text-sm text-gray-500">{t('projects.create.subtitle')}</p>
                         </div>
                     </div>
                     <button
@@ -217,13 +219,13 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Project Name <span className="text-red-400">*</span>
+                            {t('projects.create.name')} <span className="text-red-400">*</span>
                         </label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g., Website Redesign"
+                            placeholder={t('projects.create.name_placeholder')}
                             className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all font-medium"
                             required
                         />
@@ -231,12 +233,12 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
 
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Description
+                            {t('projects.create.description')}
                         </label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Brief description of the project..."
+                            placeholder={t('projects.create.description_placeholder')}
                             rows={3}
                             className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none text-sm"
                         />
@@ -245,11 +247,11 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             <Users size={14} className="inline mr-2" />
-                            Team <span className="text-red-400">*</span>
+                            {t('projects.create.team')} <span className="text-red-400">*</span>
                         </label>
                         <Select value={teamId} onValueChange={setTeamId}>
                             <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border-none text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all data-[placeholder]:text-gray-500">
-                                <SelectValue placeholder="Select a team" />
+                                <SelectValue placeholder={t('projects.create.select_team')} />
                             </SelectTrigger>
                             <SelectContent className="bg-[#1a1a24] border-none text-white">
                                 {teams.map((team) => (
@@ -270,22 +272,22 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                         </Select>
                         {teams.length === 0 && (
                             <p className="text-xs text-gray-500 mt-2">
-                                No teams available. Create a team first.
+                                {t('projects.create.no_teams')}
                             </p>
                         )}
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Industry Template
+                            {t('projects.create.template')}
                         </label>
                         <Select value={industryTemplateId} onValueChange={setIndustryTemplateId}>
                             <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border-none text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all">
-                                <SelectValue placeholder="Select template" />
+                                <SelectValue placeholder={t('projects.create.select_template')} />
                             </SelectTrigger>
                             <SelectContent className="bg-[#1a1a24] border-none text-white">
                                 <SelectItem value="no_template" className="focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white font-medium">
-                                    No template (custom stages)
+                                    {t('projects.create.no_template')}
                                 </SelectItem>
                                 {templates.map((template) => (
                                     <SelectItem
@@ -306,14 +308,14 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             </SelectContent>
                         </Select>
                         <p className="text-xs text-gray-500 mt-2">
-                            Templates provide predefined stages for your workflow
+                            {t('projects.create.template_help')}
                         </p>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
                             <Palette size={14} className="inline mr-2" />
-                            Project Color
+                            {t('projects.create.color')}
                         </label>
                         <div className="flex flex-wrap gap-2">
                             {PROJECT_COLORS.map((c) => (
@@ -334,23 +336,23 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Start Date
+                                {t('projects.create.start_date')}
                             </label>
                             <DueDatePicker
                                 value={startDate}
                                 onChange={(date) => setStartDate(date || '')}
-                                placeholder="Select start date"
+                                placeholder={t('projects.create.start_date')}
                                 className="w-full"
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Deadline
+                                {t('projects.create.deadline')}
                             </label>
                             <DueDatePicker
                                 value={deadline}
                                 onChange={(date) => setDeadline(date || '')}
-                                placeholder="Select deadline"
+                                placeholder={t('projects.create.deadline')}
                                 className="w-full"
                             />
                         </div>
@@ -369,7 +371,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                         onClick={onClose}
                         className="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-300 font-medium hover:bg-gray-800 transition-colors"
                     >
-                        Cancel
+                        {t('projects.create.cancel')}
                     </button>
                     <button
                         type="submit"
@@ -377,7 +379,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                         disabled={loading || !name.trim() || !teamId}
                         className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/20"
                     >
-                        {loading ? 'Creating...' : 'Create Project'}
+                        {loading ? t('projects.create.creating') : t('projects.create.submit')}
                     </button>
                 </div>
             </div>

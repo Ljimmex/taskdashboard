@@ -53,7 +53,6 @@ export const auth = betterAuth({
         defaultCookieAttributes: {
             sameSite: 'none',
             secure: true, // Requires HTTPS
-            domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined // Share cookies across subdomains on Render
         },
     },
 

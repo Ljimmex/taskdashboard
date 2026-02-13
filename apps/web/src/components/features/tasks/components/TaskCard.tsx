@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import Markdown from 'react-markdown'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
@@ -95,6 +96,7 @@ export function TaskCard({
     onArchive,
     isDragging = false,
 }: TaskCardProps) {
+    const { t, i18n } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const [showMenu, setShowMenu] = useState(false)
     const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('down')
@@ -162,7 +164,7 @@ export function TaskCard({
     // Format date
     const formatDate = (dateStr: string | Date) => {
         const date = new Date(dateStr)
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        return date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' })
     }
 
     // Normal view mode
@@ -198,7 +200,7 @@ export function TaskCard({
                                 <path d="M22.5 4.5L27.5 9.5L12 25L7 20L22.5 4.5Z" fill="#7A664E" />
                                 <path d="M12 25L7 20L4 28L12 25Z" fill="#F2CE88" />
                             </svg>
-                            Edit
+                            {t('tasks.card.menu.edit')}
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
                             <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
@@ -209,7 +211,7 @@ export function TaskCard({
                                 <rect x="10" y="10" width="16" height="16" rx="3" fill="#F2CE88" />
                                 <path d="M8 22V10C8 7.79086 9.79086 6 12 6H22" stroke="#7A664E" strokeWidth="4" strokeLinecap="round" />
                             </svg>
-                            Duplicate
+                            {t('tasks.card.menu.duplicate')}
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onArchive?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
                             <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
@@ -220,7 +222,7 @@ export function TaskCard({
                                 <rect x="4" y="12" width="24" height="16" rx="3" fill="#7A664E" />
                                 <rect x="6" y="8" width="20" height="4" rx="1" fill="#F2CE88" />
                             </svg>
-                            Archive
+                            {t('tasks.card.menu.archive')}
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onDelete?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
                             <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
@@ -231,7 +233,7 @@ export function TaskCard({
                                 <path d="M6 10V24C6 26.2091 7.79086 28 10 28H22C24.2091 28 26 26.2091 26 24V10H6Z" fill="#7A664E" />
                                 <rect x="4" y="6" width="24" height="4" rx="2" fill="#F2CE88" />
                             </svg>
-                            Delete
+                            {t('tasks.card.menu.delete')}
                         </button>
                     </div>
                 )}
@@ -393,7 +395,9 @@ export function TaskCard({
 }
 
 // Add New Task Card - matching existing AddNewTaskCard style
-export function AddTaskCard({ onClick, label = "Add New Task" }: { onClick?: () => void, label?: string }) {
+export function AddTaskCard({ onClick, label: propLabel }: { onClick?: () => void, label?: string }) {
+    const { t } = useTranslation()
+    const label = propLabel || t('tasks.card.add_task')
     return (
         <button
             onClick={onClick}

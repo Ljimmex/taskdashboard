@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { usePanelStore } from '../../../../lib/panelStore'
 import { LabelPicker } from '../../labels/LabelPicker'
 import type { Label } from '../../labels/LabelBadge'
@@ -122,6 +123,7 @@ export function CreateTaskPanel({
     onCreateLabel: propOnCreateLabel,
     teamMembers = [],
 }: CreateTaskPanelProps & { availableLabels?: Label[]; onCreateLabel?: (name: string, color: string) => Label }) {
+    const { t } = useTranslation()
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [status, setStatus] = useState(defaultStatus)
@@ -433,7 +435,7 @@ export function CreateTaskPanel({
                                     className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 text-sm text-gray-300 transition-colors"
                                 >
                                     <span className="text-lg">📁</span>
-                                    <span>{selectedProject?.name || 'Wybierz projekt'}</span>
+                                    <span>{selectedProject?.name || t('tasks.create.select_project')}</span>
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M6 9L12 15L18 9" />
                                     </svg>
@@ -461,7 +463,7 @@ export function CreateTaskPanel({
                         )}
 
                         <h2 className="text-lg font-semibold text-white flex-1">
-                            Nowe zadanie
+                            {t('tasks.create.title')}
                         </h2>
 
                         {/* Template Selector - for tasks */}
@@ -507,14 +509,14 @@ export function CreateTaskPanel({
                 <div className="flex-1 overflow-y-auto p-6">
                     {/* Title */}
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Tytuł zadania</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('tasks.create.task_title')}</label>
                         <input
                             ref={titleInputRef}
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             onKeyDown={handleTitleKeyDown}
-                            placeholder="Co jest do zrobienia?"
+                            placeholder={t('tasks.create.task_title_placeholder')}
                             className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
                         />
                     </div>
@@ -525,12 +527,12 @@ export function CreateTaskPanel({
                             ref={descriptionRef}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Dodaj opis zadania... (wspiera Markdown)"
+                            placeholder={t('tasks.create.description_placeholder')}
                             rows={4}
                             className="w-full text-sm text-gray-300 bg-[#1a1a24] rounded-xl p-4 placeholder-gray-500 outline-none resize-none transition-colors"
                         />
                         <p className="text-xs text-gray-600 mt-2">
-                            Wskazówka: Użyj **pogrubienia**, *kursywy*, - listy
+                            {t('tasks.create.markdown_hint')}
                         </p>
                     </div>
 
@@ -559,7 +561,7 @@ export function CreateTaskPanel({
                                 availableAssignees={teamMembers as any}
                                 onSelect={setAssignees}
                                 maxVisible={2}
-                                placeholder={'Przypisz osobę...'}
+                                placeholder={t('tasks.create.assignee_placeholder')}
                             />
                         </div>
 
@@ -569,20 +571,20 @@ export function CreateTaskPanel({
                         {/* Dates - aligned right */}
                         <div className="flex items-center gap-2">
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase">Start</span>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase">{t('tasks.create.start_date')}</span>
                                 <DueDatePicker
                                     value={startDate}
                                     onChange={(date) => setStartDate(date || '')}
-                                    placeholder="Start"
+                                    placeholder={t('tasks.create.start_date')}
                                     showTime={false}
                                 />
                             </div>
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase">Koniec</span>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase">{t('tasks.create.end_date')}</span>
                                 <DueDatePicker
                                     value={dueDate}
                                     onChange={(date) => setDueDate(date || '')}
-                                    placeholder="Termin"
+                                    placeholder={t('tasks.create.due_date_placeholder')}
                                     showTime={false}
                                 />
                             </div>
@@ -617,7 +619,7 @@ export function CreateTaskPanel({
                         >
                             <path d="M6 9L12 15L18 9" />
                         </svg>
-                        {showMore ? 'Mniej opcji' : 'Więcej opcji'}
+                        {showMore ? t('tasks.create.less_options') : t('tasks.create.more_options')}
                     </button>
 
                     {/* Extended Options */}
@@ -628,7 +630,7 @@ export function CreateTaskPanel({
                                 <div>
                                     <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
                                         <SubtaskCheckboxIcon />
-                                        Zadania podrzędne
+                                        {t('tasks.create.subtasks')}
                                     </label>
                                     <div className="space-y-3">
                                         {subtasks.map((subtask, index) => (
@@ -734,7 +736,7 @@ export function CreateTaskPanel({
                                                 value={newSubtask}
                                                 onChange={(e) => setNewSubtask(e.target.value)}
                                                 onKeyDown={(e) => e.key === 'Enter' && addSubtask()}
-                                                placeholder="Dodaj zadanie podrzędne..."
+                                                placeholder={t('tasks.create.add_subtask_placeholder')}
                                                 className="flex-1 px-4 py-3 bg-gray-800/50 rounded-xl text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500/50 transition-colors"
                                             />
                                             <button
@@ -742,7 +744,7 @@ export function CreateTaskPanel({
                                                 disabled={!newSubtask.trim()}
                                                 className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${newSubtask.trim() ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'text-gray-600 cursor-not-allowed'}`}
                                             >
-                                                + Dodaj
+                                                {t('tasks.create.add_subtask_button')}
                                             </button>
                                         </div>
                                     </div>
@@ -753,7 +755,7 @@ export function CreateTaskPanel({
                             <div>
                                 <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
                                     <PaperclipIcon />
-                                    Załączniki
+                                    {t('tasks.create.attachments')}
                                 </label>
 
                                 {/* Hidden file input */}
@@ -852,9 +854,9 @@ export function CreateTaskPanel({
                                             </svg>
                                         </div>
                                         <p className={`text-sm transition-colors ${isDragging ? 'text-amber-400' : 'text-gray-500'}`}>
-                                            {isDragging ? 'Upuść pliki tutaj...' : 'Przeciągnij pliki lub kliknij aby dodać'}
+                                            {isDragging ? t('tasks.create.dropzone_active') : t('tasks.create.dropzone_inactive')}
                                         </p>
-                                        <p className="text-xs text-gray-600">PNG, JPG, PDF, DOCX do 100MB</p>
+                                        <p className="text-xs text-gray-600">{t('tasks.create.file_type_hint')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -882,7 +884,7 @@ export function CreateTaskPanel({
                                     </svg>
                                 )}
                             </div>
-                            <span className="text-sm text-gray-400 font-medium">Stwórz kolejne</span>
+                            <span className="text-sm text-gray-400 font-medium">{t('tasks.create.create_another')}</span>
                         </label>
 
                         {/* Right side - Actions */}
@@ -891,7 +893,7 @@ export function CreateTaskPanel({
                                 onClick={onClose}
                                 className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
                             >
-                                Anuluj
+                                {t('tasks.create.cancel')}
                             </button>
                             <button
                                 onClick={handleCreate}
@@ -901,7 +903,7 @@ export function CreateTaskPanel({
                                     : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
-                                Stwórz zadanie
+                                {t('tasks.create.create_button')}
                                 <span className="text-xs opacity-75">⌘↵</span>
                             </button>
                         </div>

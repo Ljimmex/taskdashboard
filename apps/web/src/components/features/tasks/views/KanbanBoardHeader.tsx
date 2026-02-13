@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FilterIcon, SearchIconDefault, SearchIconActive } from '@/components/dashboard/icons'
 import {
     FlagIcon,
@@ -46,6 +47,7 @@ function SortByDropdown({
     onClose: () => void
     onSort?: (sortBy: string, direction: 'asc' | 'desc') => void
 }) {
+    const { t } = useTranslation()
     const [sortBy, setSortBy] = useState<string | null>(null)
     const [direction, setDirection] = useState<'asc' | 'desc'>('desc')
     const menuRef = useRef<HTMLDivElement>(null)
@@ -72,10 +74,10 @@ function SortByDropdown({
     }
 
     const sortOptions = [
-        { value: 'priority', label: 'Priorytet', icon: <FlagIcon /> },
-        { value: 'dueDate', label: 'Termin', icon: <CalendarSmallIcon /> },
-        { value: 'createdAt', label: 'Data utworzenia', icon: <CalendarSmallIcon /> },
-        { value: 'updatedAt', label: 'Ostatnia aktualizacja', icon: <ClockIcon /> },
+        { value: 'priority', label: t('board.sort.options.priority'), icon: <FlagIcon /> },
+        { value: 'dueDate', label: t('board.sort.options.due_date'), icon: <CalendarSmallIcon /> },
+        { value: 'createdAt', label: t('board.sort.options.created_at'), icon: <CalendarSmallIcon /> },
+        { value: 'updatedAt', label: t('board.sort.options.updated_at'), icon: <ClockIcon /> },
     ]
 
     return (
@@ -85,7 +87,7 @@ function SortByDropdown({
         >
             {/* Core Sort Options */}
             <div className="p-2">
-                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">Sortuj według</div>
+                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">{t('board.sort.title')}</div>
                 {sortOptions.map(option => (
                     <button
                         key={option.value}
@@ -110,7 +112,7 @@ function SortByDropdown({
 
             {/* Direction Toggle */}
             <div className="p-2">
-                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">Kolejność</div>
+                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">{t('board.sort.direction')}</div>
                 <button
                     onClick={toggleDirection}
                     className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
@@ -122,7 +124,7 @@ function SortByDropdown({
                                 <path d="M16 26L16 6" stroke="#9E9E9E" strokeWidth="4" strokeLinecap="round" />
                                 <path d="M8 14L16 6L24 14" stroke="#545454" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                            Rosnąco
+                            {t('board.sort.asc')}
                         </>
                     ) : (
                         <>
@@ -131,7 +133,7 @@ function SortByDropdown({
                                 <path d="M16 6L16 26" stroke="#9E9E9E" strokeWidth="4" strokeLinecap="round" />
                                 <path d="M8 18L16 26L24 18" stroke="#545454" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                            Malejąco
+                            {t('board.sort.desc')}
                         </>
                     )}
                 </button>
@@ -154,6 +156,7 @@ function FiltersDropdown({
     availableLabels?: { id: string; name: string; color: string }[]
     availableStatuses?: { value: string; label: string }[]
 }) {
+    const { t } = useTranslation()
     const [filters, setFilters] = useState<FilterState>({
         assignedToMe: false,
         overdue: false,
@@ -228,14 +231,14 @@ function FiltersDropdown({
         >
             {/* Quick Filters */}
             <div className="p-2">
-                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">Szybkie filtry</div>
+                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">{t('board.filters.quick.title')}</div>
                 <button
                     onClick={() => toggleFilter('assignedToMe')}
                     className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
                 >
                     <Checkbox checked={filters.assignedToMe} />
                     <UserIcon />
-                    Przypisane do mnie
+                    {t('board.filters.quick.assigned_to_me')}
                 </button>
                 <button
                     onClick={() => toggleFilter('dueDateRange', 'overdue')}
@@ -243,7 +246,7 @@ function FiltersDropdown({
                 >
                     <Checkbox checked={filters.dueDateRange === 'overdue'} />
                     <FireIcon />
-                    Przeterminowane
+                    {t('board.filters.quick.overdue')}
                 </button>
                 <button
                     onClick={() => toggleFilter('dueDateRange', 'today')}
@@ -251,7 +254,7 @@ function FiltersDropdown({
                 >
                     <Checkbox checked={filters.dueDateRange === 'today'} />
                     <span className="text-amber-400">📅</span>
-                    Dzisiaj
+                    {t('board.filters.quick.today')}
                 </button>
                 <button
                     onClick={() => toggleFilter('dueDateRange', 'this_week')}
@@ -259,7 +262,7 @@ function FiltersDropdown({
                 >
                     <Checkbox checked={filters.dueDateRange === 'this_week'} />
                     <span className="text-blue-400">📅</span>
-                    Ten tydzień
+                    {t('board.filters.quick.this_week')}
                 </button>
             </div>
 
@@ -267,7 +270,7 @@ function FiltersDropdown({
 
             {/* Assignees Section */}
             <div className="p-2">
-                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">Osoby</div>
+                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">{t('board.filters.assignees')}</div>
                 <div className="max-h-40 overflow-y-auto">
                     {members.map(member => (
                         <button
@@ -287,7 +290,7 @@ function FiltersDropdown({
                         </button>
                     ))}
                     {members.length === 0 && (
-                        <div className="px-3 py-2 text-xs text-gray-500 italic">Brak członków zespołu</div>
+                        <div className="px-3 py-2 text-xs text-gray-500 italic">{t('board.filters.no_members')}</div>
                     )}
                 </div>
             </div>
@@ -296,7 +299,7 @@ function FiltersDropdown({
 
             {/* Priority */}
             <div className="p-2">
-                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">Priorytet</div>
+                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">{t('board.filters.priorities')}</div>
                 {priorities.map(p => (
                     <button
                         key={p.value}
@@ -305,7 +308,7 @@ function FiltersDropdown({
                     >
                         <Checkbox checked={filters.priorities.includes(p.value)} />
                         <span className={`w-2 h-2 rounded-full ${p.color}`} />
-                        {p.label}
+                        {t(`tasks.priority.${p.value}`)}
                     </button>
                 ))}
             </div>
@@ -314,7 +317,7 @@ function FiltersDropdown({
 
             {/* Labels */}
             <div className="p-2">
-                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">Etykiety / Tagi</div>
+                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">{t('board.filters.labels')}</div>
                 <div className="max-h-40 overflow-y-auto">
                     {availableLabels.map(label => (
                         <button
@@ -328,7 +331,7 @@ function FiltersDropdown({
                         </button>
                     ))}
                     {availableLabels.length === 0 && (
-                        <div className="px-3 py-2 text-xs text-gray-500 italic">Brak etykiet</div>
+                        <div className="px-3 py-2 text-xs text-gray-500 italic">{t('board.filters.no_labels')}</div>
                     )}
                 </div>
             </div>
@@ -337,7 +340,7 @@ function FiltersDropdown({
 
             {/* Status */}
             <div className="p-2">
-                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">Status</div>
+                <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">{t('board.filters.status')}</div>
                 {availableStatuses.map(s => (
                     <button
                         key={s.value}
@@ -368,7 +371,7 @@ function FiltersDropdown({
                     }}
                     className="w-full px-3 py-2 text-sm text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
                 >
-                    Wyczyść filtry
+                    {t('board.filters.clear')}
                 </button>
             </div>
         </div>
@@ -388,6 +391,7 @@ export function KanbanBoardHeader({
     availableLabels,
     availableStatuses
 }: KanbanBoardHeaderProps) {
+    const { t } = useTranslation()
     const [searchFocused, setSearchFocused] = useState(false)
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null)
     const [showSortDropdown, setShowSortDropdown] = useState(false)
@@ -416,7 +420,7 @@ export function KanbanBoardHeader({
                     </div>
                     <input
                         type="text"
-                        placeholder="Search"
+                        placeholder={t('board.header.search')}
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
@@ -434,7 +438,7 @@ export function KanbanBoardHeader({
                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a24] text-gray-400 hover:text-white text-sm font-medium transition-all"
                     >
                         <FilterIcon isHovered={hoveredBtn === 'filters' || showFiltersDropdown} />
-                        Filters
+                        {t('board.header.filters')}
                     </button>
                     {showFiltersDropdown && (
                         <FiltersDropdown
@@ -466,7 +470,7 @@ export function KanbanBoardHeader({
                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a24] text-gray-400 hover:text-white text-sm font-medium transition-all"
                     >
                         {(hoveredBtn === 'sort' || showSortDropdown) ? <SortIconGold /> : <SortIconGrey />}
-                        Sort By
+                        {t('board.header.sort')}
                     </button>
                     {showSortDropdown && (
                         <SortByDropdown
@@ -485,7 +489,7 @@ export function KanbanBoardHeader({
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    New Task
+                    {t('board.header.new_task')}
                 </button>
             </div>
         </div>

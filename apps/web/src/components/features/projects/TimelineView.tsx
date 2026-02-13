@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { getDaysInMonth, isSameDay } from './utils'
 import { Task } from './types'
+import { useTranslation } from 'react-i18next'
 
 export function TimelineView({
     tasks,
@@ -18,6 +19,7 @@ export function TimelineView({
     onAddTask?: (date?: Date) => void
     onDayClick?: (date: Date, tasks: Task[]) => void
 }) {
+    const { t, i18n } = useTranslation()
     const days = getDaysInMonth(currentMonth)
 
     // Group tasks by dueDate
@@ -48,10 +50,7 @@ export function TimelineView({
         ? (todayIndex * DAY_WIDTH) + ((timePercentage / 100) * DAY_WIDTH)
         : -1
 
-    const MONTH_NAMES = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-    ]
+
 
     return (
         <div className="flex flex-col w-full">
@@ -59,7 +58,7 @@ export function TimelineView({
             <div className="flex items-center justify-center h-10 gap-4 bg-[#1e1e29] rounded-xl m-2 flex-shrink-0">
                 <button onClick={handlePrevMonth} className="text-gray-400 hover:text-white"><ChevronLeft size={14} /></button>
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                    {currentMonth.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
                 </span>
                 <button onClick={handleNextMonth} className="text-gray-400 hover:text-white"><ChevronRight size={14} /></button>
             </div>
@@ -68,7 +67,7 @@ export function TimelineView({
                 {/* Date Header bar */}
                 <div className="flex h-12 bg-[#1e1e29] rounded-xl mb-2 mx-2 shadow-sm items-center w-[calc(100%-16px)] min-w-max">
                     {days.map((day, idx) => {
-                        const dayName = day.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
+                        const dayName = day.toLocaleDateString(i18n.language, { weekday: 'short' }).toUpperCase()
                         const isToday = isSameDay(day, today)
                         return (
                             <div
@@ -121,7 +120,7 @@ export function TimelineView({
                                                 backgroundColor: '#13131a' // Match bg to hide line behind
                                             }}
                                         >
-                                            {dayTasks.length}t
+                                            {dayTasks.length}{t('projects.timeline.task_abbr')}
                                         </div>
                                     )}
                                 </div>

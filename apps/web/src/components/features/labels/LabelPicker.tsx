@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Label, LabelBadge } from './LabelBadge'
+import { useTranslation } from 'react-i18next'
 
 interface LabelPickerProps {
     selectedLabels: Label[]
@@ -28,6 +29,7 @@ const PRESET_COLORS = [
 ]
 
 export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreateNew }: LabelPickerProps) => {
+    const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [isCreating, setIsCreating] = useState(false)
@@ -95,7 +97,7 @@ export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreat
                         )}
                     </div>
                 ) : (
-                    'Add labels'
+                    t('tasks.labels.add_labels')
                 )}
             </button>
 
@@ -110,7 +112,7 @@ export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreat
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search labels..."
+                                    placeholder={t('tasks.labels.search')}
                                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500/50"
                                     autoFocus
                                 />
@@ -140,7 +142,7 @@ export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreat
                                     })
                                 ) : (
                                     <div className="text-center py-6 text-gray-500 text-sm">
-                                        No labels found
+                                        {t('tasks.labels.no_results')}
                                     </div>
                                 )}
                             </div>
@@ -156,7 +158,7 @@ export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreat
                                             <line x1="12" y1="5" x2="12" y2="19" />
                                             <line x1="5" y1="12" x2="19" y2="12" />
                                         </svg>
-                                        Create new label
+                                        {t('tasks.labels.create_new')}
                                     </button>
                                 </div>
                             )}
@@ -165,7 +167,7 @@ export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreat
                         /* Create Form */
                         <div className="p-4 space-y-4">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-semibold text-white">Create Label</h3>
+                                <h3 className="text-sm font-semibold text-white">{t('tasks.labels.create_header')}</h3>
                                 <button
                                     onClick={() => setIsCreating(false)}
                                     className="text-gray-500 hover:text-white transition-colors"
@@ -178,13 +180,13 @@ export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreat
 
                             {/* Name Input */}
                             <div>
-                                <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">Name</label>
+                                <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">{t('tasks.labels.name')}</label>
                                 <input
                                     type="text"
                                     value={newLabelName}
                                     onChange={(e) => setNewLabelName(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleCreateLabel()}
-                                    placeholder="e.g., Bug, Feature, Design"
+                                    placeholder={t('tasks.labels.placeholder')}
                                     className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500/50"
                                     autoFocus
                                 />
@@ -192,7 +194,7 @@ export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreat
 
                             {/* Color Picker */}
                             <div>
-                                <label className="text-xs text-gray-500 uppercase font-bold mb-2 block">Color</label>
+                                <label className="text-xs text-gray-500 uppercase font-bold mb-2 block">{t('tasks.labels.color')}</label>
                                 <div className="grid grid-cols-8 gap-2">
                                     {PRESET_COLORS.map(color => (
                                         <button
@@ -207,8 +209,8 @@ export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreat
 
                             {/* Preview */}
                             <div>
-                                <label className="text-xs text-gray-500 uppercase font-bold mb-2 block">Preview</label>
-                                <LabelBadge label={{ id: 'preview', name: newLabelName || 'Label name', color: newLabelColor }} size="md" />
+                                <label className="text-xs text-gray-500 uppercase font-bold mb-2 block">{t('tasks.labels.preview')}</label>
+                                <LabelBadge label={{ id: 'preview', name: newLabelName || t('tasks.labels.name'), color: newLabelColor }} size="md" />
                             </div>
 
                             {/* Actions */}
@@ -218,13 +220,13 @@ export const LabelPicker = ({ selectedLabels, availableLabels, onSelect, onCreat
                                     disabled={!newLabelName.trim()}
                                     className="flex-1 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-medium rounded-lg transition-colors text-sm"
                                 >
-                                    Create
+                                    {t('tasks.labels.add')}
                                 </button>
                                 <button
                                     onClick={() => setIsCreating(false)}
                                     className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm"
                                 >
-                                    Cancel
+                                    {t('tasks.labels.cancel')}
                                 </button>
                             </div>
                         </div>

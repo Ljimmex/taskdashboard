@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { TaskCardProps } from '../components/TaskCard'
 import {
     DocumentIcon,
@@ -173,6 +174,7 @@ const RowMenu = ({
     onDuplicate?: () => void
     onArchive?: () => void
 }) => {
+    const { t } = useTranslation()
     const [open, setOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
 
@@ -207,7 +209,7 @@ const RowMenu = ({
                     >
                         <div className="group-hover/item:hidden"><PencilIcon /></div>
                         <div className="hidden group-hover/item:block"><PencilIconGold /></div>
-                        Edit
+                        {t('tasks.card.menu.edit')}
                     </button>
                     {/* Duplicate */}
                     <button
@@ -216,7 +218,7 @@ const RowMenu = ({
                     >
                         <div className="group-hover/item:hidden"><DuplicateIcon /></div>
                         <div className="hidden group-hover/item:block"><DuplicateIconGold /></div>
-                        Duplicate
+                        {t('tasks.card.menu.duplicate')}
                     </button>
                     {/* Archive */}
                     <button
@@ -225,7 +227,7 @@ const RowMenu = ({
                     >
                         <div className="group-hover/item:hidden"><ArchiveIcon /></div>
                         <div className="hidden group-hover/item:block"><ArchiveIconGold /></div>
-                        Archive
+                        {t('tasks.card.menu.archive')}
                     </button>
                     {/* Delete */}
                     <button
@@ -234,7 +236,7 @@ const RowMenu = ({
                     >
                         <div className="group-hover/item:hidden"><TrashIcon /></div>
                         <div className="hidden group-hover/item:block"><TrashRedIcon /></div>
-                        Delete
+                        {t('tasks.card.menu.delete')}
                     </button>
                 </div>
             )}
@@ -258,6 +260,7 @@ export function TaskListView({
     columns = [],
     priorities = []
 }: TaskListViewProps) {
+    const { t, i18n } = useTranslation()
     const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
@@ -307,7 +310,7 @@ export function TaskListView({
     const formatDate = (dateString: string | null | undefined) => {
         if (!dateString) return '-'
         const date = new Date(dateString)
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        return date.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric', year: 'numeric' })
     }
 
     const allSelected = tasks.length > 0 && selectedTasks.length === tasks.length
@@ -330,24 +333,24 @@ export function TaskListView({
                                 />
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>
-                                <div className="flex items-center gap-2">Task Name <SortIcon direction={getSortDirection('name')} /></div>
+                                <div className="flex items-center gap-2">{t('projects.list.columns.name')} <SortIcon direction={getSortDirection('name')} /></div>
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('subtasks')}>
-                                <div className="flex items-center gap-2">Subtasks <SortIcon direction={getSortDirection('subtasks')} /></div>
+                                <div className="flex items-center gap-2">{t('projects.list.columns.subtasks')} <SortIcon direction={getSortDirection('subtasks')} /></div>
                             </th>
                             <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('status')}>
-                                <div className="flex items-center justify-center gap-2">Status <SortIcon direction={getSortDirection('status')} /></div>
+                                <div className="flex items-center justify-center gap-2">{t('projects.list.columns.status')} <SortIcon direction={getSortDirection('status')} /></div>
                             </th>
                             <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('priority')}>
-                                <div className="flex items-center justify-center gap-2">Priority <SortIcon direction={getSortDirection('priority')} /></div>
+                                <div className="flex items-center justify-center gap-2">{t('projects.list.columns.priority')} <SortIcon direction={getSortDirection('priority')} /></div>
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('startDate')}>
-                                <div className="flex items-center gap-2">Start Date <SortIcon direction={getSortDirection('startDate')} /></div>
+                                <div className="flex items-center gap-2">{t('projects.list.columns.start_date')} <SortIcon direction={getSortDirection('startDate')} /></div>
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('endDate')}>
-                                <div className="flex items-center gap-2">End Date <SortIcon direction={getSortDirection('endDate')} /></div>
+                                <div className="flex items-center gap-2">{t('projects.list.columns.end_date')} <SortIcon direction={getSortDirection('endDate')} /></div>
                             </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Assignee</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">{t('projects.list.columns.assignee')}</th>
                             <th className="w-12 p-4"></th>
                         </tr>
                     </thead>
@@ -399,7 +402,7 @@ export function TaskListView({
                             <path d="M18 4V8C18 9.10457 18.8954 10 20 10H24" fill="#9E9E9E" />
                         </svg>
                     </div>
-                    <p className="text-gray-500 text-sm">No tasks found</p>
+                    <p className="text-gray-500 text-sm">{t('projects.list.no_tasks')}</p>
                 </div>
             )}
         </div>

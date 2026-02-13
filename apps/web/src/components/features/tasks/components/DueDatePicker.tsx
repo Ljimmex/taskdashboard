@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { cn } from '../../../../lib/utils'
@@ -14,11 +15,7 @@ interface DueDatePickerProps {
     showTime?: boolean
 }
 
-const DAYS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const MONTHS_EN = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-]
+
 
 export function DueDatePicker({
     value,
@@ -30,6 +27,7 @@ export function DueDatePicker({
     triggerClassName,
     showTime = false,
 }: DueDatePickerProps) {
+    const { t, i18n } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
     const [viewDate, setViewDate] = useState(() => {
         if (value) return new Date(value)
@@ -39,6 +37,26 @@ export function DueDatePicker({
     const dropdownRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
     const [position, setPosition] = useState({ top: 0, left: 0, openUp: false })
+
+    // Generate localized days and months
+    const { days, months } = useMemo(() => {
+        const d = []
+        const m = []
+        const lang = i18n.language || 'en'
+
+        // Days (Monday based)
+        for (let i = 0; i < 7; i++) {
+            // 2024-01-01 is Monday
+            d.push(new Date(2024, 0, 1 + i).toLocaleDateString(lang, { weekday: 'short' }))
+        }
+
+        // Months
+        for (let i = 0; i < 12; i++) {
+            m.push(new Date(2024, i, 1).toLocaleDateString(lang, { month: 'long' }))
+        }
+
+        return { days: d, months: m }
+    }, [i18n.language])
 
     const selectedDate = value ? new Date(value) : null
 
@@ -273,14 +291,14 @@ export function DueDatePicker({
     const formatDisplayDate = () => {
         if (!selectedDate) return placeholder
 
-        const datePart = selectedDate.toLocaleDateString('en-US', {
+        const datePart = selectedDate.toLocaleDateString(i18n.language, {
             day: 'numeric',
             month: 'short',
             year: 'numeric',
         })
 
         if (showTime && value?.includes('T')) {
-            const timePart = selectedDate.toLocaleTimeString('en-US', {
+            const timePart = selectedDate.toLocaleTimeString(i18n.language, {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false
@@ -292,9 +310,9 @@ export function DueDatePicker({
     }
 
     const quickDates = [
-        { label: 'Today', date: new Date() },
-        { label: 'Tomorrow', date: new Date(Date.now() + 86400000) },
-        { label: 'Next Week', date: new Date(Date.now() + 7 * 86400000) },
+        { label: t('tasks.datepicker.today', 'Today'), date: new Date() },
+        { label: t('tasks.datepicker.tomorrow', 'Tomorrow'), date: new Date(Date.now() + 86400000) },
+        { label: t('tasks.datepicker.next_week', 'Next Week'), date: new Date(Date.now() + 7 * 86400000) },
     ]
 
 
@@ -382,7 +400,7 @@ export function DueDatePicker({
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
                                     <span className="font-semibold text-gray-100 capitalize">
-                                        {MONTHS_EN[viewDate.getMonth()]} {viewDate.getFullYear()}
+                                        {months[viewDate.getMonth()]} {viewDate.getFullYear()}
                                     </span>
                                     <button
                                         onClick={handleNextMonth}
@@ -394,8 +412,8 @@ export function DueDatePicker({
 
                                 {/* Calendar Grid */}
                                 <div className="grid grid-cols-7 gap-1 mb-2">
-                                    {DAYS_EN.map((day) => (
-                                        <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
+                                    {days.map((day) => (
+                                        <div key={day} className="text-center text-xs font-medium text-gray-500 py-1 capitalize">
                                             {day}
                                         </div>
                                     ))}
@@ -427,7 +445,7 @@ export function DueDatePicker({
                             {/* Time Column */}
                             {showTime && (
                                 <div className="w-[88px] border-none pl-4 flex flex-col">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase mb-4 text-center tracking-widest">Time</span>
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase mb-4 text-center tracking-widest">{t('tasks.datepicker.time', 'Time')}</span>
 
                                     <div className="flex-1 flex flex-col gap-1 overflow-y-auto time-scrollbar pr-3 max-h-[300px]">
                                         {Array.from({ length: 24 }).map((_, h) => (
@@ -473,7 +491,7 @@ export function DueDatePicker({
                                 onClick={() => setIsOpen(false)}
                                 className="w-full py-2.5 bg-[#F2CE88] hover:bg-[#d6b677] text-gray-900 rounded-xl text-sm font-bold transition-all shadow-lg shadow-[#F2CE88]/20 active:scale-95"
                             >
-                                Done
+                                {t('tasks.datepicker.done', 'Done')}
                             </button>
                         </div>
                     </div>,

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FilterIcon, SearchIconDefault, SearchIconActive } from '@/components/dashboard/icons'
 
 // Icons
@@ -40,6 +41,7 @@ export function ProjectsHeader({
     onSearchChange,
     onNewProject,
 }: ProjectsHeaderProps) {
+    const { t } = useTranslation()
     const [searchFocused, setSearchFocused] = useState(false)
     const [hoveredBtn, setHoveredBtn] = useState<string | null>(null)
 
@@ -50,22 +52,22 @@ export function ProjectsHeader({
                 <button
                     onClick={() => onViewModeChange('gantt')}
                     className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === 'gantt'
-                            ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                            : 'text-gray-500 hover:text-white'
+                        ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                        : 'text-gray-500 hover:text-white'
                         }`}
                 >
                     <GanttIcon active={viewMode === 'gantt'} />
-                    Gantt
+                    {t('projects.header.gantt')}
                 </button>
                 <button
                     onClick={() => onViewModeChange('timeline')}
                     className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium transition-all ${viewMode === 'timeline'
-                            ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                            : 'text-gray-500 hover:text-white'
+                        ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                        : 'text-gray-500 hover:text-white'
                         }`}
                 >
                     <TimelineIcon active={viewMode === 'timeline'} />
-                    Timeline
+                    {t('projects.header.timeline')}
                 </button>
             </div>
 
@@ -78,7 +80,7 @@ export function ProjectsHeader({
                     </div>
                     <input
                         type="text"
-                        placeholder="Search"
+                        placeholder={t('projects.header.search')}
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
@@ -94,7 +96,7 @@ export function ProjectsHeader({
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a24] text-gray-400 hover:text-white text-sm font-medium transition-all"
                 >
                     <FilterIcon isHovered={hoveredBtn === 'filters'} />
-                    Filters
+                    {t('projects.header.filters')}
                 </button>
 
                 {/* Sort By */}
@@ -104,7 +106,7 @@ export function ProjectsHeader({
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a24] text-gray-400 hover:text-white text-sm font-medium transition-all"
                 >
                     <SortIcon active={hoveredBtn === 'sort'} />
-                    Sort By
+                    {t('projects.header.sort')}
                 </button>
 
                 {/* New Project */}
@@ -116,7 +118,7 @@ export function ProjectsHeader({
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    New Project
+                    {t('projects.header.new_project')}
                 </button>
             </div>
         </div>

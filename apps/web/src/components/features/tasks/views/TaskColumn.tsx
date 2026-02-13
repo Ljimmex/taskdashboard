@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
@@ -69,11 +70,14 @@ interface TaskColumnProps {
 }
 
 // Status configuration with colors and icons
-const statusConfig = {
-    todo: { label: 'To Do', color: '#6366f1', bgColor: 'bg-indigo-500/10', textColor: 'text-indigo-400' },
-    in_progress: { label: 'In Progress', color: '#f59e0b', bgColor: 'bg-amber-500/10', textColor: 'text-amber-400' },
-    review: { label: 'Review', color: '#8b5cf6', bgColor: 'bg-purple-500/10', textColor: 'text-purple-400' },
-    done: { label: 'Done', color: '#10b981', bgColor: 'bg-emerald-500/10', textColor: 'text-emerald-400' },
+const useStatusConfig = () => {
+    const { t } = useTranslation()
+    return {
+        todo: { label: t('tasks.status.todo'), color: '#6366f1', bgColor: 'bg-indigo-500/10', textColor: 'text-indigo-400' },
+        in_progress: { label: t('tasks.status.in_progress'), color: '#f59e0b', bgColor: 'bg-amber-500/10', textColor: 'text-amber-400' },
+        review: { label: t('tasks.status.review'), color: '#8b5cf6', bgColor: 'bg-purple-500/10', textColor: 'text-purple-400' },
+        done: { label: t('tasks.status.done'), color: '#10b981', bgColor: 'bg-emerald-500/10', textColor: 'text-emerald-400' },
+    }
 }
 
 // Quick Add Task Popup Component
@@ -88,6 +92,7 @@ function QuickAddTask({
     onAdd: (data: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string; startDate?: string }) => void
     onClose: () => void
 }) {
+    const { t } = useTranslation()
     const [title, setTitle] = useState('')
     const [priority, setPriority] = useState('medium')
     const [showPriority, setShowPriority] = useState(false)
@@ -144,10 +149,10 @@ function QuickAddTask({
         label: p.name,
         color: p.color
     })) || [
-            { value: 'urgent', label: 'Urgent', color: '#ef4444' },
-            { value: 'high', label: 'High', color: '#f59e0b' },
-            { value: 'medium', label: 'Medium', color: '#3b82f6' },
-            { value: 'low', label: 'Low', color: '#6b7280' },
+            { value: 'urgent', label: t('tasks.priority.urgent'), color: '#ef4444' },
+            { value: 'high', label: t('tasks.priority.high'), color: '#f59e0b' },
+            { value: 'medium', label: t('tasks.priority.medium'), color: '#3b82f6' },
+            { value: 'low', label: t('tasks.priority.low'), color: '#6b7280' },
         ]
 
     return (
@@ -163,7 +168,7 @@ function QuickAddTask({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                    placeholder="Wpisz nazwę zadania"
+                    placeholder={t('board.column.quick_add.placeholder')}
                     autoFocus
                     className="flex-1 bg-transparent text-white placeholder-gray-500 outline-none text-sm"
                 />
@@ -177,7 +182,7 @@ function QuickAddTask({
                         className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-800 text-gray-400 text-xs hover:bg-gray-700 transition-colors"
                     >
                         <FlagIcon />
-                        Priorytet
+                        {t('board.column.quick_add.priority')}
                     </button>
                     {showPriority && (
                         <div className="absolute top-full left-0 mt-1 w-32 bg-[#1a1a24] rounded-lg shadow-xl border border-gray-800 py-1 z-20">
@@ -226,7 +231,7 @@ function QuickAddTask({
                         </button>
                         {showAssignee && members && (
                             <div className="absolute top-full left-0 mt-2 w-48 bg-[#1a1a24] rounded-lg shadow-xl border border-gray-800 py-1 z-30 max-h-60 overflow-y-auto">
-                                <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Przpisz do</div>
+                                <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('board.column.quick_add.assign_to')}</div>
                                 {members.map(member => (
                                     <button
                                         key={member.id}
@@ -267,7 +272,7 @@ function QuickAddTask({
                                     }}
                                     className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-amber-400"
                                 >
-                                    Dzisiaj
+                                    {t('board.column.quick_add.today')}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -278,7 +283,7 @@ function QuickAddTask({
                                     }}
                                     className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-amber-400"
                                 >
-                                    Jutro
+                                    {t('board.column.quick_add.tomorrow')}
                                 </button>
                                 <div className="border-t border-gray-800 my-1"></div>
                                 <div className="px-4 py-1">
@@ -321,6 +326,7 @@ export function QuickEditTask({
     onUpdate: (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string }) => void
     onClose: () => void
 }) {
+    const { t } = useTranslation()
     const [title, setTitle] = useState(task.title)
     const [priority, setPriority] = useState(task.priority)
     const [showPriority, setShowPriority] = useState(false)
@@ -354,10 +360,10 @@ export function QuickEditTask({
         label: p.name,
         color: p.color
     })) || [
-            { value: 'urgent', label: 'Urgent', color: '#ef4444' },
-            { value: 'high', label: 'High', color: '#f59e0b' },
-            { value: 'medium', label: 'Medium', color: '#3b82f6' },
-            { value: 'low', label: 'Low', color: '#6b7280' },
+            { value: 'urgent', label: t('tasks.priority.urgent'), color: '#ef4444' },
+            { value: 'high', label: t('tasks.priority.high'), color: '#f59e0b' },
+            { value: 'medium', label: t('tasks.priority.medium'), color: '#3b82f6' },
+            { value: 'low', label: t('tasks.priority.low'), color: '#6b7280' },
         ]
 
     useEffect(() => {
@@ -433,7 +439,7 @@ export function QuickEditTask({
                         className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-800 text-gray-400 text-xs hover:bg-gray-700 transition-colors"
                     >
                         <FlagIcon />
-                        Priorytet
+                        {t('board.column.quick_add.priority')}
                     </button>
                     {showPriority && (
                         <div className="absolute top-full left-0 mt-1 w-32 bg-[#1a1a24] rounded-lg shadow-xl border border-gray-800 py-1 z-20">
@@ -469,7 +475,7 @@ export function QuickEditTask({
                     selectedAssignees={selectedAssignees}
                     availableAssignees={availableAssignees}
                     onSelect={setSelectedAssignees}
-                    placeholder="Przypisz osobę..."
+                    placeholder={t('board.column.quick_edit.assignee_placeholder')}
                 />
             </div>
 
@@ -478,7 +484,7 @@ export function QuickEditTask({
                 <DueDatePicker
                     value={dueDate}
                     onChange={(date) => setDueDate(date)}
-                    placeholder="Termin wykonania"
+                    placeholder={t('board.column.quick_edit.date_placeholder')}
                 />
             </div>
 
@@ -490,7 +496,7 @@ export function QuickEditTask({
                     className="px-4 py-2 rounded-full bg-amber-500 flex items-center justify-center gap-2 text-black text-xs font-bold hover:bg-amber-400 transition-colors"
                 >
                     <CheckIcon />
-                    Zapisz
+                    {t('board.column.quick_edit.save')}
                 </button>
             </div>
         </div>
@@ -519,6 +525,7 @@ function ColumnMenu({
     onAddRule?: () => void
     onDeleteColumn?: () => void
 }) {
+    const { t } = useTranslation()
     const menuRef = useRef<HTMLDivElement>(null)
     const [view, setView] = useState<'main' | 'colors'>('main')
 
@@ -568,7 +575,7 @@ function ColumnMenu({
                             <path d="M12 19L5 12L12 5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </button>
-                    <span className="text-sm font-medium text-white">Wybierz kolor</span>
+                    <span className="text-sm font-medium text-white">{t('board.column.menu.select_color')}</span>
                 </div>
                 <div className="p-3 grid grid-cols-5 gap-2">
                     {COLUMN_COLORS.map((color) => (
@@ -590,20 +597,20 @@ function ColumnMenu({
             className="absolute right-0 top-8 z-20 w-52 bg-[#1a1a24] rounded-xl shadow-2xl overflow-hidden border border-gray-800"
         >
             {/* Group 1: Configuration */}
-            <MenuSection title="Konfiguracja">
+            <MenuSection title={t('board.column.menu.config')}>
                 <MenuItem
                     icon={<EditIconDefault />}
-                    label="Zmień nazwę"
+                    label={t('board.column.menu.rename')}
                     onClick={onRename}
                 />
                 <MenuItem
                     icon={<HashIcon />}
-                    label="Ustaw limit (WIP)"
+                    label={t('board.column.menu.wip_limit')}
                     onClick={onSetWipLimit}
                 />
                 <MenuItem
                     icon={<PaletteIcon />}
-                    label="Zmień kolor"
+                    label={t('board.column.menu.change_color')}
                     onClick={() => setView('colors')}
                 />
             </MenuSection>
@@ -611,14 +618,14 @@ function ColumnMenu({
             <div className="border-t border-gray-800" />
 
             {/* Group 2: Sort & Filter */}
-            <MenuSection title="Sortowanie">
+            <MenuSection title={t('board.column.menu.sort_title')}>
                 <MenuItem
                     icon={<SortIcon />}
-                    label="Sortuj według..."
+                    label={t('board.column.menu.sort_by')}
                 />
                 <MenuItem
                     icon={<BellIcon />}
-                    label="Obserwuj listę"
+                    label={t('board.column.menu.watch')}
                     onClick={onWatch}
                 />
             </MenuSection>
@@ -626,15 +633,15 @@ function ColumnMenu({
             <div className="border-t border-gray-800" />
 
             {/* Group 3: Bulk Actions */}
-            <MenuSection title="Akcje masowe">
+            <MenuSection title={t('board.column.menu.bulk_title')}>
                 <MenuItem
                     icon={<ArrowRightSmallIcon />}
-                    label="Przenieś wszystkie..."
+                    label={t('board.column.menu.move_all')}
                     onClick={onMoveAllCards}
                 />
                 <MenuItem
                     icon={<ArchiveIconDefault />}
-                    label="Archiwizuj wszystkie"
+                    label={t('board.column.menu.archive_all')}
                     onClick={onArchiveAll}
                 />
             </MenuSection>
@@ -642,10 +649,10 @@ function ColumnMenu({
             <div className="border-t border-gray-800" />
 
             {/* Group 4: Automation (Pro) */}
-            <MenuSection title="Automatyzacje">
+            <MenuSection title={t('board.column.menu.auto_title')}>
                 <MenuItem
                     icon={<ZapIcon />}
-                    label="Dodaj regułę"
+                    label={t('board.column.menu.add_rule')}
                     onClick={onAddRule}
                 />
             </MenuSection>
@@ -656,7 +663,7 @@ function ColumnMenu({
             <MenuSection>
                 <MenuItem
                     icon={<DeleteIconDefault />}
-                    label="Usuń kolumnę"
+                    label={t('board.column.menu.delete_column')}
                     onClick={onDeleteColumn}
                     danger
                 />
@@ -693,7 +700,7 @@ export function TaskColumn({
     const [isRenaming, setIsRenaming] = useState(false)
     const [renameTitle, setRenameTitle] = useState('')
 
-    const config = statusConfig[status] || {
+    const config = useStatusConfig()[status] || {
         label: title,
         color: color || '#6B7280',
         bgColor: 'bg-gray-800',
@@ -838,6 +845,7 @@ export function AddColumn({
 }: {
     onAdd?: (title: string, color: string) => void
 }) {
+    const { t } = useTranslation()
     const [isAdding, setIsAdding] = useState(false)
     const [title, setTitle] = useState('')
     const [color, setColor] = useState('#6B7280')
@@ -864,7 +872,7 @@ export function AddColumn({
                             <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
                     </div>
-                    <p className="text-gray-500 group-hover:text-gray-300 font-medium transition-colors">Add Column</p>
+                    <p className="text-gray-500 group-hover:text-gray-300 font-medium transition-colors">{t('board.add_column.empty_button')}</p>
                 </button>
             </div>
         )
@@ -873,7 +881,7 @@ export function AddColumn({
     return (
         <div className="flex flex-col min-w-[320px] max-w-[320px] h-full">
             <div className="h-10 mb-4 flex items-center justify-between">
-                <span className="font-semibold text-white text-sm">Nowa kolumna</span>
+                <span className="font-semibold text-white text-sm">{t('board.add_column.title')}</span>
                 <button onClick={() => setIsAdding(false)} className="text-gray-500 hover:text-white">
                     <CloseIcon />
                 </button>
@@ -881,12 +889,12 @@ export function AddColumn({
 
             <div className="p-4 bg-[#1a1a24] rounded-xl border border-gray-800 space-y-4">
                 <div>
-                    <label className="block text-xs text-gray-500 mb-1.5 uppercase tracking-wider font-medium">Nazwa kolumny</label>
+                    <label className="block text-xs text-gray-500 mb-1.5 uppercase tracking-wider font-medium">{t('board.add_column.label')}</label>
                     <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Np. Weryfikacja"
+                        placeholder={t('board.add_column.placeholder')}
                         autoFocus
                         onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
                         className="w-full bg-[#12121a] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all placeholder-gray-600"
@@ -894,7 +902,7 @@ export function AddColumn({
                 </div>
 
                 <div>
-                    <label className="block text-xs text-gray-500 mb-1.5 uppercase tracking-wider font-medium">Kolor</label>
+                    <label className="block text-xs text-gray-500 mb-1.5 uppercase tracking-wider font-medium">{t('board.add_column.color_label')}</label>
                     <div className="grid grid-cols-6 gap-2">
                         {COLUMN_COLORS.map((c) => (
                             <button
@@ -914,7 +922,7 @@ export function AddColumn({
                         className="w-full py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                         <CheckIcon />
-                        Dodaj kolumnę
+                        {t('board.add_column.button')}
                     </button>
                 </div>
             </div>

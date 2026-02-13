@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { usePanelStore } from '../../../../lib/panelStore'
 import type { Label } from '../../labels/LabelBadge'
 import { LabelPicker } from '../../labels/LabelPicker'
@@ -79,6 +80,9 @@ const TabButton = ({
 
 
 // Status Selector with dropdown
+import * as Select from '@radix-ui/react-select'
+import { Check, ChevronDown } from 'lucide-react'
+
 const StatusSelector = ({
     status,
     stages,
@@ -88,42 +92,55 @@ const StatusSelector = ({
     stages: { id: string; name: string; color: string }[]
     onChange: (s: string) => void
 }) => {
-    const [showDropdown, setShowDropdown] = useState(false)
+    const { t } = useTranslation()
     const currentStage = stages.find(s => s.id === status)
 
     return (
-        <div className="relative">
-            <button
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 transition-colors cursor-pointer"
-            >
-                {currentStage && (
-                    <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: currentStage.color }}
-                    />
-                )}
-                <span className="text-white">{currentStage?.name || 'Wybierz status'}</span>
-                <span className="text-gray-400">▾</span>
-            </button>
-            {showDropdown && (
-                <div className="absolute top-full left-0 mt-1 bg-[#1a1a24] rounded-lg border border-gray-800 shadow-xl z-20 py-1 min-w-32">
-                    {stages.map(stage => (
-                        <button
-                            key={stage.id}
-                            onClick={() => { onChange(stage.id); setShowDropdown(false) }}
-                            className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors flex items-center gap-2 ${status === stage.id ? 'text-amber-400' : 'text-gray-300'}`}
-                        >
+        <Select.Root value={status} onValueChange={onChange}>
+            <Select.Trigger className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 transition-colors cursor-pointer outline-none border-none focus:ring-1 focus:ring-amber-500/50">
+                <Select.Value>
+                    <div className="flex items-center gap-2">
+                        {currentStage && (
                             <div
                                 className="w-2 h-2 rounded-full"
-                                style={{ backgroundColor: stage.color }}
+                                style={{ backgroundColor: currentStage.color }}
                             />
-                            {stage.name}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
+                        )}
+                        <span className="text-white">{currentStage?.name || t('tasks.edit.select_status')}</span>
+                    </div>
+                </Select.Value>
+                <Select.Icon className="text-gray-400">
+                    <ChevronDown size={14} />
+                </Select.Icon>
+            </Select.Trigger>
+
+            <Select.Portal>
+                <Select.Content className="overflow-hidden bg-[#1a1a24] rounded-lg border border-gray-800 shadow-xl z-50 min-w-[140px]">
+                    <Select.Viewport className="p-1">
+                        {stages.map(stage => (
+                            <Select.Item
+                                key={stage.id}
+                                value={stage.id}
+                                className="relative flex items-center gap-2 px-6 py-2 text-xs text-gray-300 rounded-md select-none hover:bg-gray-800 focus:bg-gray-800 focus:text-white outline-none cursor-pointer data-[state=checked]:text-amber-400"
+                            >
+                                <Select.ItemText>
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="w-2 h-2 rounded-full"
+                                            style={{ backgroundColor: stage.color }}
+                                        />
+                                        {stage.name}
+                                    </div>
+                                </Select.ItemText>
+                                <Select.ItemIndicator className="absolute left-1 inline-flex items-center justify-center">
+                                    <Check size={12} />
+                                </Select.ItemIndicator>
+                            </Select.Item>
+                        ))}
+                    </Select.Viewport>
+                </Select.Content>
+            </Select.Portal>
+        </Select.Root>
     )
 }
 
@@ -145,6 +162,7 @@ export function EditTaskPanel({
     workspaceSlug,
     userId,
 }: EditTaskPanelProps) {
+    const { t } = useTranslation()
     const [activeTab, setActiveTab] = useState<'subtasks' | 'shared' | 'links'>('subtasks')
     const [links, setLinks] = useState<TaskLink[]>([])
     const [showLinkInput, setShowLinkInput] = useState(false)
@@ -278,7 +296,7 @@ export function EditTaskPanel({
                                 <path d="M6 17L11 12L6 7" />
                             </svg>
                         </button>
-                        <span className="text-xs text-amber-400 font-medium px-2 py-1 bg-amber-500/10 rounded-lg">Tryb edycji</span>
+                        <span className="text-xs text-amber-400 font-medium px-2 py-1 bg-amber-500/10 rounded-lg">{t('tasks.edit.edit_mode')}</span>
                     </div>
 
                     {/* Task Title - Editable */}
@@ -296,7 +314,7 @@ export function EditTaskPanel({
                         <h2
                             onClick={() => setIsEditingTitle(true)}
                             className="text-xl font-bold text-white mb-4 cursor-pointer hover:text-amber-400 transition-colors"
-                            title="Kliknij aby edytować"
+                            title={t('tasks.edit.click_to_edit')}
                         >
                             {title}
                         </h2>
@@ -307,14 +325,14 @@ export function EditTaskPanel({
                         {/* Project */}
                         {task.projectName && (
                             <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-20">Project</span>
+                                <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.project')}</span>
                                 <span className="text-sm text-white">{task.projectName}</span>
                             </div>
                         )}
 
                         {/* Assignees - Editable */}
                         <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-20 pt-2">Assignee</span>
+                            <span className="text-sm text-gray-500 w-20 pt-2">{t('tasks.edit.meta.assignee')}</span>
                             <div className="flex-1">
                                 <AssigneePicker
                                     selectedAssignees={selectedAssignees}
@@ -327,29 +345,29 @@ export function EditTaskPanel({
 
                         {/* Status */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-20">Status</span>
+                            <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.status')}</span>
                             <StatusSelector status={status} stages={stages} onChange={setStatus} />
                         </div>
 
                         {/* Due Date - Editable */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-20">End Date</span>
+                            <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.end_date')}</span>
                             <DueDatePicker
                                 value={dueDate}
                                 onChange={setDueDate}
-                                placeholder="Wybierz datę..."
+                                placeholder={t('tasks.edit.select_date')}
                             />
                         </div>
 
                         {/* Priority - Editable */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-20">Priority</span>
+                            <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.priority')}</span>
                             <PrioritySelector value={priority} onChange={setPriority} size="sm" />
                         </div>
 
                         {/* Labels - Editable */}
                         <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-20 pt-2">Labels</span>
+                            <span className="text-sm text-gray-500 w-20 pt-2">{t('tasks.edit.meta.labels')}</span>
                             <div className="flex-1">
                                 <LabelPicker
                                     selectedLabels={selectedLabels}
@@ -364,7 +382,7 @@ export function EditTaskPanel({
 
                 {/* Description - Editable */}
                 <div className="flex-none p-6 border-b border-gray-800">
-                    <h3 className="text-sm font-semibold text-white mb-2">Description</h3>
+                    <h3 className="text-sm font-semibold text-white mb-2">{t('tasks.edit.description')}</h3>
                     {isEditingDescription ? (
                         <textarea
                             value={description}
@@ -373,40 +391,40 @@ export function EditTaskPanel({
                             autoFocus
                             rows={4}
                             className="w-full text-sm text-gray-400 leading-relaxed bg-gray-800 border border-amber-500 rounded-lg px-3 py-2 outline-none resize-none"
-                            placeholder="Dodaj opis..."
+                            placeholder={t('tasks.edit.description_placeholder')}
                         />
                     ) : (
                         <p
                             onClick={() => setIsEditingDescription(true)}
                             className="text-sm text-gray-400 leading-relaxed break-words cursor-pointer hover:text-gray-300 transition-colors min-h-[40px]"
-                            title="Kliknij aby dodać opis...'"
+                            title={t('tasks.edit.click_to_add_description')}
                         >
-                            {description || 'Kliknij aby dodać opis...'}
+                            {description || t('tasks.edit.click_to_add_description')}
                         </p>
                     )}
                 </div>
 
                 {/* Tabs */}
                 <div className="flex-none border-b border-gray-800">
-                    <div className="flex gap-2 px-6">
+                    <div className="flex gap-2 px-6 overflow-x-auto scrollbar-hide">
                         <TabButton
                             active={activeTab === 'subtasks'}
                             onClick={() => setActiveTab('subtasks')}
                             icon={<DocumentIcon />}
                             activeIcon={<DocumentIconGold />}
-                            label="Subtasks"
+                            label={t('tasks.edit.tabs.subtasks')}
                         />
                         <TabButton
                             active={activeTab === 'shared'}
                             onClick={() => setActiveTab('shared')}
                             icon={<PaperclipIcon />}
                             activeIcon={<PaperclipIconGold />}
-                            label="Files"
+                            label={t('tasks.edit.tabs.files')}
                         />
                         <TabButton
                             active={activeTab === 'links'}
                             onClick={() => setActiveTab('links')}
-                            label="Linki"
+                            label={t('tasks.edit.tabs.links')}
                         />
                     </div>
                 </div>
@@ -417,7 +435,7 @@ export function EditTaskPanel({
                     {activeTab === 'subtasks' && (
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-sm font-semibold text-white">Podzadania</h3>
+                                <h3 className="text-sm font-semibold text-white">{t('tasks.edit.subtasks_header')}</h3>
                                 <span className="text-xs text-gray-500">{subtasks.filter(s => s.status === 'done' || s.isCompleted).length}/{subtasks.length}</span>
                             </div>
                             <SubtaskList
@@ -454,12 +472,12 @@ export function EditTaskPanel({
                     {activeTab === 'shared' && (
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-sm font-semibold text-white">Pliki</h3>
+                                <h3 className="text-sm font-semibold text-white">{t('tasks.edit.files_header')}</h3>
                                 <button
                                     onClick={() => setShowFilePicker(true)}
                                     className="px-3 py-1.5 text-xs font-medium text-amber-400 bg-amber-500/10 rounded-lg hover:bg-amber-500/20 transition-colors"
                                 >
-                                    + Dodaj plik
+                                    {t('tasks.edit.add_file')}
                                 </button>
                             </div>
                             {taskFiles && taskFiles.length > 0 ? (
@@ -487,8 +505,8 @@ export function EditTaskPanel({
                             ) : (
                                 <div className="text-center py-8 text-gray-500">
                                     <PaperclipIcon />
-                                    <p className="text-sm mt-2">Brak załączników</p>
-                                    <p className="text-xs text-gray-600 mt-1">Kliknij przycisk powyżej aby dodać pliki</p>
+                                    <p className="text-sm mt-2">{t('tasks.edit.no_attachments')}</p>
+                                    <p className="text-xs text-gray-600 mt-1">{t('tasks.edit.no_attachments_hint')}</p>
                                 </div>
                             )}
 
@@ -515,12 +533,12 @@ export function EditTaskPanel({
                     {activeTab === 'links' && (
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-sm font-semibold text-white">Linki</h3>
+                                <h3 className="text-sm font-semibold text-white">{t('tasks.edit.links_header')}</h3>
                                 <button
                                     onClick={() => setShowLinkInput(true)}
                                     className="px-3 py-1.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-lg text-xs font-medium transition-colors"
                                 >
-                                    + Dodaj link
+                                    {t('tasks.edit.add_link')}
                                 </button>
                             </div>
                             <LinksList
@@ -554,14 +572,14 @@ export function EditTaskPanel({
                         onClick={onClose}
                         className="flex-1 px-4 py-3 bg-gray-800 text-gray-300 rounded-xl font-medium hover:bg-gray-700 transition-colors"
                     >
-                        Anuluj
+                        {t('tasks.edit.cancel')}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={!title.trim()}
                         className="flex-1 px-4 py-3 bg-amber-500 text-black rounded-xl font-bold hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Zapisz zmiany
+                        {t('tasks.edit.save')}
                     </button>
                 </div>
             </div>

@@ -1,5 +1,6 @@
 import { createFileRoute, useParams, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, LayoutGrid, List, Calendar, GitBranch } from 'lucide-react'
 import { useSession } from '@/lib/auth'
@@ -50,6 +51,7 @@ interface Project {
 }
 
 function ProjectDetailPage() {
+  const { t } = useTranslation()
   const { workspaceSlug, projectId } = useParams({ strict: false }) as { workspaceSlug: string; projectId: string }
   const navigate = useNavigate()
   const { data: session } = useSession()
@@ -107,7 +109,7 @@ function ProjectDetailPage() {
   // Bulk action handlers with API
   const handleBulkDelete = async () => {
     if (selectedTasks.length === 0) return
-    if (!confirm(`Are you sure you want to delete ${selectedTasks.length} task(s) ? `)) return
+    if (!confirm(t('board.messages.delete_tasks_confirm', { count: selectedTasks.length }))) return
 
     try {
       await apiFetch('/api/tasks/bulk/delete', {
@@ -726,16 +728,16 @@ function ProjectDetailPage() {
   }, [filteredTasks, project?.stages])
 
   const VIEW_TABS: { id: ViewMode; label: string; Icon: any }[] = [
-    { id: 'kanban', label: 'Kanban', Icon: LayoutGrid },
-    { id: 'list', label: 'Lista', Icon: List },
-    { id: 'calendar', label: 'Kalendarz', Icon: Calendar },
-    { id: 'timeline', label: 'Timeline', Icon: GitBranch },
+    { id: 'kanban', label: t('board.header.kanban'), Icon: LayoutGrid },
+    { id: 'list', label: t('board.header.list'), Icon: List },
+    { id: 'calendar', label: t('board.header.calendar'), Icon: Calendar },
+    { id: 'timeline', label: t('board.header.timeline'), Icon: GitBranch },
   ]
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
-        Loading project...
+        {t('board.messages.loading')}
       </div>
     )
   }
@@ -743,7 +745,7 @@ function ProjectDetailPage() {
   if (!project) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
-        Project not found
+        {t('board.messages.not_found')}
       </div>
     )
   }
@@ -804,7 +806,7 @@ function ProjectDetailPage() {
 
   // Handle deleting stage
   const handleDeleteStage = async (stageId: string) => {
-    if (!confirm('Czy na pewno chcesz usunąć tę kolumnę? Wszystkie zadania w niej zostaną usunięte.')) return
+    if (!confirm(t('board.messages.delete_column_confirm'))) return
     try {
       const res = await apiFetch(`/api/projects/${projectId}/stages/${stageId}`, {
         method: 'DELETE',

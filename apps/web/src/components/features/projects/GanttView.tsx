@@ -2,6 +2,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { StatusBadge } from '../tasks/components/StatusBadge'
 import { getDaysInMonth, isSameDay, formatShortDate } from './utils'
 import { Task } from './types'
+import { useTranslation } from 'react-i18next'
+import { Marquee } from '../../ui/Marquee'
 
 // =============================================================================
 // TASK BAR (for Gantt)
@@ -100,19 +102,15 @@ export function GanttView({
     onMonthChange: (date: Date) => void
     onTaskClick?: (task: Task) => void
 }) {
-    const days = getDaysInMonth(currentMonth)
+    const { t, i18n } = useTranslation()
     const today = new Date()
-
-    // Calculate current time position for the "Now" line
+    const days = getDaysInMonth(currentMonth)
     const now = new Date()
     const currentMinutes = now.getHours() * 60 + now.getMinutes()
-    const totalMinutes = 24 * 60
-    const timePercentage = (currentMinutes / totalMinutes) * 100
+    const timePercentage = (currentMinutes / (24 * 60)) * 100
 
-    const MONTH_NAMES = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-    ]
+    // Dynamic month formatting
+    const currentMonthLabel = currentMonth.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })
 
     const handlePrevMonth = () => {
         onMonthChange(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
@@ -128,7 +126,7 @@ export function GanttView({
             <div className="flex items-center justify-center h-10 gap-4 bg-[#1e1e29] rounded-xl m-2 flex-shrink-0">
                 <button onClick={handlePrevMonth} className="text-gray-400 hover:text-white"><ChevronLeft size={14} /></button>
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                    {currentMonthLabel}
                 </span>
                 <button onClick={handleNextMonth} className="text-gray-400 hover:text-white"><ChevronRight size={14} /></button>
             </div>
@@ -140,20 +138,19 @@ export function GanttView({
                     {/* Header Row */}
                     <div className="flex sticky top-0 z-40 gap-4 pb-2 bg-transparent">
                         {/* Left Side Header (Sticky Left + Sticky Top) */}
-                        <div className="w-[600px] flex-shrink-0 sticky left-0 z-50 bg-[#1e1e29] flex items-center h-12 text-xs font-semibold text-gray-300 rounded-xl border border-gray-800 shadow-sm">
-                            <div className="w-[240px] px-4 border-r border-gray-800/50 h-full flex items-center">Task Name</div>
-                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center">Start Date</div>
-                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center">End Date</div>
-                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center">Status</div>
-                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center">Subtasks</div>
-                            <div className="w-[80px] px-2 text-center h-full flex items-center justify-center">Assignee</div>
+                        <div className="w-[720px] flex-shrink-0 sticky left-0 z-50 bg-[#1e1e29] flex items-center h-12 text-xs font-semibold text-gray-300 rounded-xl border border-gray-800 shadow-sm">
+                            <div className="w-[240px] px-4 border-r border-gray-800/50 h-full flex items-center overflow-hidden"><Marquee>{t('projects.gantt.task_name')}</Marquee></div>
+                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.start_date')}</Marquee></div>
+                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.end_date')}</Marquee></div>
+                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.status')}</Marquee></div>
+                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.subtasks')}</Marquee></div>
+                            <div className="w-[80px] px-2 text-center h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.assignee')}</Marquee></div>
                         </div>
 
                         {/* Right Side Header (Sticky Top) */}
                         <div className="flex bg-[#1e1e29] rounded-xl border border-gray-800 shadow-sm overflow-hidden z-30 relative">
                             {days.map((day, idx) => {
                                 const isToday = isSameDay(day, today)
-                                const dayName = day.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
                                 return (
                                     <div
                                         key={idx}
@@ -162,7 +159,7 @@ export function GanttView({
                                         {isToday && (
                                             <div className="absolute inset-1 bg-amber-500/10 border border-amber-500/20 rounded-lg -z-0" />
                                         )}
-                                        <span className={`relative z-10 ${isToday ? 'text-amber-500 font-bold' : ''}`}>{dayName}</span>
+                                        <span className={`relative z-10 ${isToday ? 'text-amber-500 font-bold' : ''}`}>{day.toLocaleDateString(i18n.language, { weekday: 'short' }).toUpperCase()}</span>
                                         <span className={`relative z-10 font-bold ${isToday ? 'text-amber-400' : ''}`}>{day.getDate()}</span>
                                     </div>
                                 )
@@ -176,22 +173,22 @@ export function GanttView({
                             <div key={task.id} className="flex group transition-colors h-12 relative gap-4">
                                 {/* Left Side Details (Sticky Left) */}
                                 <div
-                                    className="w-[600px] flex-shrink-0 sticky left-0 z-40 flex items-center bg-[#13131a] group-hover:bg-[#1e1e29]/50 transition-colors border border-gray-800/50 rounded-xl"
+                                    className="w-[720px] flex-shrink-0 sticky left-0 z-40 flex items-center bg-[#13131a] group-hover:bg-[#1a1a24] transition-colors border border-gray-800/50 rounded-xl"
                                     onClick={() => onTaskClick?.(task)}
                                 >
-                                    <div className="w-[240px] px-4 text-sm font-medium text-gray-200 truncate cursor-pointer hover:text-white transition-colors border-r border-gray-800/20 h-full flex items-center pl-4">
-                                        {task.title}
+                                    <div className="w-[240px] px-4 text-sm font-medium text-gray-200 cursor-pointer hover:text-white transition-colors border-r border-gray-800/20 h-full flex items-center overflow-hidden">
+                                        <Marquee>{task.title}</Marquee>
                                     </div>
-                                    <div className="w-[100px] px-2 text-xs text-gray-500 text-center border-r border-gray-800/20 h-full flex items-center justify-center">
-                                        {task.startDate ? formatShortDate(task.startDate) : '-'}
+                                    <div className="w-[100px] px-2 text-xs text-gray-500 text-center border-r border-gray-800/20 h-full flex items-center justify-center overflow-hidden">
+                                        <Marquee>{task.startDate ? formatShortDate(task.startDate) : '-'}</Marquee>
                                     </div>
-                                    <div className="w-[100px] px-2 text-xs text-gray-500 text-center border-r border-gray-800/20 h-full flex items-center justify-center">
-                                        {task.endDate ? formatShortDate(task.endDate) : '-'}
+                                    <div className="w-[100px] px-2 text-xs text-gray-500 text-center border-r border-gray-800/20 h-full flex items-center justify-center overflow-hidden">
+                                        <Marquee>{task.endDate ? formatShortDate(task.endDate) : '-'}</Marquee>
                                     </div>
-                                    <div className="w-[100px] px-2 flex justify-center border-r border-gray-800/20 h-full items-center">
+                                    <div className="w-[100px] px-2 flex justify-center border-r border-gray-800/20 h-full items-center overflow-hidden">
                                         <StatusBadge status={task.status} stages={stages} size="sm" />
                                     </div>
-                                    <div className="w-[100px] px-2 text-xs text-gray-500 flex items-center justify-center gap-1 border-r border-gray-800/20 h-full">
+                                    <div className="w-[100px] px-2 text-xs text-gray-500 flex items-center justify-center gap-1 border-r border-gray-800/20 h-full overflow-hidden">
                                         {task.subtasksCount ? (
                                             <span className="flex items-center gap-1 bg-gray-800/50 px-1.5 py-0.5 rounded text-[10px]">
                                                 <span className="text-gray-400">📄</span>
@@ -199,11 +196,19 @@ export function GanttView({
                                             </span>
                                         ) : '-'}
                                     </div>
-                                    <div className="w-[80px] px-2 flex justify-center h-full items-center">
+                                    <div className="w-[80px] px-2 flex justify-center h-full items-center overflow-hidden">
                                         {task.assignee && (
-                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xs text-black font-bold">
-                                                {task.assignee.name.charAt(0)}
-                                            </div>
+                                            task.assignee.image ? (
+                                                <img
+                                                    src={task.assignee.image}
+                                                    alt={task.assignee.name}
+                                                    className="w-6 h-6 rounded-full object-cover border border-gray-700"
+                                                />
+                                            ) : (
+                                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xs text-black font-bold">
+                                                    {task.assignee.name.charAt(0)}
+                                                </div>
+                                            )
                                         )}
                                     </div>
                                 </div>
@@ -242,7 +247,7 @@ export function GanttView({
                         {tasks.length === 0 && (
                             <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
                                 <div className="w-[600px] text-center sticky left-0">
-                                    No tasks in this project
+                                    {t('projects.gantt.no_tasks')}
                                 </div>
                             </div>
                         )}

@@ -563,5 +563,314 @@
         "loading": "Loading teams...",
         "error_loading": "Failed to load teams",
         "retry": "Retry"
+    },
+    "projects": {
+        "gantt": {
+            "task_name": "Task Name",
+            "start_date": "Start Date",
+            "end_date": "End Date",
+            "status": "Status",
+            "subtasks": "Subtasks",
+            "assignee": "Assignee",
+            "no_tasks": "No tasks in this project"
+        },
+        "timeline": {
+            "title": "Timeline",
+            "task_abbr": "t",
+            "day": "Day",
+            "week": "Week",
+            "month": "Month",
+            "now": "Now",
+            "add_task": "Add task",
+            "no_tasks_day": "No tasks for this day"
+        },
+        "header": {
+            "gantt": "Gantt",
+            "timeline": "Timeline",
+            "search": "Search projects...",
+            "filters": "Filters",
+            "sort": "Sort By",
+            "new_project": "New Project"
+        },
+        "create": {
+            "title": "Create New Project",
+            "subtitle": "Add a new project to organize your tasks",
+            "name": "Project Name",
+            "name_placeholder": "e.g., Website Redesign",
+            "description": "Description",
+            "description_placeholder": "Brief description of the project...",
+            "team": "Team",
+            "select_team": "Select a team",
+            "no_teams": "No teams available. Create a team first.",
+            "template": "Industry Template",
+            "select_template": "Select template",
+            "no_template": "No template (custom stages)",
+            "template_help": "Templates provide predefined stages for your workflow",
+            "color": "Project Color",
+            "start_date": "Start Date",
+            "deadline": "Deadline",
+            "cancel": "Cancel",
+            "submit": "Create Project",
+            "creating": "Creating..."
+        },
+        "details": {
+            "close": "Close",
+            "archive": "Archive task",
+            "no_assignees": "No assignees",
+            "no_labels": "No labels",
+            "description": "Description",
+            "meta": {
+                "project": "Project",
+                "assignee": "Assignee",
+                "status": "Status",
+                "end_date": "End Date",
+                "priority": "Priority",
+                "labels": "Labels"
+            },
+            "tabs": {
+                "subtasks": "Subtasks",
+                "comments": "Comments",
+                "shared": "Shared",
+                "activity": "Activity"
+            },
+            "subtasks": {
+                "title": "Subtasks"
+            },
+            "discussion": {
+                "title": "Discussion"
+            },
+            "shared": {
+                "files": "Files",
+                "links": "Links",
+                "name": "Name",
+                "shared_by": "Shared by",
+                "date": "Date"
+            },
+            "activity": {
+                "title": "Activity"
+            }
+        },
+        "day_list": {
+            "title": "Daily Tasks",
+            "no_tasks": "No tasks scheduled for this day."
+        },
+        "list": {
+            "columns": {
+                "name": "Task Name",
+                "subtasks": "Subtasks",
+                "status": "Status",
+                "priority": "Priority",
+                "start_date": "Start Date",
+                "end_date": "End Date",
+                "assignee": "Assignee"
+            },
+            "no_tasks": "No tasks found"
+        }
+    },
+    "tasks": {
+        "status": {
+            "todo": "To Do",
+            "in_progress": "In Progress",
+            "review": "Review",
+            "done": "Done"
+        },
+        "priority": {
+            "low": "Low",
+            "medium": "Medium",
+            "high": "High",
+            "urgent": "Urgent"
+        },
+        "assignee": {
+            "placeholder": "Assign person...",
+            "no_results": "No people found",
+            "none": "No assignees"
+        },
+        "datepicker": {
+            "select_date": "Select date",
+            "time": "Time",
+            "done": "Done",
+            "today": "Today",
+            "tomorrow": "Tomorrow",
+            "next_week": "Next Week"
+        },
+        "edit": {
+            "title": "Edit Task",
+            "edit_mode": "Edit mode",
+            "click_to_edit": "Click to edit",
+            "title_label": "Task Title",
+            "select_status": "Select status",
+            "select_date": "Select date...",
+            "description": "Description",
+            "description_placeholder": "Add description...",
+            "click_to_add_description": "Click to add description...",
+            "subtasks_header": "Subtasks",
+            "files_header": "Files",
+            "add_file": "+ Add file",
+            "no_attachments": "No attachments",
+            "no_attachments_hint": "Click button above to add files",
+            "links_header": "Links",
+            "add_link": "+ Add link",
+            "cancel": "Cancel",
+            "save": "Save changes",
+            "meta": {
+                "project": "Project",
+                "assignee": "Assignee",
+                "status": "Status",
+                "end_date": "End Date",
+                "priority": "Priority",
+                "labels": "Labels"
+            },
+            "tabs": {
+                "subtasks": "Subtasks",
+                "files": "Files",
+                "links": "Links"
+            }
+        },
+        "create": {
+            "title": "New Task",
+            "select_project": "Select project",
+            "task_title": "Task title",
+            "task_title_placeholder": "What needs to be done?",
+            "description": "Description",
+            "description_placeholder": "Add task description... (supports Markdown)",
+            "markdown_hint": "Tip: Use **bold**, *italics*, - lists",
+            "assignee": "Assignee",
+            "assignee_placeholder": "Assign person...",
+            "start_date": "Start",
+            "end_date": "End",
+            "due_date_placeholder": "Due date",
+            "more_options": "More options",
+            "less_options": "Less options",
+            "subtasks": "Subtasks",
+            "add_subtask_placeholder": "Add subtask...",
+            "add_subtask_button": "+ Add",
+            "attachments": "Attachments",
+            "dropzone_active": "Drop files here...",
+            "dropzone_inactive": "Drag files or click to add",
+            "file_type_hint": "PNG, JPG, PDF, DOCX up to 100MB",
+            "file_size_error": "The following files are too large (max 100MB):",
+            "upload_error": "Failed to upload some files. Check console.",
+            "create_another": "Create another",
+            "cancel": "Cancel",
+            "create_button": "Create task",
+            "priority": "Priority",
+            "status": "Status",
+            "labels": "Labels",
+            "mock_projects": {
+                "marketing": "Marketing",
+                "development": "Development",
+                "design_system": "Design System"
+            }
+        }
+    },
+    "board": {
+        "column": {
+            "quick_add": {
+                "placeholder": "Type task name",
+                "priority": "Priority",
+                "assign_to": "Assign to",
+                "today": "Today",
+                "tomorrow": "Tomorrow",
+                "save": "Save"
+            },
+            "quick_edit": {
+                "assignee_placeholder": "Assign someone...",
+                "date_placeholder": "Due date",
+                "save": "Save"
+            },
+            "menu": {
+                "config": "Configuration",
+                "rename": "Rename",
+                "wip_limit": "Set WIP limit",
+                "change_color": "Change color",
+                "sort_title": "Sorting",
+                "sort_by": "Sort by...",
+                "watch": "Watch list",
+                "bulk_title": "Bulk Actions",
+                "move_all": "Move all...",
+                "archive_all": "Archive all",
+                "auto_title": "Automations",
+                "add_rule": "Add rule",
+                "delete_column": "Delete column",
+                "select_color": "Select Color"
+            }
+        },
+        "add_column": {
+            "title": "New Column",
+            "button": "Add Column",
+            "placeholder": "e.g. Verification",
+            "label": "Column Name",
+            "color_label": "Color",
+            "empty_button": "Add Column"
+        },
+        "header": {
+            "search": "Search tasks...",
+            "filters": "Filters",
+            "sort": "Sort By",
+            "new_task": "New Task",
+            "kanban": "Kanban",
+            "list": "List",
+            "calendar": "Calendar",
+            "timeline": "Timeline"
+        },
+        "filters": {
+            "title": "Filters",
+            "quick": {
+                "title": "Quick Filters",
+                "assigned_to_me": "Assigned to me",
+                "overdue": "Overdue",
+                "today": "Today",
+                "this_week": "This week"
+            },
+            "assignees": "Assignees",
+            "priorities": "Priorities",
+            "labels": "Labels & Tags",
+            "status": "Status",
+            "no_members": "No team members",
+            "no_labels": "No labels found",
+            "clear": "Clear filters"
+        },
+        "sort": {
+            "title": "Sort By",
+            "direction": "Order",
+            "asc": "Ascending",
+            "desc": "Descending",
+            "options": {
+                "priority": "Priority",
+                "due_date": "Due Date",
+                "created_at": "Created At",
+                "updated_at": "Last Updated"
+            }
+        },
+        "messages": {
+            "loading": "Loading project...",
+            "not_found": "Project not found",
+            "delete_column_confirm": "Are you sure you want to delete this column? All tasks in it will be deleted.",
+            "delete_tasks_confirm": "Are you sure you want to delete {{count}} task(s)?"
+        }
+    },
+    "card": {
+        "menu": {
+            "edit": "Edit",
+            "duplicate": "Duplicate",
+            "archive": "Archive",
+            "delete": "Delete"
+        },
+        "add_task": "Add New Task"
+    },
+    "labels": {
+        "task_singular": "Task",
+        "task_plural": "Tasks",
+        "search": "Search labels...",
+        "create_new": "Create new label",
+        "no_results": "No labels found",
+        "create_header": "Create Label",
+        "name": "Name",
+        "color": "Color",
+        "preview": "Preview",
+        "add": "Create",
+        "cancel": "Cancel",
+        "placeholder": "e.g., Bug, Feature, Design",
+        "add_labels": "Add labels"
     }
 }

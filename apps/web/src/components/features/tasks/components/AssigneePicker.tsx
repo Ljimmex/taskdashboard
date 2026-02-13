@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../../../lib/utils'
 
 export interface Assignee {
@@ -57,6 +58,7 @@ export function AssigneePicker({
     maxVisible = 3,
     placeholder = 'Przypisz osobę...',
 }: AssigneePickerProps) {
+    const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const containerRef = useRef<HTMLDivElement>(null)
@@ -124,7 +126,7 @@ export function AssigneePicker({
                 className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-transparent hover:bg-gray-800/50 transition-colors w-full min-h-[32px] cursor-pointer outline-none focus:ring-2 focus:ring-amber-500/50"
             >
                 {selectedAssignees.length === 0 ? (
-                    <span className="text-sm text-gray-500">{placeholder}</span>
+                    <span className="text-sm text-gray-500">{placeholder === 'Przypisz osobę...' ? t('tasks.assignee.placeholder') : placeholder}</span>
                 ) : (
                     <div className="flex items-center gap-2 flex-wrap">
                         {visibleAssignees.map(assignee => (
@@ -187,7 +189,7 @@ export function AssigneePicker({
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Szukaj osób..."
+                                placeholder={t('tasks.header.search', { defaultValue: 'Szukaj osób...' })}
                                 className="w-full pl-9 pr-3 py-2 bg-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
                             />
                         </div>
@@ -197,7 +199,7 @@ export function AssigneePicker({
                     <div className="max-h-64 overflow-y-auto">
                         {filteredAssignees.length === 0 ? (
                             <div className="p-4 text-center text-sm text-gray-500">
-                                Nie znaleziono osób
+                                {t('tasks.assignee.no_results')}
                             </div>
                         ) : (
                             filteredAssignees.map(assignee => {

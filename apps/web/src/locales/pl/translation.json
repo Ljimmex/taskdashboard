@@ -571,5 +571,314 @@
         "loading": "Ładowanie zespołów...",
         "error_loading": "Nie udało się załadować zespołów",
         "retry": "Spróbuj ponownie"
+    },
+    "projects": {
+        "gantt": {
+            "task_name": "Nazwa Zadania",
+            "start_date": "Data Rozpoczęcia",
+            "end_date": "Data Zakończenia",
+            "status": "Status",
+            "subtasks": "Podzadania",
+            "assignee": "Przypisany",
+            "no_tasks": "Brak zadań w tym projekcie"
+        },
+        "timeline": {
+            "title": "Harmonogram",
+            "task_abbr": "z",
+            "day": "Dzień",
+            "week": "Tydzień",
+            "month": "Miesiąc",
+            "now": "Teraz",
+            "add_task": "Dodaj zadanie",
+            "no_tasks_day": "Brak zadań na ten dzień"
+        },
+        "header": {
+            "gantt": "Gantt",
+            "timeline": "Timeline",
+            "search": "Szukaj projektów...",
+            "filters": "Filtry",
+            "sort": "Sortuj",
+            "new_project": "Nowy Projekt"
+        },
+        "create": {
+            "title": "Utwórz Nowy Projekt",
+            "subtitle": "Dodaj nowy projekt, aby uporządkować zadania",
+            "name": "Nazwa Projektu",
+            "name_placeholder": "np. Przebudowa Strony",
+            "description": "Opis",
+            "description_placeholder": "Krótki opis projektu...",
+            "team": "Zespół",
+            "select_team": "Wybierz zespół",
+            "no_teams": "Brak dostępnych zespołów. Najpierw utwórz zespół.",
+            "template": "Szablon Branżowy",
+            "select_template": "Wybierz szablon",
+            "no_template": "Brak szablonu (własne etapy)",
+            "template_help": "Szablony zapewniają predefiniowane etapy dla Twojego workflow",
+            "color": "Kolor Projektu",
+            "start_date": "Data Rozpoczęcia",
+            "deadline": "Termin",
+            "cancel": "Anuluj",
+            "submit": "Utwórz Projekt",
+            "creating": "Tworzenie..."
+        },
+        "details": {
+            "close": "Zamknij",
+            "archive": "Archiwizuj zadanie",
+            "no_assignees": "Brak przypisanych osób",
+            "no_labels": "Brak etykiet",
+            "description": "Opis",
+            "meta": {
+                "project": "Projekt",
+                "assignee": "Przypisane",
+                "status": "Status",
+                "end_date": "Termin",
+                "priority": "Priorytet",
+                "labels": "Etykiety"
+            },
+            "tabs": {
+                "subtasks": "Podzadania",
+                "comments": "Komentarze",
+                "shared": "Udostępnione",
+                "activity": "Aktywność"
+            },
+            "subtasks": {
+                "title": "Podzadania"
+            },
+            "discussion": {
+                "title": "Dyskusja"
+            },
+            "shared": {
+                "files": "Pliki",
+                "links": "Linki",
+                "name": "Nazwa",
+                "shared_by": "Udostępnił",
+                "date": "Data"
+            },
+            "activity": {
+                "title": "Aktywność"
+            }
+        },
+        "day_list": {
+            "title": "Zadania na dziś",
+            "no_tasks": "Brak zaplanowanych zadań na ten dzień."
+        },
+        "list": {
+            "columns": {
+                "name": "Nazwa Zadania",
+                "subtasks": "Podzadania",
+                "status": "Status",
+                "priority": "Priorytet",
+                "start_date": "Data Rozpoczęcia",
+                "end_date": "Data Zakończenia",
+                "assignee": "Przypisany"
+            },
+            "no_tasks": "Nie znaleziono zadań"
+        }
+    },
+    "tasks": {
+        "status": {
+            "todo": "Do zrobienia",
+            "in_progress": "W toku",
+            "review": "Weryfikacja",
+            "done": "Gotowe"
+        },
+        "priority": {
+            "low": "Niski",
+            "medium": "Średni",
+            "high": "Wysoki",
+            "urgent": "Pilny"
+        },
+        "assignee": {
+            "placeholder": "Przypisz osobę...",
+            "no_results": "Nie znaleziono osób",
+            "none": "Brak przypisanych"
+        },
+        "datepicker": {
+            "select_date": "Wybierz datę",
+            "time": "Czas",
+            "done": "Gotowe",
+            "today": "Dzisiaj",
+            "tomorrow": "Jutro",
+            "next_week": "W przyszłym tygodniu"
+        },
+        "edit": {
+            "title": "Edytuj zadanie",
+            "edit_mode": "Tryb edycji",
+            "click_to_edit": "Kliknij aby edytować",
+            "title_label": "Tytuł zadania",
+            "select_status": "Wybierz status",
+            "select_date": "Wybierz datę...",
+            "description": "Opis",
+            "description_placeholder": "Dodaj opis...",
+            "click_to_add_description": "Kliknij aby dodać opis...",
+            "subtasks_header": "Podzadania",
+            "files_header": "Pliki",
+            "add_file": "+ Dodaj plik",
+            "no_attachments": "Brak załączników",
+            "no_attachments_hint": "Kliknij przycisk powyżej aby dodać pliki",
+            "links_header": "Linki",
+            "add_link": "+ Dodaj link",
+            "cancel": "Anuluj",
+            "save": "Zapisz zmiany",
+            "meta": {
+                "project": "Projekt",
+                "assignee": "Przypisane",
+                "status": "Status",
+                "end_date": "Termin",
+                "priority": "Priorytet",
+                "labels": "Etykiety"
+            },
+            "tabs": {
+                "subtasks": "Podzadania",
+                "files": "Pliki",
+                "links": "Linki"
+            }
+        },
+        "create": {
+            "title": "Nowe zadanie",
+            "select_project": "Wybierz projekt",
+            "task_title": "Tytuł zadania",
+            "task_title_placeholder": "Co jest do zrobienia?",
+            "description": "Opis",
+            "description_placeholder": "Dodaj opis zadania... (wspiera Markdown)",
+            "markdown_hint": "Wskazówka: Użyj **pogrubienia**, *kursywy*, - listy",
+            "assignee": "Przypisana osoba",
+            "assignee_placeholder": "Przypisz osobę...",
+            "start_date": "Start",
+            "end_date": "Koniec",
+            "due_date_placeholder": "Termin",
+            "more_options": "Więcej opcji",
+            "less_options": "Mniej opcji",
+            "subtasks": "Zadania podrzędne",
+            "add_subtask_placeholder": "Dodaj zadanie podrzędne...",
+            "add_subtask_button": "+ Dodaj",
+            "attachments": "Załączniki",
+            "dropzone_active": "Upuść pliki tutaj...",
+            "dropzone_inactive": "Przeciągnij pliki lub kliknij aby dodać",
+            "file_type_hint": "PNG, JPG, PDF, DOCX do 100MB",
+            "file_size_error": "Następujące pliki są za duże (max 100MB):",
+            "upload_error": "Nie udało się zauploadować niektórych plików. Sprawdź konsolę.",
+            "create_another": "Stwórz kolejne",
+            "cancel": "Anuluj",
+            "create_button": "Stwórz zadanie",
+            "priority": "Priorytet",
+            "status": "Status",
+            "labels": "Etykiety",
+            "mock_projects": {
+                "marketing": "Marketing",
+                "development": "Development",
+                "design_system": "Design System"
+            }
+        }
+    },
+    "board": {
+        "column": {
+            "quick_add": {
+                "placeholder": "Wpisz nazwę zadania",
+                "priority": "Priorytet",
+                "assign_to": "Przypisz do",
+                "today": "Dzisiaj",
+                "tomorrow": "Jutro",
+                "save": "Zapisz"
+            },
+            "quick_edit": {
+                "assignee_placeholder": "Przypisz osobę...",
+                "date_placeholder": "Termin wykonania",
+                "save": "Zapisz"
+            },
+            "menu": {
+                "config": "Konfiguracja",
+                "rename": "Zmień nazwę",
+                "wip_limit": "Ustaw limit (WIP)",
+                "change_color": "Zmień kolor",
+                "sort_title": "Sortowanie",
+                "sort_by": "Sortuj według...",
+                "watch": "Obserwuj listę",
+                "bulk_title": "Akcje masowe",
+                "move_all": "Przenieś wszystkie...",
+                "archive_all": "Archiwizuj wszystkie",
+                "auto_title": "Automatyzacje",
+                "add_rule": "Dodaj regułę",
+                "delete_column": "Usuń kolumnę",
+                "select_color": "Wybierz kolor"
+            }
+        },
+        "add_column": {
+            "title": "Nowa kolumna",
+            "button": "Dodaj kolumnę",
+            "placeholder": "Np. Weryfikacja",
+            "label": "Nazwa kolumny",
+            "color_label": "Kolor",
+            "empty_button": "Dodaj kolumnę"
+        },
+        "header": {
+            "search": "Szukaj zadań...",
+            "filters": "Filtry",
+            "sort": "Sortuj",
+            "new_task": "Nowe Zadanie",
+            "kanban": "Kanban",
+            "list": "Lista",
+            "calendar": "Kalendarz",
+            "timeline": "Timeline"
+        },
+        "filters": {
+            "title": "Filtry",
+            "quick": {
+                "title": "Szybkie filtry",
+                "assigned_to_me": "Przypisane do mnie",
+                "overdue": "Przeterminowane",
+                "today": "Dzisiaj",
+                "this_week": "Ten tydzień"
+            },
+            "assignees": "Osoby",
+            "priorities": "Priorytety",
+            "labels": "Etykiety i Tagi",
+            "status": "Status",
+            "no_members": "Brak członków zespołu",
+            "no_labels": "Nie znaleziono etykiet",
+            "clear": "Wyczyść filtry"
+        },
+        "sort": {
+            "title": "Sortuj według",
+            "direction": "Kolejność",
+            "asc": "Rosnąco",
+            "desc": "Malejąco",
+            "options": {
+                "priority": "Priorytet",
+                "due_date": "Termin",
+                "created_at": "Data utworzenia",
+                "updated_at": "Ostatnia aktualizacja"
+            }
+        },
+        "messages": {
+            "loading": "Ładowanie projektu...",
+            "not_found": "Projekt nie znaleziony",
+            "delete_column_confirm": "Czy na pewno chcesz usunąć tę kolumnę? Wszystkie zadania w niej zostaną usunięte.",
+            "delete_tasks_confirm": "Czy na pewno chcesz usunąć {{count}} zadań?"
+        }
+    },
+    "card": {
+        "menu": {
+            "edit": "Edytuj",
+            "duplicate": "Duplikuj",
+            "archive": "Archiwizuj",
+            "delete": "Usuń"
+        },
+        "add_task": "Dodaj Nowe Zadanie"
+    },
+    "labels": {
+        "task_singular": "Zadanie",
+        "task_plural": "Zadania",
+        "search": "Szukaj etykiet...",
+        "create_new": "Utwórz nową etykietę",
+        "no_results": "Brak etykiet",
+        "create_header": "Utwórz Etykietę",
+        "name": "Nazwa",
+        "color": "Kolor",
+        "preview": "Podgląd",
+        "add": "Utwórz",
+        "cancel": "Anuluj",
+        "placeholder": "np. Błąd, Funkcja, Design",
+        "add_labels": "Dodaj etykiety"
     }
 }

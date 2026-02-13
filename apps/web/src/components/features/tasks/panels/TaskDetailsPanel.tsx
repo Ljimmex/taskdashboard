@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import Markdown from 'react-markdown'
 import { usePanelStore } from '../../../../lib/panelStore'
 import { StatusBadge } from '../components/StatusBadge'
@@ -10,6 +11,7 @@ import type { TaskLink } from '@taskdashboard/types'
 import { CommentList } from '../../comments/CommentList'
 import { CommentInput } from '../../comments/CommentInput'
 import { ActivityFeed, type Activity } from '@/components/common/ActivityFeed'
+import { Marquee } from '@/components/ui/Marquee'
 import type { Comment } from '../../comments/CommentList'
 import type { TaskCardProps } from '../components/TaskCard'
 import { SubtaskList, type Subtask } from '../subtasks/SubtaskList'
@@ -98,13 +100,15 @@ const TabButton = ({
 }) => (
     <button
         onClick={onClick}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${active
+        className={`flex items-center justify-center gap-2 px-2 py-2.5 rounded-lg font-medium text-sm transition-all flex-1 min-w-0 ${active
             ? 'bg-amber-500/10 text-amber-500'
             : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
             }`}
     >
-        {active ? activeIcon : icon}
-        <span>{label}</span>
+        <div className="flex-shrink-0">{active ? activeIcon : icon}</div>
+        <Marquee className="flex-1" speed={20}>
+            {label}
+        </Marquee>
     </button>
 )
 
@@ -130,6 +134,7 @@ export function TaskDetailsPanel({
     availableLabels: propAvailableLabels,
     stages = [],
 }: TaskDetailsPanelProps) {
+    const { t, i18n } = useTranslation()
     const [activeTab, setActiveTab] = useState<'subtasks' | 'comments' | 'shared' | 'activity'>(task?.type === 'meeting' ? 'comments' : 'subtasks')
     const [sharedView, setSharedView] = useState<'files' | 'links'>('files')
     const panelRef = useRef<HTMLDivElement>(null)
@@ -153,7 +158,7 @@ export function TaskDetailsPanel({
             id: f.id,
             name: f.name,
             type: fileType,
-            dateShared: new Date(f.createdAt).toLocaleDateString('pl-PL', {
+            dateShared: new Date(f.createdAt).toLocaleDateString(i18n.language, {
                 day: 'numeric',
                 month: 'short',
                 year: 'numeric'
@@ -279,7 +284,7 @@ export function TaskDetailsPanel({
                         <button
                             onClick={onClose}
                             className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-                            title="Zamknij"
+                            title={t('projects.details.close')}
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M13 17L18 12L13 7" />
@@ -291,7 +296,7 @@ export function TaskDetailsPanel({
                                 <button
                                     onClick={onArchive}
                                     className="p-2 rounded-lg text-gray-400 hover:text-amber-400 hover:bg-gray-800 transition-colors"
-                                    title="Archiwizuj zadanie"
+                                    title={t('projects.details.archive')}
                                 >
                                     <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
                                         <rect x="4" y="12" width="24" height="16" rx="3" fill="currentColor" opacity="0.7" />
@@ -329,15 +334,19 @@ export function TaskDetailsPanel({
                         {/* Project */}
                         {task.projectName && (
                             <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-20">Project</span>
-                                <span className="text-sm text-white">{task.projectName}</span>
+                                <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('projects.details.meta.project')}</span>
+                                <div className="w-64 overflow-hidden border-b border-gray-800/30">
+                                    <Marquee className="text-sm text-white" speed={25}>
+                                        {task.projectName}
+                                    </Marquee>
+                                </div>
                             </div>
                         )}
 
                         {/* Assignees - Read Only */}
                         <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-20 pt-0.5">Assignee</span>
-                            <div className="flex-1">
+                            <span className="text-sm text-gray-500 w-24 pt-0.5 flex-shrink-0">{t('projects.details.meta.assignee')}</span>
+                            <div className="w-64 overflow-hidden">
                                 {assignees.length > 0 ? (
                                     <div className="flex items-center gap-1 flex-wrap">
                                         {assignees.map(a => (
@@ -354,41 +363,47 @@ export function TaskDetailsPanel({
                                         ))}
                                     </div>
                                 ) : (
-                                    <span className="text-xs text-gray-500">Brak przypisanych osób</span>
+                                    <span className="text-xs text-gray-500">{t('projects.details.no_assignees')}</span>
                                 )}
                             </div>
                         </div>
 
                         {/* Status */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-20">Status</span>
-                            <StatusBadge status={task.status} stages={stages} />
+                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('projects.details.meta.status')}</span>
+                            <div className="w-64 text-left">
+                                <StatusBadge status={task.status} stages={stages} />
+                            </div>
                         </div>
 
                         {/* Due Date */}
                         {task.dueDate && (
                             <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-20">End Date</span>
-                                <span className="text-sm text-white">
-                                    {new Date(task.dueDate).toLocaleDateString('pl-PL', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric',
-                                    })}
-                                </span>
+                                <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('projects.details.meta.end_date')}</span>
+                                <div className="w-64 overflow-hidden">
+                                    <span className="text-sm text-white block truncate">
+                                        {new Date(task.dueDate).toLocaleDateString(i18n.language, {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            year: 'numeric',
+                                        })}
+                                    </span>
+                                </div>
                             </div>
                         )}
 
                         {/* Priority */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-20">Priority</span>
-                            <PriorityBadge priority={task.priority} />
+                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('projects.details.meta.priority')}</span>
+                            <div className="w-64 text-left">
+                                <PriorityBadge priority={task.priority} />
+                            </div>
                         </div>
 
                         {/* Labels - Read Only */}
                         <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-20 pt-0.5">Labels</span>
-                            <div className="flex-1">
+                            <span className="text-sm text-gray-500 w-24 pt-0.5 flex-shrink-0">{t('projects.details.meta.labels')}</span>
+                            <div className="w-64">
                                 {taskLabels.length > 0 ? (
                                     <div className="flex items-center gap-1 flex-wrap">
                                         {taskLabels.map(label => (
@@ -402,7 +417,7 @@ export function TaskDetailsPanel({
                                         ))}
                                     </div>
                                 ) : (
-                                    <span className="text-xs text-gray-500">Brak etykiet</span>
+                                    <span className="text-xs text-gray-500">{t('projects.details.no_labels')}</span>
                                 )}
                             </div>
                         </div>
@@ -412,7 +427,7 @@ export function TaskDetailsPanel({
                 {/* Description */}
                 {task.description && (
                     <div className="flex-none p-6 border-b border-gray-800">
-                        <h3 className="text-sm font-semibold text-white mb-2">Description</h3>
+                        <h3 className="text-sm font-semibold text-white mb-2">{t('projects.details.description')}</h3>
                         <div className="prose prose-sm prose-invert max-w-none text-gray-400 leading-relaxed break-words [&>h1]:text-white [&>h1]:text-lg [&>h1]:font-bold [&>h1]:mb-2 [&>h2]:text-white [&>h2]:text-base [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1.5 [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:mb-2 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:mb-2 [&>li]:mb-1 [&>blockquote]:border-l-2 [&>blockquote]:border-amber-500 [&>blockquote]:pl-3 [&>blockquote]:italic [&>blockquote]:text-gray-500 [&>code]:bg-gray-800 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-amber-400 [&>code]:text-xs [&>strong]:text-white [&>strong]:font-semibold [&>em]:italic">
                             <Markdown>{task.description}</Markdown>
                         </div>
@@ -421,14 +436,14 @@ export function TaskDetailsPanel({
 
                 {/* Tabs */}
                 <div className="flex-none border-b border-gray-800">
-                    <div className="flex gap-2 px-6">
+                    <div className="flex gap-1 px-4 py-2">
                         {task?.type !== 'meeting' && (
                             <TabButton
                                 active={activeTab === 'subtasks'}
                                 onClick={() => setActiveTab('subtasks')}
                                 icon={<DocumentIcon />}
                                 activeIcon={<DocumentIconGold />}
-                                label="Subtasks"
+                                label={t('projects.details.tabs.subtasks')}
                             />
                         )}
                         <TabButton
@@ -436,21 +451,21 @@ export function TaskDetailsPanel({
                             onClick={() => setActiveTab('comments')}
                             icon={<CommentIcon />}
                             activeIcon={<CommentIconGold />}
-                            label="Comments"
+                            label={t('projects.details.tabs.comments')}
                         />
                         <TabButton
                             active={activeTab === 'shared'}
                             onClick={() => setActiveTab('shared')}
                             icon={<PaperclipIcon />}
                             activeIcon={<PaperclipIconGold />}
-                            label="Shared"
+                            label={t('projects.details.tabs.shared')}
                         />
                         <TabButton
                             active={activeTab === 'activity'}
                             onClick={() => setActiveTab('activity')}
                             icon={<HistoryIcon />}
                             activeIcon={<HistoryIconGold />}
-                            label="Activity"
+                            label={t('projects.details.tabs.activity')}
                         />
                     </div>
                 </div>
@@ -461,7 +476,7 @@ export function TaskDetailsPanel({
                     {activeTab === 'subtasks' && (
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-sm font-semibold text-white">Podzadania</h3>
+                                <h3 className="text-sm font-semibold text-white">{t('projects.details.subtasks.title')}</h3>
                                 <span className="text-xs text-gray-500">{subtasks.filter(s => s.status === 'done' || s.isCompleted).length}/{subtasks.length}</span>
                             </div>
                             <SubtaskList
@@ -479,7 +494,7 @@ export function TaskDetailsPanel({
                         <div className="flex flex-col h-full bg-[#12121a]">
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                                 <div className="flex items-center justify-between mb-8">
-                                    <h3 className="text-sm font-semibold text-white">Dyskusja</h3>
+                                    <h3 className="text-sm font-semibold text-white">{t('projects.details.discussion.title')}</h3>
                                     <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full">{comments.length}</span>
                                 </div>
                                 <CommentList
@@ -510,7 +525,7 @@ export function TaskDetailsPanel({
                                         : 'text-gray-400 border-transparent hover:text-gray-300'
                                         }`}
                                 >
-                                    Files
+                                    {t('projects.details.shared.files')}
                                 </button>
                                 <button
                                     onClick={() => setSharedView('links')}
@@ -519,7 +534,7 @@ export function TaskDetailsPanel({
                                         : 'text-gray-400 border-transparent hover:text-gray-300'
                                         }`}
                                 >
-                                    Links
+                                    {t('projects.details.shared.links')}
                                 </button>
                             </div>
 
@@ -529,9 +544,9 @@ export function TaskDetailsPanel({
                                     <table className="w-full">
                                         <thead>
                                             <tr className="text-left text-xs text-gray-500 border-b border-gray-800">
-                                                <th className="pb-3 font-medium">Name</th>
-                                                <th className="pb-3 font-medium">Shared by</th>
-                                                <th className="pb-3 font-medium">Date</th>
+                                                <th className="pb-3 font-medium">{t('projects.details.shared.name')}</th>
+                                                <th className="pb-3 font-medium">{t('projects.details.shared.shared_by')}</th>
+                                                <th className="pb-3 font-medium">{t('projects.details.shared.date')}</th>
                                                 <th className="pb-3 font-medium w-12"></th>
                                             </tr>
                                         </thead>
@@ -580,14 +595,14 @@ export function TaskDetailsPanel({
                     {activeTab === 'activity' && (
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-8">
-                                <h3 className="text-sm font-semibold text-white">Aktywność</h3>
+                                <h3 className="text-sm font-semibold text-white">{t('projects.details.activity.title')}</h3>
                                 <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full">{activities.length}</span>
                             </div>
                             <ActivityFeed activities={activities} />
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
         </>
     )
 }
