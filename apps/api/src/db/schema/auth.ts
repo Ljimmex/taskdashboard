@@ -77,35 +77,27 @@ export const twoFactors = pgTable('two_factors', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
     secret: text('secret').notNull(),
-    backupCodes: text('backup_codes').notNull(), // stored as comma-separated or JSON string usually
+    backupCodes: text('backup_codes').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (_table) => [
-    pgPolicy("Users can view own two factor", {
-        for: "select",
-        using: sql`user_id = auth.uid()::text`,
-    }),
-    pgPolicy("Users can update own two factor", {
-        for: "update",
-        using: sql`user_id = auth.uid()::text`,
-    }),
-    pgPolicy("Users can insert own two factor", {
-        for: "insert",
-        withCheck: sql`user_id = auth.uid()::text`,
+    pgPolicy("Backend can manage two factor", {
+        for: "all",
+        using: sql`true`,
     }),
 ])
 
 export const twoFactorTrust = pgTable('two_factor_trust', {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
-    b_twoFactorId: text('two_factor_id'), // optional FK to two_factors if needed, but better-auth might not enforce it strictly
     deviceId: text('device_id').notNull(),
-    expiresAt: timestamp('expires_at').notNull(),
+    metadata: text('metadata'),
+    expiresAt: timestamp('expires_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (_table) => [
-    pgPolicy("Users can view own trusted devices", {
-        for: "select",
-        using: sql`user_id = auth.uid()::text`,
+    pgPolicy("Backend can manage trusted devices", {
+        for: "all",
+        using: sql`true`,
     }),
 ])
 

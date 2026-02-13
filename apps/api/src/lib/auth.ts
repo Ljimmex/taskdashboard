@@ -182,6 +182,11 @@ export const auth = betterAuth({
             },
         },
     },
+
+    // Debugging
+    logger: {
+        level: "debug",
+    },
 })
 
 // Export auth types

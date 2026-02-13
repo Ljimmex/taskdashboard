@@ -15,6 +15,13 @@
       "when": 1770982203681,
       "tag": "0001_lonely_turbo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771000469677,
+      "tag": "0002_lush_rick_jones",
+      "breakpoints": true
     }
   ]
 }
