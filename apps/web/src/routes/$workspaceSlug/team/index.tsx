@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createFileRoute, useParams } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { TeamHeader, SortOption, SortDirection, FilterOption } from '@/components/features/teams/TeamHeader'
@@ -19,6 +20,7 @@ export default function TeamPage() {
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug/team/' })
     const { data: session } = useSession()
     const queryClient = useQueryClient()
+    const { t } = useTranslation()
 
     // UI State
     const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false)
@@ -393,19 +395,19 @@ export default function TeamPage() {
     }
 
     if (isLoadingTeams) {
-        return <div className="p-8 text-center text-gray-500">Loading teams...</div>
+        return <div className="p-8 text-center text-gray-500">{t('teams.loading')}</div>
     }
 
     if (hasTeamsError) {
         return (
             <div className="p-8 text-center">
-                <div className="text-red-500 mb-4 font-semibold">Failed to load teams</div>
+                <div className="text-red-500 mb-4 font-semibold">{t('teams.error_loading')}</div>
                 <div className="text-gray-400 text-sm">{String(teamsError)}</div>
                 <button
                     onClick={() => queryClient.invalidateQueries({ queryKey: ['teams'] })}
                     className="mt-6 px-4 py-2 bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors"
                 >
-                    Retry
+                    {t('teams.retry')}
                 </button>
             </div>
         )

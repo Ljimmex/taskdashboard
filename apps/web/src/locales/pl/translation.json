@@ -284,5 +284,292 @@
             "subscribe": "Sub",
             "rights": "© 2024 Zadano.app. Wszystkie prawa zastrzeżone."
         }
+    },
+    "settings": {
+        "title": "Ustawienia Użytkownika",
+        "subtitle": "Zarządzaj swoimi preferencjami",
+        "tabs": {
+            "account": "Konto",
+            "notification": "Powiadomienia",
+            "privacy": "Prywatność i Bezpieczeństwo"
+        },
+        "account": {
+            "title": "Ustawienia Konta",
+            "subtitle": "Zarządzaj swoim profilem i preferencjami konta.",
+            "photo": {
+                "title": "Zdjęcie",
+                "change": "Zmień zdjęcie",
+                "remove": "Usuń zdjęcie",
+                "uploading": "Przesyłanie...",
+                "hint": "Wybierz zdjęcie do 4MB.",
+                "confirmRemove": "Czy na pewno chcesz usunąć swoje zdjęcie profilowe?"
+            },
+            "personalInfo": {
+                "title": "Dane Osobowe",
+                "save": "Zapisz Zmiany",
+                "saving": "Zapisywanie...",
+                "firstName": "Imię",
+                "firstNamePlaceholder": "Jan",
+                "lastName": "Nazwisko",
+                "lastNamePlaceholder": "Kowalski",
+                "birthDate": "Data Urodzenia",
+                "pickDate": "Wybierz datę",
+                "gender": "Płeć",
+                "selectGender": "Wybierz płeć",
+                "genders": {
+                    "male": "Mężczyzna",
+                    "female": "Kobieta",
+                    "other": "Inna",
+                    "prefer_not_to_say": "Wolę nie podawać"
+                }
+            },
+            "professional": {
+                "title": "Dane Zawodowe",
+                "position": "Stanowisko",
+                "positionPlaceholder": "np. Projektant Produktu",
+                "description": "Opis",
+                "descriptionPlaceholder": "Opowiedz nam trochę o sobie..."
+            },
+            "location": {
+                "title": "Lokalizacja i Preferencje",
+                "country": "Kraj",
+                "countryPlaceholder": "np. Polska",
+                "city": "Miasto",
+                "cityPlaceholder": "np. Warszawa",
+                "timezone": "Strefa czasowa"
+            },
+            "danger": {
+                "deleteAccount": "Usuń moje konto",
+                "confirmDelete": "Czy na pewno chcesz usunąć swoje konto? Ta akcja jest nieodwracalna."
+            },
+            "toast": {
+                "success": "Profil zaktualizowany pomyślnie",
+                "error": "Nie udało się zaktualizować profilu",
+                "avatarError": "Nie udało się przesłać awatara"
+            }
+        },
+        "notification": {
+            "title": "Preferencje Powiadomień",
+            "subtitle": "Wybierz, jak chcesz otrzymywać powiadomienia."
+        },
+        "privacy": {
+            "title": "Bezpieczeństwo",
+            "subtitle": "Zarządzaj ustawieniami bezpieczeństwa",
+            "loginPreferences": "Preferencje Logowania",
+            "password": "Hasło",
+            "email": "Email",
+            "emailPlaceholder": "Email",
+            "phoneNumber": "Numer Telefonu",
+            "phonePlaceholder": "000 000 000",
+            "save": "Zapisz",
+            "cancel": "Anuluj",
+            "updating": "Aktualizowanie...",
+            "changePassword": "Zmień Hasło",
+            "currentPassword": "Obecne Hasło",
+            "newPassword": "Nowe Hasło",
+            "confirmNewPassword": "Potwierdź Nowe Hasło",
+            "updatePassword": "Zaktualizuj Hasło",
+            "twoFactor": {
+                "title": "Uwierzytelnianie Dwuskładnikowe",
+                "securityTitle": "Zabezpieczenia 2FA",
+                "securityDescription": "Dodaj dodatkową warstwę zabezpieczeń do swojego konta.",
+                "disableTitle": "Wyłącz 2FA",
+                "disableDescription": "Wpisz hasło, aby wyłączyć uwierzytelnianie dwuskładnikowe.",
+                "passwordPlaceholder": "Twoje Hasło",
+                "enabledTitle": "Włączone",
+                "enabledDescription": "Twoje konto jest bezpieczne.",
+                "turnOff": "Wyłącz",
+                "confirmPasswordTitle": "Potwierdź hasło",
+                "confirmPasswordDescription": "Wpisz hasło, aby włączyć 2FA.",
+                "continue": "Kontynuuj",
+                "authenticatorAppTitle": "Aplikacja uwierzytelniająca",
+                "authenticatorAppDescription": "Zabezpiecz konto za pomocą Google Authenticator lub Authy.",
+                "enable": "Włącz 2FA",
+                "disable": "Wyłącz 2FA",
+                "scanCode": "Zeskanuj kod QR poniżej za pomocą aplikacji uwierzytelniającej",
+                "enterCode": "Wpisz kod z aplikacji",
+                "codePlaceholder": "000 000",
+                "backupCodes": "Kody Zapasowe",
+                "backupCodesDesc": "Zachowaj te kody w bezpiecznym miejscu. Możesz ich użyć do odzyskania dostępu do konta.",
+                "verify": "Zweryfikuj",
+                "verifying": "Weryfikacja..."
+            },
+            "sessions": {
+                "title": "Aktywne Sesje",
+                "description": "Zobacz, jakie urządzenia są używane do logowania.",
+                "current": "Obecna sesja",
+                "lastActive": "Ostatnio aktywna",
+                "revoke": "Wyloguj",
+                "revokeAll": "Wyloguj się ze wszystkich urządzeń",
+                "confirmRevokeAll": "Czy na pewno chcesz wylogować się ze wszystkich urządzeń, włącznie z tym?",
+                "noActive": "Nie znaleziono aktywnych sesji.",
+                "device": {
+                    "mobile": "Telefon",
+                    "desktop": "Komputer",
+                    "browser": "Nieznana Przeglądarka",
+                    "os": "Nieznany System"
+                }
+            },
+            "toast": {
+                "passwordSuccess": "Hasło zaktualizowane pomyślnie",
+                "passwordError": "Nie udało się zaktualizować hasła",
+                "2faEnabled": "Weryfikacja dwuetapowa została włączona",
+                "2faDisabled": "Weryfikacja dwuetapowa została wyłączona",
+                "revokeAllSuccess": "Wszystkie sesje zostały zakończone"
+            }
+        }
+    },
+    "teams": {
+        "title": "Zespoły",
+        "search_placeholder": "Szukaj członków...",
+        "add_team": "Dodaj Zespół",
+        "filters": {
+            "label": "Filtry",
+            "clear_all": "Wyczyść wszystkie filtry",
+            "role_and_team": "Rola i Zespół",
+            "job_title": "Stanowisko",
+            "no_roles": "Brak dostępnych ról",
+            "team": "Zespół",
+            "status_and_availability": "Status i Dostępność",
+            "account_status": "Status Konta",
+            "availability": "Dostępność",
+            "work_context": "Kontekst Pracy",
+            "assigned_project": "Przypisany do Projektu",
+            "status": {
+                "active": "Aktywny",
+                "inactive": "Nieaktywny",
+                "pending": "Zaproszony / Oczekujący"
+            },
+            "availability_status": {
+                "available": "Dostępny",
+                "busy": "Zajęty",
+                "overloaded": "Przeciążony"
+            }
+        },
+        "sort": {
+            "name": "Nazwa",
+            "last_active": "Ostatnio aktywny",
+            "date_added": "Data dodania",
+            "project_count": "Liczba projektów",
+            "job_title": "Stanowisko",
+            "directions": {
+                "az": "A → Z",
+                "za": "Z → A",
+                "oldest": "Najstarsze",
+                "newest": "Najnowsze",
+                "low_high": "Rosnąco",
+                "high_low": "Malejąco"
+            }
+        },
+        "table": {
+            "selected": "zaznaczono",
+            "delete": "Usuń",
+            "move_to": "Przenieś do...",
+            "name": "Imię i Nazwisko",
+            "email": "Email",
+            "job_title": "Stanowisko",
+            "current_projects": "Obecne Projekty",
+            "date_added": "Data dodania",
+            "last_active": "Ostatnio aktywny",
+            "empty_state": "Brak członków w tym zespole.",
+            "menu": {
+                "edit_team": "Edytuj Zespół",
+                "export_members": "Eksportuj Członków",
+                "delete_team": "Usuń Zespół"
+            },
+            "actions": {
+                "view_profile": "Zobacz Profil",
+                "edit_member": "Edytuj Członka",
+                "remove_member": "Usuń Członka",
+                "confirm_remove": "Czy na pewno chcesz usunąć {{name}} z tego zespołu?"
+            }
+        },
+        "create_panel": {
+            "title": "Utwórz Nowy Zespół",
+            "team_name": "Nazwa Zespołu",
+            "team_name_placeholder": "np. System Design, Marketing",
+            "description": "Opis",
+            "description_placeholder": "Za co odpowiedzialny jest ten zespół?",
+            "team_color": "Kolor Zespołu",
+            "members": "Członkowie",
+            "search_placeholder": "Dodaj członków po nazwie lub emailu",
+            "no_users_found": "Nie znaleziono użytkowników",
+            "cancel": "Anuluj",
+            "create_button": "Utwórz Zespół"
+        },
+        "invite_panel": {
+            "title": "Zaproś do {{teamName}}",
+            "subtitle": "Dodaj członków do współpracy",
+            "tabs": {
+                "email": "Zaproś przez email",
+                "link": "Zaproś linkiem"
+            },
+            "search_label": "Szukaj Członka Obszaru Roboczego",
+            "search_placeholder": "Wpisz nazwę lub email...",
+            "no_member_found": "Nie znaleziono członka",
+            "role_label": "Rola w Zespole",
+            "link_label": "Link zaproszenia",
+            "anyone_with_link": "Każdy z tym linkiem może dołączyć jako",
+            "member_role": "Członek",
+            "generate_new_link": "Wygeneruj nowy link",
+            "add_to_team": "Dodaj do Zespołu",
+            "done": "Gotowe"
+        },
+        "edit_panel": {
+            "title": "Edytuj Członka",
+            "photo": "Zdjęcie",
+            "change_photo": "Zmień zdjęcie",
+            "remove_photo": "Usuń zdjęcie",
+            "photo_help": "Wybierz zdjęcie do 4MB.",
+            "first_name": "Imię",
+            "last_name": "Nazwisko",
+            "job_title": "Stanowisko",
+            "job_title_placeholder": "np. Product Designer",
+            "team_level": "Poziom w Zespole",
+            "select_level": "Wybierz poziom...",
+            "city": "Miasto",
+            "city_placeholder": "np. Warszawa",
+            "country": "Kraj",
+            "country_placeholder": "np. Polska",
+            "change_email": "Zmień email",
+            "team_groups": "Grupy Zespołowe",
+            "select_teams": "Wybierz zespoły...",
+            "no_teams_found": "Nie znaleziono zespołów",
+            "projects": "Projekty",
+            "select_projects": "Wybierz projekty...",
+            "no_projects_found": "Nie znaleziono projektów",
+            "save_changes": "Zapisz Zmiany",
+            "saving": "Zapisywanie...",
+            "delete_member": "Usuń Członka",
+            "delete_confirmation": "Czy na pewno chcesz usunąć {{name}}? Ta akcja jest nieodwracalna.",
+            "deleting": "Usuwanie..."
+        },
+        "view_panel": {
+            "member_since": "Członek od",
+            "location": "Lokalizacja",
+            "current_workload": "Obecne Obciążenie",
+            "tasks_count": "{{completed}}/{{total}} zadań",
+            "capacity_used": "{{percentage}}% wykorzystanej przepustowości",
+            "quick_actions": {
+                "assign_task": "Przypisz Zadanie",
+                "message": "Wiadomość",
+                "view_tasks": "Zobacz Zadania"
+            },
+            "teams": "Zespoły",
+            "no_teams": "Brak zespołów",
+            "active_projects": "Aktywne Projekty",
+            "no_projects": "Brak aktywnych projektów"
+        },
+        "roles": {
+            "team_lead": "Lider Zespołu",
+            "senior": "Senior",
+            "mid": "Mid-level",
+            "junior": "Junior",
+            "intern": "Stażysta",
+            "member": "Członek"
+        },
+        "loading": "Ładowanie zespołów...",
+        "error_loading": "Nie udało się załadować zespołów",
+        "retry": "Spróbuj ponownie"
     }
 }

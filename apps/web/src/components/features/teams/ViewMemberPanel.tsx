@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { usePanelStore } from '../../../lib/panelStore'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -21,6 +22,7 @@ interface ViewMemberPanelProps {
 export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMemberPanelProps) {
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
     const panelRef = useRef<HTMLDivElement>(null)
+    const { t } = useTranslation()
 
     // Sync global panel state
     useEffect(() => {
@@ -110,8 +112,8 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                     {/* Workload Indicator (Moved to top as it's key info) */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider">Current Workload</Label>
-                            <span className="text-xs text-gray-400">{completedTasks}/{totalTasks} tasks</span>
+                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider">{t('teams.view_panel.current_workload')}</Label>
+                            <span className="text-xs text-gray-400">{t('teams.view_panel.tasks_count', { completed: completedTasks, total: totalTasks })}</span>
                         </div>
                         <ProgressBar
                             value={completedTasks}
@@ -119,7 +121,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                             size="md"
                             showLabel={false}
                         />
-                        <p className="text-[10px] text-gray-500 mt-1 text-right">62% capacity used</p>
+                        <p className="text-[10px] text-gray-500 mt-1 text-right">{t('teams.view_panel.capacity_used', { percentage: 62 })}</p>
                     </div>
 
                     {/* Quick Actions - Improved Styling + Project Icons */}
@@ -131,7 +133,10 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                             <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                                 <SubtaskCheckboxIcon />
                             </div>
-                            <span className="text-[10px] font-medium">Assign Task</span>
+                            <div className="opacity-80 group-hover:opacity-100 transition-opacity">
+                                <SubtaskCheckboxIcon />
+                            </div>
+                            <span className="text-[10px] font-medium">{t('teams.view_panel.quick_actions.assign_task')}</span>
                         </Button>
 
                         <Button
@@ -141,7 +146,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                             <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                                 <SendIcon />
                             </div>
-                            <span className="text-[10px] font-medium">Message</span>
+                            <span className="text-[10px] font-medium">{t('teams.view_panel.quick_actions.message')}</span>
                         </Button>
 
                         <Button
@@ -151,7 +156,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                             <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                                 <KanbanIconGrey />
                             </div>
-                            <span className="text-[10px] font-medium">View Tasks</span>
+                            <span className="text-[10px] font-medium">{t('teams.view_panel.quick_actions.view_tasks')}</span>
                         </Button>
                     </div>
 
@@ -159,7 +164,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                     <div className="space-y-6">
                         {/* Teams */}
                         <div>
-                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-3 block">Teams</Label>
+                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-3 block">{t('teams.view_panel.teams')}</Label>
                             <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24]">
                                 <div className="flex flex-wrap gap-2">
                                     {displayTeams.length > 0 ? displayTeams.map((team, i) => (
@@ -168,7 +173,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                             {team}
                                         </div>
                                     )) : (
-                                        <span className="text-gray-500 text-xs py-1">No teams</span>
+                                        <span className="text-gray-500 text-xs py-1">{t('teams.view_panel.no_teams')}</span>
                                     )}
                                 </div>
                             </div>
@@ -176,7 +181,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
 
                         {/* Projects */}
                         <div>
-                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-3 block">Active Projects</Label>
+                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-3 block">{t('teams.view_panel.active_projects')}</Label>
                             <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24]">
                                 {(member.projects && member.projects.length > 0) ? (
                                     <div className="flex flex-wrap gap-2">
@@ -187,7 +192,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-xs text-gray-500 py-1">No active projects</p>
+                                    <p className="text-xs text-gray-500 py-1">{t('teams.view_panel.no_projects')}</p>
                                 )}
                             </div>
                         </div>
@@ -196,7 +201,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                     {/* System Information */}
                     <div className="pt-4 border-t border-gray-800 space-y-3">
                         <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Member Since</span>
+                            <span>{t('teams.view_panel.member_since')}</span>
                             <span className="text-gray-400 font-medium">{member.dateAdded || 'Unknown'}</span>
                         </div>
 
@@ -208,7 +213,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
                                         <circle cx="12" cy="10" r="3" />
                                     </svg>
-                                    Location
+                                    {t('teams.view_panel.location')}
                                 </span>
                                 <span className="text-gray-400 font-medium">
                                     {[member.city, member.country].filter(Boolean).join(', ')}
@@ -225,7 +230,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                         <circle cx="9" cy="7" r="4" />
                                         <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
                                     </svg>
-                                    Team Level
+                                    {t('teams.edit_panel.team_level')}
                                 </span>
                                 <span className={`font-medium px-2 py-0.5 rounded text-[10px] ${member.teamLevel === 'team_lead' ? 'bg-amber-500/20 text-amber-400' :
                                     member.teamLevel === 'senior' ? 'bg-blue-500/20 text-blue-400' :
@@ -233,10 +238,10 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                             member.teamLevel === 'junior' ? 'bg-purple-500/20 text-purple-400' :
                                                 'bg-gray-500/20 text-gray-400'
                                     }`}>
-                                    {member.teamLevel === 'team_lead' ? 'Team Lead' :
-                                        member.teamLevel === 'senior' ? 'Senior' :
-                                            member.teamLevel === 'mid' ? 'Mid-level' :
-                                                member.teamLevel === 'junior' ? 'Junior' : 'Intern'}
+                                    {member.teamLevel === 'team_lead' ? t('teams.roles.team_lead') :
+                                        member.teamLevel === 'senior' ? t('teams.roles.senior') :
+                                            member.teamLevel === 'mid' ? t('teams.roles.mid') :
+                                                member.teamLevel === 'junior' ? t('teams.roles.junior') : t('teams.roles.intern')}
                                 </span>
                             </div>
                         )}

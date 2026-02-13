@@ -95,6 +95,20 @@ export const twoFactors = pgTable('two_factors', {
     }),
 ])
 
+export const twoFactorTrust = pgTable('two_factor_trust', {
+    id: text('id').primaryKey(),
+    userId: text('user_id').notNull(),
+    b_twoFactorId: text('two_factor_id'), // optional FK to two_factors if needed, but better-auth might not enforce it strictly
+    deviceId: text('device_id').notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (_table) => [
+    pgPolicy("Users can view own trusted devices", {
+        for: "select",
+        using: sql`user_id = auth.uid()::text`,
+    }),
+])
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -107,3 +121,5 @@ export type Verification = typeof verifications.$inferSelect
 export type NewVerification = typeof verifications.$inferInsert
 export type TwoFactor = typeof twoFactors.$inferSelect
 export type NewTwoFactor = typeof twoFactors.$inferInsert
+export type TwoFactorTrust = typeof twoFactorTrust.$inferSelect
+export type NewTwoFactorTrust = typeof twoFactorTrust.$inferInsert

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDoubleRightIcon } from '../tasks/components/TaskIcons'
 import { usePanelStore } from '../../../lib/panelStore'
+import { useTranslation } from 'react-i18next'
 
 interface TeamMemberInvite {
     id: string
@@ -46,6 +47,7 @@ const KNOWN_USERS = [
 ]
 
 export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelProps) {
+    const { t } = useTranslation()
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
     const [selectedColor, setSelectedColor] = useState(TEAM_COLORS[10].value) // Default Blue
@@ -160,7 +162,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                         >
                             <ChevronDoubleRightIcon />
                         </button>
-                        <h2 className="text-lg font-semibold text-white">Create New Team</h2>
+                        <h2 className="text-lg font-semibold text-white">{t('teams.create_panel.title')}</h2>
                     </div>
                 </div>
 
@@ -168,24 +170,24 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {/* Team Name */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Team Name</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.create_panel.team_name')}</label>
                         <input
                             ref={nameInputRef}
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g., Design System, Marketing"
+                            placeholder={t('teams.create_panel.team_name_placeholder')}
                             className="w-full text-lg font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-transparent focus:border-amber-500/50 transition-colors"
                         />
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Description</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.create_panel.description')}</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="What is this team responsible for?"
+                            placeholder={t('teams.create_panel.description_placeholder')}
                             rows={3}
                             className="w-full text-sm text-gray-300 bg-[#1a1a24] rounded-xl p-4 placeholder-gray-500 outline-none resize-none border border-transparent focus:border-amber-500/50 transition-colors"
                         />
@@ -193,7 +195,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
 
                     {/* Color Picker */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-3">Team Color</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-3">{t('teams.create_panel.team_color')}</label>
                         <div className="grid grid-cols-6 gap-2">
                             {TEAM_COLORS.map(color => (
                                 <button
@@ -215,7 +217,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
 
                     {/* Add Members */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Members</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.create_panel.members')}</label>
                         <div className="relative">
                             <input
                                 type="text"
@@ -225,7 +227,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                                     setShowMemberResults(true)
                                 }}
                                 onFocus={() => setShowMemberResults(true)}
-                                placeholder="Add members by name or email"
+                                placeholder={t('teams.create_panel.search_placeholder')}
                                 className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-gray-800 focus:border-amber-500/50 transition-colors"
                             />
                             {showMemberResults && searchQuery && (
@@ -247,7 +249,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                                             </button>
                                         ))
                                     ) : (
-                                        <div className="px-4 py-3 text-sm text-gray-500 text-center">No users found</div>
+                                        <div className="px-4 py-3 text-sm text-gray-500 text-center">{t('teams.create_panel.no_users_found')}</div>
                                     )}
                                 </div>
                             )}
@@ -333,7 +335,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                             onClick={onClose}
                             className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
                         >
-                            Cancel
+                            {t('teams.create_panel.cancel')}
                         </button>
                         <button
                             onClick={handleCreate}
@@ -343,7 +345,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                                 : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                                 }`}
                         >
-                            Create Team
+                            {t('teams.create_panel.create_button')}
                             <span className="text-xs opacity-75">⌘↵</span>
                         </button>
                     </div>

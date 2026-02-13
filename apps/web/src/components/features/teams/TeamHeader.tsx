@@ -4,6 +4,7 @@ import {
     SearchIconDefault,
     SearchIconActive,
 } from '@/components/dashboard/icons'
+import { useTranslation } from 'react-i18next'
 
 // Sort Icon
 const SortIcon = () => (
@@ -73,6 +74,7 @@ export function TeamHeader({
     availableProjects,
     userRole
 }: TeamHeaderProps) {
+    const { t } = useTranslation()
     const [searchFocused, setSearchFocused] = useState(false)
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const [isSortOpen, setIsSortOpen] = useState(false)
@@ -95,23 +97,23 @@ export function TeamHeader({
     }, [])
 
     const sortOptions: { value: SortOption; label: string; directions: { asc: string; desc: string } }[] = [
-        { value: 'name', label: 'Name', directions: { asc: 'A → Z', desc: 'Z → A' } },
-        { value: 'lastActive', label: 'Last Active', directions: { asc: 'Oldest', desc: 'Newest' } },
-        { value: 'dateAdded', label: 'Date Added', directions: { asc: 'Oldest', desc: 'Newest' } },
-        { value: 'projectCount', label: 'Project Count', directions: { asc: 'Low → High', desc: 'High → Low' } },
-        { value: 'role', label: 'Job Title', directions: { asc: 'A → Z', desc: 'Z → A' } },
+        { value: 'name', label: t('teams.sort.name'), directions: { asc: t('teams.sort.directions.az'), desc: t('teams.sort.directions.za') } },
+        { value: 'lastActive', label: t('teams.sort.last_active'), directions: { asc: t('teams.sort.directions.oldest'), desc: t('teams.sort.directions.newest') } },
+        { value: 'dateAdded', label: t('teams.sort.date_added'), directions: { asc: t('teams.sort.directions.oldest'), desc: t('teams.sort.directions.newest') } },
+        { value: 'projectCount', label: t('teams.sort.project_count'), directions: { asc: t('teams.sort.directions.low_high'), desc: t('teams.sort.directions.high_low') } },
+        { value: 'role', label: t('teams.sort.job_title'), directions: { asc: t('teams.sort.directions.az'), desc: t('teams.sort.directions.za') } },
     ]
 
     const statusOptions = [
-        { value: 'active', label: 'Active', default: true },
-        { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Invited / Pending' },
+        { value: 'active', label: t('teams.filters.status.active'), default: true },
+        { value: 'inactive', label: t('teams.filters.status.inactive') },
+        { value: 'pending', label: t('teams.filters.status.pending') },
     ]
 
     const availabilityOptions = [
-        { value: 'available', label: 'Available', color: 'text-green-400' },
-        { value: 'busy', label: 'Busy', color: 'text-yellow-400' },
-        { value: 'overloaded', label: 'Overloaded', color: 'text-red-400' },
+        { value: 'available', label: t('teams.filters.availability_status.available'), color: 'text-green-400' },
+        { value: 'busy', label: t('teams.filters.availability_status.busy'), color: 'text-yellow-400' },
+        { value: 'overloaded', label: t('teams.filters.availability_status.overloaded'), color: 'text-red-400' },
     ]
 
     const hasActiveFilters = (filters.roles?.length || 0) > 0 ||
@@ -120,7 +122,7 @@ export function TeamHeader({
         (filters.availability?.length || 0) > 0 ||
         (filters.projects?.length || 0) > 0
 
-    const currentSortLabel = sortOptions.find(s => s.value === sortBy)?.label || 'Name'
+    const currentSortLabel = sortOptions.find(s => s.value === sortBy)?.label || t('teams.sort.name')
     const currentDirectionLabel = sortOptions.find(s => s.value === sortBy)?.directions[sortDirection] || ''
 
     const toggleArrayFilter = (key: keyof FilterOption, value: string) => {
@@ -138,7 +140,7 @@ export function TeamHeader({
 
     return (
         <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold text-white">Teams</h1>
+            <h1 className="text-2xl font-bold text-white">{t('teams.title')}</h1>
 
             <div className="flex items-center gap-3">
                 {/* Search */}
@@ -148,7 +150,7 @@ export function TeamHeader({
                     </div>
                     <input
                         type="text"
-                        placeholder="Search members..."
+                        placeholder={t('teams.search_placeholder')}
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
@@ -167,7 +169,7 @@ export function TeamHeader({
                             }`}
                     >
                         <FilterIcon isHovered={!!hasActiveFilters} />
-                        Filters
+                        {t('teams.filters.label')}
                         {hasActiveFilters && (
                             <span className="w-2 h-2 rounded-full bg-amber-500" />
                         )}
@@ -177,11 +179,11 @@ export function TeamHeader({
                         <div className="absolute right-0 top-full mt-2 w-80 bg-[#1a1a24] rounded-xl shadow-2xl z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
                             {/* Role & Team Section */}
                             <div className="p-4">
-                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Role & Team</span>
+                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('teams.filters.role_and_team')}</span>
 
                                 {/* Job Title */}
                                 <div className="mt-3">
-                                    <label className="text-xs text-gray-400 mb-2 block font-medium">Job Title</label>
+                                    <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.job_title')}</label>
                                     <div className="space-y-0.5 max-h-32 overflow-y-auto">
                                         {availableRoles.map(role => (
                                             <Checkbox
@@ -192,7 +194,7 @@ export function TeamHeader({
                                             />
                                         ))}
                                         {availableRoles.length === 0 && (
-                                            <span className="text-xs text-gray-500 italic px-2">No roles available</span>
+                                            <span className="text-xs text-gray-500 italic px-2">{t('teams.filters.no_roles')}</span>
                                         )}
                                     </div>
                                 </div>
@@ -200,7 +202,7 @@ export function TeamHeader({
                                 {/* Teams */}
                                 {availableTeams.length > 1 && (
                                     <div className="mt-4">
-                                        <label className="text-xs text-gray-400 mb-2 block font-medium">Team</label>
+                                        <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.team')}</label>
                                         <div className="space-y-0.5 max-h-32 overflow-y-auto">
                                             {availableTeams.map(team => (
                                                 <Checkbox
@@ -217,11 +219,11 @@ export function TeamHeader({
 
                             {/* Status Section */}
                             <div className="p-4 bg-[#12121a]/50">
-                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status & Availability</span>
+                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('teams.filters.status_and_availability')}</span>
 
                                 {/* Account Status */}
                                 <div className="mt-3">
-                                    <label className="text-xs text-gray-400 mb-2 block font-medium">Account Status</label>
+                                    <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.account_status')}</label>
                                     <div className="space-y-0.5">
                                         {statusOptions.map(opt => (
                                             <Checkbox
@@ -236,7 +238,7 @@ export function TeamHeader({
 
                                 {/* Availability */}
                                 <div className="mt-4">
-                                    <label className="text-xs text-gray-400 mb-2 block font-medium">Availability</label>
+                                    <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.availability')}</label>
                                     <div className="space-y-0.5">
                                         {availabilityOptions.map(opt => (
                                             <Checkbox
@@ -254,10 +256,10 @@ export function TeamHeader({
                             {/* Projects Section */}
                             {availableProjects.length > 0 && (
                                 <div className="p-4">
-                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Work Context</span>
+                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('teams.filters.work_context')}</span>
 
                                     <div className="mt-3">
-                                        <label className="text-xs text-gray-400 mb-2 block font-medium">Assigned to Project</label>
+                                        <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.assigned_project')}</label>
                                         <div className="space-y-0.5 max-h-32 overflow-y-auto">
                                             {availableProjects.map(proj => (
                                                 <Checkbox
@@ -281,7 +283,7 @@ export function TeamHeader({
                                     }}
                                     className="w-full px-3 py-2 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-all"
                                 >
-                                    Clear All Filters
+                                    {t('teams.filters.clear_all')}
                                 </button>
                             </div>
                         </div>
@@ -348,7 +350,7 @@ export function TeamHeader({
                             <line x1="12" y1="5" x2="12" y2="19" />
                             <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
-                        Add Team
+                        {t('teams.add_team')}
                     </button>
                 )}
             </div>

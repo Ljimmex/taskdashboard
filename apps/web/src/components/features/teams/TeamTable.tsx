@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Team, TeamMember } from './types'
 import { PencilIcon, PencilIconGold, TrashIcon, TrashRedIcon } from '../tasks/components/TaskIcons'
+import { useTranslation } from 'react-i18next'
 
 // Sort indicator icon helper
 const SortIcon = ({ direction }: { direction: 'asc' | 'desc' | null }) => (
@@ -28,6 +29,7 @@ const EyeIconGold = () => (
 function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?: (team: Team) => void; onDeleteTeam?: (team: Team) => void }) {
     const [isOpen, setIsOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
+    const { t } = useTranslation()
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -64,7 +66,7 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
                         className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800/80 hover:text-white transition-colors flex items-center gap-3"
                     >
                         <PencilIcon />
-                        Edit Team
+                        {t('teams.table.menu.edit_team')}
                     </button>
                     <button
                         onClick={() => {
@@ -85,7 +87,7 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
-                        Export Members
+                        {t('teams.table.menu.export_members')}
                     </button>
                     <div className="my-1 mx-2 h-px bg-gray-800" />
                     <button
@@ -96,11 +98,13 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
                         className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3"
                     >
                         <TrashIcon />
-                        Delete Team
+                        <TrashIcon />
+                        {t('teams.table.menu.delete_team')}
                     </button>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     )
 }
 
@@ -118,6 +122,7 @@ interface TeamTableProps {
 }
 
 export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember, onEditTeam, onDeleteTeam, onDeleteMember }: TeamTableProps) {
+    const { t } = useTranslation()
     const [isExpanded, setIsExpanded] = useState(true)
     const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -221,14 +226,14 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                     <div className="absolute inset-x-0 top-0 z-10 h-[52px] bg-[#1a1a24] flex items-center justify-between px-4 border-b border-gray-800 animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="flex items-center gap-4">
                             <Checkbox checked={true} onClick={toggleSelectAll} />
-                            <span className="text-sm font-medium text-white">{selectedMemberIds.size} selected</span>
+                            <span className="text-sm font-medium text-white">{selectedMemberIds.size} {t('teams.table.selected')}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <button className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2">
-                                <TrashIcon /> Delete
+                                <TrashIcon /> {t('teams.table.delete')}
                             </button>
                             <button className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2">
-                                <span className="text-gray-400">Move to...</span>
+                                <span className="text-gray-400">{t('teams.table.move_to')}</span>
                             </button>
                         </div>
                     </div>
@@ -313,32 +318,32 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                         className="p-3 text-left cursor-pointer hover:text-white transition-colors"
                                         onClick={() => handleSort('name')}
                                     >
-                                        <div className="flex items-center gap-2">Name <SortIcon direction={getSortDirection('name')} /></div>
+                                        <div className="flex items-center gap-2">{t('teams.table.name')} <SortIcon direction={getSortDirection('name')} /></div>
                                     </th>
                                     <th
                                         className="p-3 text-left cursor-pointer hover:text-white transition-colors"
                                         onClick={() => handleSort('email')}
                                     >
-                                        <div className="flex items-center gap-2">Email <SortIcon direction={getSortDirection('email')} /></div>
+                                        <div className="flex items-center gap-2">{t('teams.table.email')} <SortIcon direction={getSortDirection('email')} /></div>
                                     </th>
                                     <th
                                         className="p-3 text-left cursor-pointer hover:text-white transition-colors"
                                         onClick={() => handleSort('role')}
                                     >
-                                        <div className="flex items-center gap-2">Job Title <SortIcon direction={getSortDirection('role')} /></div>
+                                        <div className="flex items-center gap-2">{t('teams.table.job_title')} <SortIcon direction={getSortDirection('role')} /></div>
                                     </th>
-                                    <th className="p-3 text-left">Current Projects</th>
+                                    <th className="p-3 text-left">{t('teams.table.current_projects')}</th>
                                     <th
                                         className="p-3 text-left cursor-pointer hover:text-white transition-colors"
                                         onClick={() => handleSort('dateAdded')}
                                     >
-                                        <div className="flex items-center gap-2">Date Added <SortIcon direction={getSortDirection('dateAdded')} /></div>
+                                        <div className="flex items-center gap-2">{t('teams.table.date_added')} <SortIcon direction={getSortDirection('dateAdded')} /></div>
                                     </th>
                                     <th
                                         className="p-3 text-left cursor-pointer hover:text-white transition-colors"
                                         onClick={() => handleSort('lastActive')}
                                     >
-                                        <div className="flex items-center gap-2">Last Active <SortIcon direction={getSortDirection('lastActive')} /></div>
+                                        <div className="flex items-center gap-2">{t('teams.table.last_active')} <SortIcon direction={getSortDirection('lastActive')} /></div>
                                     </th>
                                     <th className="w-24 p-3"></th>
                                 </tr>
@@ -409,7 +414,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                                     <button
                                                         onClick={() => onViewMember(member)}
                                                         className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
-                                                        title="View Profile"
+                                                        title={t('teams.table.actions.view_profile')}
                                                     >
                                                         <div className="group-hover/btn:hidden"><EyeIcon /></div>
                                                         <div className="hidden group-hover/btn:block"><EyeIconGold /></div>
@@ -419,7 +424,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                                             <button
                                                                 onClick={() => onEditMember(member)}
                                                                 className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
-                                                                title="Edit Member"
+                                                                title={t('teams.table.actions.edit_member')}
                                                             >
                                                                 <div className="group-hover/btn:hidden"><PencilIcon /></div>
                                                                 <div className="hidden group-hover/btn:block"><PencilIconGold /></div>
@@ -427,12 +432,12 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation()
-                                                                    if (confirm(`Are you sure you want to remove ${member.name} from this team?`)) {
+                                                                    if (confirm(t('teams.table.actions.confirm_remove', { name: member.name }))) {
                                                                         onDeleteMember?.(member)
                                                                     }
                                                                 }}
                                                                 className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
-                                                                title="Delete Member"
+                                                                title={t('teams.table.actions.remove_member')}
                                                             >
                                                                 <div className="group-hover/btn:hidden"><TrashIcon /></div>
                                                                 <div className="hidden group-hover/btn:block"><TrashRedIcon /></div>
@@ -451,7 +456,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                 {/* Empty State for Expanded but no members */}
                 {isExpanded && team.members.length === 0 && (
                     <div className="p-8 flex flex-col items-center justify-center text-gray-500 text-sm">
-                        <p>No members in this team yet.</p>
+                        <p>{t('teams.table.empty_state')}</p>
                     </div>
                 )}
             </div>

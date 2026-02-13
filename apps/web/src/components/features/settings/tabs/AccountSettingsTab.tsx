@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
 import { format } from "date-fns"
@@ -30,6 +31,7 @@ const accountSchema = z.object({
 type AccountFormValues = z.infer<typeof accountSchema>
 
 export function AccountSettingsTab() {
+    const { t } = useTranslation()
     const queryClient = useQueryClient()
     const { data: session } = useSession()
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -79,9 +81,9 @@ export function AccountSettingsTab() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['user', 'me'] })
             // Ideally invalidate session too
-            alert('Profile updated successfully')
+            alert(t('settings.account.toast.success'))
         },
-        onError: () => alert('Failed to update profile')
+        onError: () => alert(t('settings.account.toast.error'))
     })
 
     const uploadAvatarMutation = useMutation({
@@ -99,7 +101,7 @@ export function AccountSettingsTab() {
         },
         onError: () => {
             setIsUploading(false)
-            alert('Failed to upload avatar')
+            alert(t('settings.account.toast.avatarError'))
         }
     })
 
@@ -137,13 +139,13 @@ export function AccountSettingsTab() {
         <div className="space-y-8 max-w-3xl">
             {/* Header */}
             <div>
-                <h3 className="text-lg font-medium text-white">Account Settings</h3>
-                <p className="text-sm text-gray-400">Manage your profile and account preferences.</p>
+                <h3 className="text-lg font-medium text-white">{t('settings.account.title')}</h3>
+                <p className="text-sm text-gray-400">{t('settings.account.subtitle')}</p>
             </div>
 
             {/* Photo Section */}
             <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Photo</h3>
+                <h3 className="text-lg font-semibold text-white">{t('settings.account.photo.title')}</h3>
                 <div className="bg-[#1a1a24] rounded-xl p-6 flex items-center gap-6">
                     <div className="relative group">
                         <div
@@ -177,20 +179,20 @@ export function AccountSettingsTab() {
                                 disabled={isUploading}
                                 className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
                             >
-                                {isUploading ? 'Uploading...' : 'Change photo'}
+                                {isUploading ? t('settings.account.photo.uploading') : t('settings.account.photo.change')}
                             </button>
                             <button
                                 onClick={() => {
-                                    if (confirm('Are you sure you want to remove your profile picture?')) {
+                                    if (confirm(t('settings.account.photo.confirmRemove'))) {
                                         deleteAvatarMutation.mutate()
                                     }
                                 }}
                                 className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-sm transition-colors"
                             >
-                                Remove photo
+                                {t('settings.account.photo.remove')}
                             </button>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">Pick a photo up to 4MB.</p>
+                        <p className="text-xs text-gray-500 mt-2">{t('settings.account.photo.hint')}</p>
                     </div>
                 </div>
             </section>
@@ -200,7 +202,7 @@ export function AccountSettingsTab() {
                 {/* Personal Information */}
                 <section className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-white">Personal Information</h3>
+                        <h3 className="text-lg font-semibold text-white">{t('settings.account.personalInfo.title')}</h3>
                         <button
                             type="submit"
                             disabled={updateProfileMutation.isPending}
@@ -209,7 +211,7 @@ export function AccountSettingsTab() {
                                 : 'bg-[#F2CE88] hover:bg-[#d9b877] text-black'
                                 }`}
                         >
-                            {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                            {updateProfileMutation.isPending ? t('settings.account.personalInfo.saving') : t('settings.account.personalInfo.save')}
                         </button>
                     </div>
 
@@ -217,11 +219,11 @@ export function AccountSettingsTab() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* First Name */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">First Name</label>
+                                <label className="text-sm font-medium text-gray-400">{t('settings.account.personalInfo.firstName')}</label>
                                 <input
                                     {...form.register('firstName')}
                                     className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
-                                    placeholder="John"
+                                    placeholder={t('settings.account.personalInfo.firstNamePlaceholder')}
                                 />
                                 {form.formState.errors.firstName && (
                                     <p className="text-xs text-red-500">{form.formState.errors.firstName.message}</p>
@@ -230,11 +232,11 @@ export function AccountSettingsTab() {
 
                             {/* Last Name */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">Last Name</label>
+                                <label className="text-sm font-medium text-gray-400">{t('settings.account.personalInfo.lastName')}</label>
                                 <input
                                     {...form.register('lastName')}
                                     className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
-                                    placeholder="Doe"
+                                    placeholder={t('settings.account.personalInfo.lastNamePlaceholder')}
                                 />
                                 {form.formState.errors.lastName && (
                                     <p className="text-xs text-red-500">{form.formState.errors.lastName.message}</p>
@@ -243,7 +245,7 @@ export function AccountSettingsTab() {
 
                             {/* Date of Birth */}
                             <div className="space-y-2 flex flex-col">
-                                <label className="text-sm font-medium text-gray-400">Date of Birth</label>
+                                <label className="text-sm font-medium text-gray-400">{t('settings.account.personalInfo.birthDate')}</label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <button
@@ -257,7 +259,7 @@ export function AccountSettingsTab() {
                                             {form.watch('birthDate') ? (
                                                 format(new Date(form.watch('birthDate')!), "PPP")
                                             ) : (
-                                                <span>Pick a date</span>
+                                                <span>{t('settings.account.personalInfo.pickDate')}</span>
                                             )}
                                         </button>
                                     </PopoverTrigger>
@@ -266,8 +268,7 @@ export function AccountSettingsTab() {
                                             mode="single"
                                             selected={form.watch('birthDate') ? new Date(form.watch('birthDate')!) : undefined}
                                             onSelect={(date) => {
-                                                if (date) {
-                                                    // Adjust for timezone offset to ensure the date string is correct local date
+                                                if (date) { /**/
                                                     const offset = date.getTimezoneOffset()
                                                     const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000))
                                                     form.setValue('birthDate', adjustedDate.toISOString().split('T')[0], { shouldDirty: true })
@@ -287,16 +288,16 @@ export function AccountSettingsTab() {
 
                             {/* Gender */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">Gender</label>
+                                <label className="text-sm font-medium text-gray-400">{t('settings.account.personalInfo.gender')}</label>
                                 <select
                                     {...form.register('gender')}
                                     className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] appearance-none"
                                 >
-                                    <option value="">Select Gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                    <option value="prefer_not_to_say">Prefer not to say</option>
+                                    <option value="">{t('settings.account.personalInfo.selectGender')}</option>
+                                    <option value="male">{t('settings.account.personalInfo.genders.male')}</option>
+                                    <option value="female">{t('settings.account.personalInfo.genders.female')}</option>
+                                    <option value="other">{t('settings.account.personalInfo.genders.other')}</option>
+                                    <option value="prefer_not_to_say">{t('settings.account.personalInfo.genders.prefer_not_to_say')}</option>
                                 </select>
                             </div>
                         </div>
@@ -305,25 +306,25 @@ export function AccountSettingsTab() {
 
                 {/* Professional Details */}
                 <section className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white">Professional Details</h3>
+                    <h3 className="text-lg font-semibold text-white">{t('settings.account.professional.title')}</h3>
                     <div className="bg-[#1a1a24] rounded-xl p-6 space-y-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Position</label>
+                            <label className="text-sm font-medium text-gray-400">{t('settings.account.professional.position')}</label>
                             <input
                                 {...form.register('position')}
                                 className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
-                                placeholder="e.g. Product Designer"
+                                placeholder={t('settings.account.professional.positionPlaceholder')}
                             />
                         </div>
 
                         {/* Description */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Description</label>
+                            <label className="text-sm font-medium text-gray-400">{t('settings.account.professional.description')}</label>
                             <textarea
                                 {...form.register('description')}
                                 rows={4}
                                 className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] min-h-[100px]"
-                                placeholder="Tell us a bit about yourself..."
+                                placeholder={t('settings.account.professional.descriptionPlaceholder')}
                             />
                         </div>
                     </div>
@@ -331,32 +332,32 @@ export function AccountSettingsTab() {
 
                 {/* Location & Preferences */}
                 <section className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white">Location & Preferences</h3>
+                    <h3 className="text-lg font-semibold text-white">{t('settings.account.location.title')}</h3>
                     <div className="bg-[#1a1a24] rounded-xl p-6 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Country */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">Country</label>
+                                <label className="text-sm font-medium text-gray-400">{t('settings.account.location.country')}</label>
                                 <input
                                     {...form.register('country')}
                                     className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
-                                    placeholder="e.g. Poland"
+                                    placeholder={t('settings.account.location.countryPlaceholder')}
                                 />
                             </div>
 
                             {/* City */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">City</label>
+                                <label className="text-sm font-medium text-gray-400">{t('settings.account.location.city')}</label>
                                 <input
                                     {...form.register('city')}
                                     className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
-                                    placeholder="e.g. Warsaw"
+                                    placeholder={t('settings.account.location.cityPlaceholder')}
                                 />
                             </div>
 
                             {/* Timezone */}
                             <div className="space-y-2 col-span-1 md:col-span-2">
-                                <label className="text-sm font-medium text-gray-400">Timezone</label>
+                                <label className="text-sm font-medium text-gray-400">{t('settings.account.location.timezone')}</label>
                                 <select
                                     {...form.register('timezone')}
                                     className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] appearance-none"
@@ -385,13 +386,13 @@ export function AccountSettingsTab() {
                 <button
                     type="button"
                     onClick={() => {
-                        if (confirm('Are you absolutely sure you want to delete your account? This action cannot be undone.')) {
+                        if (confirm(t('settings.account.danger.confirmDelete'))) {
                             deleteAccountMutation.mutate()
                         }
                     }}
                     className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors"
                 >
-                    Delete my account
+                    {t('settings.account.danger.deleteAccount')}
                 </button>
             </div>
         </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
 import { createPortal } from 'react-dom'
 import { usePanelStore } from '../../../lib/panelStore'
@@ -38,6 +39,7 @@ export function EditMemberPanel({
     availableTeamObjects = [],
     availableProjects = []
 }: EditMemberPanelProps) {
+    const { t } = useTranslation()
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
     const panelRef = useRef<HTMLDivElement>(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -228,7 +230,8 @@ export function EditMemberPanel({
     /* For this specific replacement, I will implement the UI logic part only and add the input. */
 
     const handleRemovePhoto = async () => {
-        if (!member || !confirm('Are you sure you want to remove the photo?')) return
+        if (!member || !confirm(t('teams.edit_panel.delete_confirmation', { name: member.name }))) return
+
 
         setIsLoading(true)
         try {
@@ -263,7 +266,7 @@ export function EditMemberPanel({
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-gray-800 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-white">Edit Member</h2>
+                    <h2 className="text-lg font-semibold text-white">{t('teams.edit_panel.title')}</h2>
                     <button
                         onClick={onClose}
                         className="text-gray-400 hover:text-white transition-colors"
@@ -279,7 +282,7 @@ export function EditMemberPanel({
                 <div className="flex-1 p-6 overflow-y-auto space-y-6">
                     {/* Photo Section */}
                     <div>
-                        <Label className="text-gray-400 text-xs mb-2 block">Photo</Label>
+                        <Label className="text-gray-400 text-xs mb-2 block">{t('teams.edit_panel.photo')}</Label>
                         <div className="flex items-center gap-4">
                             <div
                                 onClick={handleUploadClick}
@@ -304,17 +307,17 @@ export function EditMemberPanel({
                                         onClick={handleUploadClick}
                                         className="text-gray-300 hover:text-white font-medium text-xs"
                                     >
-                                        Change photo
+                                        {t('teams.edit_panel.change_photo')}
                                     </button>
                                     <span className="text-gray-600">·</span>
                                     <button
                                         onClick={handleRemovePhoto}
                                         className="text-gray-500 hover:text-white font-medium text-xs"
                                     >
-                                        Remove photo
+                                        {t('teams.edit_panel.remove_photo')}
                                     </button>
                                 </div>
-                                <p className="text-gray-500 text-[10px] mt-1">Pick a photo up to 4MB.</p>
+                                <p className="text-gray-500 text-[10px] mt-1">{t('teams.edit_panel.photo_help')}</p>
                             </div>
                         </div>
                     </div>
@@ -322,7 +325,7 @@ export function EditMemberPanel({
                     {/* Name Fields */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-gray-400 text-xs">First Name</Label>
+                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.first_name')}</Label>
                             <Input
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
@@ -330,7 +333,7 @@ export function EditMemberPanel({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-gray-400 text-xs">Last Name</Label>
+                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.last_name')}</Label>
                             <Input
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
@@ -341,58 +344,58 @@ export function EditMemberPanel({
 
                     {/* Job Title */}
                     <div className="space-y-2">
-                        <Label className="text-gray-400 text-xs">Job title</Label>
+                        <Label className="text-gray-400 text-xs">{t('teams.edit_panel.job_title')}</Label>
                         <Input
                             value={position}
                             onChange={(e) => setPosition(e.target.value)}
                             className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
-                            placeholder="e.g. Product Designer"
+                            placeholder={t('teams.edit_panel.job_title_placeholder')}
                         />
                     </div>
 
                     {/* Team Level */}
                     <div className="space-y-2">
-                        <Label className="text-gray-400 text-xs">Team Level</Label>
+                        <Label className="text-gray-400 text-xs">{t('teams.edit_panel.team_level')}</Label>
                         <select
                             value={teamLevel}
                             onChange={(e) => setTeamLevel(e.target.value as TeamLevel | '')}
                             className="w-full px-3 py-2 bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50 focus:outline-none text-sm"
                         >
-                            <option value="">Select level...</option>
-                            <option value="team_lead">Team Lead</option>
-                            <option value="senior">Senior</option>
-                            <option value="mid">Mid-level</option>
-                            <option value="junior">Junior</option>
-                            <option value="intern">Intern</option>
+                            <option value="">{t('teams.edit_panel.select_level')}</option>
+                            <option value="team_lead">{t('teams.roles.team_lead')}</option>
+                            <option value="senior">{t('teams.roles.senior')}</option>
+                            <option value="mid">{t('teams.roles.mid')}</option>
+                            <option value="junior">{t('teams.roles.junior')}</option>
+                            <option value="intern">{t('teams.roles.intern')}</option>
                         </select>
                     </div>
 
                     {/* Location */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-gray-400 text-xs">City</Label>
+                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.city')}</Label>
                             <Input
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
                                 className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
-                                placeholder="e.g. Warsaw"
+                                placeholder={t('teams.edit_panel.city_placeholder')}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-gray-400 text-xs">Country</Label>
+                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.country')}</Label>
                             <Input
                                 value={country}
                                 onChange={(e) => setCountry(e.target.value)}
                                 className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
-                                placeholder="e.g. Poland"
+                                placeholder={t('teams.edit_panel.country_placeholder')}
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <div className="flex justify-between">
-                            <Label className="text-gray-400 text-xs">Email</Label>
-                            <button className="text-xs text-gray-500 hover:text-white">Change email</button>
+                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.email')}</Label>
+                            <button className="text-xs text-gray-500 hover:text-white">{t('teams.edit_panel.change_email')}</button>
                         </div>
                         <Input
                             value={email}
@@ -403,7 +406,7 @@ export function EditMemberPanel({
 
                     {/* Team Groups */}
                     <div className="space-y-2.5 z-20 relative">
-                        <Label className="text-gray-400 text-xs font-medium tracking-wide uppercase">Team Groups</Label>
+                        <Label className="text-gray-400 text-xs font-medium tracking-wide uppercase">{t('teams.edit_panel.team_groups')}</Label>
                         <div className="relative group">
                             <div className={cn(
                                 "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
@@ -432,7 +435,7 @@ export function EditMemberPanel({
                                                     </div>
                                                 ))
                                             ) : (
-                                                <span className="text-gray-500 text-xs py-1">Select teams...</span>
+                                                <span className="text-gray-500 text-xs py-1">{t('teams.edit_panel.select_teams')}</span>
                                             )}
                                         </div>
                                     </SelectTrigger>
@@ -454,7 +457,7 @@ export function EditMemberPanel({
                                             </SelectItem>
                                         ))}
                                         {availableTeams.length === 0 && (
-                                            <div className="p-3 text-xs text-gray-500 text-center">No teams found</div>
+                                            <div className="p-3 text-xs text-gray-500 text-center">{t('teams.edit_panel.no_teams_found')}</div>
                                         )}
                                     </SelectContent>
                                 </Select>
@@ -464,7 +467,7 @@ export function EditMemberPanel({
 
                     {/* Projects */}
                     <div className="space-y-2.5 z-10 relative">
-                        <Label className="text-gray-400 text-xs font-medium tracking-wide uppercase">Projects</Label>
+                        <Label className="text-gray-400 text-xs font-medium tracking-wide uppercase">{t('teams.edit_panel.projects')}</Label>
                         <div className="relative group">
                             <div className={cn(
                                 "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
@@ -492,7 +495,7 @@ export function EditMemberPanel({
                                                     </div>
                                                 ))
                                             ) : (
-                                                <span className="text-gray-500 text-xs py-1">Select projects...</span>
+                                                <span className="text-gray-500 text-xs py-1">{t('teams.edit_panel.select_projects')}</span>
                                             )}
                                         </div>
                                     </SelectTrigger>
@@ -513,7 +516,7 @@ export function EditMemberPanel({
                                             </SelectItem>
                                         ))}
                                         {availableProjects.length === 0 && (
-                                            <div className="p-3 text-xs text-gray-500 text-center">No projects found</div>
+                                            <div className="p-3 text-xs text-gray-500 text-center">{t('teams.edit_panel.no_projects_found')}</div>
                                         )}
                                     </SelectContent>
                                 </Select>
@@ -529,7 +532,7 @@ export function EditMemberPanel({
                         variant="ghost"
                         className="text-red-500 hover:text-red-400 hover:bg-red-500/10 px-4"
                     >
-                        Delete
+                        {t('teams.edit_panel.delete_member')}
                     </Button>
 
                     <div className="flex gap-3">
@@ -538,14 +541,14 @@ export function EditMemberPanel({
                             variant="ghost"
                             className="text-gray-400 hover:text-white hover:bg-gray-800"
                         >
-                            Cancel
+                            {t('teams.create_panel.cancel')}
                         </Button>
                         <Button
                             onClick={handleSave}
                             disabled={isLoading}
                             className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-6"
                         >
-                            {isLoading ? 'Saving...' : 'Save Changes'}
+                            {isLoading ? t('teams.edit_panel.saving') : t('teams.edit_panel.save_changes')}
                         </Button>
                     </div>
                 </div >
@@ -564,9 +567,9 @@ export function EditMemberPanel({
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
                             </div>
-                            <h3 className="text-lg leading-6 font-medium text-white mb-2">Delete Member</h3>
+                            <h3 className="text-lg leading-6 font-medium text-white mb-2">{t('teams.edit_panel.delete_member')}</h3>
                             <p className="text-sm text-gray-400 mb-6">
-                                Are you sure you want to delete <span className="font-semibold text-white">{member?.name}</span>? This action cannot be undone.
+                                {t('teams.edit_panel.delete_confirmation', { name: member?.name })}
                             </p>
 
                             <div className="flex gap-3 justify-center">
@@ -574,14 +577,14 @@ export function EditMemberPanel({
                                     onClick={() => setShowDeleteConfirm(false)}
                                     className="bg-gray-800 hover:bg-gray-700 text-white w-full border border-gray-700 hover:border-gray-600"
                                 >
-                                    Cancel
+                                    {t('teams.create_panel.cancel')}
                                 </Button>
                                 <Button
                                     onClick={handleDelete}
                                     disabled={isDeleting}
                                     className="bg-red-600 hover:bg-red-500 text-white w-full border border-red-500/50"
                                 >
-                                    {isDeleting ? 'Deleting...' : 'Delete'}
+                                    {isDeleting ? t('teams.edit_panel.deleting') : t('teams.table.delete')}
                                 </Button>
                             </div>
                         </div>

@@ -4,6 +4,7 @@ import { ChevronDoubleRightIcon } from '../tasks/components/TaskIcons'
 import { useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 interface InviteMemberPanelProps {
     isOpen: boolean
@@ -36,6 +37,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
     const inputRef = useRef<HTMLInputElement>(null)
     const { data: session } = useSession()
+    const { t } = useTranslation()
 
     // Sync global panel state
     useEffect(() => {
@@ -142,8 +144,8 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                             <ChevronDoubleRightIcon />
                         </button>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Invite to {teamName}</h2>
-                            <p className="text-xs text-gray-500">Add members to collaborate</p>
+                            <h2 className="text-lg font-semibold text-white">{t('teams.invite_panel.title', { teamName })}</h2>
+                            <p className="text-xs text-gray-500">{t('teams.invite_panel.subtitle')}</p>
                         </div>
                     </div>
                 </div>
@@ -155,7 +157,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                             onClick={() => setActiveTab('email')}
                             className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'email' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            Invite with email
+                            {t('teams.invite_panel.tabs.email')}
                             {activeTab === 'email' && (
                                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 rounded-t-full" />
                             )}
@@ -164,7 +166,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                             onClick={() => setActiveTab('link')}
                             className={`pb-3 text-sm font-medium transition-colors relative ${activeTab === 'link' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            Invite with link
+                            {t('teams.invite_panel.tabs.link')}
                             {activeTab === 'link' && (
                                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 rounded-t-full" />
                             )}
@@ -177,7 +179,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                     {activeTab === 'email' ? (
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-2">Search Workspace Member</label>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.invite_panel.search_label')}</label>
                                 <div className="relative">
                                     {selectedMember ? (
                                         <div className="flex items-center justify-between bg-[#1a1a24] border border-amber-500/50 rounded-xl px-4 py-3">
@@ -215,7 +217,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                                         setIsSearchOpen(true)
                                                     }}
                                                     onFocus={() => setIsSearchOpen(true)}
-                                                    placeholder="Type name or email..."
+                                                    placeholder={t('teams.invite_panel.search_placeholder')}
                                                     className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-gray-800 focus:border-amber-500/50 transition-colors"
                                                 />
                                                 {isSearching && (
@@ -255,7 +257,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                                         ))
                                                     ) : !isSearching ? (
                                                         <div className="px-4 py-3 text-sm text-gray-500 text-center italic">
-                                                            No member found
+                                                            {t('teams.invite_panel.no_member_found')}
                                                         </div>
                                                     ) : null}
                                                 </div>
@@ -266,7 +268,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-2">Role in Team</label>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.invite_panel.role_label')}</label>
                                 <div className="relative">
                                     <button
                                         onClick={() => setActiveDropdown(!activeDropdown)}
@@ -303,7 +305,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                     ) : (
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-2">Invite Link</label>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.invite_panel.link_label')}</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
@@ -329,14 +331,14 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                     </button>
                                 </div>
                                 <p className="mt-2 text-xs text-gray-500">
-                                    Anyone with this link can join as a <strong>Member</strong>.
+                                    {t('teams.invite_panel.anyone_with_link')} <strong>{t('teams.invite_panel.member_role')}</strong>.
                                 </p>
                             </div>
                             <button
                                 onClick={handleGenerateNewLink}
                                 className="text-sm text-amber-500 hover:text-amber-400 transition-colors font-medium"
                             >
-                                Generate new link
+                                {t('teams.invite_panel.generate_new_link')}
                             </button>
                         </div>
                     )}
@@ -349,7 +351,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                             onClick={onClose}
                             className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
                         >
-                            Cancel
+                            {t('teams.create_panel.cancel')}
                         </button>
                         {activeTab === 'email' && (
                             <button
@@ -360,7 +362,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                     : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
-                                Add to Team
+                                {t('teams.invite_panel.add_to_team')}
                             </button>
                         )}
                         {activeTab === 'link' && (
@@ -368,7 +370,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                 onClick={onClose}
                                 className="px-6 py-2 rounded-lg text-sm font-medium bg-[#0F4C75] hover:bg-[#0F4C75]/80 text-white transition-all"
                             >
-                                Done
+                                {t('teams.invite_panel.done')}
                             </button>
                         )}
                     </div>

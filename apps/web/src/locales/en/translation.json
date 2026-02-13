@@ -284,5 +284,284 @@
             "subscribe": "Sub",
             "rights": "© 2024 Zadano.app. All rights reserved."
         }
+    },
+    "settings": {
+        "title": "User Settings",
+        "subtitle": "Manage your personal preferences",
+        "tabs": {
+            "account": "Account",
+            "notification": "Notification",
+            "privacy": "Privacy & Security"
+        },
+        "account": {
+            "title": "Account Settings",
+            "subtitle": "Manage your profile and account preferences.",
+            "photo": {
+                "title": "Photo",
+                "change": "Change photo",
+                "remove": "Remove photo",
+                "uploading": "Uploading...",
+                "hint": "Pick a photo up to 4MB.",
+                "confirmRemove": "Are you sure you want to remove your profile picture?"
+            },
+            "personalInfo": {
+                "title": "Personal Information",
+                "save": "Save Changes",
+                "saving": "Saving...",
+                "firstName": "First Name",
+                "firstNamePlaceholder": "John",
+                "lastName": "Last Name",
+                "lastNamePlaceholder": "Doe",
+                "birthDate": "Date of Birth",
+                "pickDate": "Pick a date",
+                "gender": "Gender",
+                "selectGender": "Select Gender",
+                "genders": {
+                    "male": "Male",
+                    "female": "Female",
+                    "other": "Other",
+                    "prefer_not_to_say": "Prefer not to say"
+                }
+            },
+            "professional": {
+                "title": "Professional Details",
+                "position": "Position",
+                "positionPlaceholder": "e.g. Product Designer",
+                "description": "Description",
+                "descriptionPlaceholder": "Tell us a bit about yourself..."
+            },
+            "location": {
+                "title": "Location & Preferences",
+                "country": "Country",
+                "countryPlaceholder": "e.g. Poland",
+                "city": "City",
+                "cityPlaceholder": "e.g. Warsaw",
+                "timezone": "Timezone"
+            },
+            "danger": {
+                "deleteAccount": "Delete my account",
+                "confirmDelete": "Are you absolutely sure you want to delete your account? This action cannot be undone."
+            },
+            "toast": {
+                "success": "Profile updated successfully",
+                "error": "Failed to update profile",
+                "avatarError": "Failed to upload avatar"
+            }
+        },
+        "notification": {
+            "title": "Notification Preferences",
+            "subtitle": "Choose how you want to be notified."
+        },
+        "privacy": {
+            "title": "Security",
+            "subtitle": "Manage your security settings",
+            "loginPreferences": "Log In Preferences",
+            "password": "Password",
+            "email": "Email",
+            "emailPlaceholder": "Email",
+            "phoneNumber": "Phone Number",
+            "phonePlaceholder": "000 000 000",
+            "save": "Save",
+            "cancel": "Cancel",
+            "updating": "Updating...",
+            "changePassword": "Change Password",
+            "currentPassword": "Current Password",
+            "newPassword": "New Password",
+            "confirmNewPassword": "Confirm New Password",
+            "updatePassword": "Update Password",
+            "twoFactor": {
+                "title": "Two-Factor Authentication",
+                "securityTitle": "2FA Security",
+                "securityDescription": "Add an extra layer of security to your account.",
+                "disableTitle": "Disable 2FA",
+                "disableDescription": "Enter your password to disable two-factor authentication.",
+                "passwordPlaceholder": "Your Password",
+                "enabledTitle": "Enabled",
+                "enabledDescription": "Your account is secured.",
+                "turnOff": "Turn off",
+                "confirmPasswordTitle": "Confirm Password",
+                "confirmPasswordDescription": "Please enter your password to enable 2FA.",
+                "continue": "Continue",
+                "authenticatorAppTitle": "Authenticator App",
+                "authenticatorAppDescription": "Secure your account with Google Authenticator or Authy.",
+                "enable": "Enable 2FA",
+                "disable": "Disable 2FA",
+                "scanCode": "Scan the QR code below with your authenticator app",
+                "enterCode": "Enter the code from your app",
+                "codePlaceholder": "000 000",
+                "backupCodes": "Backup Codes",
+                "backupCodesDesc": "Keep these codes safe. You can use them to recover access to your account.",
+                "verify": "Verify",
+                "verifying": "Verifying..."
+            },
+            "sessions": {
+                "title": "Active Sessions",
+                "current": "Current session",
+                "lastActive": "Last active",
+                "revoke": "Log Out",
+                "revokeAll": "Log out from all devices",
+                "confirmRevokeAll": "Are you sure you want to log out from all devices including this one?"
+            },
+            "toast": {
+                "passwordSuccess": "Password updated successfully",
+                "passwordError": "Failed to update password",
+                "2faEnabled": "Two-factor authentication enabled",
+                "2faDisabled": "Two-factor authentication disabled",
+                "revokeAllSuccess": "All sessions terminated"
+            }
+        }
+    },
+    "teams": {
+        "title": "Teams",
+        "search_placeholder": "Search members...",
+        "add_team": "Add Team",
+        "filters": {
+            "label": "Filters",
+            "clear_all": "Clear All Filters",
+            "role_and_team": "Role & Team",
+            "job_title": "Job Title",
+            "no_roles": "No roles available",
+            "team": "Team",
+            "status_and_availability": "Status & Availability",
+            "account_status": "Account Status",
+            "availability": "Availability",
+            "work_context": "Work Context",
+            "assigned_project": "Assigned to Project",
+            "status": {
+                "active": "Active",
+                "inactive": "Inactive",
+                "pending": "Invited / Pending"
+            },
+            "availability_status": {
+                "available": "Available",
+                "busy": "Busy",
+                "overloaded": "Overloaded"
+            }
+        },
+        "sort": {
+            "name": "Name",
+            "last_active": "Last Active",
+            "date_added": "Date Added",
+            "project_count": "Project Count",
+            "job_title": "Job Title",
+            "directions": {
+                "az": "A → Z",
+                "za": "Z → A",
+                "oldest": "Oldest",
+                "newest": "Newest",
+                "low_high": "Low → High",
+                "high_low": "High → Low"
+            }
+        },
+        "table": {
+            "selected": "selected",
+            "delete": "Delete",
+            "move_to": "Move to...",
+            "name": "Name",
+            "email": "Email",
+            "job_title": "Job Title",
+            "current_projects": "Current Projects",
+            "date_added": "Date Added",
+            "last_active": "Last Active",
+            "empty_state": "No members in this team yet.",
+            "menu": {
+                "edit_team": "Edit Team",
+                "export_members": "Export Members",
+                "delete_team": "Delete Team"
+            },
+            "actions": {
+                "view_profile": "View Profile",
+                "edit_member": "Edit Member",
+                "remove_member": "Remove Member",
+                "confirm_remove": "Are you sure you want to remove {{name}} from this team?"
+            }
+        },
+        "create_panel": {
+            "title": "Create New Team",
+            "team_name": "Team Name",
+            "team_name_placeholder": "e.g., Design System, Marketing",
+            "description": "Description",
+            "description_placeholder": "What is this team responsible for?",
+            "team_color": "Team Color",
+            "members": "Members",
+            "search_placeholder": "Add members by name or email",
+            "no_users_found": "No users found",
+            "cancel": "Cancel",
+            "create_button": "Create Team"
+        },
+        "invite_panel": {
+            "title": "Invite to {{teamName}}",
+            "subtitle": "Add members to collaborate",
+            "tabs": {
+                "email": "Invite with email",
+                "link": "Invite with link"
+            },
+            "search_label": "Search Workspace Member",
+            "search_placeholder": "Type name or email...",
+            "no_member_found": "No member found",
+            "role_label": "Role in Team",
+            "link_label": "Invite Link",
+            "anyone_with_link": "Anyone with this link can join as a",
+            "member_role": "Member",
+            "generate_new_link": "Generate new link",
+            "add_to_team": "Add to Team",
+            "done": "Done"
+        },
+        "edit_panel": {
+            "title": "Edit Member",
+            "photo": "Photo",
+            "change_photo": "Change photo",
+            "remove_photo": "Remove photo",
+            "photo_help": "Pick a photo up to 4MB.",
+            "first_name": "First Name",
+            "last_name": "Last Name",
+            "job_title": "Job title",
+            "job_title_placeholder": "e.g. Product Designer",
+            "team_level": "Team Level",
+            "select_level": "Select level...",
+            "city": "City",
+            "city_placeholder": "e.g. Warsaw",
+            "country": "Country",
+            "country_placeholder": "e.g. Poland",
+            "change_email": "Change email",
+            "team_groups": "Team Groups",
+            "select_teams": "Select teams...",
+            "no_teams_found": "No teams found",
+            "projects": "Projects",
+            "select_projects": "Select projects...",
+            "no_projects_found": "No projects found",
+            "save_changes": "Save Changes",
+            "saving": "Saving...",
+            "delete_member": "Delete Member",
+            "delete_confirmation": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+            "deleting": "Deleting..."
+        },
+        "view_panel": {
+            "member_since": "Member Since",
+            "location": "Location",
+            "current_workload": "Current Workload",
+            "tasks_count": "{{completed}}/{{total}} tasks",
+            "capacity_used": "{{percentage}}% capacity used",
+            "quick_actions": {
+                "assign_task": "Assign Task",
+                "message": "Message",
+                "view_tasks": "View Tasks"
+            },
+            "teams": "Teams",
+            "no_teams": "No teams",
+            "active_projects": "Active Projects",
+            "no_projects": "No active projects"
+        },
+        "roles": {
+            "team_lead": "Team Lead",
+            "senior": "Senior",
+            "mid": "Mid-level",
+            "junior": "Junior",
+            "intern": "Intern",
+            "member": "Member"
+        },
+        "loading": "Loading teams...",
+        "error_loading": "Failed to load teams",
+        "retry": "Retry"
     }
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { AccountSettingsTab } from '../tabs/AccountSettingsTab'
 import { NotificationSettingsTab } from '../tabs/NotificationSettingsTab'
 import { PrivacySettingsTab } from '../tabs/PrivacySettingsTab'
@@ -10,6 +11,7 @@ interface UserSettingsPanelProps {
 }
 
 export function UserSettingsPanel({ isOpen, onClose }: UserSettingsPanelProps) {
+    const { t } = useTranslation()
     const [mounted, setMounted] = useState(false)
     const [activeTab, setActiveTab] = useState<'account' | 'notification' | 'privacy'>('account')
 
@@ -34,8 +36,8 @@ export function UserSettingsPanel({ isOpen, onClose }: UserSettingsPanelProps) {
                 {/* Header */}
                 <div className="p-6 border-b border-gray-800/50 flex items-center justify-between bg-[#14141b] rounded-t-2xl">
                     <div>
-                        <h2 className="text-xl font-bold text-white">User Settings</h2>
-                        <p className="text-sm text-gray-400">Manage your personal preferences</p>
+                        <h2 className="text-xl font-bold text-white">{t('settings.title')}</h2>
+                        <p className="text-sm text-gray-400">{t('settings.subtitle')}</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -53,17 +55,17 @@ export function UserSettingsPanel({ isOpen, onClose }: UserSettingsPanelProps) {
                         <TabButton
                             active={activeTab === 'account'}
                             onClick={() => setActiveTab('account')}
-                            label="Account"
+                            label={t('settings.tabs.account')}
                         />
                         <TabButton
                             active={activeTab === 'notification'}
                             onClick={() => setActiveTab('notification')}
-                            label="Notification"
+                            label={t('settings.tabs.notification')}
                         />
                         <TabButton
                             active={activeTab === 'privacy'}
                             onClick={() => setActiveTab('privacy')}
-                            label="Privacy & Security"
+                            label={t('settings.tabs.privacy')}
                         />
                     </div>
                 </div>
