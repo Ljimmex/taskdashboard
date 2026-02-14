@@ -56,7 +56,7 @@ export async function seedRBAC() {
     }
 
     // 3. Insert Roles and Role Permissions
-    for (const [roleKey, roleDef] of Object.entries(SYSTEM_ROLES)) {
+    for (const roleDef of Object.values(SYSTEM_ROLES)) {
         const roleId = roleDef.level
         console.log(`Processing role: ${roleDef.name} (${roleId})`)
 

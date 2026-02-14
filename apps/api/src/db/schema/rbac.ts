@@ -1,7 +1,7 @@
 
-import { pgTable, text, timestamp, boolean, primaryKey, pgPolicy } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, primaryKey, pgPolicy } from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
-import { authenticatedRole, anonRole } from 'drizzle-orm/supabase'
+import { authenticatedRole } from 'drizzle-orm/supabase'
 
 // =============================================================================
 // ROLES TABLE
@@ -14,7 +14,7 @@ export const roles = pgTable('roles', {
     type: text('type').notNull(), // 'global' | 'team'
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => [
+}, () => [
     pgPolicy('roles_read_policy', {
         for: 'select',
         to: authenticatedRole,
@@ -38,7 +38,7 @@ export const permissions = pgTable('permissions', {
     category: text('category').notNull(), // 'workspace', 'tasks', 'projects', etc.
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => [
+}, () => [
     pgPolicy('permissions_read_policy', {
         for: 'select',
         to: authenticatedRole,

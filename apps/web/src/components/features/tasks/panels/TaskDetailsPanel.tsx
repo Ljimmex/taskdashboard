@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Markdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
