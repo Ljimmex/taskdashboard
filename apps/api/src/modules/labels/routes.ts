@@ -3,11 +3,35 @@ import { db } from '../../db'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { tasks } from '../../db/schema/tasks'
 import { eq, sql, and } from 'drizzle-orm'
-import { auth } from '../../lib/auth'
+import { auth, type Auth } from '../../lib/auth'
 import { triggerWebhook } from '../webhooks/trigger'
+import { authMiddleware } from '@/middleware/auth'
 import type { WorkspaceRole } from '../../lib/permissions'
 
-export const labelsRoutes = new Hono()
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
+
+const createLabelSchema = z.object({
+    workspaceSlug: zSanitizedString(),
+    name: zSanitizedString(),
+    color: zSanitizedStringOptional(),
+})
+
+const updateLabelSchema = z.object({
+    workspaceSlug: zSanitizedString(),
+    name: zSanitizedString().optional(),
+    color: zSanitizedString().optional(),
+})
+
+const labelsQuerySchema = z.object({
+    workspaceSlug: zSanitizedString(),
+})
+
+export const labelsRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
+
+// Apply auth middleware to all routes
+labelsRoutes.use('*', authMiddleware)
 
 // Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -32,13 +56,13 @@ async function getWorkspaceBySlug(slug: string) {
 }
 
 // GET /api/labels - List labels for a workspace
-labelsRoutes.get('/', async (c) => {
+labelsRoutes.get('/', zValidator('query', labelsQuerySchema), async (c) => {
     try {
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
         if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
         const userId = session.user.id
 
-        const workspaceSlug = c.req.query('workspaceSlug')
+        const { workspaceSlug } = c.req.valid('query')
         if (!workspaceSlug) return c.json({ success: false, error: 'workspaceSlug is required' }, 400)
 
         const workspace = await getWorkspaceBySlug(workspaceSlug)
@@ -60,18 +84,16 @@ labelsRoutes.get('/', async (c) => {
 })
 
 // POST /api/labels - Add label to workspace
-labelsRoutes.post('/', async (c) => {
+labelsRoutes.post('/', zValidator('json', createLabelSchema), async (c) => {
     try {
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
         if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
         const userId = session.user.id
 
-        const body = await c.req.json()
+        const body = c.req.valid('json')
         const { workspaceSlug, name, color } = body
 
-        if (!workspaceSlug || !name) {
-            return c.json({ success: false, error: 'workspaceSlug and name are required' }, 400)
-        }
+        // if (!workspaceSlug || !name) { ... } -> handled by schema
 
         const workspace = await getWorkspaceBySlug(workspaceSlug)
         if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
@@ -109,14 +131,14 @@ labelsRoutes.post('/', async (c) => {
 })
 
 // PATCH /api/labels/:id - Update label in workspace
-labelsRoutes.patch('/:id', async (c) => {
+labelsRoutes.patch('/:id', zValidator('json', updateLabelSchema), async (c) => {
     try {
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
         if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
         const userId = session.user.id
 
         const labelId = c.req.param('id')
-        const body = await c.req.json()
+        const body = c.req.valid('json')
         const { workspaceSlug, name, color } = body
 
         if (!workspaceSlug) {

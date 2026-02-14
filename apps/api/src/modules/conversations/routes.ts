@@ -6,7 +6,49 @@ import type { ConversationMessage } from '@taskdashboard/types'
 import { triggerWebhook } from '../webhooks/trigger'
 import type { WorkspaceRole } from '../../lib/permissions'
 
-const conversationsRoutes = new Hono()
+import { type Auth } from '../../lib/auth'
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString } from '../../lib/zod-extensions'
+
+const createConversationSchema = z.object({
+    teamId: z.string().optional().nullable(),
+    workspaceId: z.string().optional(),
+    type: z.enum(['direct', 'group', 'channel']),
+    name: zSanitizedString().optional(),
+    description: zSanitizedString().optional(),
+    isPrivate: z.boolean().optional(),
+    participants: z.array(z.string()).optional()
+}).refine(data => data.teamId || data.workspaceId, {
+    message: "teamId or workspaceId required"
+}).refine(data => data.type !== 'channel' || data.name, {
+    message: "name required for channels"
+})
+
+const createDirectConversationSchema = z.object({
+    workspaceId: z.string(),
+    userId1: z.string(),
+    userId2: z.string()
+})
+
+const typingSchema = z.object({
+    isTyping: z.boolean()
+})
+
+const createMessageSchema = z.object({
+    content: zSanitizedString(),
+    attachments: z.array(z.any()).optional(), // Define stricter attachment schema if possible
+    senderId: z.string().optional(), // usually userId but can be overridden?
+    replyToId: z.string().optional()
+})
+
+const appendMessageSchema = z.object({
+    content: zSanitizedString(),
+    attachments: z.array(z.any()).optional()
+})
+
+const conversationsRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
 
 // Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -28,14 +70,13 @@ const typingMap = new Map<string, Map<string, number>>()
 // POST /api/conversations/:id/typing - Update typing status
 // =============================================================================
 
-conversationsRoutes.post('/:id/typing', async (c) => {
+conversationsRoutes.post('/:id/typing', zValidator('json', typingSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const conversationId = c.req.param('id')
-        const body = await c.req.json()
+        const body = c.req.valid('json')
         const { isTyping } = body
-
-        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
 
         if (!typingMap.has(conversationId)) {
             typingMap.set(conversationId, new Map())
@@ -61,10 +102,9 @@ conversationsRoutes.post('/:id/typing', async (c) => {
 
 conversationsRoutes.post('/:id/read', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const conversationId = c.req.param('id')
-
-        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
 
         // Fetch conversation to get current states
         const [conversation] = await db.select()
@@ -145,14 +185,10 @@ conversationsRoutes.get('/direct', async (c) => {
 // POST /api/conversations/direct - Create direct conversation between 2 users
 // =============================================================================
 
-conversationsRoutes.post('/direct', async (c) => {
+conversationsRoutes.post('/direct', zValidator('json', createDirectConversationSchema), async (c) => {
     try {
-        const body = await c.req.json()
+        const body = c.req.valid('json')
         const { workspaceId, userId1, userId2 } = body
-
-        if (!workspaceId || !userId1 || !userId2) {
-            return c.json({ success: false, error: 'workspaceId, userId1, and userId2 required' }, 400)
-        }
 
         // Check if conversation already exists
         const [existing] = await db.select()
@@ -193,16 +229,13 @@ conversationsRoutes.post('/direct', async (c) => {
 
 conversationsRoutes.get('/', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         let workspaceId = c.req.query('workspaceId')
         const workspaceSlug = c.req.query('workspaceSlug')
         const teamId = c.req.query('teamId')
         const type = c.req.query('type') as 'direct' | 'group' | 'channel' | undefined
         const includeMessages = c.req.query('includeMessages') === 'true'
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         if (workspaceSlug && !workspaceId) {
             const [ws] = await db.select().from(workspaces).where(eq(workspaces.slug, workspaceSlug))
@@ -285,29 +318,13 @@ conversationsRoutes.get('/', async (c) => {
 // POST /api/conversations - Create conversation
 // =============================================================================
 
-conversationsRoutes.post('/', async (c) => {
+conversationsRoutes.post('/', zValidator('json', createConversationSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
-        const body = await c.req.json()
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
+        const user = c.get('user')
+        const userId = user.id
+        const body = c.req.valid('json')
 
         const { teamId, workspaceId, type, name, description, isPrivate, participants } = body
-
-        if (!teamId && !workspaceId) {
-            return c.json({ success: false, error: 'teamId or workspaceId required' }, 400)
-        }
-
-        if (!type) {
-            return c.json({ success: false, error: 'type required' }, 400)
-        }
-
-        // For channels, name is required
-        if (type === 'channel' && !name) {
-            return c.json({ success: false, error: 'name required for channels' }, 400)
-        }
 
         // Ensure creator is in participants
         const allParticipants = participants ? [...new Set([userId, ...participants])] : [userId]
@@ -337,14 +354,11 @@ conversationsRoutes.post('/', async (c) => {
 
 conversationsRoutes.get('/:id', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const conversationId = c.req.param('id')
         const limit = parseInt(c.req.query('limit') || '50')
         const before = c.req.query('before') // message ID for pagination
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId))
 
@@ -403,21 +417,14 @@ conversationsRoutes.get('/:id', async (c) => {
 // POST /api/conversations/:id/messages - Add new message (new endpoint)
 // =============================================================================
 
-conversationsRoutes.post('/:id/messages', async (c) => {
+conversationsRoutes.post('/:id/messages', zValidator('json', createMessageSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const conversationId = c.req.param('id')
-        const body = await c.req.json()
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
+        const body = c.req.valid('json')
 
         const { content, attachments, senderId, replyToId } = body
-
-        if (!content) {
-            return c.json({ success: false, error: 'content required' }, 400)
-        }
 
         const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId))
 
@@ -427,7 +434,8 @@ conversationsRoutes.post('/:id/messages', async (c) => {
 
         // Check if user is participant
         const participants = (conversation.participants || []) as string[]
-        if (!Array.isArray(participants) || (!participants.includes(userId) && !participants.includes(senderId))) {
+        const effectiveSenderId = senderId || userId
+        if (!Array.isArray(participants) || (!participants.includes(userId) && !participants.includes(effectiveSenderId))) {
             return c.json({ success: false, error: 'Access denied' }, 403)
         }
 
@@ -477,21 +485,14 @@ conversationsRoutes.post('/:id/messages', async (c) => {
 // PATCH /api/conversations/:id/messages - Append new message (legacy)
 // =============================================================================
 
-conversationsRoutes.patch('/:id/messages', async (c) => {
+conversationsRoutes.patch('/:id/messages', zValidator('json', appendMessageSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const conversationId = c.req.param('id')
-        const body = await c.req.json()
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
+        const body = c.req.valid('json')
 
         const { content, attachments } = body
-
-        if (!content) {
-            return c.json({ success: false, error: 'content required' }, 400)
-        }
 
         const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId))
 
@@ -551,14 +552,11 @@ conversationsRoutes.patch('/:id/messages', async (c) => {
 
 conversationsRoutes.patch('/:id/messages/:msgId', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const conversationId = c.req.param('id')
         const messageId = c.req.param('msgId')
         const body = await c.req.json()
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         const { content } = body
 
@@ -622,13 +620,10 @@ conversationsRoutes.patch('/:id/messages/:msgId', async (c) => {
 
 conversationsRoutes.delete('/:id/messages/:msgId', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const conversationId = c.req.param('id')
         const messageId = c.req.param('msgId')
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId))
 
@@ -691,13 +686,10 @@ conversationsRoutes.delete('/:id/messages/:msgId', async (c) => {
 
 conversationsRoutes.post('/:id/reactions', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const conversationId = c.req.param('id')
         const body = await c.req.json()
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         const { messageId, emoji } = body
 
@@ -753,16 +745,13 @@ conversationsRoutes.post('/:id/reactions', async (c) => {
 
 conversationsRoutes.post('/:id/messages/:msgId/pin', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const conversationId = c.req.param('id')
         const messageId = c.req.param('msgId')
         // Optional: Body to explicitly set state, otherwise toggle
         const body = await c.req.json().catch(() => ({}))
         const { isPinned } = body
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId))
 

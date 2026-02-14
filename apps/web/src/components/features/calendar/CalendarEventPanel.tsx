@@ -15,6 +15,7 @@ import { AssigneePicker, type Assignee } from '../tasks/components/AssigneePicke
 import {
     SubtaskCheckboxIcon,
 } from '../tasks/components/TaskIcons'
+import { useTranslation } from 'react-i18next'
 
 interface CalendarEventPanelProps {
     isOpen: boolean
@@ -42,6 +43,7 @@ const DEFAULT_LABELS = [
 ]
 
 export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEventType.EVENT, workspaceSlug, onCreate, initialDate }: CalendarEventPanelProps) {
+    const { t } = useTranslation()
     // Common State
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
@@ -371,12 +373,12 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                         </div>
                         <div>
                             <h2 className="text-lg font-semibold text-white">
-                                {selectedType === CalendarEventType.EVENT ? 'Add New Event' :
-                                    selectedType === CalendarEventType.TASK ? 'Add New Task' : 'Add Reminder'}
+                                {selectedType === CalendarEventType.EVENT ? t('calendar.panels.add_event_title') :
+                                    selectedType === CalendarEventType.TASK ? t('calendar.panels.add_task_title') : t('calendar.panels.add_reminder_title')}
                             </h2>
                             <p className="text-sm text-gray-500">
-                                {selectedType === CalendarEventType.EVENT ? 'Schedule a new event' :
-                                    selectedType === CalendarEventType.TASK ? 'Create a new task' : 'Set a reminder'}
+                                {selectedType === CalendarEventType.EVENT ? t('calendar.panels.add_event_subtitle') :
+                                    selectedType === CalendarEventType.TASK ? t('calendar.panels.add_task_subtitle') : t('calendar.panels.add_reminder_subtitle')}
                             </p>
                         </div>
                     </div>
@@ -402,9 +404,9 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                         : "border-transparent text-gray-400 hover:text-white hover:border-gray-700"
                                 )}
                             >
-                                {type === CalendarEventType.EVENT ? 'Event' :
-                                    type === CalendarEventType.MEETING ? 'Meeting' :
-                                        type === CalendarEventType.TASK ? 'Task' : 'Reminder'}
+                                {type === CalendarEventType.EVENT ? t('calendar.panels.types.event') :
+                                    type === CalendarEventType.MEETING ? t('calendar.panels.types.meeting') :
+                                        type === CalendarEventType.TASK ? t('calendar.panels.types.task') : t('calendar.panels.types.reminder')}
                             </button>
                         ))}
                     </div>
@@ -419,7 +421,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder={selectedType === CalendarEventType.TASK ? "Task title..." : "Event title..."}
+                            placeholder={selectedType === CalendarEventType.TASK ? t('calendar.panels.title_placeholder_task') : t('calendar.panels.title_placeholder_event')}
                             className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
                             autoFocus
                         />
@@ -430,7 +432,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Add description..."
+                            placeholder={t('calendar.panels.description_placeholder')}
                             rows={3}
                             className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors resize-none"
                         />
@@ -447,7 +449,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                         <div className="flex items-center gap-2">
                                             <FolderOpen size={14} className="text-gray-400" />
                                             <span className="truncate max-w-[120px]">
-                                                {projects.find(p => p.id === projectId)?.name || 'Select Project'}
+                                                {projects.find(p => p.id === projectId)?.name || t('calendar.panels.select_project')}
                                             </span>
                                         </div>
                                     </SelectTrigger>
@@ -485,20 +487,20 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             {/* Dates Row */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">Start Date</span>
+                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.start_date')}</span>
                                     <DueDatePicker
                                         value={taskStartDate}
                                         onChange={(d) => setTaskStartDate(d || '')}
-                                        placeholder="Pick start date"
+                                        placeholder={t('calendar.panels.start_date')}
                                         className="w-full"
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">Due Date</span>
+                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.due_date')}</span>
                                     <DueDatePicker
                                         value={dueDate}
                                         onChange={(d) => setDueDate(d || '')}
-                                        placeholder="Pick due date"
+                                        placeholder={t('calendar.panels.due_date')}
                                         className="w-full"
                                     />
                                 </div>
@@ -520,7 +522,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                 className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
                             >
                                 <SubtaskCheckboxIcon />
-                                {showMore ? 'Hide Subtasks' : 'Add Subtasks'}
+                                {showMore ? t('calendar.panels.hide_subtasks') : t('calendar.panels.add_subtasks')}
                             </button>
 
                             {/* Subtasks Section */}
@@ -541,10 +543,10 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                             value={newSubtask}
                                             onChange={(e) => setNewSubtask(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && addSubtask()}
-                                            placeholder="Add subtask..."
+                                            placeholder={t('calendar.panels.add_subtask_placeholder')}
                                             className="flex-1 px-3 py-2 bg-[#12121a] rounded-lg text-sm text-white border border-gray-800/50 focus:border-amber-500/50 outline-none"
                                         />
-                                        <button onClick={addSubtask} className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white text-xs">Add</button>
+                                        <button onClick={addSubtask} className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white text-xs">{t('calendar.panels.add_btn')}</button>
                                     </div>
                                 </div>
                             )}
@@ -563,14 +565,14 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                     {selectedType === CalendarEventType.EVENT && (
                                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsAllDay(!isAllDay)}>
                                             <CustomCheckbox checked={isAllDay} />
-                                            <span className="text-sm text-gray-400">All Day</span>
+                                            <span className="text-sm text-gray-400">{t('calendar.panels.all_day')}</span>
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1">
-                                        <span className="text-xs text-gray-500 font-bold uppercase ml-1">Starts</span>
+                                        <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.starts')}</span>
                                         <DueDatePicker
                                             value={startDate}
                                             onChange={(date) => {
@@ -581,7 +583,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                     setEndDate(new Date(newStart.getTime() + 60 * 60 * 1000).toISOString())
                                                 }
                                             }}
-                                            placeholder="Start date"
+                                            placeholder={t('calendar.panels.starts')}
                                             showTime={!isAllDay && selectedType === CalendarEventType.EVENT}
                                             className="w-full"
                                             triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
@@ -590,11 +592,11 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
 
                                     {selectedType === CalendarEventType.EVENT && (
                                         <div className="space-y-1">
-                                            <span className="text-xs text-gray-500 font-bold uppercase ml-1">Ends</span>
+                                            <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.ends')}</span>
                                             <DueDatePicker
                                                 value={endDate}
                                                 onChange={(date) => setEndDate(date || '')}
-                                                placeholder="End date"
+                                                placeholder={t('calendar.panels.ends')}
                                                 showTime={!isAllDay}
                                                 className="w-full"
                                                 triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
@@ -607,32 +609,32 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             {/* Recurrence Selector */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Repeat
+                                    {t('calendar.panels.repeat')}
                                 </label>
                                 <Select value={recurrence} onValueChange={(val) => { console.log('Selected recurrence:', val); setRecurrence(val) }}>
                                     <SelectTrigger className="w-full h-11 px-4 rounded-xl bg-[#1a1a24] border-none text-gray-300 hover:text-white hover:bg-[#20202b] transition-colors focus:ring-0">
                                         <div className="flex items-center gap-3">
                                             <RotateCw size={18} className="text-gray-500" />
                                             <span>
-                                                {recurrence === 'none' ? 'Does not repeat' :
-                                                    recurrence === 'daily' ? 'Daily' :
-                                                        recurrence === 'weekly' ? 'Weekly' :
-                                                            recurrence === 'biweekly' ? 'Bi-weekly' :
-                                                                recurrence === 'monthly' ? 'Monthly' :
-                                                                    recurrence === 'quarterly' ? 'Quarterly' :
-                                                                        recurrence === 'yearly' ? 'Yearly' : 'Custom'}
+                                                {recurrence === 'none' ? t('calendar.panels.recurrence.none') :
+                                                    recurrence === 'daily' ? t('calendar.panels.recurrence.daily') :
+                                                        recurrence === 'weekly' ? t('calendar.panels.recurrence.weekly') :
+                                                            recurrence === 'biweekly' ? t('calendar.panels.recurrence.biweekly') :
+                                                                recurrence === 'monthly' ? t('calendar.panels.recurrence.monthly') :
+                                                                    recurrence === 'quarterly' ? t('calendar.panels.recurrence.quarterly') :
+                                                                        recurrence === 'yearly' ? t('calendar.panels.recurrence.yearly') : t('calendar.panels.recurrence.custom')}
                                             </span>
                                         </div>
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
-                                        <SelectItem value="none" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Does not repeat</SelectItem>
-                                        <SelectItem value="daily" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Daily</SelectItem>
-                                        <SelectItem value="weekly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Weekly</SelectItem>
-                                        <SelectItem value="biweekly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Bi-weekly</SelectItem>
-                                        <SelectItem value="monthly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Monthly</SelectItem>
-                                        <SelectItem value="quarterly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Quarterly</SelectItem>
-                                        <SelectItem value="yearly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Yearly</SelectItem>
-                                        <SelectItem value="custom" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">Custom...</SelectItem>
+                                        <SelectItem value="none" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.none')}</SelectItem>
+                                        <SelectItem value="daily" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.daily')}</SelectItem>
+                                        <SelectItem value="weekly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.weekly')}</SelectItem>
+                                        <SelectItem value="biweekly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.biweekly')}</SelectItem>
+                                        <SelectItem value="monthly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.monthly')}</SelectItem>
+                                        <SelectItem value="quarterly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.quarterly')}</SelectItem>
+                                        <SelectItem value="yearly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.yearly')}</SelectItem>
+                                        <SelectItem value="custom" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.custom')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -640,11 +642,11 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             {/* Recurrence End Date (Until) */}
                             {recurrence !== 'none' && (
                                 <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">Until (Optional)</span>
+                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.until')}</span>
                                     <DueDatePicker
                                         value={recurrenceEnd}
                                         onChange={(date) => setRecurrenceEnd(date || '')}
-                                        placeholder="Forever"
+                                        placeholder={t('calendar.panels.until')}
                                         className="w-full"
                                         triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
                                     />
@@ -654,7 +656,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             {/* Team Selection (Multi-select) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    Teams <span className="text-red-400">*</span>
+                                    {t('calendar.panels.teams_label')} <span className="text-red-400">*</span>
                                 </label>
                                 <div className="relative group">
                                     <div className={cn(
@@ -685,7 +687,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                             )
                                                         })
                                                     ) : (
-                                                        <span className="text-gray-500 py-1">Select teams...</span>
+                                                        <span className="text-gray-500 py-1">{t('settings.organization.edit_panel.select_teams')}</span>
                                                     )}
                                                 </div>
                                             </SelectTrigger>
@@ -709,13 +711,13 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                     </SelectItem>
                                                 ))}
                                                 {teams.length === 0 && (
-                                                    <div className="p-3 text-xs text-gray-500 text-center">No teams found</div>
+                                                    <div className="p-3 text-xs text-gray-500 text-center">{t('settings.organization.edit_panel.no_teams_found')}</div>
                                                 )}
                                             </SelectContent>
                                         </Select>
                                     </div>
                                     <p className="text-[10px] text-gray-500 mt-1.5 ml-1">
-                                        Selected event will appear on calendars of all chosen teams.
+                                        {t('calendar.panels.teams_help')}
                                     </p>
                                 </div>
                             </div>
@@ -725,40 +727,40 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                 <div className="space-y-4">
                                     <div className="flex bg-[#1a1a24] p-1 rounded-full w-full">
                                         <button
-                                            onClick={() => {
-                                                setMeetingType('physical')
-                                                setLocation('') // Reset location/link when switching
-                                            }}
-                                            className={cn(
-                                                "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
-                                                meetingType === 'physical'
-                                                    ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                                    : 'text-gray-500 hover:text-white'
-                                            )}
-                                        >
-                                            <Building className="w-3.5 h-3.5" />
-                                            In Person
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setMeetingType('virtual')
-                                                setLocation('') // Reset location/link when switching
-                                            }}
-                                            className={cn(
-                                                "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
-                                                meetingType === 'virtual'
-                                                    ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                                    : 'text-gray-500 hover:text-white'
-                                            )}
-                                        >
-                                            <Monitor className="w-3.5 h-3.5" />
-                                            Virtual
-                                        </button>
+                                        onClick={() => {
+                                            setMeetingType('physical')
+                                            setLocation('') // Reset location/link when switching
+                                        }}
+                                        className={cn(
+                                            "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
+                                            meetingType === 'physical'
+                                                ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                                                : 'text-gray-500 hover:text-white'
+                                        )}
+                                    >
+                                        <Building className="w-3.5 h-3.5" />
+                                        {t('calendar.panels.in_person')}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setMeetingType('virtual')
+                                            setLocation('') // Reset location/link when switching
+                                        }}
+                                        className={cn(
+                                            "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
+                                            meetingType === 'virtual'
+                                                ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                                                : 'text-gray-500 hover:text-white'
+                                        )}
+                                    >
+                                        <Monitor className="w-3.5 h-3.5" />
+                                        {t('calendar.panels.virtual')}
+                                    </button>
                                     </div>
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                                            {meetingType === 'physical' ? 'Location' : 'Meeting Link'}
+                                            {meetingType === 'physical' ? t('calendar.panels.location') : t('calendar.panels.meeting_link')}
                                         </label>
                                         <div className="relative group focus-within:ring-2 ring-amber-500/30 rounded-xl transition-all">
                                             {meetingType === 'physical' ? (
@@ -770,7 +772,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                 type="text"
                                                 value={meetingType === 'physical' ? location : meetingLink}
                                                 onChange={(e) => meetingType === 'physical' ? setLocation(e.target.value) : setMeetingLink(e.target.value)}
-                                                placeholder={meetingType === 'physical' ? "Add location address..." : "Add meeting URL (e.g. Zoom, Meet)..."}
+                                                placeholder={meetingType === 'physical' ? t('calendar.panels.location_placeholder') : t('calendar.panels.meeting_link_placeholder')}
                                                 className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:bg-[#1f1f2e] transition-all"
                                             />
                                         </div>
@@ -787,15 +789,15 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                         onClick={onClose}
                         className="flex-1 px-4 py-3 rounded-xl border border-gray-800 text-gray-300 font-medium hover:bg-gray-800 hover:text-white transition-colors"
                     >
-                        Cancel
+                        {t('calendar.panels.cancel')}
                     </button>
                     <button
                         onClick={handleCreate}
                         disabled={loading}
                         className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
                     >
-                        {loading ? 'Creating...' : selectedType === CalendarEventType.EVENT ? 'Add Event' :
-                            selectedType === CalendarEventType.TASK ? 'Add Task' : 'Set Reminder'}
+                        {loading ? t('calendar.panels.creating') : selectedType === CalendarEventType.EVENT ? t('calendar.panels.add_event_btn') :
+                            selectedType === CalendarEventType.TASK ? t('calendar.panels.add_task_btn') : t('calendar.panels.set_reminder_btn')}
                     </button>
                 </div>
             </div>

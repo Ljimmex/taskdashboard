@@ -7,6 +7,13 @@ import { users } from '../../db/schema/users'
 import { authMiddleware } from '@/middleware/auth'
 import { type Auth } from '../../lib/auth'
 import { getSupabase } from '../../lib/supabase'
+import { zSanitizedStringOptional } from '../../lib/zod-extensions'
+
+const avatarSchema = z.object({
+    file: z.any().refine((file) => file instanceof File, {
+        message: 'File is required'
+    })
+})
 
 type Env = {
     Variables: {
@@ -32,17 +39,18 @@ usersRoutes.get('/me', async (c) => {
 // -----------------------------------------------------------------------------
 // PATCH /api/users/me
 // -----------------------------------------------------------------------------
+
 const updateUserSchema = z.object({
-    name: z.string().optional(),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-    description: z.string().optional().nullable(),
-    birthDate: z.string().optional().nullable(), // Receive as ISO string
-    gender: z.string().optional().nullable(),
-    position: z.string().optional().nullable(),
-    city: z.string().optional().nullable(),
-    country: z.string().optional().nullable(),
-    timezone: z.string().optional().nullable(),
+    name: zSanitizedStringOptional(),
+    firstName: zSanitizedStringOptional(),
+    lastName: zSanitizedStringOptional(),
+    description: zSanitizedStringOptional(),
+    birthDate: zSanitizedStringOptional(), // Receive as ISO string
+    gender: zSanitizedStringOptional(),
+    position: zSanitizedStringOptional(),
+    city: zSanitizedStringOptional(),
+    country: zSanitizedStringOptional(),
+    timezone: zSanitizedStringOptional(),
 })
 
 usersRoutes.patch('/me', zValidator('json', updateUserSchema), async (c) => {
@@ -65,10 +73,9 @@ usersRoutes.patch('/me', zValidator('json', updateUserSchema), async (c) => {
 // POST /api/users/me/avatar
 // -----------------------------------------------------------------------------
 // Expects multipart/form-data with 'file'
-usersRoutes.post('/me/avatar', async (c) => {
+usersRoutes.post('/me/avatar', zValidator('form', avatarSchema), async (c) => {
     const user = c.get('user')
-    const body = await c.req.parseBody()
-    const file = body['file'] as File
+    const { file } = c.req.valid('form')
 
     if (!file) {
         return c.json({ error: 'No file uploaded' }, 400)
@@ -112,10 +119,12 @@ usersRoutes.post('/me/avatar', async (c) => {
 // DELETE /api/users/:id/avatar
 // -----------------------------------------------------------------------------
 usersRoutes.delete('/:id/avatar', async (c) => {
-    // const _requester = c.get('user') // Unused
+    const user = c.get('user')
     const targetUserId = c.req.param('id')
 
-    // TODO: Permission Check
+    if (targetUserId !== user.id) {
+        return c.json({ error: 'Unauthorized to delete other users avatar' }, 403)
+    }
 
     // Just clear the DB field
     const [updatedUser] = await db.update(users)
@@ -132,11 +141,14 @@ usersRoutes.delete('/:id/avatar', async (c) => {
 // -----------------------------------------------------------------------------
 // POST /api/users/:id/avatar
 // -----------------------------------------------------------------------------
-usersRoutes.post('/:id/avatar', async (c) => {
-    // const _requester = c.get('user') // Unused
+usersRoutes.post('/:id/avatar', zValidator('form', avatarSchema), async (c) => {
+    const user = c.get('user')
     const targetUserId = c.req.param('id')
-    const body = await c.req.parseBody()
-    const file = body['file'] as File
+
+    if (targetUserId !== user.id) {
+        return c.json({ error: 'Unauthorized to upload avatar for other users' }, 403)
+    }
+    const { file } = c.req.valid('form')
 
     if (!file) {
         return c.json({ error: 'No file uploaded' }, 400)

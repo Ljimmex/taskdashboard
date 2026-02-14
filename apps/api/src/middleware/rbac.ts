@@ -2,101 +2,97 @@
 import { Context, Next } from 'hono'
 import { createMiddleware } from 'hono/factory'
 import { db } from '../db'
-import { SYSTEM_ROLES } from '../db/schema/roles'
+import { roles, rolePermissions, permissions } from '../db/schema/rbac'
+import { eq, and } from 'drizzle-orm'
 import { auth } from '../lib/auth'
 
-// Generic permission path type (e.g., 'workspace.manageSettings')
-type PermissionPath = string
+// In-memory cache for role permissions to reduce DB hits
+// RoleID -> Set<PermissionID>
+const rolePermissionCache = new Map<string, Set<string>>()
+const CACHE_TTL = 60 * 1000 // 1 minute
+let lastCacheUpdate = 0
 
-// Mapping from simple DB Enums to Complex System Roles (Permissions)
-const WORKSPACE_ROLE_MAP: Record<string, typeof SYSTEM_ROLES[keyof typeof SYSTEM_ROLES]> = {
-    'owner': SYSTEM_ROLES.OWNER,
-    'admin': SYSTEM_ROLES.ADMIN,
-    'project_manager': SYSTEM_ROLES.PROJECT_MANAGER,
-    'hr_manager': SYSTEM_ROLES.HR_MANAGER,
-    'member': SYSTEM_ROLES.WORKSPACE_MEMBER,
-    'guest': SYSTEM_ROLES.INTERN // Fallback for guest
-}
-
-const TEAM_ROLE_MAP: Record<string, typeof SYSTEM_ROLES[keyof typeof SYSTEM_ROLES]> = {
-    'team_lead': SYSTEM_ROLES.TEAM_LEAD,
-    'senior': SYSTEM_ROLES.SENIOR,
-    'mid': SYSTEM_ROLES.MID,
-    'junior': SYSTEM_ROLES.JUNIOR,
-    'intern': SYSTEM_ROLES.INTERN
-}
-
-/**
- * Helper to get nested property from object by string path
- * e.g. getPermission(roles, 'workspace.manageMembers')
- */
-function getPermissionValue(permissions: any, path: string): boolean {
-    const parts = path.split('.')
-    let current = permissions
-
-    for (const part of parts) {
-        if (current === undefined || current === null) return false
-        current = current[part]
+async function loadPermissions() {
+    const now = Date.now()
+    if (now - lastCacheUpdate < CACHE_TTL && rolePermissionCache.size > 0) {
+        return
     }
 
-    return !!current
+    console.log('🔄 Refreshing RBAC Cache...')
+    const allRolePerms = await db.select({
+        roleId: rolePermissions.roleId,
+        permissionId: rolePermissions.permissionId
+    }).from(rolePermissions)
+
+    rolePermissionCache.clear()
+    for (const rp of allRolePerms) {
+        if (!rolePermissionCache.has(rp.roleId)) {
+            rolePermissionCache.set(rp.roleId, new Set())
+        }
+        rolePermissionCache.get(rp.roleId)?.add(rp.permissionId)
+    }
+    lastCacheUpdate = now
 }
 
-export const requirePermission = (permission: PermissionPath) => createMiddleware(async (c: Context, next: Next) => {
+export const requirePermission = (requiredPermission: string) => createMiddleware(async (c: Context, next: Next) => {
+    // 0. Ensure permissions are loaded
+    await loadPermissions()
+
     // 1. Get User Session
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
-    const userId = session?.user?.id
+    const user = c.get('user')
+    const userId = user?.id
 
     if (!userId) {
         return c.json({ error: 'Unauthorized: No session found' }, 401)
     }
 
-    // Flags to check both contexts
     let hasAccess = false
 
-    // CHECK WORKSPACE PERMISSIONS
-    const workspaceId = c.req.param('id') || c.req.param('workspaceId')
-    if (c.req.path.includes('/workspaces/') && workspaceId) {
-        // Find member from DB using userId and workspaceId
+    // CHECK WORKSPACE CONTEXT
+    // Try to find workspaceId from params or body
+    const workspaceId = c.req.param('workspaceId') || c.req.param('id')
+    
+    // If request is strictly workspace related
+    if (workspaceId) {
         const member = await db.query.workspaceMembers.findFirst({
-            where: (wm, { eq, and }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId))
+            where: (wm, { and, eq }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId))
         })
 
         if (member) {
-            // Check for suspension
             if (member.status === 'suspended') {
                 return c.json({ error: 'Forbidden: Member suspended' }, 403)
             }
-            const roleDef = WORKSPACE_ROLE_MAP[member.role]
-            if (roleDef && getPermissionValue(roleDef.permissions, permission)) {
+            
+            // Check if member's role has the required permission
+            // The member.role is a string like 'owner', 'admin', 'member' which matches roles.id
+            const rolePerms = rolePermissionCache.get(member.role)
+            if (rolePerms && rolePerms.has(requiredPermission)) {
                 hasAccess = true
             }
         }
     }
 
-    // If we are touching /api/teams/:id, then id is teamId
-    // Or if we create team in workspace
-    else if (c.req.path.startsWith('/api/teams/') && c.req.param('id')) {
-        const tmId = c.req.param('id')
-
-        if (!tmId) return c.json({ error: 'Invalid team ID' }, 400)
-
-        // Check Team Membership
+    // CHECK TEAM CONTEXT
+    // If accessing team resources
+    const teamId = c.req.param('teamId') || (c.req.path.includes('/teams/') ? c.req.param('id') : null)
+    
+    if (teamId && !hasAccess) {
         const teamMember = await db.query.teamMembers.findFirst({
-            where: (tm, { and, eq }) => and(eq(tm.teamId, tmId), eq(tm.userId, userId))
+            where: (tm, { and, eq }) => and(eq(tm.teamId, teamId), eq(tm.userId, userId))
         })
 
         if (teamMember) {
-            const roleDef = TEAM_ROLE_MAP[teamMember.teamLevel] // Map 'team_lead' -> TEAM_LEAD etc
-            if (roleDef && getPermissionValue(roleDef.permissions, permission)) {
+            // Check team role permissions
+            const rolePerms = rolePermissionCache.get(teamMember.role)
+            if (rolePerms && rolePerms.has(requiredPermission)) {
                 hasAccess = true
             }
         }
 
-        // Also check Workspace Admin override?
+        // Fallback: Check if Workspace Admin has access to this team resource
         if (!hasAccess) {
-            const team = await db.query.teams.findFirst({
-                where: (t, { eq }) => eq(t.id, tmId),
+             const team = await db.query.teams.findFirst({
+                where: (t, { eq }) => eq(t.id, teamId),
                 columns: { workspaceId: true }
             })
 
@@ -105,9 +101,12 @@ export const requirePermission = (permission: PermissionPath) => createMiddlewar
                     where: (m, { and, eq }) => and(eq(m.workspaceId, team.workspaceId), eq(m.userId, userId))
                 })
 
-                // If workspace OWNER or ADMIN, they often overrides team specific checks
-                if (wsMember && (wsMember.role === 'owner' || wsMember.role === 'admin')) {
-                    hasAccess = true
+                if (wsMember) {
+                     const rolePerms = rolePermissionCache.get(wsMember.role)
+                     // Usually admins have almost all permissions, but let's check explicitly
+                     if (rolePerms && rolePerms.has(requiredPermission)) {
+                         hasAccess = true
+                     }
                 }
             }
         }
@@ -116,6 +115,281 @@ export const requirePermission = (permission: PermissionPath) => createMiddlewar
     if (hasAccess) {
         await next()
     } else {
-        return c.json({ error: 'Forbidden: Insufficient permissions' }, 403)
+        return c.json({ error: `Forbidden: Missing permission ${requiredPermission}` }, 403)
     }
 })
+
+// Keep the SYSTEM_ROLES export for backward compatibility or seeding reference
+export const SYSTEM_ROLES = {
+    OWNER: {
+        name: 'Workspace Owner',
+        level: 'owner',
+        description: 'Full access to everything in the workspace',
+        type: 'global',
+        permissions: {
+            workspace: {
+                manageSettings: true,
+                manageMembers: true,
+                manageBilling: true,
+                deleteWorkspace: true,
+                viewAuditLogs: true
+            },
+            projects: {
+                create: true,
+                delete: true,
+                archive: true,
+                manageSettings: true
+            },
+            tasks: {
+                create: true,
+                edit: true,
+                delete: true,
+                assign: true
+            }
+        }
+    },
+    ADMIN: {
+        name: 'Workspace Admin',
+        level: 'admin',
+        description: 'Can manage members and projects',
+        type: 'global',
+        permissions: {
+            workspace: {
+                manageSettings: true,
+                manageMembers: true,
+                manageBilling: false,
+                deleteWorkspace: false,
+                viewAuditLogs: true
+            },
+            projects: {
+                create: true,
+                delete: true,
+                archive: true,
+                manageSettings: true
+            },
+            tasks: {
+                create: true,
+                edit: true,
+                delete: true,
+                assign: true
+            }
+        }
+    },
+    PROJECT_MANAGER: {
+        name: 'Project Manager',
+        level: 'project_manager',
+        description: 'Can manage projects and tasks',
+        type: 'global',
+        permissions: {
+            workspace: {
+                manageSettings: false,
+                manageMembers: false,
+                manageBilling: false,
+                deleteWorkspace: false,
+                viewAuditLogs: false
+            },
+            projects: {
+                create: true,
+                delete: false,
+                archive: true,
+                manageSettings: true
+            },
+            tasks: {
+                create: true,
+                edit: true,
+                delete: true,
+                assign: true
+            }
+        }
+    },
+    HR_MANAGER: {
+        name: 'HR Manager',
+        level: 'hr_manager',
+        description: 'Can manage workspace members',
+        type: 'global',
+        permissions: {
+            workspace: {
+                manageSettings: false,
+                manageMembers: true,
+                manageBilling: false,
+                deleteWorkspace: false,
+                viewAuditLogs: true
+            },
+            projects: {
+                create: false,
+                delete: false,
+                archive: false,
+                manageSettings: false
+            },
+            tasks: {
+                create: false,
+                edit: false,
+                delete: false,
+                assign: false
+            }
+        }
+    },
+    WORKSPACE_MEMBER: {
+        name: 'Workspace Member',
+        level: 'member',
+        description: 'Regular member, can work on tasks',
+        type: 'global',
+        permissions: {
+            workspace: {
+                manageSettings: false,
+                manageMembers: false,
+                manageBilling: false,
+                deleteWorkspace: false,
+                viewAuditLogs: false
+            },
+            projects: {
+                create: false,
+                delete: false,
+                archive: false,
+                manageSettings: false
+            },
+            tasks: {
+                create: true,
+                edit: true,
+                delete: false,
+                assign: true
+            }
+        }
+    },
+    TEAM_LEAD: {
+        name: 'Team Lead',
+        level: 'team_lead',
+        description: 'Leader of a specific team',
+        type: 'team',
+        permissions: {
+            workspace: {
+                manageSettings: false,
+                manageMembers: false,
+                manageBilling: false,
+                deleteWorkspace: false,
+                viewAuditLogs: false
+            },
+            projects: {
+                create: true,
+                delete: false,
+                archive: false,
+                manageSettings: true
+            },
+            tasks: {
+                create: true,
+                edit: true,
+                delete: true,
+                assign: true
+            }
+        }
+    },
+    SENIOR: {
+        name: 'Senior Developer',
+        level: 'senior',
+        description: 'Senior team member',
+        type: 'team',
+        permissions: {
+            workspace: {
+                manageSettings: false,
+                manageMembers: false,
+                manageBilling: false,
+                deleteWorkspace: false,
+                viewAuditLogs: false
+            },
+            projects: {
+                create: false,
+                delete: false,
+                archive: false,
+                manageSettings: false
+            },
+            tasks: {
+                create: true,
+                edit: true,
+                delete: true,
+                assign: true
+            }
+        }
+    },
+    MID: {
+        name: 'Mid Developer',
+        level: 'mid',
+        description: 'Mid-level team member',
+        type: 'team',
+        permissions: {
+            workspace: {
+                manageSettings: false,
+                manageMembers: false,
+                manageBilling: false,
+                deleteWorkspace: false,
+                viewAuditLogs: false
+            },
+            projects: {
+                create: false,
+                delete: false,
+                archive: false,
+                manageSettings: false
+            },
+            tasks: {
+                create: true,
+                edit: true,
+                delete: false,
+                assign: true
+            }
+        }
+    },
+    JUNIOR: {
+        name: 'Junior Developer',
+        level: 'junior',
+        description: 'Junior team member',
+        type: 'team',
+        permissions: {
+            workspace: {
+                manageSettings: false,
+                manageMembers: false,
+                manageBilling: false,
+                deleteWorkspace: false,
+                viewAuditLogs: false
+            },
+            projects: {
+                create: false,
+                delete: false,
+                archive: false,
+                manageSettings: false
+            },
+            tasks: {
+                create: true,
+                edit: true,
+                delete: false,
+                assign: false
+            }
+        }
+    },
+    INTERN: {
+        name: 'Intern',
+        level: 'intern',
+        description: 'Intern or Guest',
+        type: 'team',
+        permissions: {
+            workspace: {
+                manageSettings: false,
+                manageMembers: false,
+                manageBilling: false,
+                deleteWorkspace: false,
+                viewAuditLogs: false
+            },
+            projects: {
+                create: false,
+                delete: false,
+                archive: false,
+                manageSettings: false
+            },
+            tasks: {
+                create: false,
+                edit: false,
+                delete: false,
+                assign: false
+            }
+        }
+    }
+}
+

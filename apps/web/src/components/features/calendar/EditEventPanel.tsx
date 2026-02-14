@@ -8,6 +8,7 @@ import { DueDatePicker } from '../tasks/components/DueDatePicker'
 import { apiFetchJson, apiFetch } from '@/lib/api'
 import { CheckCircle2 } from 'lucide-react'
 import type { CalendarEvent } from './DayEventListPanel'
+import { useTranslation } from 'react-i18next'
 
 interface EditEventPanelProps {
     event: CalendarEvent | null
@@ -18,6 +19,7 @@ interface EditEventPanelProps {
 }
 
 export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdated }: EditEventPanelProps) {
+    const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
 
     // Form State
@@ -123,8 +125,8 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                             ✏️
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Edit Event</h2>
-                            <p className="text-sm text-gray-500">Update event details</p>
+                            <h2 className="text-lg font-semibold text-white">{t('calendar.panels.edit_event_title')}</h2>
+                            <p className="text-sm text-gray-500">{t('calendar.panels.edit_event_subtitle')}</p>
                         </div>
                     </div>
                     <button
@@ -144,7 +146,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Event title..."
+                            placeholder={t('calendar.panels.title_placeholder_event')}
                             className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
                         />
                     </div>
@@ -154,7 +156,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Add description..."
+                            placeholder={t('calendar.panels.description_placeholder')}
                             rows={3}
                             className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors resize-none"
                         />
@@ -164,19 +166,19 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <label className="block text-sm font-medium text-gray-300">
-                                Date & Time
+                                {t('calendar.panels.date_time')}
                             </label>
                             {eventType === CalendarEventType.EVENT && (
                                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsAllDay(!isAllDay)}>
                                     <CustomCheckbox checked={isAllDay} />
-                                    <span className="text-sm text-gray-400">All Day</span>
+                                    <span className="text-sm text-gray-400">{t('calendar.panels.all_day')}</span>
                                 </div>
                             )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <span className="text-xs text-gray-500 font-bold uppercase ml-1">Starts</span>
+                                <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.starts')}</span>
                                 <DueDatePicker
                                     value={startDate}
                                     onChange={(date) => {
@@ -186,7 +188,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                             setEndDate(new Date(newStart.getTime() + 60 * 60 * 1000).toISOString())
                                         }
                                     }}
-                                    placeholder="Start date"
+                                    placeholder={t('calendar.panels.starts')}
                                     showTime={!isAllDay && eventType === CalendarEventType.EVENT}
                                     className="w-full"
                                     triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
@@ -195,11 +197,11 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
 
                             {eventType !== CalendarEventType.REMINDER && (
                                 <div className="space-y-1">
-                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">Ends</span>
+                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.ends')}</span>
                                     <DueDatePicker
                                         value={endDate}
                                         onChange={(date) => setEndDate(date || '')}
-                                        placeholder="End date"
+                                        placeholder={t('calendar.panels.ends')}
                                         showTime={!isAllDay}
                                         className="w-full"
                                         triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
@@ -212,7 +214,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                     {/* Team Selection */}
                     <div>
                         <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Teams <span className="text-red-400">*</span>
+                            {t('calendar.panels.teams_label')} <span className="text-red-400">*</span>
                         </label>
                         <div className="relative group">
                             <div className={cn(
@@ -243,7 +245,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                                     )
                                                 })
                                             ) : (
-                                                <span className="text-gray-500 py-1">Select teams...</span>
+                                                <span className="text-gray-500 py-1">{t('settings.organization.edit_panel.select_teams')}</span>
                                             )}
                                         </div>
                                     </SelectTrigger>
@@ -267,7 +269,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                             </SelectItem>
                                         ))}
                                         {teams.length === 0 && (
-                                            <div className="p-3 text-xs text-gray-500 text-center">No teams found</div>
+                                            <div className="p-3 text-xs text-gray-500 text-center">{t('settings.organization.edit_panel.no_teams_found')}</div>
                                         )}
                                     </SelectContent>
                                 </Select>
@@ -280,40 +282,40 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                         <div className="space-y-4">
                             <div className="flex bg-[#1a1a24] p-1 rounded-full w-full">
                                 <button
-                                    onClick={() => {
-                                        setMeetingType('physical')
-                                        setMeetingLink('')
-                                    }}
-                                    className={cn(
-                                        "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
-                                        meetingType === 'physical'
-                                            ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                            : 'text-gray-500 hover:text-white'
-                                    )}
-                                >
-                                    <Building className="w-3.5 h-3.5" />
-                                    In Person
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setMeetingType('virtual')
-                                        setLocation('')
-                                    }}
-                                    className={cn(
-                                        "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
-                                        meetingType === 'virtual'
-                                            ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                            : 'text-gray-500 hover:text-white'
-                                    )}
-                                >
-                                    <Monitor className="w-3.5 h-3.5" />
-                                    Virtual
-                                </button>
+                                        onClick={() => {
+                                            setMeetingType('physical')
+                                            setMeetingLink('')
+                                        }}
+                                        className={cn(
+                                            "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
+                                            meetingType === 'physical'
+                                                ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                                                : 'text-gray-500 hover:text-white'
+                                        )}
+                                    >
+                                        <Building className="w-3.5 h-3.5" />
+                                        {t('calendar.panels.in_person')}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setMeetingType('virtual')
+                                            setLocation('')
+                                        }}
+                                        className={cn(
+                                            "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
+                                            meetingType === 'virtual'
+                                                ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                                                : 'text-gray-500 hover:text-white'
+                                        )}
+                                    >
+                                        <Monitor className="w-3.5 h-3.5" />
+                                        {t('calendar.panels.virtual')}
+                                    </button>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    {meetingType === 'physical' ? 'Location' : 'Meeting Link'}
+                                    {meetingType === 'physical' ? t('calendar.panels.location') : t('calendar.panels.meeting_link')}
                                 </label>
                                 <div className="relative group focus-within:ring-2 ring-amber-500/30 rounded-xl transition-all">
                                     {meetingType === 'physical' ? (
@@ -325,7 +327,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                         type="text"
                                         value={meetingType === 'physical' ? location : meetingLink}
                                         onChange={(e) => meetingType === 'physical' ? setLocation(e.target.value) : setMeetingLink(e.target.value)}
-                                        placeholder={meetingType === 'physical' ? "Add location address..." : "Add meeting URL (e.g. Zoom, Meet)..."}
+                                        placeholder={meetingType === 'physical' ? t('calendar.panels.location_placeholder') : t('calendar.panels.meeting_link_placeholder')}
                                         className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:bg-[#1f1f2e] transition-all"
                                     />
                                 </div>
@@ -340,14 +342,14 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                         onClick={onClose}
                         className="flex-1 px-4 py-3 rounded-xl border border-gray-800 text-gray-300 font-medium hover:bg-gray-800 hover:text-white transition-colors"
                     >
-                        Cancel
+                        {t('calendar.panels.cancel')}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={loading}
                         className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
                     >
-                        {loading ? 'Saving...' : 'Save Changes'}
+                        {loading ? t('calendar.panels.saving') : t('calendar.panels.save_changes')}
                     </button>
                 </div>
             </div>

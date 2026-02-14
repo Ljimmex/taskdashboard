@@ -18,4 +18,6 @@ export * from './filters'
 export * from './templates'
 export * from './folders'
 export * from './webhooks'
+export * from './rbac'
+export * from './audit'
 

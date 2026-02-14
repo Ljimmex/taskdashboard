@@ -1,11 +1,41 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
+import { type Auth } from '../../lib/auth'
 import { taskTemplates } from '../../db/schema/templates'
 import { workspaceMembers } from '../../db/schema/workspaces'
 import { eq, and } from 'drizzle-orm'
 import type { WorkspaceRole } from '../../lib/permissions'
 
-export const templatesRoutes = new Hono()
+type Env = {
+    Variables: {
+        user: Auth['$Infer']['Session']['user']
+        session: Auth['$Infer']['Session']['session']
+    }
+}
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
+
+const createTemplateSchema = z.object({
+    workspaceSlug: zSanitizedString(),
+    name: zSanitizedString(),
+    description: zSanitizedStringOptional(),
+    templateData: z.any()
+})
+
+const updateTemplateSchema = z.object({
+    name: zSanitizedStringOptional(),
+    description: zSanitizedStringOptional(),
+    isActive: z.boolean().optional(),
+    templateData: z.any().optional()
+})
+
+const templatesQuerySchema = z.object({
+    workspaceSlug: zSanitizedString().optional(),
+})
+
+export const templatesRoutes = new Hono<Env>()
 
 // Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -21,18 +51,14 @@ async function getUserWorkspaceRole(userId: string, workspaceId: string): Promis
         .limit(1)
     return (member?.role as WorkspaceRole) || null
 }
-// =============================================================================
 // GET /api/templates - List workspace templates
 // =============================================================================
 
-templatesRoutes.get('/', async (c) => {
+templatesRoutes.get('/', zValidator('query', templatesQuerySchema), async (c) => {
     try {
-        const workspaceSlug = c.req.query('workspaceSlug')
-        const userId = c.req.header('x-user-id')
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
+        const { workspaceSlug } = c.req.valid('query')
+        const user = c.get('user') as any
+        const userId = user.id
 
         // Get workspace ID from slug
         let workspaceId: string | undefined
@@ -109,20 +135,17 @@ templatesRoutes.get('/:id', async (c) => {
 // POST /api/templates - Create new template
 // =============================================================================
 
-templatesRoutes.post('/', async (c) => {
+// POST /api/templates - Create new template
+templatesRoutes.post('/', zValidator('json', createTemplateSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user') as any
+        const userId = user.id
 
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
-
-        const body = await c.req.json()
+        const body = c.req.valid('json')
         const { workspaceSlug, name, description, templateData } = body
 
-        if (!workspaceSlug || !name || !templateData) {
-            return c.json({ success: false, error: 'Missing required fields' }, 400)
-        }
+        // Validation handled by schema
+        // if (!workspaceSlug || !name || !templateData) { ... }
 
         // Get workspace ID from slug
         const workspace = await db.query.workspaces.findFirst({
@@ -154,14 +177,11 @@ templatesRoutes.post('/', async (c) => {
 // PUT /api/templates/:id - Update template
 // =============================================================================
 
-templatesRoutes.put('/:id', async (c) => {
+templatesRoutes.put('/:id', zValidator('json', updateTemplateSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user') as any
+        const userId = user.id
         const id = c.req.param('id')
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         const existing = await db.query.taskTemplates.findFirst({
             where: (t, { eq }) => eq(t.id, id)
@@ -171,7 +191,13 @@ templatesRoutes.put('/:id', async (c) => {
             return c.json({ success: false, error: 'Template not found' }, 404)
         }
 
-        const body = await c.req.json()
+        // Check workspace membership status
+        const workspaceRole = await getUserWorkspaceRole(userId, existing.workspaceId)
+        if (!workspaceRole) {
+            return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+        }
+
+        const body = c.req.valid('json')
         const { name, description, templateData, isActive } = body
 
         const [updated] = await db.update(taskTemplates)
@@ -198,12 +224,9 @@ templatesRoutes.put('/:id', async (c) => {
 
 templatesRoutes.delete('/:id', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user') as any
+        const userId = user.id
         const id = c.req.param('id')
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         const existing = await db.query.taskTemplates.findFirst({
             where: (t, { eq }) => eq(t.id, id)
@@ -211,6 +234,12 @@ templatesRoutes.delete('/:id', async (c) => {
 
         if (!existing) {
             return c.json({ success: false, error: 'Template not found' }, 404)
+        }
+
+        // Check workspace membership status
+        const workspaceRole = await getUserWorkspaceRole(userId, existing.workspaceId)
+        if (!workspaceRole) {
+            return c.json({ error: 'Forbidden: No active workspace access' }, 403)
         }
 
         await db.delete(taskTemplates).where(eq(taskTemplates.id, id))

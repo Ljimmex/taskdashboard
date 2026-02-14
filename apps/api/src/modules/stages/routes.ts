@@ -15,7 +15,40 @@ import {
 import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema'
 
-const app = new Hono()
+import { type Auth } from '../../lib/auth'
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString } from '../../lib/zod-extensions'
+
+const createStageSchema = z.object({
+    name: zSanitizedString(),
+    color: zSanitizedString().optional(),
+    isFinal: z.boolean().optional(),
+})
+
+const updateStageSchema = z.object({
+    name: zSanitizedString().optional(),
+    color: zSanitizedString().optional(),
+    isFinal: z.boolean().optional(),
+})
+
+// Schema for reorder
+const reorderStagesSchema = z.object({
+    stageIds: z.array(z.string())
+})
+
+// Schema for import
+const importStageSchema = z.object({
+    templateStageId: z.string()
+})
+
+// Schema for init
+const initStagesSchema = z.object({
+    templateSlug: zSanitizedString()
+})
+
+const app = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
 
 // Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -83,15 +116,15 @@ app.get('/:projectId/stages', async (c) => {
 // =============================================================================
 // POST /api/projects/:projectId/stages - Add custom stage (requires stages.create)
 // =============================================================================
-app.post('/:projectId/stages', async (c) => {
+app.post('/:projectId/stages', zValidator('json', createStageSchema), async (c) => {
     const { projectId } = c.req.param()
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
+
+    const user = c.get('user')
+    const userId = user.id
+    const body = c.req.valid('json')
     const { name, color = '#6B7280', isFinal = false } = body
 
-    if (!name) {
-        return c.json({ success: false, error: 'Stage name is required' }, 400)
-    }
+    // if (!name) -> Handled by schema
 
     try {
         // Get workspace context and check suspension status
@@ -152,10 +185,12 @@ app.post('/:projectId/stages', async (c) => {
 // =============================================================================
 // PATCH /api/projects/:projectId/stages/:stageId - Update stage (requires stages.update)
 // =============================================================================
-app.patch('/:projectId/stages/:stageId', async (c) => {
+app.patch('/:projectId/stages/:stageId', zValidator('json', updateStageSchema), async (c) => {
     const { projectId, stageId } = c.req.param()
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
+
+    const user = c.get('user')
+    const userId = user.id
+    const body = c.req.valid('json')
     const { name, color, isFinal } = body
 
     try {
@@ -205,7 +240,9 @@ app.patch('/:projectId/stages/:stageId', async (c) => {
 // =============================================================================
 app.delete('/:projectId/stages/:stageId', async (c) => {
     const { projectId, stageId } = c.req.param()
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
+
+    const user = c.get('user')
+    const userId = user.id
 
     try {
         // Get teamId from project
@@ -246,15 +283,15 @@ app.delete('/:projectId/stages/:stageId', async (c) => {
 // =============================================================================
 // POST /api/projects/:projectId/stages/reorder - Reorder stages (requires stages.reorder)
 // =============================================================================
-app.post('/:projectId/stages/reorder', async (c) => {
+app.post('/:projectId/stages/reorder', zValidator('json', reorderStagesSchema), async (c) => {
     const { projectId } = c.req.param()
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
-    const { stageIds } = body // Array of stage IDs in new order
 
-    if (!stageIds || !Array.isArray(stageIds)) {
-        return c.json({ success: false, error: 'stageIds array is required' }, 400)
-    }
+    const user = c.get('user')
+    const userId = user.id
+    const body = c.req.valid('json')
+    const { stageIds } = body
+
+    // if (!stageIds || !Array.isArray(stageIds)) { ... } -> schema
 
     try {
         // Get teamId from project
@@ -303,15 +340,13 @@ app.post('/:projectId/stages/reorder', async (c) => {
 // =============================================================================
 // POST /api/projects/:projectId/stages/import - Import stage from template
 // =============================================================================
-app.post('/:projectId/stages/import', async (c) => {
+app.post('/:projectId/stages/import', zValidator('json', importStageSchema), async (c) => {
     const { projectId } = c.req.param()
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
-    const { templateStageId } = body
 
-    if (!templateStageId) {
-        return c.json({ success: false, error: 'templateStageId is required' }, 400)
-    }
+    const user = c.get('user')
+    const userId = user.id
+    const body = c.req.valid('json')
+    const { templateStageId } = body
 
     try {
         // Get teamId from project
@@ -368,15 +403,13 @@ app.post('/:projectId/stages/import', async (c) => {
 // =============================================================================
 // POST /api/projects/:projectId/stages/init-from-template - Initialize stages from template
 // =============================================================================
-app.post('/:projectId/stages/init-from-template', async (c) => {
+app.post('/:projectId/stages/init-from-template', zValidator('json', initStagesSchema), async (c) => {
     const { projectId } = c.req.param()
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
-    const { templateSlug } = body
 
-    if (!templateSlug) {
-        return c.json({ success: false, error: 'templateSlug is required' }, 400)
-    }
+    const user = c.get('user')
+    const userId = user.id
+    const body = c.req.valid('json')
+    const { templateSlug } = body
 
     try {
         // Get teamId from project

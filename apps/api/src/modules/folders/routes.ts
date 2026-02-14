@@ -7,18 +7,18 @@ import { folders } from '../../db/schema/folders'
 import { workspaceMembers } from '../../db/schema/workspaces'
 import { authMiddleware } from '@/middleware/auth'
 
-import { auth } from '../../lib/auth'
+import { type Auth } from '../../lib/auth'
 import { triggerWebhook } from '../webhooks/trigger'
 import type { WorkspaceRole } from '../../lib/permissions'
 
-type Env = {
-    Variables: {
-        user: typeof auth.$Infer.Session.user
-        session: typeof auth.$Infer.Session.session
-    }
-}
+// type Env removed
 
-const app = new Hono<Env>()
+const app = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
+
+const foldersQuerySchema = z.object({
+    workspaceId: z.string(),
+    parentId: z.string().optional(),
+})
 
 // Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -40,10 +40,9 @@ app.use('*', authMiddleware)
 // -----------------------------------------------------------------------------
 // GET /folders - List folders
 // -----------------------------------------------------------------------------
-app.get('/', async (c) => {
+app.get('/', zValidator('query', foldersQuerySchema), async (c) => {
     const user = c.get('user')
-    const workspaceId = c.req.query('workspaceId')
-    const parentId = c.req.query('parentId')
+    const { workspaceId, parentId } = c.req.valid('query')
 
     if (!workspaceId) {
         return c.json({ error: 'Workspace ID is required' }, 400)
@@ -95,8 +94,12 @@ app.get('/', async (c) => {
 // -----------------------------------------------------------------------------
 // POST /folders - Create folder
 // -----------------------------------------------------------------------------
+import { zSanitizedString } from '../../lib/zod-extensions'
+
+// ...
+
 const createSchema = z.object({
-    name: z.string().min(1),
+    name: zSanitizedString(),
     workspaceId: z.string(),
     parentId: z.string().optional().nullable(),
 })
@@ -104,6 +107,12 @@ const createSchema = z.object({
 app.post('/', zValidator('json', createSchema), async (c) => {
     const body = c.req.valid('json')
     const user = c.get('user')
+
+    // Check workspace membership status
+    const workspaceRole = await getUserWorkspaceRole(user.id, body.workspaceId)
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
 
     const [newFolder] = await db.insert(folders).values({
         name: body.name,
@@ -124,13 +133,26 @@ app.post('/', zValidator('json', createSchema), async (c) => {
 // PATCH /folders/:id - Rename / Move
 // -----------------------------------------------------------------------------
 const updateSchema = z.object({
-    name: z.string().optional(),
+    name: zSanitizedString().optional(),
     parentId: z.string().nullable().optional(),
 })
 
 app.patch('/:id', zValidator('json', updateSchema), async (c) => {
     const id = c.req.param('id')
+    const user = c.get('user')
     const body = c.req.valid('json')
+
+    const folder = await db.query.folders.findFirst({
+        where: eq(folders.id, id)
+    })
+
+    if (!folder) return c.json({ error: 'Folder not found' }, 404)
+
+    // Check workspace membership status
+    const workspaceRole = await getUserWorkspaceRole(user.id, folder.workspaceId)
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
 
     const [updated] = await db.update(folders)
         .set({
@@ -153,14 +175,18 @@ app.patch('/:id', zValidator('json', updateSchema), async (c) => {
 // -----------------------------------------------------------------------------
 app.delete('/:id', async (c) => {
     const id = c.req.param('id')
-
-    // Database cascade should handle subfolders and files if configured, 
-    // BUT files.r2Key deletion needs handling.
-    // For MVP, simplistic delete. 
-    // Ideally: Use a recursive query to find all file keys to delete from R2, then DB delete.
+    const user = c.get('user')
 
     // Get folder for workspaceId before delete
     const [folder] = await db.select().from(folders).where(eq(folders.id, id)).limit(1)
+
+    if (!folder) return c.json({ success: true })
+
+    // Check workspace membership status
+    const workspaceRole = await getUserWorkspaceRole(user.id, folder.workspaceId)
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
 
     await db.delete(folders).where(eq(folders.id, id))
 

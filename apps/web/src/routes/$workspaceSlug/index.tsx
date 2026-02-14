@@ -233,6 +233,7 @@ function DashboardHome() {
               ))}
               {events.length < 4 && (
                 <AddTaskCard
+                  key="add-meeting"
                   label={t('dashboard.addMeeting')}
                   onClick={() => setIsEventPanelOpen(true)}
                 />
@@ -244,6 +245,7 @@ function DashboardHome() {
                 <p className="text-gray-500 text-sm">{t('dashboard.noMeetings')}</p>
               </div>
               <AddTaskCard
+                key="add-meeting-empty"
                 label={t('dashboard.addMeeting')}
                 onClick={() => setIsEventPanelOpen(true)}
               />
