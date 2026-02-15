@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { signIn, authClient } from '@/lib/auth'
+import { signIn, authClient, emailOtp } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LanguageSwitcher } from '@/components/language-switcher'
+import { DashboardMockup } from '@/components/auth/DashboardMockup'
 
 export const Route = createFileRoute('/login')({
     component: LoginPage,
@@ -26,6 +27,9 @@ function LoginPage() {
     const [isTwoFactor, setIsTwoFactor] = useState(false)
     const [twoFactorCode, setTwoFactorCode] = useState('')
 
+    // Email Verification State
+    const [isEmailVerification, setIsEmailVerification] = useState(false)
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
@@ -44,7 +48,16 @@ function LoginPage() {
                 // Check for 2FA requirement in error
                 if (result.error.message?.includes("2FA") ||
                     (result.error as any).code === "TWO_FACTOR_REQUIRED" ||
+                    (result.error as any).code === "EMAIL_NOT_VERIFIED" ||
                     result.error.status === 403) {
+
+                    // Handle Email Not Verified FIRST
+                    if ((result.error as any).code === "EMAIL_NOT_VERIFIED" || result.error.message === "Email not verified") {
+                        setIsEmailVerification(true)
+                        setError('')
+                        return
+                    }
+
                     if (result.error.message === "Two factor authentication required" || result.error.status === 403) {
                         setIsTwoFactor(true)
                         setError('')
@@ -87,6 +100,12 @@ function LoginPage() {
                 navigate({ to: '/dashboard' })
             }
         } catch (err) {
+            // Catch explicit EMAIL_NOT_VERIFIED if thrown
+            if ((err as any)?.code === "EMAIL_NOT_VERIFIED" || (err as any)?.message === "Email not verified") {
+                setIsEmailVerification(true)
+                setError('')
+                return
+            }
             setError(t('auth.error.default'))
         } finally {
             setLoading(false)
@@ -110,6 +129,55 @@ function LoginPage() {
             }
         } catch (err: any) {
             setError(err.message)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const [otp, setOtp] = useState('')
+
+    const handleVerifyEmail = async () => {
+        setLoading(true)
+        try {
+            const res = await emailOtp.verifyEmail({
+                email,
+                otp
+            })
+
+            if (res.error) {
+                setError(res.error.message || t('auth.error.default'))
+            } else {
+                // If verification successful, try to login again or redirect
+                setError('')
+                setIsEmailVerification(false)
+                // Optionally auto-login if token is valid, but usually better to let them login again or continue session
+                // For better-auth, verifyEmail might establish session? Check docs/implementation.
+                // Assuming it might not auto-login, we could re-trigger handleSubmit or just let user login.
+                // Let's try to just navigate or reload.
+                // Re-attempt login logic:
+                handleSubmit({ preventDefault: () => { } } as React.FormEvent)
+            }
+        } catch (err: any) {
+            setError(err.message || t('auth.error.default'))
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleResendVerification = async () => {
+        setLoading(true)
+        try {
+            await emailOtp.sendVerificationOtp({
+                email,
+                type: 'email-verification'
+            })
+            // Using a simple alert or toast if available. For now just set error to success message (or use error state with green color logic, but clearer to just use error field for feedback)
+            // Or better, just show a success text.
+            setError(t('auth.resentVerification'))
+            // Clear error after 3s
+            setTimeout(() => setError(''), 3000)
+        } catch (err) {
+            setError(t('auth.error.default'))
         } finally {
             setLoading(false)
         }
@@ -150,17 +218,73 @@ function LoginPage() {
                             <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-8" />
                         </h1>
                         <p className="mt-2 text-gray-400">
-                            {isTwoFactor ? t('auth.title2FA') : t('auth.title')}
+                            {isTwoFactor ? t('auth.title2FA') : isEmailVerification ? t('auth.verifyEmailTitle') : t('auth.title')}
                         </p>
                     </div>
 
                     {error && (
-                        <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-500">
+                        <div className={`mb-4 rounded-lg p-3 text-sm ${error === t('auth.resentVerification') ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                             {error}
                         </div>
                     )}
 
-                    {isTwoFactor ? (
+                    {isEmailVerification ? (
+                        <div className="space-y-6">
+                            <div className="flex justify-center mb-6">
+                                <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                    <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <div className="text-center space-y-2">
+                                <h3 className="text-xl font-semibold text-white">{t('auth.verifyEmailTitle')}</h3>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    {t('auth.verifyEmailDescCode')}
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="otp" className="text-gray-400 text-sm">{t('auth.enterCode')}</Label>
+                                    <Input
+                                        id="otp"
+                                        type="text"
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none text-center tracking-widest text-xl"
+                                        placeholder={t('auth.codePlaceholder')}
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <Button
+                                    onClick={handleVerifyEmail}
+                                    disabled={loading || otp.length !== 6}
+                                    className="w-full bg-amber-500 py-6 text-black font-medium hover:bg-amber-400 rounded-full"
+                                >
+                                    {loading ? t('auth.verifying') : t('auth.verify')}
+                                </Button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleResendVerification}
+                                    className="w-full text-sm text-gray-400 hover:text-white"
+                                >
+                                    {t('auth.resendVerification')}
+                                </button>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsEmailVerification(false)}
+                                className="w-full text-sm text-gray-500 hover:text-white"
+                            >
+                                {t('auth.backToLogin')}
+                            </button>
+                        </div>
+                    ) : isTwoFactor ? (
                         <form onSubmit={handle2FAVerify} className="space-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="2fa" className="text-gray-400 text-sm">{t('auth.code2FA')}</Label>
@@ -332,13 +456,10 @@ function LoginPage() {
                         {t('auth.marketingDesc')}
                     </p>
 
-                    {/* App Preview Image Placeholder */}
-                    <div className="mt-12 rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-8 border border-gray-800">
-                        <div className="aspect-video rounded-xl bg-[#0a0a0f] flex items-center justify-center border border-gray-800">
-                            <div className="text-center">
-                                <div className="text-6xl mb-4">📊</div>
-                                <p className="text-gray-500">{t('auth.dashboardPreview')}</p>
-                            </div>
+                    {/* App Preview - Mockup */}
+                    <div className="mt-12 w-full h-[300px] overflow-hidden">
+                        <div className="w-[200%] origin-top-left transform scale-50">
+                            <DashboardMockup />
                         </div>
                     </div>
                 </div>

@@ -4,6 +4,8 @@ import { emailOtp } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useTranslation } from 'react-i18next'
+import { DashboardMockup } from '@/components/auth/DashboardMockup'
 
 export const Route = createFileRoute('/reset-password')({
   component: ResetPasswordPage,
@@ -13,6 +15,7 @@ export const Route = createFileRoute('/reset-password')({
 })
 
 function ResetPasswordPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { email: initialEmail } = Route.useSearch()
 
@@ -29,17 +32,17 @@ function ResetPasswordPage() {
     setError('')
 
     if (password !== confirmPassword) {
-      setError('Hasła nie są identyczne')
+      setError(t('auth.resetPassword.errorMismatch'))
       return
     }
 
     if (password.length < 8) {
-      setError('Hasło musi mieć minimum 8 znaków')
+      setError(t('auth.resetPassword.errorLength'))
       return
     }
 
     if (otp.length !== 6) {
-      setError('Kod musi mieć 6 cyfr')
+      setError(t('auth.resetPassword.errorCode'))
       return
     }
 
@@ -53,7 +56,7 @@ function ResetPasswordPage() {
       })
 
       if (result.error) {
-        setError(result.error.message || 'Nie udało się zresetować hasła')
+        setError(result.error.message || t('auth.resetPassword.errorDefault'))
       } else {
         setSuccess(true)
         setTimeout(() => {
@@ -61,7 +64,7 @@ function ResetPasswordPage() {
         }, 3000)
       }
     } catch (err) {
-      setError('Wystąpił nieoczekiwany błąd')
+      setError(t('auth.resetPassword.errorDefault'))
     } finally {
       setLoading(false)
     }
@@ -77,15 +80,15 @@ function ResetPasswordPage() {
             <h1 className="text-3xl font-bold text-white">
               <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-8" />
             </h1>
-            <p className="mt-2 text-gray-400">Ustaw nowe hasło</p>
+            <p className="mt-2 text-gray-400">{t('auth.resetPassword.newPasswordTitle')}</p>
           </div>
 
           {success ? (
             <div className="rounded-lg bg-green-500/10 p-6 text-center">
               <div className="text-4xl mb-4">🎉</div>
-              <h2 className="text-xl font-semibold text-white mb-2">Hasło zmienione!</h2>
+              <h2 className="text-xl font-semibold text-white mb-2">{t('auth.resetPassword.successResetTitle')}</h2>
               <p className="text-gray-400">
-                Możesz teraz zalogować się nowym hasłem. Za chwilę zostaniesz przekierowany...
+                {t('auth.resetPassword.successResetDesc')}
               </p>
             </div>
           ) : (
@@ -114,7 +117,7 @@ function ResetPasswordPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="otp" className="text-gray-400 text-sm">Kod z emaila (6 cyfr)</Label>
+                  <Label htmlFor="otp" className="text-gray-400 text-sm">{t('auth.resetPassword.codeLabel')}</Label>
                   <Input
                     id="otp"
                     type="text"
@@ -128,7 +131,7 @@ function ResetPasswordPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-400 text-sm">Nowe hasło</Label>
+                  <Label htmlFor="password" className="text-gray-400 text-sm">{t('auth.resetPassword.newPasswordLabel')}</Label>
                   <div className="relative">
                     <Input
                       id="password"
@@ -136,7 +139,7 @@ function ResetPasswordPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
-                      placeholder="Minimum 8 znaków"
+                      placeholder={t('auth.resetPassword.tip1')}
                       required
                       minLength={8}
                     />
@@ -145,7 +148,7 @@ function ResetPasswordPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-gray-400 text-sm">Potwierdź hasło</Label>
+                  <Label htmlFor="confirmPassword" className="text-gray-400 text-sm">{t('auth.resetPassword.confirmPasswordLabel')}</Label>
                   <div className="relative">
                     <Input
                       id="confirmPassword"
@@ -153,7 +156,7 @@ function ResetPasswordPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
-                      placeholder="Powtórz hasło"
+                      placeholder={t('auth.resetPassword.confirmPasswordLabel')}
                       required
                       minLength={8}
                     />
@@ -166,19 +169,19 @@ function ResetPasswordPage() {
                   disabled={loading}
                   className="w-full bg-amber-500 py-6 text-black font-medium hover:bg-amber-400 rounded-full"
                 >
-                  {loading ? 'Resetowanie...' : 'Zresetuj hasło'}
+                  {loading ? t('auth.resetPassword.resetting') : t('auth.resetPassword.resetButton')}
                 </Button>
 
                 <div className="mt-6 text-center">
                   <Link to="/forgot-password" className="text-sm text-amber-500 hover:underline">
-                    Nie dostałeś kodu? Wyślij ponownie
+                    {t('auth.resetPassword.resendCode')}
                   </Link>
                 </div>
 
                 <p className="mt-4 text-center text-gray-400">
-                  Pamiętasz hasło?{' '}
+                  {t('auth.resetPassword.rememberPassword')}{' '}
                   <Link to="/login" className="text-amber-500 hover:underline font-medium">
-                    Zaloguj się
+                    {t('auth.resetPassword.backToLogin')}
                   </Link>
                 </p>
               </form>
@@ -189,23 +192,30 @@ function ResetPasswordPage() {
 
       {/* Right side - Marketing */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 bg-[#0d0d12]">
-        <div className="max-w-lg">
+        <div className="max-w-lg mb-8">
           <h2 className="text-5xl font-bold text-white leading-tight">
-            Prawie gotowe!
+            {t('auth.resetPassword.newPasswordSubtitle')}
           </h2>
           <p className="mt-6 text-lg text-gray-400">
-            Wpisz kod który otrzymałeś na email i ustaw nowe, bezpieczne hasło.
+            {t('auth.resetPassword.newPasswordDesc')}
           </p>
 
           {/* Tips */}
           <div className="mt-12 rounded-xl bg-gray-800/50 p-6 border border-gray-700">
-            <h3 className="text-white font-semibold mb-4">💡 Wskazówki dot. hasła</h3>
+            <h3 className="text-white font-semibold mb-4">💡 {t('auth.resetPassword.tipsTitle')}</h3>
             <ul className="space-y-2 text-gray-400 text-sm">
-              <li>✓ Minimum 8 znaków</li>
-              <li>✓ Użyj kombinacji liter, cyfr i symboli</li>
-              <li>✓ Unikaj oczywistych słów</li>
-              <li>✓ Nie używaj tego samego hasła w innych miejscach</li>
+              <li>✓ {t('auth.resetPassword.tip1')}</li>
+              <li>✓ {t('auth.resetPassword.tip2')}</li>
+              <li>✓ {t('auth.resetPassword.tip3')}</li>
+              <li>✓ {t('auth.resetPassword.tip4')}</li>
             </ul>
+          </div>
+        </div>
+
+        {/* App Preview - Mockup */}
+        <div className="mt-12 w-full h-[300px] overflow-hidden">
+          <div className="w-[200%] origin-top-left transform scale-50">
+            <DashboardMockup />
           </div>
         </div>
       </div>

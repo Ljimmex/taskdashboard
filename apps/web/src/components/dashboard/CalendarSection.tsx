@@ -20,6 +20,7 @@ import { DayEventListPanel, type CalendarEvent } from '@/components/features/cal
 import { ViewEventPanel } from '@/components/features/calendar/ViewEventPanel'
 import { EditEventPanel } from '@/components/features/calendar/EditEventPanel'
 import { TaskDetailsPanel } from '@/components/features/tasks/panels/TaskDetailsPanel'
+import { useSession } from '@/lib/auth'
 
 // Enum mirroring backend
 export enum CalendarEventType {
@@ -70,6 +71,8 @@ export function CalendarSection() {
     const dateLocale = i18n.language === 'pl' ? pl : enUS
     const params = useParams({ strict: false }) as any
     const workspaceSlug = params.workspaceSlug
+    const { data: session } = useSession()
+    const [userRole, setUserRole] = useState<string | null>(null)
 
     const [currentDate, setCurrentDate] = useState(new Date())
     const [events, setEvents] = useState<Event[]>([])
@@ -112,6 +115,22 @@ export function CalendarSection() {
     useEffect(() => {
         fetchEvents()
     }, [fetchEvents, currentDate])
+
+    useEffect(() => {
+        const fetchWorkspaceRole = async () => {
+            if (!workspaceSlug || !session?.user?.id) return
+            try {
+                const data = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`, {
+                    headers: { 'x-user-id': session?.user?.id || '' }
+                })
+                setUserRole(data?.userRole || null)
+            } catch {
+                setUserRole(null)
+            }
+        }
+
+        fetchWorkspaceRole()
+    }, [workspaceSlug, session?.user?.id])
 
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(monthStart)
@@ -196,6 +215,11 @@ export function CalendarSection() {
         .filter(e => isSameDay(parseISO(e.startAt), day))
         .filter(e => e.type ? selectedTypes.includes(e.type) : true)
 
+    const canCreateTeamEvents = userRole ? !['member', 'guest'].includes(userRole) : true
+    const canCreatePersonalEvents = userRole === 'member'
+    const canCreateCalendarEvents = canCreateTeamEvents || canCreatePersonalEvents
+
+
     return (
         <div className="flex flex-col h-full w-full bg-[#12121a] rounded-2xl p-6 font-sans relative overflow-hidden">
 
@@ -204,7 +228,7 @@ export function CalendarSection() {
                 {/* Lewa strona: Ikonka + Miesiąc/Rok */}
                 <div className="flex items-center gap-3 mb-4 md:mb-0">
                     <h2 className="text-lg font-semibold text-white tracking-wide capitalize">
-                        {format(currentDate, 'MMMM yyyy', { locale: dateLocale })}
+                        {format(currentDate, 'LLLL yyyy', { locale: dateLocale })}
                     </h2>
                 </div>
 
@@ -413,14 +437,16 @@ export function CalendarSection() {
                                         </div>
 
                                         {/* Add Event Button (visible on hover) - Fixed positioning to avoid overflow */}
-                                        <div className="mt-1 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                            <button
-                                                onClick={() => setIsEventPanelOpen(true)}
-                                                className="w-full py-1 text-[10px] text-gray-500 border border-white/10 border-dashed rounded bg-white/5 hover:bg-white/10 hover:text-gray-300 transition-all flex items-center justify-center gap-1"
-                                            >
-                                                <span>+</span> {t('dashboard.addEvent')}
-                                            </button>
-                                        </div>
+                                        {canCreateCalendarEvents && (
+                                            <div className="mt-1 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                                <button
+                                                    onClick={() => setIsEventPanelOpen(true)}
+                                                    className="w-full py-1 text-[10px] text-gray-500 border border-white/10 border-dashed rounded bg-white/5 hover:bg-white/10 hover:text-gray-300 transition-all flex items-center justify-center gap-1"
+                                                >
+                                                    <span>+</span> {t('dashboard.addEvent')}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -435,6 +461,7 @@ export function CalendarSection() {
                 onClose={() => setIsEventPanelOpen(false)}
                 workspaceSlug={workspaceSlug}
                 onCreate={fetchEvents}
+                canCreateEvents={canCreateTeamEvents}
             />
 
             {/* Day Event List Panel */}

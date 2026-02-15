@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CalendarEventType } from './CalendarView'
 import { X, MapPin, Building, Monitor, Link as LinkIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -15,9 +16,11 @@ interface EditEventPanelProps {
     onClose: () => void
     workspaceSlug?: string
     onUpdated?: () => void
+    canCreateTeamEvents?: boolean
 }
 
-export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdated }: EditEventPanelProps) {
+export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdated, canCreateTeamEvents = true }: EditEventPanelProps) {
+    const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
 
     // Form State
@@ -69,10 +72,12 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
 
     const handleSave = async () => {
         if (!event || !title.trim()) return
-        if (teamIds.length === 0) {
-            alert('Please select at least one team')
-            return
-        }
+
+        // Validations
+        // If it's a team event (has teams), it's fine.
+        // If it has no teams, it's personal.
+        // We don't enforce team selection anymore since personal events exist.
+
 
         setLoading(true)
         try {
@@ -96,7 +101,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
             onClose()
         } catch (error) {
             console.error('Error updating event:', error)
-            alert('Failed to update event')
+            alert(t('calendar.panels.edit_event.alerts.update_error'))
         } finally {
             setLoading(false)
         }
@@ -123,8 +128,8 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                             ✏️
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Edit Event</h2>
-                            <p className="text-sm text-gray-500">Update event details</p>
+                            <h2 className="text-lg font-semibold text-white">{t('calendar.panels.edit_event.title')}</h2>
+                            <p className="text-sm text-gray-500">{t('calendar.panels.edit_event.subtitle')}</p>
                         </div>
                     </div>
                     <button
@@ -144,7 +149,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Event title..."
+                            placeholder={t('calendar.placeholders.title_event')}
                             className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
                         />
                     </div>
@@ -154,7 +159,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Add description..."
+                            placeholder={t('calendar.placeholders.description')}
                             rows={3}
                             className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors resize-none"
                         />
@@ -164,19 +169,19 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <label className="block text-sm font-medium text-gray-300">
-                                Date & Time
+                                {t('calendar.fields.date_time')}
                             </label>
                             {eventType === CalendarEventType.EVENT && (
                                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsAllDay(!isAllDay)}>
                                     <CustomCheckbox checked={isAllDay} />
-                                    <span className="text-sm text-gray-400">All Day</span>
+                                    <span className="text-sm text-gray-400">{t('calendar.fields.all_day')}</span>
                                 </div>
                             )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <span className="text-xs text-gray-500 font-bold uppercase ml-1">Starts</span>
+                                <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.fields.starts')}</span>
                                 <DueDatePicker
                                     value={startDate}
                                     onChange={(date) => {
@@ -186,7 +191,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                             setEndDate(new Date(newStart.getTime() + 60 * 60 * 1000).toISOString())
                                         }
                                     }}
-                                    placeholder="Start date"
+                                    placeholder={t('calendar.placeholders.start_date')}
                                     showTime={!isAllDay && eventType === CalendarEventType.EVENT}
                                     className="w-full"
                                     triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
@@ -195,11 +200,11 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
 
                             {eventType !== CalendarEventType.REMINDER && (
                                 <div className="space-y-1">
-                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">Ends</span>
+                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.fields.ends')}</span>
                                     <DueDatePicker
                                         value={endDate}
                                         onChange={(date) => setEndDate(date || '')}
-                                        placeholder="End date"
+                                        placeholder={t('calendar.placeholders.end_date')}
                                         showTime={!isAllDay}
                                         className="w-full"
                                         triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
@@ -209,71 +214,73 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                         </div>
                     </div>
 
-                    {/* Team Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Teams <span className="text-red-400">*</span>
-                        </label>
-                        <div className="relative group">
-                            <div className={cn(
-                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
-                                teamIds.length === 0 && "text-gray-500"
-                            )}>
-                                <Select value="" onValueChange={(val) => {
-                                    if (!teamIds.includes(val)) {
-                                        setTeamIds([...teamIds, val])
-                                    }
-                                }}>
-                                    <SelectTrigger className="w-full h-full border-none bg-transparent p-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0 focus:outline-none shadow-none text-sm font-normal">
-                                        <div className="flex flex-wrap gap-2 w-full">
-                                            {teamIds.length > 0 ? (
-                                                teamIds.map(id => {
-                                                    const team = teams.find(t => t.id === id)
-                                                    if (!team) return null
-                                                    return (
-                                                        <div key={id} onPointerDown={(e) => {
-                                                            e.preventDefault()
-                                                            e.stopPropagation()
-                                                            setTeamIds(teamIds.filter(t => t !== id))
-                                                        }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
-                                                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.color || '#666' }} />
-                                                            {team.name}
-                                                            <X size={12} className="ml-1 text-gray-500 group-hover/tag:text-red-400 transition-colors" />
-                                                        </div>
-                                                    )
-                                                })
-                                            ) : (
-                                                <span className="text-gray-500 py-1">Select teams...</span>
-                                            )}
-                                        </div>
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
-                                        {teams.map((team) => (
-                                            <SelectItem
-                                                key={team.id}
-                                                value={team.id}
-                                                className={cn(
-                                                    "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
-                                                    teamIds.includes(team.id) && "opacity-50 pointer-events-none"
+                    {/* Team Selection - Only if allowed */}
+                    {canCreateTeamEvents && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                {t('calendar.fields.teams')} <span className="text-red-400">*</span>
+                            </label>
+                            <div className="relative group">
+                                <div className={cn(
+                                    "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                    teamIds.length === 0 && "text-gray-500"
+                                )}>
+                                    <Select value="" onValueChange={(val) => {
+                                        if (!teamIds.includes(val)) {
+                                            setTeamIds([...teamIds, val])
+                                        }
+                                    }}>
+                                        <SelectTrigger className="w-full h-full border-none bg-transparent p-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0 focus:outline-none shadow-none text-sm font-normal">
+                                            <div className="flex flex-wrap gap-2 w-full">
+                                                {teamIds.length > 0 ? (
+                                                    teamIds.map(id => {
+                                                        const team = teams.find(t => t.id === id)
+                                                        if (!team) return null
+                                                        return (
+                                                            <div key={id} onPointerDown={(e) => {
+                                                                e.preventDefault()
+                                                                e.stopPropagation()
+                                                                setTeamIds(teamIds.filter(t => t !== id))
+                                                            }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
+                                                                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.color || '#666' }} />
+                                                                {team.name}
+                                                                <X size={12} className="ml-1 text-gray-500 group-hover/tag:text-red-400 transition-colors" />
+                                                            </div>
+                                                        )
+                                                    })
+                                                ) : (
+                                                    <span className="text-gray-500 py-1">{t('calendar.placeholders.select_teams')}</span>
                                                 )}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    {team.color && (
-                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }} />
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
+                                            {teams.map((team) => (
+                                                <SelectItem
+                                                    key={team.id}
+                                                    value={team.id}
+                                                    className={cn(
+                                                        "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
+                                                        teamIds.includes(team.id) && "opacity-50 pointer-events-none"
                                                     )}
-                                                    {team.name}
-                                                    {teamIds.includes(team.id) && <CheckCircle2 className="w-3 h-3 text-amber-500 ml-auto" />}
-                                                </div>
-                                            </SelectItem>
-                                        ))}
-                                        {teams.length === 0 && (
-                                            <div className="p-3 text-xs text-gray-500 text-center">No teams found</div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        {team.color && (
+                                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }} />
+                                                        )}
+                                                        {team.name}
+                                                        {teamIds.includes(team.id) && <CheckCircle2 className="w-3 h-3 text-amber-500 ml-auto" />}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                            {teams.length === 0 && (
+                                                <div className="p-3 text-xs text-gray-500 text-center">{t('calendar.placeholders.no_teams_found')}</div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Meeting Type & Location */}
                     {(eventType === CalendarEventType.EVENT || eventType === CalendarEventType.MEETING) && (
@@ -292,7 +299,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                     )}
                                 >
                                     <Building className="w-3.5 h-3.5" />
-                                    In Person
+                                    {t('calendar.actions.in_person')}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -307,13 +314,13 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                     )}
                                 >
                                     <Monitor className="w-3.5 h-3.5" />
-                                    Virtual
+                                    {t('calendar.actions.virtual')}
                                 </button>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    {meetingType === 'physical' ? 'Location' : 'Meeting Link'}
+                                    {meetingType === 'physical' ? t('calendar.fields.location') : t('calendar.fields.meeting_link')}
                                 </label>
                                 <div className="relative group focus-within:ring-2 ring-amber-500/30 rounded-xl transition-all">
                                     {meetingType === 'physical' ? (
@@ -325,7 +332,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                         type="text"
                                         value={meetingType === 'physical' ? location : meetingLink}
                                         onChange={(e) => meetingType === 'physical' ? setLocation(e.target.value) : setMeetingLink(e.target.value)}
-                                        placeholder={meetingType === 'physical' ? "Add location address..." : "Add meeting URL (e.g. Zoom, Meet)..."}
+                                        placeholder={meetingType === 'physical' ? t('calendar.placeholders.add_location') : t('calendar.placeholders.add_meeting_url')}
                                         className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:bg-[#1f1f2e] transition-all"
                                     />
                                 </div>
@@ -334,23 +341,24 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                     )}
                 </div>
 
+
                 {/* Footer */}
                 <div className="p-6 border-t border-gray-800 flex gap-3 bg-[#12121a] rounded-b-2xl">
                     <button
                         onClick={onClose}
                         className="flex-1 px-4 py-3 rounded-xl border border-gray-800 text-gray-300 font-medium hover:bg-gray-800 hover:text-white transition-colors"
                     >
-                        Cancel
+                        {t('calendar.actions.cancel')}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={loading}
                         className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
                     >
-                        {loading ? 'Saving...' : 'Save Changes'}
+                        {loading ? t('calendar.actions.saving') : t('calendar.actions.save')}
                     </button>
                 </div>
-            </div>
+            </div >
         </>
     )
 }

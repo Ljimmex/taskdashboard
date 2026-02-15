@@ -77,6 +77,7 @@ export interface RolePermissions {
     }
     calendar?: {
         createEvents?: boolean
+        createReminders?: boolean
         manageEvents?: boolean
         view?: boolean
     }
@@ -172,6 +173,7 @@ export const SYSTEM_ROLES = {
             },
             calendar: {
                 createEvents: true,
+                createReminders: true,
                 manageEvents: true,
                 view: true,
             },
@@ -259,6 +261,7 @@ export const SYSTEM_ROLES = {
             },
             calendar: {
                 createEvents: true,
+                createReminders: true,
                 manageEvents: true,
                 view: true,
             },
@@ -346,6 +349,7 @@ export const SYSTEM_ROLES = {
             },
             calendar: {
                 createEvents: true,
+                createReminders: true,
                 manageEvents: true,
                 view: true,
             },
@@ -433,6 +437,7 @@ export const SYSTEM_ROLES = {
             },
             calendar: {
                 createEvents: true,
+                createReminders: true,
                 manageEvents: true,
                 view: true,
             },
@@ -520,6 +525,7 @@ export const SYSTEM_ROLES = {
             },
             calendar: {
                 createEvents: false,
+                createReminders: true,
                 manageEvents: false,
                 view: true,
             },
@@ -605,6 +611,7 @@ export const SYSTEM_ROLES = {
             },
             calendar: {
                 createEvents: true,
+                createReminders: true,
                 manageEvents: true,
                 view: true,
             },
@@ -686,6 +693,7 @@ export const SYSTEM_ROLES = {
             },
             calendar: {
                 createEvents: true,
+                createReminders: true,
                 manageEvents: false,
                 view: true,
             },
@@ -767,6 +775,7 @@ export const SYSTEM_ROLES = {
             },
             calendar: {
                 createEvents: true,
+                createReminders: true,
                 manageEvents: false,
                 view: true,
             },

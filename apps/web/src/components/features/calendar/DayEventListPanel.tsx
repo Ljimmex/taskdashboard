@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Calendar, Clock, MapPin, Video } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { CalendarEventType } from './CalendarView'
@@ -17,6 +18,7 @@ export interface CalendarEvent {
     teamIds?: string[]
     createdBy?: string
     creator?: { id: string; name: string; image?: string }
+    assignees?: { id: string; name: string; image?: string }[]
 }
 
 interface DayEventListPanelProps {
@@ -37,13 +39,13 @@ function getTypeColor(type?: CalendarEventType) {
     }
 }
 
-function getTypeLabel(type?: CalendarEventType) {
+function getTypeLabel(type?: CalendarEventType, t: (key: string) => string = (k) => k) {
     switch (type) {
-        case CalendarEventType.EVENT: return 'Event'
-        case CalendarEventType.MEETING: return 'Meeting'
-        case CalendarEventType.TASK: return 'Task'
-        case CalendarEventType.REMINDER: return 'Reminder'
-        default: return 'Event'
+        case CalendarEventType.EVENT: return t('calendar.panels.types.event')
+        case CalendarEventType.MEETING: return t('calendar.panels.types.meeting')
+        case CalendarEventType.TASK: return t('calendar.panels.types.task')
+        case CalendarEventType.REMINDER: return t('calendar.panels.types.reminder')
+        default: return t('calendar.panels.types.event')
     }
 }
 
@@ -54,6 +56,7 @@ export function DayEventListPanel({
     onClose,
     onEventClick,
 }: DayEventListPanelProps) {
+    const { t } = useTranslation()
     const panelRef = useRef<HTMLDivElement>(null)
 
     // Close on escape
@@ -108,7 +111,7 @@ export function DayEventListPanel({
                             <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
                                 <Calendar size={20} className="text-amber-500" />
                             </div>
-                            <h2 className="text-xl font-bold text-white">Daily Events</h2>
+                            <h2 className="text-xl font-bold text-white">{t('calendar.panels.day_list.title')}</h2>
                         </div>
                         <button
                             onClick={onClose}
@@ -120,7 +123,7 @@ export function DayEventListPanel({
                     <p className="text-sm text-gray-400">{formattedDate}</p>
                     <div className="mt-4 flex items-center gap-2">
                         <span className="px-2.5 py-1 rounded-lg bg-gray-800 text-xs font-medium text-gray-300">
-                            {events.length} {events.length === 1 ? 'Event' : 'Events'}
+                            {t('calendar.panels.day_list.count', { count: events.length })}
                         </span>
                     </div>
                 </div>
@@ -129,7 +132,7 @@ export function DayEventListPanel({
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {events.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm">
-                            <p>No events scheduled for this day.</p>
+                            <p>{t('calendar.panels.day_list.no_events')}</p>
                         </div>
                     ) : (
                         events.map((event) => (
@@ -148,7 +151,7 @@ export function DayEventListPanel({
                                                     event.type === CalendarEventType.REMINDER ? 'bg-purple-500/10 text-purple-400' :
                                                         'bg-amber-500/10 text-amber-400'
                                                 }`}>
-                                                {getTypeLabel(event.type)}
+                                                {getTypeLabel(event.type, t)}
                                             </span>
                                         </div>
                                         <h3 className="text-sm font-medium text-white group-hover:text-amber-200 transition-colors truncate">
@@ -167,7 +170,7 @@ export function DayEventListPanel({
                                                 </div>
                                             )}
                                             {event.isAllDay && (
-                                                <span className="text-[11px] text-amber-500/80">All day</span>
+                                                <span className="text-[11px] text-amber-500/80">{t('calendar.fields.all_day')}</span>
                                             )}
                                             {event.location && (
                                                 <div className="flex items-center gap-1">

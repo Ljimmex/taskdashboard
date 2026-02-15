@@ -14,6 +14,14 @@
         "code2FA": "2FA code from app",
         "verify2FA": "Verify",
         "backToLogin": "Back to login",
+        "verifyEmailTitle": "Verify your email",
+        "verifyEmailDesc": "We sent a verification link to your email address. Check your inbox and click the link to activate your account.",
+        "resendVerification": "Resend verification email",
+        "resentVerification": "Resent successfully!",
+        "verifyEmailDescCode": "Enter the verification code sent to your email address.",
+        "enterCode": "Enter code",
+        "codePlaceholder": "123456",
+        "verify": "Verify",
         "marketingTitle": "Designed For",
         "marketingTitleStrong": "Task",
         "marketingTitle2": "Management",
@@ -23,6 +31,43 @@
             "default": "An unexpected error occurred",
             "login": "Login error",
             "provider": "Login error via {{provider}}"
+        },
+        "resetPassword": {
+            "title": "Reset your password",
+            "subtitle": "Don't worry!",
+            "desc": "Resetting your password is easy. We'll send you a code via email and you'll set a new password in seconds.",
+            "step1": "Enter your email",
+            "step2": "Get code from email",
+            "step3": "Set new password",
+            "emailLabel": "Email",
+            "sendCode": "Send reset code",
+            "sending": "Sending...",
+            "backToLogin": "Log in",
+            "rememberPassword": "Remember password?",
+            "successTitle": "Code sent!",
+            "successDesc": "Check your mailbox. You will be redirected shortly...",
+            "errorDefault": "An unexpected error occurred",
+            "errorSend": "Failed to send code",
+            "descInput": "We will send you a 6-digit code to the email address provided, which you will use to reset your password.",
+            "newPasswordTitle": "Set new password",
+            "newPasswordSubtitle": "Almost done!",
+            "newPasswordDesc": "Enter the code you received via email and set a new, secure password.",
+            "codeLabel": "Code from email (6 digits)",
+            "newPasswordLabel": "New password",
+            "confirmPasswordLabel": "Confirm password",
+            "resetButton": "Reset password",
+            "resetting": "Resetting...",
+            "resendCode": "Didn't receive the code? Resend",
+            "successResetTitle": "Password changed!",
+            "successResetDesc": "You can now log in with your new password. You will be redirected shortly...",
+            "tipsTitle": "Password Tips",
+            "tip1": "Minimum 8 characters",
+            "tip2": "Use a mix of letters, numbers & symbols",
+            "tip3": "Avoid common words",
+            "tip4": "Don't reuse passwords",
+            "errorMismatch": "Passwords do not match",
+            "errorLength": "Password must be at least 8 characters",
+            "errorCode": "Code must be 6 digits"
         }
     },
     "common": {
@@ -34,6 +79,7 @@
         "error": "An error occurred",
         "saving": "Saving...",
         "uploading": "Uploading...",
+        "sending": "Sending...",
         "save_changes": "Save changes",
         "feature_coming_soon": "This feature is coming soon."
     },
@@ -64,6 +110,15 @@
         "noFiles": "No files uploaded yet",
         "overallProgress": "Overall Progress",
         "last7Days": "Last 7 days",
+        "myProjects": "My Projects",
+        "entireWorkspace": "Entire Workspace",
+        "report": "Report",
+        "allTime": "All time",
+        "lastYear": "Last year",
+        "lastMonth": "Last month",
+        "lastWeek": "Last week",
+        "last24h": "Last 24h",
+        "occupancyRate": "Occupancy rate {{count}}/{{total}}",
         "inProgress": "In Progress",
         "totalProjects": "Total Project",
         "upcoming": "Upcoming",
@@ -97,6 +152,145 @@
             "defaults": "Defaults",
             "integrations": "Integrations",
             "security": "Security"
+        }
+    },
+    "calendar": {
+        "scope": {
+            "label": "Scope",
+            "team": "Teams",
+            "personal": "Personal"
+        },
+        "fields": {
+            "teams": "Teams",
+            "members": "Members",
+            "date_time": "Date & Time",
+            "all_day": "All Day",
+            "starts": "Starts",
+            "ends": "Ends",
+            "repeat": "Repeat",
+            "until": "Until",
+            "location": "Location",
+            "meeting_link": "Meeting Link",
+            "created_by": "Created by"
+        },
+        "placeholders": {
+            "select_teams": "Select teams...",
+            "select_members": "Select members...",
+            "no_teams_found": "No teams found",
+            "no_members_found": "No members found",
+            "start_date": "Start date",
+            "end_date": "End date",
+            "add_location": "Add location address...",
+            "add_meeting_url": "Add meeting URL...",
+            "title_event": "Event title...",
+            "title_reminder": "Reminder title...",
+            "description": "Add description..."
+        },
+        "actions": {
+            "create": "Create Event",
+            "creating": "Creating...",
+            "add": "Add",
+            "add_event": "Add Event",
+            "set_reminder": "Set Reminder",
+            "cancel": "Cancel",
+            "save": "Save Changes",
+            "saving": "Saving...",
+            "in_person": "In Person",
+            "virtual": "Virtual",
+            "delete": "Delete",
+            "edit": "Edit",
+            "filter": "Filter",
+            "export": "Export",
+            "today": "Today",
+            "month": "Month",
+            "week": "Week",
+            "day": "Day",
+            "schedule_setting": "Schedule setting",
+            "view_options": "View Options",
+            "show_weekends": "Show weekends",
+            "start_of_week": "Start of week",
+            "monday": "Monday",
+            "sunday": "Sunday",
+            "clear_filters": "Clear All Filters",
+            "sync_calendar": "Sync with Calendar"
+        },
+        "types": {
+            "event": "Events",
+            "task": "Tasks",
+            "reminder": "Reminders",
+            "meeting": "Meetings"
+        },
+        "recurrence": {
+            "none": "Does not repeat",
+            "daily": "Daily",
+            "weekly": "Weekly",
+            "biweekly": "Bi-weekly",
+            "monthly": "Monthly",
+            "quarterly": "Quarterly",
+            "yearly": "Yearly",
+            "custom": "Custom",
+            "forever": "Forever"
+        },
+        "hints": {
+            "team_selection": "Selected event will appear on calendars of all chosen teams."
+        },
+        "panels": {
+            "view_event": {
+                "title": "Event Details",
+                "created_by": "Created by",
+                "delete_confirm": "Are you sure you want to delete this event?",
+                "delete_error": "Failed to delete event"
+            },
+            "edit_event": {
+                "title": "Edit Event",
+                "subtitle": "Update event details",
+                "alerts": {
+                    "select_team": "Please select at least one team",
+                    "update_error": "Failed to update event"
+                }
+            },
+            "add_event": {
+                "title_event": "Add New Event",
+                "title_reminder": "Add Reminder",
+                "subtitle_event": "Schedule a new event",
+                "subtitle_reminder": "Set a reminder"
+            },
+            "day_list": {
+                "title": "Daily Events",
+                "count_one": "{{count}} Event",
+                "count_other": "{{count}} Events",
+                "no_events": "No events scheduled for this day."
+            },
+            "common": {
+                "title_placeholder_event": "Event title",
+                "title_placeholder_reminder": "Reminder title",
+                "desc_placeholder": "Add description",
+                "date_time": "Date & Time",
+                "all_day": "All Day",
+                "location": "Location",
+                "alerts": {
+                    "select_team": "Select team",
+                    "select_member": "Select member"
+                }
+            },
+            "types": {
+                "event": "Event",
+                "meeting": "Meeting",
+                "reminder": "Reminder",
+                "task": "Task"
+            }
+        },
+        "export": {
+            "title": "Calendar Export",
+            "desc": "Export your workspace calendar to PDF or iCal format.",
+            "sync_title": "Sync with external apps",
+            "copy_link": "Copy Subscription Link",
+            "link_copied": "Link Copied!",
+            "sync_desc": "Synchronize your schedule with an external calendar – e.g. Google Calendar or Apple Calendar. After adding the link to your chosen calendar, events will update automatically. Keep in mind, however, that changes in the external calendar may be visible with a delay.",
+            "sync_instructions": "Sync Instructions",
+            "google_help": "Google Calendar Help",
+            "apple_iphone": "Apple Calendar (iPhone)",
+            "apple_mac": "Apple Calendar (Mac)"
         }
     },
     "register": {
@@ -771,6 +965,7 @@
             "photo_help": "Pick a photo up to 4MB.",
             "first_name": "First Name",
             "last_name": "Last Name",
+            "email": "Email",
             "job_title": "Job title",
             "job_title_placeholder": "e.g. Product Designer",
             "team_level": "Team Level",
@@ -821,6 +1016,8 @@
         "retry": "Retry"
     },
     "projects": {
+        "noProjectsFound": "No projects found",
+        "createFirstProject": "Create your first project",
         "gantt": {
             "task_name": "Task Name",
             "start_date": "Start Date",
@@ -956,6 +1153,21 @@
                 "archive": "Archive",
                 "delete": "Delete"
             }
+        },
+        "labels": {
+            "task_singular": "Task",
+            "task_plural": "Tasks",
+            "search": "Search labels...",
+            "create_new": "Create new label",
+            "no_results": "No labels found",
+            "create_header": "Create Label",
+            "name": "Name",
+            "color": "Color",
+            "preview": "Preview",
+            "add": "Create",
+            "cancel": "Cancel",
+            "placeholder": "e.g., Bug, Feature, Design",
+            "add_labels": "Add labels"
         },
         "datepicker": {
             "select_date": "Select date",

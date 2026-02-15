@@ -4,12 +4,15 @@ import { forgetPassword } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useTranslation } from 'react-i18next'
+import { DashboardMockup } from '@/components/auth/DashboardMockup'
 
 export const Route = createFileRoute('/forgot-password')({
     component: ForgotPasswordPage,
 })
 
 function ForgotPasswordPage() {
+    const { t } = useTranslation()
     const navigate = useNavigate()
     const [email, setEmail] = useState('')
     const [error, setError] = useState('')
@@ -27,7 +30,7 @@ function ForgotPasswordPage() {
             })
 
             if (result.error) {
-                setError(result.error.message || 'Nie udało się wysłać kodu')
+                setError(result.error.message || t('auth.error.send'))
             } else {
                 setSuccess(true)
                 setTimeout(() => {
@@ -38,7 +41,7 @@ function ForgotPasswordPage() {
                 }, 2000)
             }
         } catch (err) {
-            setError('Wystąpił nieoczekiwany błąd')
+            setError(t('auth.error.default'))
         } finally {
             setLoading(false)
         }
@@ -54,15 +57,15 @@ function ForgotPasswordPage() {
                         <h1 className="text-3xl font-bold text-white">
                             <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-8" />
                         </h1>
-                        <p className="mt-2 text-gray-400">Zresetuj swoje hasło</p>
+                        <p className="mt-2 text-gray-400">{t('auth.resetPassword.title')}</p>
                     </div>
 
                     {success ? (
                         <div className="rounded-lg bg-green-500/10 p-6 text-center">
                             <div className="text-4xl mb-4">✅</div>
-                            <h2 className="text-xl font-semibold text-white mb-2">Kod wysłany!</h2>
+                            <h2 className="text-xl font-semibold text-white mb-2">{t('auth.resetPassword.successTitle')}</h2>
                             <p className="text-gray-400">
-                                Sprawdź swoją skrzynkę pocztową. Za chwilę zostaniesz przekierowany...
+                                {t('auth.resetPassword.successDesc')}
                             </p>
                         </div>
                     ) : (
@@ -75,7 +78,7 @@ function ForgotPasswordPage() {
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="email" className="text-gray-400 text-sm">E-mail</Label>
+                                    <Label htmlFor="email" className="text-gray-400 text-sm">{t('auth.resetPassword.emailLabel')}</Label>
                                     <div className="relative">
                                         <Input
                                             id="email"
@@ -91,7 +94,7 @@ function ForgotPasswordPage() {
                                 </div>
 
                                 <p className="text-sm text-gray-400">
-                                    Wyślemy Ci 6-cyfrowy kod na podany adres email, którego użyjesz do zresetowania hasła.
+                                    {t('auth.resetPassword.descInput')}
                                 </p>
 
                                 <Button
@@ -99,13 +102,13 @@ function ForgotPasswordPage() {
                                     disabled={loading}
                                     className="w-full bg-amber-500 py-6 text-black font-medium hover:bg-amber-400 rounded-full"
                                 >
-                                    {loading ? 'Wysyłanie...' : 'Wyślij kod resetujący'}
+                                    {loading ? t('auth.resetPassword.sending') : t('auth.resetPassword.sendCode')}
                                 </Button>
 
                                 <p className="mt-6 text-center text-gray-400">
-                                    Pamiętasz hasło?{' '}
+                                    {t('auth.resetPassword.rememberPassword')}{' '}
                                     <Link to="/login" className="text-amber-500 hover:underline font-medium">
-                                        Zaloguj się
+                                        {t('auth.resetPassword.backToLogin')}
                                     </Link>
                                 </p>
                             </form>
@@ -116,29 +119,35 @@ function ForgotPasswordPage() {
 
             {/* Right side - Marketing */}
             <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 bg-[#0d0d12]">
-                <div className="max-w-lg">
+                <div className="max-w-lg mb-8">
                     <h2 className="text-5xl font-bold text-white leading-tight">
-                        Nie martw się!
+                        {t('auth.resetPassword.subtitle')}
                     </h2>
                     <p className="mt-6 text-lg text-gray-400">
-                        Zresetowanie hasła jest proste. Wyślemy Ci kod na email,
-                        a Ty ustawisz nowe hasło w kilka sekund.
+                        {t('auth.resetPassword.desc')}
                     </p>
 
                     {/* Steps */}
                     <div className="mt-12 space-y-6">
                         <div className="flex items-center gap-4">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 text-black font-bold">1</div>
-                            <p className="text-gray-300">Wpisz swój email</p>
+                            <p className="text-gray-300">{t('auth.resetPassword.step1')}</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-700 text-white font-bold">2</div>
-                            <p className="text-gray-300">Odbierz kod z emaila</p>
+                            <p className="text-gray-300">{t('auth.resetPassword.step2')}</p>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-700 text-white font-bold">3</div>
-                            <p className="text-gray-300">Ustaw nowe hasło</p>
+                            <p className="text-gray-300">{t('auth.resetPassword.step3')}</p>
                         </div>
+                    </div>
+                </div>
+
+                {/* App Preview - Mockup */}
+                <div className="mt-12 w-full h-[300px] overflow-hidden">
+                    <div className="w-[200%] origin-top-left transform scale-50">
+                        <DashboardMockup />
                     </div>
                 </div>
             </div>
