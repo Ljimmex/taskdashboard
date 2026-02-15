@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { usePanelStore } from '../../../../lib/panelStore'
 import type { Label } from '../../labels/LabelBadge'
@@ -17,7 +18,7 @@ import { AssigneePicker, type Assignee } from '../components/AssigneePicker'
 import { DueDatePicker } from '../components/DueDatePicker'
 import { LinkInput } from '../links/LinkInput'
 import { LinksList } from '../links/LinksList'
-import type { TaskLink } from '@taskdashboard/types'
+import type { TaskLink, FileRecord } from '@taskdashboard/types'
 import { PrioritySelector } from '../components/PrioritySelector'
 
 interface EditTaskPanelProps {
@@ -511,20 +512,44 @@ export function EditTaskPanel({
                             )}
 
                             {/* FilePicker Modal */}
-                            {workspaceSlug && (
-                                <FilePicker
-                                    open={showFilePicker}
-                                    onClose={() => setShowFilePicker(false)}
-                                    onSelectFiles={(files) => {
-                                        if (task?.id && files.length > 0) {
-                                            files.forEach(file => {
-                                                attachFile.mutate({ taskId: task.id, fileId: file.id })
-                                            })
-                                        }
-                                        setShowFilePicker(false)
-                                    }}
-                                    workspaceSlug={workspaceSlug}
-                                />
+                            {showFilePicker && createPortal(
+                                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                                    {/* Backdrop */}
+                                    <div
+                                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                                        onClick={() => setShowFilePicker(false)}
+                                    />
+
+                                    {/* Modal Content */}
+                                    <div className="relative w-full max-w-4xl bg-[#12121a] rounded-2xl border border-gray-800 shadow-2xl overflow-hidden">
+                                        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+                                            <h3 className="text-lg font-semibold text-white">{t('files.picker.title')}</h3>
+                                            <button
+                                                onClick={() => setShowFilePicker(false)}
+                                                className="p-1 hover:bg-gray-800 rounded-lg transition-colors"
+                                            >
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M18 6L6 18M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div className="p-4">
+                                            <FilePicker
+                                                onCancel={() => setShowFilePicker(false)}
+                                                onSelect={(files: FileRecord[]) => {
+                                                    if (task?.id && files.length > 0) {
+                                                        files.forEach(file => {
+                                                            attachFile.mutate({ taskId: task.id!, fileId: file.id })
+                                                        })
+                                                    }
+                                                    setShowFilePicker(false)
+                                                }}
+                                            // workspaceSlug is handled internally by FilePicker using useParams
+                                            />
+                                        </div>
+                                    </div>
+                                </div>,
+                                document.body
                             )}
                         </div>
                     )}
