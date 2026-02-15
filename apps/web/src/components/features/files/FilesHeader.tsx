@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react"
 import { Calendar, ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, List, Plus } from "lucide-react"
 import { createPortal } from 'react-dom'
 import { format } from "date-fns"
+import { pl, enUS } from 'date-fns/locale'
+import { useTranslation } from "react-i18next"
 
 interface FilesHeaderProps {
     // View Mode
@@ -24,25 +26,19 @@ interface FilesHeaderProps {
 }
 
 const FILE_TYPES = [
-    { value: 'all', label: 'All type' },
-    { value: 'pdf', label: 'PDF' },
-    { value: 'document', label: 'DOC' },
-    { value: 'spreadsheet', label: 'XLS' },
-    { value: 'image', label: 'Images' },
-    { value: 'video', label: 'Videos' },
+    { value: 'all', labelKey: 'files.types.all' },
+    { value: 'pdf', labelKey: 'files.types.pdf' },
+    { value: 'document', labelKey: 'files.types.document' },
+    { value: 'spreadsheet', labelKey: 'files.types.spreadsheet' },
+    { value: 'image', labelKey: 'files.types.image' },
+    { value: 'video', labelKey: 'files.types.video' },
 ]
 
 const SORT_OPTIONS = [
-    { value: 'date', label: 'Date' },
-    { value: 'name', label: 'Name' },
-    { value: 'size', label: 'Size' },
-    { value: 'type', label: 'Type' },
-]
-
-const DAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
-const MONTHS = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    { value: 'date', labelKey: 'files.sort.date' },
+    { value: 'name', labelKey: 'files.sort.name' },
+    { value: 'size', labelKey: 'files.sort.size' },
+    { value: 'type', labelKey: 'files.sort.type' },
 ]
 
 export function FilesHeader({
@@ -58,6 +54,9 @@ export function FilesHeader({
     sortOrder,
     onSortChange,
 }: FilesHeaderProps) {
+    const { t, i18n } = useTranslation()
+    const currentLocale = i18n.language === 'pl' ? pl : enUS
+
     // Date Range Picker state
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
     const [viewDate, setViewDate] = useState(() => new Date())
@@ -79,7 +78,7 @@ export function FilesHeader({
 
     const formatDate = (date: Date | null) => {
         if (!date) return '--.--.--'
-        return format(date, 'dd.MM.yy')
+        return format(date, 'dd.MM.yy', { locale: currentLocale })
     }
 
     // Date picker position
@@ -131,6 +130,8 @@ export function FilesHeader({
     const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate()
     const getFirstDayOfMonth = (year: number, month: number) => {
         const day = new Date(year, month, 1).getDay()
+        // Adjust for start of week (Monday = 1, Sunday = 0 for getDay())
+        // If Monday is start: 0(Sun)->6, 1(Mon)->0
         return day === 0 ? 6 : day - 1
     }
 
@@ -181,16 +182,25 @@ export function FilesHeader({
         return date.toDateString() === today.toDateString()
     }
 
+    // Generate localized day names (Mo, Tu, ...)
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+        // Start from Monday (arbitrary date known to be Monday, e.g. 2024-01-01)
+        const d = new Date(2024, 0, i + 1)
+        return format(d, 'EEEEEE', { locale: currentLocale })
+    })
+
     const renderMonth = (monthOffset: number) => {
         const { days, year, month } = generateCalendarDays(monthOffset)
+        const monthName = format(new Date(year, month), 'MMMM', { locale: currentLocale })
+
         return (
             <div className="flex-1">
-                <div className="text-center text-sm font-medium text-white mb-4">
-                    {MONTHS[month]} {year}
+                <div className="text-center text-sm font-medium text-white mb-4 capitalize">
+                    {monthName} {year}
                 </div>
                 <div className="grid grid-cols-7 gap-1 mb-2">
-                    {DAYS.map(day => (
-                        <div key={day} className="text-center text-[10px] font-medium text-gray-600 py-1">{day}</div>
+                    {weekDays.map(day => (
+                        <div key={day} className="text-center text-[10px] font-medium text-gray-600 py-1 capitalize">{day}</div>
                     ))}
                 </div>
                 <div className="grid grid-cols-7 gap-1">
@@ -220,8 +230,11 @@ export function FilesHeader({
         )
     }
 
-    const selectedTypeLabel = FILE_TYPES.find(t => t.value === fileTypeFilter)?.label || 'All type'
-    const selectedSortLabel = SORT_OPTIONS.find(s => s.value === sortBy)?.label || 'Date'
+    const selectedType = FILE_TYPES.find(t => t.value === fileTypeFilter)
+    const selectedTypeLabel = selectedType ? t(selectedType.labelKey) : t('files.types.all')
+
+    const selectedSort = SORT_OPTIONS.find(s => s.value === sortBy)
+    const selectedSortLabel = selectedSort ? t(selectedSort.labelKey) : t('files.sort.date')
 
     return (
         <div className="flex items-center justify-between px-6 py-4">
@@ -243,7 +256,7 @@ export function FilesHeader({
                     onClick={() => setIsTypeOpen(!isTypeOpen)}
                     className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[#1a1a24] text-gray-400 hover:text-white transition-colors"
                 >
-                    <span>{selectedTypeLabel}</span>
+                    <span className="capitalize">{selectedTypeLabel}</span>
                     <ChevronDown size={14} />
                 </button>
 
@@ -253,7 +266,7 @@ export function FilesHeader({
                     onClick={() => setIsSortOpen(!isSortOpen)}
                     className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[#1a1a24] text-gray-400 hover:text-white transition-colors"
                 >
-                    <span>Sort by: {selectedSortLabel}</span>
+                    <span>{t('files.header.sort_by', { value: selectedSortLabel })}</span>
                     <ChevronDown size={14} className={`transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
                 </button>
             </div>
@@ -268,9 +281,10 @@ export function FilesHeader({
                             ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
                             : 'text-gray-500 hover:text-white'
                             }`}
+                        title={t('files.header.view_grid')}
                     >
                         <LayoutGrid size={14} />
-                        Grid
+                        <span className="hidden sm:inline">{t('files.header.view_grid').split(' ')[0]}</span>
                     </button>
                     <button
                         onClick={() => onViewModeChange('list')}
@@ -278,9 +292,10 @@ export function FilesHeader({
                             ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
                             : 'text-gray-500 hover:text-white'
                             }`}
+                        title={t('files.header.view_list')}
                     >
                         <List size={14} />
-                        List
+                        <span className="hidden sm:inline">{t('files.header.view_list').split(' ')[0]}</span>
                     </button>
                 </div>
 
@@ -290,7 +305,7 @@ export function FilesHeader({
                     className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[#1a1a24] text-gray-400 hover:text-white transition-colors"
                 >
                     <Plus size={14} />
-                    <span>Drag and drop or Browse upload</span>
+                    <span>{t('files.header.upload')}</span>
                 </button>
             </div>
 
@@ -309,7 +324,7 @@ export function FilesHeader({
                         >
                             <ChevronLeft size={16} />
                         </button>
-                        <span className="text-sm font-bold text-white">Select date range</span>
+                        <span className="text-sm font-bold text-white">{t('files.header.select_date')}</span>
                         <button
                             type="button"
                             onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
@@ -323,8 +338,8 @@ export function FilesHeader({
                         {renderMonth(1)}
                     </div>
                     <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-gray-800">
-                        <button onClick={() => onDateRangeChange(null, null)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Clear</button>
-                        <button onClick={() => setIsDatePickerOpen(false)} className="px-5 py-2 bg-[#F2CE88] text-[#0a0a0f] text-sm font-bold rounded-full hover:bg-amber-400 transition-all">Apply</button>
+                        <button onClick={() => onDateRangeChange(null, null)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">{t('common.cancel')}</button>
+                        <button onClick={() => setIsDatePickerOpen(false)} className="px-5 py-2 bg-[#F2CE88] text-[#0a0a0f] text-sm font-bold rounded-full hover:bg-amber-400 transition-all">{t('common.save')}</button>
                     </div>
                 </div>,
                 document.body
@@ -346,7 +361,7 @@ export function FilesHeader({
                                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
                                 }`}
                         >
-                            {type.label}
+                            {t(type.labelKey)}
                         </button>
                     ))}
                 </div>,
@@ -372,7 +387,7 @@ export function FilesHeader({
                                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
                                 }`}
                         >
-                            <span>{option.label}</span>
+                            <span>{t(option.labelKey)}</span>
                             {sortBy === option.value && (
                                 <ChevronDown
                                     size={14}

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { X, Folder, FolderOpen, Loader2, Home } from 'lucide-react'
 import { useFolders, useMoveFile } from '@/hooks/useFiles'
 import { useParams } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 
 interface MoveToFolderModalProps {
     isOpen: boolean
@@ -14,6 +15,7 @@ interface MoveToFolderModalProps {
 }
 
 export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFolderId, onSuccess }: MoveToFolderModalProps) {
+    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
     const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
     const { data: folders, isLoading } = useFolders(workspaceSlug, null) // Get all root folders
@@ -62,7 +64,7 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                                 <FolderOpen className="w-5 h-5 text-amber-400" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-semibold text-white">Move to Folder</h2>
+                                <h2 className="text-lg font-semibold text-white">{t('files.modals.move.title')}</h2>
                                 <p className="text-xs text-gray-500 truncate max-w-[200px]">{fileName}</p>
                             </div>
                         </div>
@@ -87,16 +89,16 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                                     onClick={() => setSelectedFolderId(null)}
                                     disabled={currentFolderId === null}
                                     className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${selectedFolderId === null
-                                            ? 'bg-amber-500/20 border-amber-500/50 border'
-                                            : 'bg-[#1a1a24] border border-gray-800 hover:border-gray-700'
+                                        ? 'bg-amber-500/20 border-amber-500/50 border'
+                                        : 'bg-[#1a1a24] border border-gray-800 hover:border-gray-700'
                                         } ${currentFolderId === null ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
                                     <Home className={`h-5 w-5 ${selectedFolderId === null ? 'text-amber-400' : 'text-gray-500'}`} />
                                     <span className={selectedFolderId === null ? 'text-white font-medium' : 'text-gray-300'}>
-                                        Root (Files)
+                                        {t('files.modals.move.root')}
                                     </span>
                                     {currentFolderId === null && (
-                                        <span className="ml-auto text-xs text-gray-500">Current</span>
+                                        <span className="ml-auto text-xs text-gray-500">{t('files.modals.move.current')}</span>
                                     )}
                                 </button>
 
@@ -107,8 +109,8 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                                         onClick={() => setSelectedFolderId(folder.id)}
                                         disabled={folder.id === currentFolderId}
                                         className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${selectedFolderId === folder.id
-                                                ? 'bg-amber-500/20 border-amber-500/50 border'
-                                                : 'bg-[#1a1a24] border border-gray-800 hover:border-gray-700'
+                                            ? 'bg-amber-500/20 border-amber-500/50 border'
+                                            : 'bg-[#1a1a24] border border-gray-800 hover:border-gray-700'
                                             } ${folder.id === currentFolderId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                     >
                                         <Folder className={`h-5 w-5 ${selectedFolderId === folder.id ? 'text-amber-400' : 'text-amber-500/70'}`} />
@@ -116,14 +118,14 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                                             {folder.name}
                                         </span>
                                         {folder.id === currentFolderId && (
-                                            <span className="ml-auto text-xs text-gray-500">Current</span>
+                                            <span className="ml-auto text-xs text-gray-500">{t('files.modals.move.current')}</span>
                                         )}
                                     </button>
                                 ))}
 
                                 {(!folders || folders.length === 0) && (
                                     <div className="text-center py-8 text-gray-500 text-sm">
-                                        No folders available. Create a folder first.
+                                        {t('files.modals.move.no_folders')}
                                     </div>
                                 )}
                             </div>
@@ -137,7 +139,7 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                             onClick={onClose}
                             className="flex-1 px-4 py-2.5 text-gray-400 bg-[#1a1a24] rounded-xl font-medium hover:text-white hover:bg-gray-800 transition-colors"
                         >
-                            Cancel
+                            {t('files.modals.move.cancel')}
                         </button>
                         <button
                             onClick={handleMove}
@@ -147,12 +149,12 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                             {moveFile.isPending ? (
                                 <>
                                     <Loader2 size={18} className="animate-spin" />
-                                    Moving...
+                                    {t('files.modals.move.submit_loading')}
                                 </>
                             ) : (
                                 <>
                                     <FolderOpen size={18} />
-                                    Move Here
+                                    {t('files.modals.move.move_here')}
                                 </>
                             )}
                         </button>
@@ -163,3 +165,4 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
         document.body
     )
 }
+

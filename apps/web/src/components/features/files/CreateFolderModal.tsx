@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, FolderPlus, Loader2 } from 'lucide-react'
 import { useCreateFolder } from '@/hooks/useFiles'
 import { useParams } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 
 interface CreateFolderModalProps {
     isOpen: boolean
@@ -11,6 +12,7 @@ interface CreateFolderModalProps {
 }
 
 export function CreateFolderModal({ isOpen, onClose, parentId, onSuccess }: CreateFolderModalProps) {
+    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
     const [name, setName] = useState('')
     const createFolder = useCreateFolder()
@@ -53,7 +55,7 @@ export function CreateFolderModal({ isOpen, onClose, parentId, onSuccess }: Crea
                         <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
                             <FolderPlus className="w-5 h-5 text-amber-500" />
                         </div>
-                        <h2 className="text-lg font-semibold text-white">Create New Folder</h2>
+                        <h2 className="text-lg font-semibold text-white">{t('files.modals.create_folder.title')}</h2>
                     </div>
                     <button
                         onClick={handleClose}
@@ -67,14 +69,14 @@ export function CreateFolderModal({ isOpen, onClose, parentId, onSuccess }: Crea
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     <div>
                         <label htmlFor="folder-name" className="block text-sm font-medium text-gray-300 mb-2">
-                            Folder Name
+                            {t('files.modals.create_folder.label')}
                         </label>
                         <input
                             id="folder-name"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Enter folder name..."
+                            placeholder={t('files.modals.create_folder.placeholder')}
                             autoFocus
                             className="w-full px-4 py-3 bg-[#1a1a24] border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
                         />
@@ -87,7 +89,7 @@ export function CreateFolderModal({ isOpen, onClose, parentId, onSuccess }: Crea
                             onClick={handleClose}
                             className="flex-1 px-4 py-2.5 text-gray-400 bg-[#1a1a24] rounded-xl font-medium hover:text-white hover:bg-gray-800 transition-colors"
                         >
-                            Cancel
+                            {t('files.modals.create_folder.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -97,10 +99,10 @@ export function CreateFolderModal({ isOpen, onClose, parentId, onSuccess }: Crea
                             {createFolder.isPending ? (
                                 <>
                                     <Loader2 size={18} className="animate-spin" />
-                                    Creating...
+                                    {t('files.modals.create_folder.submit_loading')}
                                 </>
                             ) : (
-                                'Create Folder'
+                                t('files.modals.create_folder.submit')
                             )}
                         </button>
                     </div>
@@ -109,3 +111,4 @@ export function CreateFolderModal({ isOpen, onClose, parentId, onSuccess }: Crea
         </div>
     )
 }
+

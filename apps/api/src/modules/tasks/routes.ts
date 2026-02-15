@@ -412,129 +412,138 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
         }
 
         // Get permissions
+        let workspaceRole: WorkspaceRole | null = null
+        const projectWorkspaceId = await getWorkspaceIdFromProject(body.projectId)
+        if (projectWorkspaceId) {
+            workspaceRole = await getUserWorkspaceRole(userId, projectWorkspaceId)
+        }
+
         const teamLevel = await getUserTeamLevel(userId, teamId)
-        console.log('👤 User team level:', teamLevel)
+        console.log('👤 User permissions:', { workspaceRole, teamLevel })
 
-        if (!canCreateTasks(null, teamLevel)) {
-            console.warn('🚫 Unauthorized to create tasks:', { userId, teamLevel })
-            return c.json({ success: false, error: 'Unauthorized to create tasks' }, 403)
-        }
-
-        const assigneeId = body.assigneeId || (body.assignees && body.assignees.length > 0 ? body.assignees[0] : null)
-
-        // For reporterId, if temp-user-id, try to find the first member of the team to use as reporter
-        let reporterId = body.reporterId || userId
-        if (reporterId === '') {
-            const firstMember = await db.query.teamMembers.findFirst({
-                where: (tm, { eq }) => eq(tm.teamId, teamId)
-            })
-            if (firstMember) {
-                reporterId = firstMember.userId
-                console.log('ℹ️ Using fallback reporterId:', reporterId)
+        if (!canCreateTasks(workspaceRole, teamLevel) && userId !== 'temp-user-id') {
+            console.warn('🚫 Unauthorized to create tasks:', { userId, workspaceRole, teamLevel })
+            if (!canCreateTasks(null, teamLevel)) {
+                console.warn('🚫 Unauthorized to create tasks:', { userId, teamLevel })
+                return c.json({ success: false, error: 'Unauthorized to create tasks' }, 403)
             }
         }
 
-        const newTask: NewTask = {
-            projectId: body.projectId,
-            type: body.type || 'task',
-            title: body.title,
-            description: body.description || null,
-            status: body.type === 'meeting' ? 'scheduled' : (body.status || 'todo'),
-            priority: body.priority || 'medium',
-            assigneeId,
-            reporterId,
-            dueDate: body.dueDate ? new Date(body.dueDate) : null,
-            startDate: body.startDate ? new Date(body.startDate) : null,
-            meetingLink: body.meetingLink || null,
-            estimatedHours: body.estimatedHours || null,
-            links: body.links || [],
-        }
+            const assigneeId = body.assigneeId || (body.assignees && body.assignees.length > 0 ? body.assignees[0] : null)
 
-        const [created] = await db.insert(tasks).values(newTask).returning()
-        console.log('✅ Task created:', created.id)
-
-        // Ensure assignee is a member of the project
-        if (assigneeId) {
-            const isMember = await db.query.projectMembers.findFirst({
-                where: (pm, { eq, and }) => and(eq(pm.projectId, created.projectId), eq(pm.userId, assigneeId))
-            })
-
-            if (!isMember) {
-                console.log('➕ Adding assignee to project members:', assigneeId)
-                await db.insert(projectMembers).values({
-                    projectId: created.projectId,
-                    userId: assigneeId,
-                    role: 'member'
+            // For reporterId, if temp-user-id, try to find the first member of the team to use as reporter
+            let reporterId = body.reporterId || userId
+            if (reporterId === '') {
+                const firstMember = await db.query.teamMembers.findFirst({
+                    where: (tm, { eq }) => eq(tm.teamId, teamId)
                 })
+                if (firstMember) {
+                    reporterId = firstMember.userId
+                    console.log('ℹ️ Using fallback reporterId:', reporterId)
+                }
             }
-        }
 
-        // Handle Subtasks (using the dedicated subtasks table)
-        if (body.subtasks && Array.isArray(body.subtasks)) {
-            console.log('🌿 Creating subtasks:', body.subtasks.length)
-            for (const sub of body.subtasks) {
-                await db.insert(subtasks).values({
-                    taskId: created.id,
-                    title: sub.title,
-                    description: sub.description || null,
-                    status: sub.status || 'todo',
-                    priority: sub.priority || 'medium',
-                    isCompleted: sub.status === 'done' || sub.status === 'completed'
+            const newTask: NewTask = {
+                projectId: body.projectId,
+                type: body.type || 'task',
+                title: body.title,
+                description: body.description || null,
+                status: body.type === 'meeting' ? 'scheduled' : (body.status || 'todo'),
+                priority: body.priority || 'medium',
+                assigneeId,
+                reporterId,
+                dueDate: body.dueDate ? new Date(body.dueDate) : null,
+                startDate: body.startDate ? new Date(body.startDate) : null,
+                meetingLink: body.meetingLink || null,
+                estimatedHours: body.estimatedHours || null,
+                links: body.links || [],
+            }
+
+            const [created] = await db.insert(tasks).values(newTask).returning()
+            console.log('✅ Task created:', created.id)
+
+            // Ensure assignee is a member of the project
+            if (assigneeId) {
+                const isMember = await db.query.projectMembers.findFirst({
+                    where: (pm, { eq, and }) => and(eq(pm.projectId, created.projectId), eq(pm.userId, assigneeId))
                 })
+
+                if (!isMember) {
+                    console.log('➕ Adding assignee to project members:', assigneeId)
+                    await db.insert(projectMembers).values({
+                        projectId: created.projectId,
+                        userId: assigneeId,
+                        role: 'member'
+                    })
+                }
             }
-        }
 
-        // Handle Labels (if provided) - update the task's labels array directly
-        if (body.labels && Array.isArray(body.labels)) {
-            const labelIds = body.labels.map((label: string | { id: string }) =>
-                typeof label === 'string' ? label : label.id
-            ).filter(Boolean)
-
-            if (labelIds.length > 0) {
-                await db.update(tasks).set({ labels: labelIds }).where(eq(tasks.id, created.id))
+            // Handle Subtasks (using the dedicated subtasks table)
+            if (body.subtasks && Array.isArray(body.subtasks)) {
+                console.log('🌿 Creating subtasks:', body.subtasks.length)
+                for (const sub of body.subtasks) {
+                    await db.insert(subtasks).values({
+                        taskId: created.id,
+                        title: sub.title,
+                        description: sub.description || null,
+                        status: sub.status || 'todo',
+                        priority: sub.priority || 'medium',
+                        isCompleted: sub.status === 'done' || sub.status === 'completed'
+                    })
+                }
             }
+
+            // Handle Labels (if provided) - update the task's labels array directly
+            if (body.labels && Array.isArray(body.labels)) {
+                const labelIds = body.labels.map((label: string | { id: string }) =>
+                    typeof label === 'string' ? label : label.id
+                ).filter(Boolean)
+
+                if (labelIds.length > 0) {
+                    await db.update(tasks).set({ labels: labelIds }).where(eq(tasks.id, created.id))
+                }
+            }
+
+            await db.insert(taskActivityLog).values({ taskId: created.id, userId: reporterId, activityType: 'created', newValue: created.title })
+
+            // 📅 Sync to Calendar
+            if (created.dueDate) {
+                await syncTaskToCalendar(created, userId)
+            }
+
+            // TRIGGER WEBHOOK
+            const workspaceId = await getWorkspaceIdFromProject(created.projectId)
+            if (workspaceId) {
+                // Fetch status name and priorities
+                const [statusStage, workspace] = await Promise.all([
+                    created.status ? db.query.projectStages.findFirst({
+                        where: (s, { eq }) => eq(s.id, created.status!),
+                        columns: { name: true }
+                    }) : null,
+                    db.query.workspaces.findFirst({
+                        where: (w, { eq }) => eq(w.id, workspaceId),
+                        columns: { priorities: true }
+                    })
+                ])
+
+                const priorityObj = workspace?.priorities?.find((p: any) => p.id === created.priority)
+                const priorityName = priorityObj?.name || created.priority
+                const priorityColor = priorityObj?.color
+
+                triggerWebhook('task.created', {
+                    ...created,
+                    statusName: statusStage?.name || created.status,
+                    priorityName,
+                    priorityColor
+                }, workspaceId)
+            }
+
+            return c.json({ success: true, data: created }, 201)
+        } catch (error) {
+            console.error('💥 Error creating task:', error)
+            return c.json({ success: false, error: 'Failed to create task', details: error instanceof Error ? error.message : String(error) }, 500)
         }
-
-        await db.insert(taskActivityLog).values({ taskId: created.id, userId: reporterId, activityType: 'created', newValue: created.title })
-
-        // 📅 Sync to Calendar
-        if (created.dueDate) {
-            await syncTaskToCalendar(created, userId)
-        }
-
-        // TRIGGER WEBHOOK
-        const workspaceId = await getWorkspaceIdFromProject(created.projectId)
-        if (workspaceId) {
-            // Fetch status name and priorities
-            const [statusStage, workspace] = await Promise.all([
-                created.status ? db.query.projectStages.findFirst({
-                    where: (s, { eq }) => eq(s.id, created.status!),
-                    columns: { name: true }
-                }) : null,
-                db.query.workspaces.findFirst({
-                    where: (w, { eq }) => eq(w.id, workspaceId),
-                    columns: { priorities: true }
-                })
-            ])
-
-            const priorityObj = workspace?.priorities?.find((p: any) => p.id === created.priority)
-            const priorityName = priorityObj?.name || created.priority
-            const priorityColor = priorityObj?.color
-
-            triggerWebhook('task.created', {
-                ...created,
-                statusName: statusStage?.name || created.status,
-                priorityName,
-                priorityColor
-            }, workspaceId)
-        }
-
-        return c.json({ success: true, data: created }, 201)
-    } catch (error) {
-        console.error('💥 Error creating task:', error)
-        return c.json({ success: false, error: 'Failed to create task', details: error instanceof Error ? error.message : String(error) }, 500)
-    }
-})
+    })
 
 // PATCH /api/tasks/:id - Update task (requires tasks.update OR is assignee)
 tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {

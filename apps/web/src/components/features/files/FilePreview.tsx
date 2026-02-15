@@ -1,6 +1,8 @@
 import { X, Download, Trash2, Pencil, Folder, Calendar, HardDrive, FileType } from 'lucide-react'
 import { FileRecord } from '@taskdashboard/types'
 import { format } from 'date-fns'
+import { pl, enUS } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
 
 interface FilePreviewProps {
     file: FileRecord | null
@@ -32,6 +34,9 @@ function formatFileSize(bytes: number | null): string {
 }
 
 export function FilePreview({ file, isOpen, onClose, onDownload, onDelete, onRename }: FilePreviewProps) {
+    const { t, i18n } = useTranslation()
+    const currentLocale = i18n.language === 'pl' ? pl : enUS
+
     if (!isOpen || !file) return null
 
     return (
@@ -55,7 +60,7 @@ export function FilePreview({ file, isOpen, onClose, onDownload, onDelete, onRen
                             <button
                                 onClick={() => onDownload(file.id)}
                                 className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-                                title="Download"
+                                title={t('files.actions.download')}
                             >
                                 <Download size={20} />
                             </button>
@@ -64,7 +69,7 @@ export function FilePreview({ file, isOpen, onClose, onDownload, onDelete, onRen
                             <button
                                 onClick={() => onRename(file.id)}
                                 className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-                                title="Rename"
+                                title={t('files.actions.rename')}
                             >
                                 <Pencil size={20} />
                             </button>
@@ -73,7 +78,7 @@ export function FilePreview({ file, isOpen, onClose, onDownload, onDelete, onRen
                             <button
                                 onClick={() => onDelete(file.id)}
                                 className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
-                                title="Delete"
+                                title={t('files.actions.delete')}
                             >
                                 <Trash2 size={20} />
                             </button>
@@ -92,15 +97,15 @@ export function FilePreview({ file, isOpen, onClose, onDownload, onDelete, onRen
                     <div className="flex items-center justify-center min-h-[400px] bg-[#1a1a24] rounded-xl">
                         <div className="flex flex-col items-center gap-4 text-gray-500">
                             <span className="text-6xl">{getFileIcon(file.mimeType)}</span>
-                            <p className="text-sm">Preview not available</p>
-                            <p className="text-xs text-gray-600">Download the file to view its contents</p>
+                            <p className="text-sm">{t('files.picker.preview_not_available')}</p>
+                            <p className="text-xs text-gray-600">{t('files.picker.download_to_view')}</p>
                             {onDownload && (
                                 <button
                                     onClick={() => onDownload(file.id)}
                                     className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-lg font-medium hover:bg-amber-400 transition-colors"
                                 >
                                     <Download size={16} />
-                                    Download to view
+                                    {t('files.actions.download_view')}
                                 </button>
                             )}
                         </div>
@@ -112,7 +117,7 @@ export function FilePreview({ file, isOpen, onClose, onDownload, onDelete, onRen
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div className="flex items-center gap-2 text-gray-400">
                             <FileType size={16} />
-                            <span>{file.mimeType || 'Unknown type'}</span>
+                            <span>{file.mimeType || t('files.types.unknown')}</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-400">
                             <HardDrive size={16} />
@@ -120,11 +125,11 @@ export function FilePreview({ file, isOpen, onClose, onDownload, onDelete, onRen
                         </div>
                         <div className="flex items-center gap-2 text-gray-400">
                             <Calendar size={16} />
-                            <span>{format(new Date(file.createdAt), 'MMM d, yyyy')}</span>
+                            <span>{format(new Date(file.createdAt), 'MMM d, yyyy', { locale: currentLocale })}</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-400">
                             <Folder size={16} />
-                            <span>{file.folderId ? 'In folder' : 'Root'}</span>
+                            <span>{file.folderId ? t('files.picker.in_folder') : t('files.picker.root')}</span>
                         </div>
                     </div>
                 </div>

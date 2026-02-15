@@ -5,6 +5,7 @@ import { DueDatePicker } from '../tasks/components/DueDatePicker'
 import { useSession } from '@/lib/auth'
 import { usePanelStore } from '@/lib/panelStore'
 import { apiFetch, apiFetchJson } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import {
     Select,
     SelectContent,
@@ -63,7 +64,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
     const [color, setColor] = useState(PROJECT_COLORS[0])
-    const [teamId, setTeamId] = useState<string>('')
+    const [teamIds, setTeamIds] = useState<string[]>([])
     const [industryTemplateId, setIndustryTemplateId] = useState<string>('no_template')
     const [startDate, setStartDate] = useState('')
     const [deadline, setDeadline] = useState('')
@@ -91,7 +92,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
             setStartDate('')
             setDeadline('')
             setColor(PROJECT_COLORS[0])
-            setTeamId('')
+            setTeamIds([])
             // Don't reset industryTemplateId immediately to avoid flash if we fetch a default
 
             try {
@@ -113,9 +114,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
 
                 if (teamsRes.data && Array.isArray(teamsRes.data)) {
                     setTeams(teamsRes.data)
-                    if (teamsRes.data.length > 0) {
-                        setTeamId(teamsRes.data[0].id)
-                    }
+                    // No default selection for multi-team to avoid accidental assignment
                 }
 
                 // 2. Fetch Workspace Default Template (after templates loaded)
@@ -147,7 +146,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!name.trim() || !teamId) return
+        if (!name.trim() || teamIds.length === 0) return
 
         setLoading(true)
         setError(null)
@@ -164,7 +163,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     name: name.trim(),
                     description: description.trim() || null,
                     color,
-                    teamId,
+                    teamIds,
                     workspaceId,
                     industryTemplateId: finalTemplateId,
                     startDate: startDate || null,
@@ -249,32 +248,48 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             <Users size={14} className="inline mr-2" />
                             {t('projects.create.team')} <span className="text-red-400">*</span>
                         </label>
-                        <Select value={teamId} onValueChange={setTeamId}>
-                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border-none text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all data-[placeholder]:text-gray-500">
-                                <SelectValue placeholder={t('projects.create.select_team')} />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a24] border-none text-white">
-                                {teams.map((team) => (
-                                    <SelectItem
-                                        key={team.id}
-                                        value={team.id}
-                                        className="focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white"
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            {team.color && (
-                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }} />
-                                            )}
-                                            {team.name}
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-hide">
+                            {teams.map((team) => (
+                                <div
+                                    key={team.id}
+                                    onClick={() => {
+                                        if (teamIds.includes(team.id)) {
+                                            setTeamIds(teamIds.filter(id => id !== team.id))
+                                        } else {
+                                            setTeamIds([...teamIds, team.id])
+                                        }
+                                    }}
+                                    className={cn(
+                                        "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border border-transparent",
+                                        teamIds.includes(team.id)
+                                            ? "bg-amber-500/10 border-amber-500/30 text-white"
+                                            : "bg-[#1a1a24] text-gray-400 hover:bg-gray-800 hover:text-gray-300"
+                                    )}
+                                >
+                                    <div
+                                        className={cn(
+                                            "w-2 h-2 rounded-full",
+                                            !team.color && "bg-amber-500"
+                                        )}
+                                        style={team.color ? { backgroundColor: team.color } : {}}
+                                    />
+                                    <span className="flex-1 text-sm font-medium">{team.name}</span>
+                                    {teamIds.includes(team.id) && (
+                                        <div className="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-black" />
                                         </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                         {teams.length === 0 && (
                             <p className="text-xs text-gray-500 mt-2">
                                 {t('projects.create.no_teams')}
                             </p>
                         )}
+                        <p className="text-[10px] text-gray-500 mt-2">
+                            {t('projects.create.multi_team_help') || 'Możesz zaznaczyć kilka zespołów'}
+                        </p>
                     </div>
 
                     <div>
@@ -376,7 +391,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     <button
                         type="submit"
                         onClick={handleSubmit}
-                        disabled={loading || !name.trim() || !teamId}
+                        disabled={loading || !name.trim() || teamIds.length === 0}
                         className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/20"
                     >
                         {loading ? t('projects.create.creating') : t('projects.create.submit')}

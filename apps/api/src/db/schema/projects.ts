@@ -25,10 +25,10 @@ export const projects = pgTable('projects', {
     startDate: timestamp('start_date'),
     deadline: timestamp('deadline'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (_table) => [
+}, () => [
     pgPolicy("Team members can view projects", {
         for: "select",
-        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text) OR id IN (SELECT project_id FROM project_teams WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text))`,
     }),
     pgPolicy("Team members can create projects", {
         for: "insert",
@@ -36,6 +36,26 @@ export const projects = pgTable('projects', {
     }),
     pgPolicy("Team members can update projects", {
         for: "update",
+        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text) OR id IN (SELECT project_id FROM project_teams WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text))`,
+    }),
+])
+
+// =============================================================================
+// PROJECT TEAMS JOIN TABLE (MANY-TO-MANY)
+// =============================================================================
+
+export const projectTeams = pgTable('project_teams', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    teamId: uuid('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    joinedAt: timestamp('joined_at').defaultNow().notNull(),
+}, () => [
+    pgPolicy("Team members can view project teams", {
+        for: "select",
+        using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
+    }),
+    pgPolicy("Team members can manage project teams", {
+        for: "all",
         using: sql`team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
     }),
 ])
@@ -50,17 +70,32 @@ export const projectMembers = pgTable('project_members', {
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     role: varchar('role', { length: 50 }).default('member').notNull(),
     joinedAt: timestamp('joined_at').defaultNow().notNull(),
-})
+}, () => [
+    pgPolicy("Project members can view members", {
+        for: "select",
+        using: sql`project_id IN (SELECT id FROM projects WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)) OR project_id IN (SELECT project_id FROM project_teams WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text))`,
+    }),
+    pgPolicy("Project members can manage memberships", {
+        for: "all",
+        using: sql`project_id IN (SELECT id FROM projects WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)) OR project_id IN (SELECT project_id FROM project_teams WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text))`,
+    }),
+])
 
 // =============================================================================
 // RELATIONS
 // =============================================================================
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
-    team: one(teams, { fields: [projects.teamId], references: [teams.id] }),
+    team: one(teams, { fields: [projects.teamId], references: [teams.id] }), // Legacy/Primary Team
+    projectTeams: many(projectTeams),
     industryTemplate: one(industryTemplates, { fields: [projects.industryTemplateId], references: [industryTemplates.id] }),
     stages: many(projectStages),
     members: many(projectMembers),
+}))
+
+export const projectTeamsRelations = relations(projectTeams, ({ one }) => ({
+    project: one(projects, { fields: [projectTeams.projectId], references: [projects.id] }),
+    team: one(teams, { fields: [projectTeams.teamId], references: [teams.id] }),
 }))
 
 export const projectStagesRelations = relations(projectStages, ({ one }) => ({

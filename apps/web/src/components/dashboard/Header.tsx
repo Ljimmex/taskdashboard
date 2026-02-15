@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { useSession, signOut } from '@/lib/auth'
+import { apiFetchJson } from '@/lib/api'
 import { DropdownArrowUp, DropdownArrowDown } from './icons'
 import { NotificationPanel } from '@/components/features/notifications/NotificationPanel'
 import { UserSettingsPanel } from '@/components/features/settings/panels/UserSettingsPanel'
@@ -10,7 +11,26 @@ export function Header() {
     const { data: session } = useSession()
     const [showUserMenu, setShowUserMenu] = useState(false)
     const [showNotifications, setShowNotifications] = useState(false)
+    const [userPosition, setUserPosition] = useState<string>('')
     const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false)
+
+    // Fetch user data for position
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (!session?.user?.id) return
+            try {
+                const data = await apiFetchJson<any>('/api/users/me')
+                // Handle both wrapped and unwrapped responses
+                const userData = data.data || data
+                if (userData && userData.position) {
+                    setUserPosition(userData.position)
+                }
+            } catch (err) {
+                console.error('Failed to fetch user position', err)
+            }
+        }
+        fetchUserData()
+    }, [session?.user?.id])
 
     // Refs for click outside
     const userMenuRef = useRef<HTMLDivElement>(null)
@@ -101,7 +121,7 @@ export function Header() {
                         </div>
                         <div className="text-left hidden md:block">
                             <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
-                            <p className="text-xs text-gray-500">Project Manager</p>
+                            <p className="text-xs text-gray-500">{userPosition || 'Member'}</p>
                         </div>
                         {/* Arrow icon - changes direction based on menu state */}
                         {showUserMenu ? (

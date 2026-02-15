@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { db } from '../../db'
 import { type Auth } from '../../lib/auth'
 import { eq, asc } from 'drizzle-orm'
-import { projects, projectMembers, industryTemplateStages, projectStages, type NewProject } from '../../db/schema'
+import { projects, projectMembers, projectTeams, industryTemplateStages, projectStages, type NewProject } from '../../db/schema'
 import {
     canCreateProjects,
     canUpdateProjects,
@@ -27,7 +27,8 @@ import { zValidator } from '@hono/zod-validator'
 import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
 
 const createProjectSchema = z.object({
-    teamId: z.string(),
+    teamId: z.string().optional(), // Keep for backward compatibility or primary team
+    teamIds: z.array(z.string()).optional(), // New multi-team support
     workspaceId: z.string().optional(),
     name: zSanitizedString(),
     description: zSanitizedStringOptional(),
@@ -85,9 +86,9 @@ projectsRoutes.get('/', async (c) => {
             if (!ws) return c.json({ success: true, data: [] })
             workspaceId = ws.id
             userWorkspaceRole = await getUserWorkspaceRole(userId, workspaceId)
-            
+
             if (!userWorkspaceRole) {
-                 return c.json({ success: false, error: 'Forbidden: You are not a member of this workspace' }, 403)
+                return c.json({ success: false, error: 'Forbidden: You are not a member of this workspace' }, 403)
             }
         }
 
@@ -200,21 +201,23 @@ projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
         const body = c.req.valid('json')
         const { teamId, workspaceId } = body
 
-        if (!teamId) {
-            return c.json({ success: false, error: 'teamId is required' }, 400)
+        // Create project
+        const projectTeamIds = body.teamIds || (teamId ? [teamId] : [])
+        if (projectTeamIds.length === 0) {
+            return c.json({ success: false, error: 'At least one teamId is required' }, 400)
         }
 
-        // Get permissions
+        // 1. Get permissions and check
+        // Check for the first team (primary) or all? Usually primary team manage projects.
         const workspaceRole = workspaceId ? await getUserWorkspaceRole(userId, workspaceId) : null
-        const teamLevel = await getUserTeamLevel(userId, teamId)
+        const teamLevel = await getUserTeamLevel(userId, projectTeamIds[0])
 
-        // Check permission
         if (!canCreateProjects(workspaceRole, teamLevel)) {
             return c.json({ success: false, error: 'Unauthorized to create projects' }, 403)
         }
 
         const newProject: NewProject = {
-            teamId: body.teamId,
+            teamId: projectTeamIds[0], // Set first team as primary for legacy compatibility
             name: body.name,
             description: body.description,
             color: body.color,
@@ -222,60 +225,73 @@ projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
             startDate: body.startDate ? new Date(body.startDate) : null,
             deadline: body.deadline ? new Date(body.deadline) : null,
         }
-        const [created] = await db.insert(projects).values(newProject).returning()
 
-        // Initialize stages if template is selected
-        if (body.industryTemplateId) {
-            const templateStages = await db
-                .select()
-                .from(industryTemplateStages)
-                .where(eq(industryTemplateStages.templateId, body.industryTemplateId))
-                .orderBy(asc(industryTemplateStages.position))
+        const result = await db.transaction(async (tx) => {
+            const [created] = await tx.insert(projects).values(newProject).returning()
 
-            if (templateStages.length > 0) {
-                await Promise.all(
-                    templateStages.map((ts) =>
-                        db.insert(projectStages).values({
+            // 1. Link multiple teams
+            await tx.insert(projectTeams).values(
+                projectTeamIds.map(tid => ({
+                    projectId: created.id,
+                    teamId: tid
+                }))
+            )
+
+            // 2. Initialize stages if template is selected
+            if (body.industryTemplateId) {
+                const templateStages = await tx
+                    .select()
+                    .from(industryTemplateStages)
+                    .where(eq(industryTemplateStages.templateId, body.industryTemplateId))
+                    .orderBy(asc(industryTemplateStages.position))
+
+                if (templateStages.length > 0) {
+                    await tx.insert(projectStages).values(
+                        templateStages.map((ts) => ({
                             projectId: created.id,
                             name: ts.name,
                             color: ts.color,
                             position: ts.position,
                             isFinal: ts.isFinal,
-                        })
+                        }))
                     )
+                }
+            }
+
+            // 3. Auto-add team members from ALL selected teams
+            const teamMems = await tx.query.teamMembers.findMany({
+                where: (tm, { inArray }) => inArray(tm.teamId, projectTeamIds)
+            })
+
+            if (teamMems.length > 0) {
+                // Use a Map to ensure unique user IDs
+                const uniqueUserIds = Array.from(new Set(teamMems.map(tm => tm.userId)))
+                await tx.insert(projectMembers).values(
+                    uniqueUserIds.map(uid => ({
+                        projectId: created.id,
+                        userId: uid,
+                        role: 'member'
+                    }))
                 )
             }
-        }
 
-        // Auto-add team members to the project
-        const teamMems = await db.query.teamMembers.findMany({
-            where: (tm, { eq }) => eq(tm.teamId, teamId)
+            return created
         })
-
-        if (teamMems.length > 0) {
-            await db.insert(projectMembers).values(
-                teamMems.map(tm => ({
-                    projectId: created.id,
-                    userId: tm.userId,
-                    role: 'member'
-                }))
-            )
-        }
 
         // TRIGGER WEBHOOK
         let finalWorkspaceId = workspaceId
         if (!finalWorkspaceId) {
-            const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, teamId)).limit(1)
+            const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, projectTeamIds[0])).limit(1)
             if (team?.workspaceId) {
                 finalWorkspaceId = team.workspaceId
             }
         }
 
         if (finalWorkspaceId) {
-            triggerWebhook('project.created', created, finalWorkspaceId)
+            triggerWebhook('project.created', result, finalWorkspaceId)
         }
 
-        return c.json({ success: true, data: created }, 201)
+        return c.json({ success: true, data: result }, 201)
     } catch (error) {
         console.error('Error creating project:', error)
         return c.json({ success: false, error: 'Failed to create project' }, 500)

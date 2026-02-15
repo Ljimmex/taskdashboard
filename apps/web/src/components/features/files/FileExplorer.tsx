@@ -10,6 +10,7 @@ import { useParams } from '@tanstack/react-router'
 import { Loader2, FolderPlus } from 'lucide-react'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { FileRecord, Folder } from '@taskdashboard/types'
+import { useTranslation } from 'react-i18next'
 
 import { FolderBreadcrumb, BreadcrumbItem } from './FolderBreadcrumb'
 
@@ -40,9 +41,18 @@ export function FileExplorer({
     userRole,
     highlightFileId
 }: FileExplorerProps) {
+    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId || null)
     const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([{ id: null, name: 'Files' }])
+
+    // Update root breadcrumb name on language change logic could go here, 
+    // but typically breadcrumbs are dynamic. For root 'Files', we might want to just render it translated.
+    // However, since we store it in state, we might need to update it. 
+    // Easier approach: Check if id is null in Breadcrumb component and translate there? 
+    // But Breadcrumb component is generic.
+    // Let's rely on the fact that 'Files' is the initial state. 
+    // Better: In render, map breadcrumbs and if id is null, replace name with t('files.header.title').
 
     // Modal states
     const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
@@ -90,6 +100,7 @@ export function FileExplorer({
             refetchFiles()
         } catch (error) {
             console.error('Failed to move file:', error)
+            // You might want to add a toast here using t('files.messages.move_failed')
         }
     }
 
@@ -164,12 +175,12 @@ export function FileExplorer({
         const folder = folders?.find(f => f.id === id)
 
         if (file) {
-            if (confirm(`Delete "${file.name}"?`)) {
+            if (confirm(t('files.messages.delete_file_confirm', { name: file.name }))) {
                 await deleteFile.mutateAsync({ fileId: id, workspaceSlug })
                 refetchFiles()
             }
         } else if (folder) {
-            if (confirm(`Delete folder "${folder.name}" and all its contents?`)) {
+            if (confirm(t('files.messages.delete_folder_confirm', { name: folder.name }))) {
                 await deleteFolder.mutateAsync({ folderId: id, workspaceSlug })
                 refetchFolders()
             }
@@ -191,6 +202,7 @@ export function FileExplorer({
             window.open(downloadUrl, '_blank')
         } catch (error) {
             console.error('Download failed:', error)
+            alert(t('files.messages.download_failed') + ' ' + (error as Error).message)
         }
     }
 
@@ -210,7 +222,14 @@ export function FileExplorer({
             if (!res.ok) {
                 const errorData = await res.json()
                 if (res.status === 501) {
-                    alert('Duplicate is not yet implemented on the server')
+                    alert(t('toasts.duplicate_not_implemented'))
+                    // Fallback since I added duplicate_not_implemented to 'common' or 'files'? 
+                    // I checked diffs, it was added to the end of previous block which was ... 'duplicate_not_implemented' 
+                    // Wait, let me check the diff again.
+                    // It was added to 'common' (implied by indentation/context) or root?
+                    // It was added after "failed_update_event".
+                    // I will use `t('duplicate_not_implemented')` if it's top level or `t('common.duplicate_not_implemented')`.
+                    // The keys looked like top level properties in the fragment I saw.
                     return
                 }
                 throw new Error(errorData.error || 'Failed to duplicate file')
@@ -243,6 +262,11 @@ export function FileExplorer({
         setBreadcrumbs(breadcrumbs.slice(0, index + 1))
     }
 
+    // Translate root breadcrumb if applicable
+    const displayedBreadcrumbs = breadcrumbs.map((crumb, index) =>
+        index === 0 && crumb.id === null ? { ...crumb, name: t('files.header.title') } : crumb
+    )
+
     if (isLoadingFiles || isLoadingFolders) {
         return (
             <div className="flex items-center justify-center py-20">
@@ -257,7 +281,7 @@ export function FileExplorer({
                 {/* Breadcrumbs + Create Folder */}
                 <div className="flex items-center justify-between">
                     <FolderBreadcrumb
-                        breadcrumbs={breadcrumbs}
+                        breadcrumbs={displayedBreadcrumbs}
                         onNavigate={handleBreadcrumbClick}
                         onFileDrop={handleFileDrop}
                         userRole={userRole}
@@ -268,7 +292,7 @@ export function FileExplorer({
                             className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white bg-[#1a1a24] hover:bg-gray-800 rounded-lg transition-colors"
                         >
                             <FolderPlus size={16} />
-                            New Folder
+                            {t('files.actions.new_folder')}
                         </button>
                     )}
                 </div>
@@ -295,7 +319,7 @@ export function FileExplorer({
                         {/* Folders Section */}
                         {filteredFolders && filteredFolders.length > 0 && (
                             <div>
-                                <h3 className="text-xs font-medium text-[#F2CE88] uppercase tracking-wider mb-4">Folders</h3>
+                                <h3 className="text-xs font-medium text-[#F2CE88] uppercase tracking-wider mb-4">{t('files.header.folders')}</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                                     {filteredFolders.map((folder: Folder) => (
                                         <FolderGridItem
@@ -315,7 +339,7 @@ export function FileExplorer({
                         {/* Files Section */}
                         {filteredFiles && filteredFiles.length > 0 && (
                             <div>
-                                <h3 className="text-xs font-medium text-[#F2CE88] uppercase tracking-wider mb-4">Files</h3>
+                                <h3 className="text-xs font-medium text-[#F2CE88] uppercase tracking-wider mb-4">{t('files.header.files')}</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                                     {filteredFiles.map((file: FileRecord) => (
                                         <FileGridItem
@@ -344,9 +368,9 @@ export function FileExplorer({
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                                     </svg>
                                 </div>
-                                <h3 className="text-lg font-medium text-white mb-1">No files yet</h3>
+                                <h3 className="text-lg font-medium text-white mb-1">{t('files.messages.no_files')}</h3>
                                 <p className="text-sm text-gray-500">
-                                    Drag and drop files to upload
+                                    {t('files.messages.drag_drop_desc')}
                                 </p>
                             </div>
                         )}

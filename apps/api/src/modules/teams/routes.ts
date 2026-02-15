@@ -4,7 +4,7 @@ import { db } from '../../db'
 import { type Auth } from '../../lib/auth'
 import { teams, teamMembers } from '../../db/schema/teams'
 import { workspaceMembers } from '../../db/schema/workspaces'
-import { projects, projectMembers } from '../../db/schema/projects'
+import { projects, projectMembers, projectTeams } from '../../db/schema/projects'
 import { users } from '../../db/schema/users'
 import {
     canManageTeamMembers,
@@ -541,11 +541,55 @@ teamsRoutes.post('/:id/members', zValidator('json', addTeamMemberSchema), async 
         }
 
         // Add to team_members
-        const [newMember] = await db.insert(teamMembers).values({
-            teamId,
-            userId: targetUserId,
-            teamLevel: newMemberLevel,
-        }).returning()
+        const newMember = await db.transaction(async (tx) => {
+            const [inserted] = await tx.insert(teamMembers).values({
+                teamId,
+                userId: targetUserId,
+                teamLevel: newMemberLevel,
+            }).returning()
+
+            // AUTO-ADD TO PROJECTS
+            // Find all projects associated with this team
+            const teamProjects = await tx.select({ id: projects.id })
+                .from(projects)
+                .where(eq(projects.teamId, teamId))
+
+            // Also check projectTeams join table
+            const linkedProjects = await tx.select({ id: projects.id })
+                .from(projects)
+                .innerJoin(projectTeams, eq(projects.id, projectTeams.projectId))
+                .where(eq(projectTeams.teamId, teamId))
+
+            const allProjectIds = Array.from(new Set([
+                ...teamProjects.map(p => p.id),
+                ...linkedProjects.map(p => p.id)
+            ]))
+
+            if (allProjectIds.length > 0) {
+                // Check existing memberships to avoid duplicates
+                const existingProjectMems = await tx.select({ projectId: projectMembers.projectId })
+                    .from(projectMembers)
+                    .where(and(
+                        eq(projectMembers.userId, targetUserId),
+                        inArray(projectMembers.projectId, allProjectIds)
+                    ))
+
+                const existingIds = existingProjectMems.map(m => m.projectId)
+                const idsToAdd = allProjectIds.filter(id => !existingIds.includes(id))
+
+                if (idsToAdd.length > 0) {
+                    await tx.insert(projectMembers).values(
+                        idsToAdd.map(pid => ({
+                            projectId: pid,
+                            userId: targetUserId,
+                            role: 'member'
+                        }))
+                    )
+                }
+            }
+
+            return inserted
+        })
 
         // TRIGGER WEBHOOK
         if (newMember) {

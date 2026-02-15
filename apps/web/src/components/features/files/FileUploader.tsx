@@ -4,6 +4,7 @@ import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useUploadFile, useCreateFolder } from '@/hooks/useFiles'
+import { useTranslation } from 'react-i18next'
 
 // Type definitions for File System API
 interface FileSystemEntry {
@@ -40,6 +41,7 @@ interface FileUploaderProps {
 }
 
 export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) {
+    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
     const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([])
     const [isDragOver, setIsDragOver] = useState(false)
@@ -282,7 +284,7 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
 
         } catch (error) {
             console.error(error)
-            setUploadQueue(prev => prev.map(p => p.file === fileItem.file ? { ...p, status: 'error', error: 'Upload failed' } : p))
+            setUploadQueue(prev => prev.map(p => p.file === fileItem.file ? { ...p, status: 'error', error: t('files.messages.upload_failed') || 'Upload failed' } : p))
         }
     }
 
@@ -313,10 +315,10 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
                     <Upload className="w-8 h-8 text-primary" />
                 </div>
                 <p className="text-lg font-medium text-foreground mb-1">
-                    Drag and drop files or folders here
+                    {t('files.messages.drag_drop_files_folders')}
                 </p>
                 <p className="text-sm text-muted-foreground mb-4">
-                    or click to browse
+                    {t('files.messages.click_to_browse')}
                 </p>
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="gap-2" type="button" onClick={(e) => {
@@ -324,14 +326,14 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
                         document.getElementById('file-input')?.click()
                     }}>
                         <File className="w-4 h-4" />
-                        Select Files
+                        {t('files.actions.select_files')}
                     </Button>
                     <Button variant="outline" size="sm" className="gap-2" type="button" onClick={(e) => {
                         e.stopPropagation()
                         document.getElementById('folder-input')?.click()
                     }}>
                         <File className="w-4 h-4" />
-                        Select Folder
+                        {t('files.actions.select_folder')}
                     </Button>
                 </div>
 
@@ -358,14 +360,14 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
             {uploadQueue.length > 0 && (
                 <div className="border-t bg-muted/30 p-4 space-y-3 max-h-60 overflow-y-auto">
                     <div className="flex items-center justify-between sticky top-0 bg-muted/30 backdrop-blur-sm z-10 pb-2">
-                        <h4 className="text-sm font-medium">Uploading {uploadQueue.length} file(s)</h4>
+                        <h4 className="text-sm font-medium">{t('files.messages.uploading_count', { count: uploadQueue.length })}</h4>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={(e) => { e.stopPropagation(); setUploadQueue([]) }}
                             className="text-xs"
                         >
-                            Clear all
+                            {t('files.actions.clear_all')}
                         </Button>
                     </div>
 

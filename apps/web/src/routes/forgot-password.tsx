@@ -5,6 +5,7 @@ import { forgetPassword } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { DashboardMockup } from '@/components/auth/DashboardMockup'
 
 export const Route = createFileRoute('/forgot-password')({
     component: ForgotPasswordPage,
@@ -29,7 +30,7 @@ function ForgotPasswordPage() {
             })
 
             if (result.error) {
-                setError(result.error.message || t('auth.error.default'))
+                setError(result.error.message || t('auth.error.send'))
             } else {
                 setSuccess(true)
                 setTimeout(() => {
@@ -118,7 +119,7 @@ function ForgotPasswordPage() {
 
             {/* Right side - Marketing */}
             <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 bg-[#0d0d12]">
-                <div className="max-w-lg">
+                <div className="max-w-lg mb-8">
                     <h2 className="text-5xl font-bold text-white leading-tight">
                         {t('forgotPassword.marketingTitle')}
                     </h2>
@@ -140,6 +141,13 @@ function ForgotPasswordPage() {
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-700 text-white font-bold">3</div>
                             <p className="text-gray-300">{t('forgotPassword.step3')}</p>
                         </div>
+                    </div>
+                </div>
+
+                {/* App Preview - Mockup */}
+                <div className="mt-12 w-full h-[300px] overflow-hidden">
+                    <div className="w-[200%] origin-top-left transform scale-50">
+                        <DashboardMockup />
                     </div>
                 </div>
             </div>

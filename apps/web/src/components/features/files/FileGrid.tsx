@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { format } from 'date-fns'
+import { pl, enUS } from 'date-fns/locale'
 import { FileRecord, Folder } from '@taskdashboard/types'
 import { MoreVertical, Folder as FolderIcon, FileText, Image, File as GenericFile, FileSpreadsheet, Video, Music, Pencil, Copy, Archive, Info, Trash2, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { FileContextMenu } from './FileContextMenu'
+import { useTranslation } from 'react-i18next'
 
 interface FileItemProps {
     file: FileRecord
@@ -58,6 +60,8 @@ function formatSize(bytes: number | null) {
 }
 
 export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDownload, onInfo, onArchive, onDuplicate, userRole }: FileItemProps) {
+    const { t, i18n } = useTranslation()
+    const currentLocale = i18n.language === 'pl' ? pl : enUS
     const isImage = file.mimeType?.startsWith('image/')
     const FileTypeIcon = getFileIcon(file.mimeType)
     const iconColor = getFileColor(file.mimeType)
@@ -102,33 +106,33 @@ export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDown
                                 {userRole !== 'member' && (
                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                         <Pencil className="h-4 w-4 text-amber-500" />
-                                        <span>Edit</span>
+                                        <span>{t('files.actions.edit')}</span>
                                     </DropdownMenuItem>
                                 )}
                                 {userRole !== 'member' && (
                                     <>
                                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                             <Copy className="h-4 w-4 text-gray-400" />
-                                            <span>Duplicate</span>
+                                            <span>{t('files.actions.duplicate')}</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMove(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                             <FolderOpen className="h-4 w-4 text-gray-400" />
-                                            <span>Move to...</span>
+                                            <span>{t('files.actions.move')}</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                             <Archive className="h-4 w-4 text-gray-400" />
-                                            <span>Archive</span>
+                                            <span>{t('files.actions.archive')}</span>
                                         </DropdownMenuItem>
                                     </>
                                 )}
                                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onInfo?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                     <Info className="h-4 w-4 text-gray-400" />
-                                    <span>Info</span>
+                                    <span>{t('files.actions.info')}</span>
                                 </DropdownMenuItem>
                                 {userRole !== 'member' && (
                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                         <Trash2 className="h-4 w-4 text-amber-600" />
-                                        <span>Delete</span>
+                                        <span>{t('files.actions.delete')}</span>
                                     </DropdownMenuItem>
                                 )}
                             </DropdownMenuContent>
@@ -146,7 +150,7 @@ export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDown
                     </div>
                     <div className="flex items-center justify-between text-xs text-gray-500">
                         <span>{formatSize(file.size)}</span>
-                        <span>{format(new Date(file.createdAt), 'dd.MM.yyyy')}</span>
+                        <span>{format(new Date(file.createdAt), 'dd.MM.yyyy', { locale: currentLocale })}</span>
                     </div>
                 </div>
             </div>
@@ -164,6 +168,8 @@ interface FolderGridItemProps {
 }
 
 export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileDrop, userRole }: FolderGridItemProps) {
+    const { t, i18n } = useTranslation()
+    const currentLocale = i18n.language === 'pl' ? pl : enUS
     const [isDragOver, setIsDragOver] = React.useState(false)
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -217,7 +223,7 @@ export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileD
                 {/* Size and Date */}
                 <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>{formatSize((folder as any).size)}</span>
-                    <span>{format(new Date(folder.updatedAt || folder.createdAt), 'dd.MM.yyyy')}</span>
+                    <span>{format(new Date(folder.updatedAt || folder.createdAt), 'dd.MM.yyyy', { locale: currentLocale })}</span>
                 </div>
 
                 {/* Menu Button */}
@@ -232,29 +238,29 @@ export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileD
                             {userRole !== 'member' && (
                                 <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                     <Pencil className="h-4 w-4 text-amber-500" />
-                                    <span>Edit</span>
+                                    <span>{t('files.actions.edit')}</span>
                                 </DropdownMenuItem>
                             )}
                             {userRole !== 'member' && (
                                 <>
                                     <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                         <Copy className="h-4 w-4 text-gray-400" />
-                                        <span>Duplicate</span>
+                                        <span>{t('files.actions.duplicate')}</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                         <Archive className="h-4 w-4 text-gray-400" />
-                                        <span>Archive</span>
+                                        <span>{t('files.actions.archive')}</span>
                                     </DropdownMenuItem>
                                 </>
                             )}
                             <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                 <Info className="h-4 w-4 text-gray-400" />
-                                <span>Info</span>
+                                <span>{t('files.actions.info')}</span>
                             </DropdownMenuItem>
                             {userRole !== 'member' && (
                                 <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDelete(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                     <Trash2 className="h-4 w-4 text-amber-600" />
-                                    <span>Delete</span>
+                                    <span>{t('files.actions.delete')}</span>
                                 </DropdownMenuItem>
                             )}
                         </DropdownMenuContent>

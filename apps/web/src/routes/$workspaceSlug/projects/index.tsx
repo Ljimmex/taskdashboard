@@ -10,6 +10,7 @@ import { DayTaskListPanel } from '@/components/features/projects/DayTaskListPane
 
 import { useSession } from '@/lib/auth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
+import { useTranslation } from 'react-i18next'
 
 export const Route = createFileRoute('/$workspaceSlug/projects/')({
     component: ProjectsPage,
@@ -42,6 +43,7 @@ interface Task {
 }
 
 function ProjectsPage() {
+    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
     const navigate = useNavigate()
     const { data: session } = useSession()
@@ -395,6 +397,7 @@ function ProjectsPage() {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 onNewProject={handleNewProject}
+                userRole={currentWorkspace?.userRole}
             />
 
             {/* Loading State */}
@@ -407,13 +410,15 @@ function ProjectsPage() {
             {/* Projects */}
             {!loading && filteredProjects.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                    <p className="mb-4">No projects found</p>
-                    <button
-                        onClick={handleNewProject}
-                        className="px-4 py-2 rounded-lg bg-amber-500 text-black font-medium hover:bg-amber-400 transition-colors"
-                    >
-                        Create your first project
-                    </button>
+                    <p className="mb-4">{t('projects.noProjectsFound')}</p>
+                    {currentWorkspace?.userRole && !['member', 'guest'].includes(currentWorkspace.userRole) && (
+                        <button
+                            onClick={handleNewProject}
+                            className="px-4 py-2 rounded-lg bg-amber-500 text-black font-medium hover:bg-amber-400 transition-colors"
+                        >
+                            {t('projects.createFirstProject')}
+                        </button>
+                    )}
                 </div>
             )}
 

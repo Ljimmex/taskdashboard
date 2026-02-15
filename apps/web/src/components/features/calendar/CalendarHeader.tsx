@@ -100,7 +100,7 @@ export function CalendarHeader({
     setFilterMemberIds,
     events = []
 }: CalendarHeaderProps) {
-    const { i18n } = useTranslation()
+    const { t, i18n } = useTranslation()
     const locale = i18n.language === 'pl' ? pl : enUS
 
     const toggleProject = (projectId: string) => {
@@ -232,7 +232,7 @@ export function CalendarHeader({
                         )}
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /><path d="M8 2v4" /><path d="M16 2v4" /></svg>
-                        <span>Month</span>
+                        <span>{t('calendar.actions.month')}</span>
                     </button>
                     <button
                         onClick={() => setView('week')}
@@ -242,7 +242,7 @@ export function CalendarHeader({
                         )}
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /></svg>
-                        <span>Week</span>
+                        <span>{t('calendar.actions.week')}</span>
                     </button>
                     <button
                         onClick={() => setView('day')}
@@ -252,7 +252,7 @@ export function CalendarHeader({
                         )}
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 12h18" /></svg>
-                        <span>Day</span>
+                        <span>{t('calendar.actions.day')}</span>
                     </button>
                 </div>
 
@@ -264,13 +264,13 @@ export function CalendarHeader({
                             hasActiveFilters ? "bg-[#1E2029] text-white ring-1 ring-amber-500/50" : "bg-[#1a1a24] text-gray-400 hover:text-white"
                         )}>
                             <Filter className="w-3.5 h-3.5" />
-                            <span>Filter</span>
+                            <span>{t('calendar.actions.filter')}</span>
                             {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-amber-500 ml-1" />}
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-64 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none max-h-[80vh] overflow-y-auto">
                         <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Event Types
+                            {t('calendar.types.event')}
                         </div>
 
                         <DropdownMenuItem
@@ -278,7 +278,7 @@ export function CalendarHeader({
                             className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                         >
                             <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.EVENT)} />
-                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.EVENT) ? "text-white" : "text-gray-400")}>Events</span>
+                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.EVENT) ? "text-white" : "text-gray-400")}>{t('calendar.types.event')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
@@ -286,7 +286,7 @@ export function CalendarHeader({
                             className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                         >
                             <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.TASK)} />
-                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.TASK) ? "text-white" : "text-gray-400")}>Tasks</span>
+                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.TASK) ? "text-white" : "text-gray-400")}>{t('calendar.types.task')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
@@ -294,7 +294,7 @@ export function CalendarHeader({
                             className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                         >
                             <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.REMINDER)} />
-                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.REMINDER) ? "text-white" : "text-gray-400")}>Reminders</span>
+                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.REMINDER) ? "text-white" : "text-gray-400")}>{t('calendar.types.reminder')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
@@ -302,7 +302,7 @@ export function CalendarHeader({
                             className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                         >
                             <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.MEETING)} />
-                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.MEETING) ? "text-white" : "text-gray-400")}>Meetings</span>
+                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.MEETING) ? "text-white" : "text-gray-400")}>{t('calendar.types.meeting')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator className="bg-gray-800 my-2" />
@@ -310,7 +310,7 @@ export function CalendarHeader({
                         {projects.length > 0 && (
                             <>
                                 <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    Projects
+                                    {t('dashboard.projects')}
                                 </div>
                                 {projects.map(p => (
                                     <DropdownMenuItem
@@ -331,7 +331,7 @@ export function CalendarHeader({
                         {members.length > 0 && (
                             <>
                                 <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    People
+                                    {t('calendar.fields.members')}
                                 </div>
                                 {members.map(m => (
                                     <DropdownMenuItem
@@ -367,7 +367,7 @@ export function CalendarHeader({
                                 }}
                                 className="w-full py-1.5 bg-[#1a1a24] hover:bg-[#20202b] text-gray-400 hover:text-white text-xs font-medium rounded-lg transition-colors border border-white/5"
                             >
-                                Clear All Filters
+                                {t('calendar.actions.clear_filters')}
                             </button>
                         </div>
                     </DropdownMenuContent>
@@ -381,14 +381,15 @@ export function CalendarHeader({
                             isExporting ? "bg-[#1E2029] text-white" : "bg-[#1a1a24] text-gray-400 hover:text-white"
                         )}>
                             <Share2 className="w-3.5 h-3.5" />
-                            <span>Export</span>
+                            <span>{t('calendar.actions.export')}</span>
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-80 bg-[#16161f] p-4 text-gray-300 shadow-2xl rounded-xl border-none">
                         <div className="flex flex-col gap-4">
                             <div>
-                                <h3 className="text-sm font-semibold text-white mb-1">Calendar Export</h3>
+                                <h3 className="text-sm font-semibold text-white mb-1">{t('calendar.export.title')}</h3>
                                 <p className="text-[11px] text-gray-500 leading-relaxed">
+                                    {t('calendar.export.desc')}
                                     Export your workspace calendar to PDF or iCal format.
                                 </p>
                             </div>
@@ -414,7 +415,7 @@ export function CalendarHeader({
                             <DropdownMenuSeparator className="bg-gray-800" />
 
                             <div>
-                                <h3 className="text-sm font-semibold text-white mb-2">Sync with external apps</h3>
+                                <h3 className="text-sm font-semibold text-white mb-2">{t('calendar.export.sync_title')}</h3>
                                 <button
                                     onClick={(e) => { e.preventDefault(); handleCopy(); }}
                                     className="w-full flex items-center justify-center gap-2 py-2.5 bg-black/40 hover:bg-white/5 rounded-xl border border-white/5 transition-all text-xs font-medium text-gray-300 hover:text-white mb-2"
@@ -422,18 +423,19 @@ export function CalendarHeader({
                                     {copied ? (
                                         <>
                                             <Check className="w-3.5 h-3.5 text-green-500" />
-                                            <span>Link Copied!</span>
+                                            <span>{t('calendar.export.link_copied')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <Clipboard className="w-3.5 h-3.5" />
-                                            <span>Copy Subscription Link</span>
+                                            <span>{t('calendar.export.copy_link')}</span>
                                         </>
                                     )}
                                 </button>
 
                                 <div className="space-y-3 mt-4">
                                     <p className="text-[11px] text-gray-400 leading-relaxed italic border-l-2 border-amber-500/30 pl-3">
+                                        {t('calendar.export.sync_desc')}
                                         Synchronize your schedule with an external calendar – e.g. Google Calendar or Apple Calendar.
                                         After adding the link to your chosen calendar, events will update automatically.
                                         Keep in mind, however, that changes in the external calendar may be visible with a delay.
@@ -441,15 +443,15 @@ export function CalendarHeader({
                                     </p>
 
                                     <div className="flex flex-col gap-1.5 pt-1">
-                                        <p className="text-[10px] text-gray-500 mb-1 font-semibold uppercase tracking-wider">Sync Instructions</p>
+                                        <p className="text-[10px] text-gray-500 mb-1 font-semibold uppercase tracking-wider">{t('calendar.export.sync_instructions')}</p>
                                         <a href="https://support.google.com/calendar/answer/37100?hl=pl-PL&co=GENIE.Platform%3DDesktop&oco=1" target="_blank" rel="noopener noreferrer" className="text-[11px] text-amber-500/80 hover:text-amber-500 transition-colors flex items-center gap-2">
-                                            <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> Google Calendar Help
+                                            <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> {t('calendar.export.google_help')}
                                         </a>
                                         <a href="https://support.apple.com/pl-pl/guide/iphone/iph3d1110d4/ios" target="_blank" rel="noopener noreferrer" className="text-[11px] text-amber-500/80 hover:text-amber-500 transition-colors flex items-center gap-2">
-                                            <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> Apple Calendar (iPhone)
+                                            <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> {t('calendar.export.apple_iphone')}
                                         </a>
                                         <a href="https://support.apple.com/pl-pl/guide/calendar/icl1022/mac" target="_blank" rel="noopener noreferrer" className="text-[11px] text-amber-500/80 hover:text-amber-500 transition-colors flex items-center gap-2">
-                                            <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> Apple Calendar (Mac)
+                                            <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> {t('calendar.export.apple_mac')}
                                         </a>
                                     </div>
                                 </div>
@@ -463,12 +465,12 @@ export function CalendarHeader({
                     <DropdownMenuTrigger asChild>
                         <button className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a24] hover:bg-[#20202b] rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all mr-2 outline-none focus:ring-1 focus:ring-white/10">
                             <SlidersHorizontal className="w-3.5 h-3.5" />
-                            <span>Schedule setting</span>
+                            <span>{t('calendar.actions.schedule_setting')}</span>
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-64 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none">
                         <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            View Options
+                            {t('calendar.actions.view_options')}
                         </div>
 
                         <DropdownMenuItem
@@ -476,13 +478,13 @@ export function CalendarHeader({
                             className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                         >
                             <CustomCheckbox checked={showWeekends} />
-                            <span className="text-gray-300">Show weekends</span>
+                            <span className="text-gray-300">{t('calendar.actions.show_weekends')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator className="bg-gray-800 my-2" />
 
                         <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Start of week
+                            {t('calendar.actions.start_of_week')}
                         </div>
                         <DropdownMenuRadioGroup value={weekStartDay} onValueChange={(v) => setWeekStartDay(v as 'monday' | 'sunday')}>
                             <DropdownMenuRadioItem value="monday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
@@ -490,7 +492,7 @@ export function CalendarHeader({
                                     <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'monday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
                                         {weekStartDay === 'monday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
                                     </div>
-                                    <span>Monday</span>
+                                    <span>{t('calendar.actions.monday')}</span>
                                 </div>
                             </DropdownMenuRadioItem>
                             <DropdownMenuRadioItem value="sunday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
@@ -498,7 +500,7 @@ export function CalendarHeader({
                                     <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'sunday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
                                         {weekStartDay === 'sunday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
                                     </div>
-                                    <span>Sunday</span>
+                                    <span>{t('calendar.actions.sunday')}</span>
                                 </div>
                             </DropdownMenuRadioItem>
                         </DropdownMenuRadioGroup>
@@ -520,7 +522,7 @@ export function CalendarHeader({
                         onClick={onToday}
                         className="px-3 py-1 text-xs font-medium text-gray-400 hover:text-amber-500 transition-colors"
                     >
-                        Today
+                        {t('calendar.actions.today')}
                     </button>
                     <button
                         onClick={onNextMonth}

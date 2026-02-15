@@ -5,6 +5,7 @@ import { ChevronDoubleRightIcon } from '../tasks/components/TaskIcons'
 import { Upload, Trash2 } from 'lucide-react'
 import { useParams } from '@tanstack/react-router'
 import { useUploadFile, useCreateFolder } from '@/hooks/useFiles'
+import { useTranslation } from 'react-i18next'
 
 interface FileUploadPanelProps {
     isOpen: boolean
@@ -55,6 +56,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
     const panelRef = useRef<HTMLDivElement>(null)
     const dropZoneRef = useRef<HTMLDivElement>(null)
+    const { t } = useTranslation()
     const uploadMutation = useUploadFile()
     const createFolderMutation = useCreateFolder()
 
@@ -382,8 +384,8 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                             <ChevronDoubleRightIcon />
                         </button>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Upload Files</h2>
-                            <p className="text-xs text-gray-500">Add files to your workspace</p>
+                            <h2 className="text-lg font-semibold text-white">{t('files.messages.upload_files')}</h2>
+                            <p className="text-xs text-gray-500">{t('files.messages.add_files_desc')}</p>
                         </div>
                     </div>
                 </div>
@@ -409,7 +411,10 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                             <Upload className={`w-6 h-6 transition-colors ${isDragOver ? 'text-amber-500' : 'text-gray-400'}`} />
                         </div>
                         <p className="text-sm text-gray-400 text-center">
-                            Drag and Drop or <span className="text-amber-500 font-medium">Browse</span> to upload
+                            {t('files.messages.drag_drop_files_folders')}
+                        </p>
+                        <p className="text-sm text-amber-500 font-medium text-center mt-1">
+                            {t('files.messages.click_to_browse')}
                         </p>
                         <input
                             type="file"
@@ -450,7 +455,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
 
                                         {/* Error message */}
                                         {qFile.status === 'error' && (
-                                            <p className="text-xs text-red-400 mt-1">{qFile.error || 'Upload failed'}</p>
+                                            <p className="text-xs text-red-400 mt-1">{qFile.error || t('files.messages.upload_failed')}</p>
                                         )}
                                     </div>
 
@@ -495,7 +500,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                         disabled={pendingCount === 0 || isUploading}
                         className="w-full py-3 bg-[#F2CE88] text-[#0a0a0f] font-bold rounded-xl hover:bg-amber-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isUploading ? 'Uploading...' : `Upload ${pendingCount > 0 ? `(${pendingCount})` : ''}`}
+                        {isUploading ? t('files.picker.uploading') : pendingCount > 0 ? t('files.picker.upload_count', { count: pendingCount }) : t('files.actions.upload')}
                     </button>
                 </div>
             </div>

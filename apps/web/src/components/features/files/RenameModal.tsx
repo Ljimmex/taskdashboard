@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, Pencil, Loader2, FileText, Folder } from 'lucide-react'
 import { useRenameFile, useRenameFolder } from '@/hooks/useFiles'
 import { useParams } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 
 interface RenameModalProps {
     isOpen: boolean
@@ -13,6 +14,7 @@ interface RenameModalProps {
 }
 
 export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuccess }: RenameModalProps) {
+    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
     const [name, setName] = useState(itemName)
     const renameFile = useRenameFile()
@@ -75,7 +77,9 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
                             )}
                         </div>
                         <h2 className="text-lg font-semibold text-white">
-                            Rename {itemType === 'folder' ? 'Folder' : 'File'}
+                            {itemType === 'folder'
+                                ? t('files.modals.rename.title_folder')
+                                : t('files.modals.rename.title_file')}
                         </h2>
                     </div>
                     <button
@@ -90,14 +94,14 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     <div>
                         <label htmlFor="item-name" className="block text-sm font-medium text-gray-300 mb-2">
-                            New Name
+                            {t('files.modals.rename.label')}
                         </label>
                         <input
                             id="item-name"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Enter new name..."
+                            placeholder={t('files.modals.rename.placeholder')}
                             autoFocus
                             className="w-full px-4 py-3 bg-[#1a1a24] border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
                         />
@@ -110,7 +114,7 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
                             onClick={handleClose}
                             className="flex-1 px-4 py-2.5 text-gray-400 bg-[#1a1a24] rounded-xl font-medium hover:text-white hover:bg-gray-800 transition-colors"
                         >
-                            Cancel
+                            {t('files.modals.rename.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -120,12 +124,12 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
                             {(renameFile.isPending || renameFolder.isPending) ? (
                                 <>
                                     <Loader2 size={18} className="animate-spin" />
-                                    Renaming...
+                                    {t('files.modals.rename.submit_loading')}
                                 </>
                             ) : (
                                 <>
                                     <Pencil size={18} />
-                                    Rename
+                                    {t('files.modals.rename.submit')}
                                 </>
                             )}
                         </button>
@@ -135,3 +139,4 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
         </div>
     )
 }
+

@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { format } from 'date-fns'
+import { pl, enUS } from 'date-fns/locale'
 import { FileRecord, Folder } from '@taskdashboard/types'
 import { Folder as FolderIcon, MoreHorizontal, FileText, Image, FileSpreadsheet, Video, Music, File as GenericFile, Pencil, Trash2, Copy, Archive, Info, FolderOpen, Download, ArrowUp, ArrowDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useTranslation } from 'react-i18next'
 
 interface FileListProps {
     files?: FileRecord[]
@@ -52,31 +54,6 @@ function getFileColor(mimeType?: string | null) {
     return 'text-gray-500'
 }
 
-// Get friendly file type name
-function getFriendlyFileType(mimeType?: string | null): string {
-    if (!mimeType) return 'Unknown'
-
-    const mimeMap: Record<string, string> = {
-        'application/pdf': 'PDF',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint',
-        'application/msword': 'Word',
-        'application/vnd.ms-excel': 'Excel',
-        'application/vnd.ms-powerpoint': 'PowerPoint',
-        'application/zip': 'ZIP',
-        'application/json': 'JSON',
-        'text/plain': 'Text',
-    }
-
-    if (mimeMap[mimeType]) return mimeMap[mimeType]
-    if (mimeType.startsWith('image/')) return mimeType.split('/')[1].toUpperCase()
-    if (mimeType.startsWith('video/')) return mimeType.split('/')[1].toUpperCase()
-    if (mimeType.startsWith('audio/')) return mimeType.split('/')[1].toUpperCase()
-
-    return mimeType.split('/')[1]?.toUpperCase() || 'Unknown'
-}
-
 export function FileList({
     files = [],
     folders = [],
@@ -94,8 +71,36 @@ export function FileList({
     onSort,
     userRole
 }: FileListProps) {
+    const { t, i18n } = useTranslation()
+    const currentLocale = i18n.language === 'pl' ? pl : enUS
+
+    // Get friendly file type name
+    const getFriendlyFileType = (mimeType?: string | null): string => {
+        if (!mimeType) return t('files.types.all') // Or Unknown? 
+
+        const mimeMap: Record<string, string> = {
+            'application/pdf': t('files.types.pdf'),
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': t('files.types.document'),
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': t('files.types.spreadsheet'),
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation': t('files.types.powerpoint'),
+            'application/msword': t('files.types.document'),
+            'application/vnd.ms-excel': t('files.types.spreadsheet'),
+            'application/vnd.ms-powerpoint': t('files.types.powerpoint'),
+            'application/zip': t('files.types.archive'),
+            'application/json': t('files.types.json'),
+            'text/plain': t('files.types.text'),
+        }
+
+        if (mimeMap[mimeType]) return mimeMap[mimeType]
+        if (mimeType.startsWith('image/')) return t('files.types.image')
+        if (mimeType.startsWith('video/')) return t('files.types.video')
+        if (mimeType.startsWith('audio/')) return t('files.types.audio')
+
+        return mimeType.split('/')[1]?.toUpperCase() || t('files.types.unknown')
+    }
+
     if (isLoading) {
-        return <div className="flex items-center justify-center py-10 text-gray-500">Loading...</div>
+        return <div className="flex items-center justify-center py-10 text-gray-500">{t('files.messages.getting_ready')}</div>
     }
 
     const formatSize = (bytes: number | null) => {
@@ -127,25 +132,25 @@ export function FileList({
                             className="w-[50%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
                             onClick={() => onSort('name')}
                         >
-                            <div className="flex items-center">Name {renderSortIcon('name')}</div>
+                            <div className="flex items-center">{t('files.sort.name')} {renderSortIcon('name')}</div>
                         </th>
                         <th
                             className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
                             onClick={() => onSort('size')}
                         >
-                            <div className="flex items-center">Size {renderSortIcon('size')}</div>
+                            <div className="flex items-center">{t('files.sort.size')} {renderSortIcon('size')}</div>
                         </th>
                         <th
                             className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
                             onClick={() => onSort('type')}
                         >
-                            <div className="flex items-center">Type {renderSortIcon('type')}</div>
+                            <div className="flex items-center">{t('files.sort.type')} {renderSortIcon('type')}</div>
                         </th>
                         <th
                             className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
                             onClick={() => onSort('date')}
                         >
-                            <div className="flex items-center">Last Modified {renderSortIcon('date')}</div>
+                            <div className="flex items-center">{t('files.properties.modified')} {renderSortIcon('date')}</div>
                         </th>
                         <th className="w-[50px] px-4 py-3"></th>
                     </tr>
@@ -166,8 +171,8 @@ export function FileList({
                                 </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-500">{formatSize((folder as any).size)}</td>
-                            <td className="px-4 py-3 text-sm text-gray-500">Folder</td>
-                            <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(folder.updatedAt || folder.createdAt), 'MMM d, yyyy')}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500">{t('files.types.folder')}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(folder.updatedAt || folder.createdAt), 'dd MMM, yyyy', { locale: currentLocale })}</td>
                             <td className="px-4 py-3" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -180,29 +185,29 @@ export function FileList({
                                         {canManageFolder && (
                                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                 <Pencil className="h-4 w-4 text-amber-500" />
-                                                <span>Edit</span>
+                                                <span>{t('files.actions.edit')}</span>
                                             </DropdownMenuItem>
                                         )}
                                         {canManageFolder && (
                                             <>
                                                 <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                     <Copy className="h-4 w-4 text-gray-400" />
-                                                    <span>Duplicate</span>
+                                                    <span>{t('files.actions.duplicate')}</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                     <Archive className="h-4 w-4 text-gray-400" />
-                                                    <span>Archive</span>
+                                                    <span>{t('files.actions.archive')}</span>
                                                 </DropdownMenuItem>
                                             </>
                                         )}
                                         <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                             <Info className="h-4 w-4 text-gray-400" />
-                                            <span>Info</span>
+                                            <span>{t('files.actions.info')}</span>
                                         </DropdownMenuItem>
                                         {canManageFolder && (
                                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                 <Trash2 className="h-4 w-4 text-amber-600" />
-                                                <span>Delete</span>
+                                                <span>{t('files.actions.delete')}</span>
                                             </DropdownMenuItem>
                                         )}
                                     </DropdownMenuContent>
@@ -230,7 +235,7 @@ export function FileList({
                                     {getFriendlyFileType(file.mimeType)}
                                 </td>
                                 <td className="px-4 py-3 text-sm text-gray-500">
-                                    {format(new Date(file.updatedAt || file.createdAt), 'MMM d, yyyy')}
+                                    {format(new Date(file.updatedAt || file.createdAt), 'dd MMM, yyyy', { locale: currentLocale })}
                                 </td>
                                 <td className="px-4 py-3">
                                     <DropdownMenu>
@@ -244,37 +249,37 @@ export function FileList({
                                             {canManageFile && (
                                                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                     <Pencil className="h-4 w-4 text-amber-500" />
-                                                    <span>Edit</span>
+                                                    <span>{t('files.actions.edit')}</span>
                                                 </DropdownMenuItem>
                                             )}
                                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDownload(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                 <Download className="h-4 w-4 text-gray-400" />
-                                                <span>Download</span>
+                                                <span>{t('files.actions.download')}</span>
                                             </DropdownMenuItem>
                                             {canManageFile && (
                                                 <>
                                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                         <Copy className="h-4 w-4 text-gray-400" />
-                                                        <span>Duplicate</span>
+                                                        <span>{t('files.actions.duplicate')}</span>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMove(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                         <FolderOpen className="h-4 w-4 text-gray-400" />
-                                                        <span>Move to...</span>
+                                                        <span>{t('files.actions.move')}</span>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                         <Archive className="h-4 w-4 text-gray-400" />
-                                                        <span>Archive</span>
+                                                        <span>{t('files.actions.archive')}</span>
                                                     </DropdownMenuItem>
                                                 </>
                                             )}
                                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onInfo?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                 <Info className="h-4 w-4 text-gray-400" />
-                                                <span>Info</span>
+                                                <span>{t('files.actions.info')}</span>
                                             </DropdownMenuItem>
                                             {canManageFile && (
                                                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                     <Trash2 className="h-4 w-4 text-amber-600" />
-                                                    <span>Delete</span>
+                                                    <span>{t('files.actions.delete')}</span>
                                                 </DropdownMenuItem>
                                             )}
                                         </DropdownMenuContent>
@@ -287,7 +292,7 @@ export function FileList({
                     {folders.length === 0 && files.length === 0 && (
                         <tr>
                             <td colSpan={5} className="h-24 text-center text-gray-500">
-                                No files or folders found.
+                                {t('files.picker.no_files')}
                             </td>
                         </tr>
                     )}

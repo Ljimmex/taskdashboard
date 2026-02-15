@@ -1,4 +1,5 @@
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu"
+import { useTranslation } from "react-i18next"
 
 interface FileContextMenuProps {
     children: React.ReactNode
@@ -12,6 +13,7 @@ interface FileContextMenuProps {
 }
 
 export function FileContextMenu({ children, itemId, isFolder, onRename, onDelete, onMove, onDownload, userRole }: FileContextMenuProps) {
+    const { t } = useTranslation()
     const canManage = userRole !== 'member'
 
     return (
@@ -19,22 +21,22 @@ export function FileContextMenu({ children, itemId, isFolder, onRename, onDelete
             <ContextMenuTrigger>{children}</ContextMenuTrigger>
             <ContextMenuContent className="w-64">
                 <ContextMenuItem inset onClick={() => !isFolder && onDownload(itemId)}>
-                    Download
+                    {t('files.actions.download')}
                 </ContextMenuItem>
                 {canManage && (
                     <>
                         <ContextMenuItem inset onClick={() => onRename(itemId)}>
-                            Rename
+                            {t('files.actions.rename')}
                         </ContextMenuItem>
                         <ContextMenuItem inset onClick={() => onMove(itemId)}>
-                            Move to...
+                            {t('files.actions.move')}
                         </ContextMenuItem>
                     </>
                 )}
                 <ContextMenuSeparator />
                 {canManage && (
                     <ContextMenuItem inset onClick={() => onDelete(itemId)} className="text-destructive">
-                        Delete
+                        {t('files.actions.delete')}
                     </ContextMenuItem>
                 )}
             </ContextMenuContent>

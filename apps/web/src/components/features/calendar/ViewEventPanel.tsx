@@ -1,11 +1,12 @@
 import { useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Calendar, Clock, MapPin, Video, Edit3, Trash2, ExternalLink } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { pl, enUS } from 'date-fns/locale'
 import { CalendarEventType } from './CalendarView'
 import type { CalendarEvent } from './DayEventListPanel'
 import { apiFetch } from '@/lib/api'
 import { useSession } from '@/lib/auth'
-import { useTranslation } from 'react-i18next'
 
 interface ViewEventPanelProps {
     event: CalendarEvent | null
@@ -24,6 +25,7 @@ function getTypeColor(type?: CalendarEventType) {
         default: return { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' }
     }
 }
+
 
 function getTypeLabel(type?: CalendarEventType, t?: any) {
     switch (type) {
@@ -51,7 +53,7 @@ export function ViewEventPanel({
     onEdit,
     onDeleted,
 }: ViewEventPanelProps) {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
     const panelRef = useRef<HTMLDivElement>(null)
     const { data: session } = useSession()
 
@@ -68,7 +70,7 @@ export function ViewEventPanel({
 
     const handleDelete = async () => {
         if (!event) return
-        if (!confirm(t('calendar.panels.delete_event_confirm'))) return
+        if (!confirm(t('calendar.panels.view_event.delete_confirm'))) return
 
         try {
             const res = await apiFetch(`/api/calendar/${event.id}`, {
@@ -78,11 +80,11 @@ export function ViewEventPanel({
                 onClose()
                 onDeleted?.()
             } else {
-                alert(t('calendar.panels.delete_error'))
+                alert(t('calendar.panels.view_event.delete_error'))
             }
         } catch (err) {
             console.error('Delete error:', err)
-            alert(t('calendar.panels.delete_error'))
+            alert(t('calendar.panels.view_event.delete_error'))
         }
     }
 
@@ -90,6 +92,10 @@ export function ViewEventPanel({
 
     const colors = getTypeColor(event.type)
     const isCreator = session?.user?.id === event.createdBy || session?.user?.id === event.creator?.id
+
+    // Get locale for date-fns
+    const dateLocale = i18n.language === 'pl' ? pl : enUS
+    const dateFormat = i18n.language === 'pl' ? 'EEEE, d MMMM yyyy' : 'EEEE, MMMM d, yyyy'
 
     return (
         <>
@@ -111,7 +117,7 @@ export function ViewEventPanel({
                             {getTypeIcon(event.type)}
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">{t('calendar.panels.event_details_title')}</h2>
+                            <h2 className="text-lg font-semibold text-white">{t('calendar.panels.view_event.title')}</h2>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium uppercase tracking-wider ${colors.bg} ${colors.text}`}>
                                     {getTypeLabel(event.type, t)}
@@ -168,7 +174,7 @@ export function ViewEventPanel({
                             <div className="flex items-center gap-3">
                                 <Calendar size={16} className="text-gray-400" />
                                 <span className="text-sm text-white">
-                                    {format(parseISO(event.startAt), 'EEEE, MMMM d, yyyy')}
+                                    {format(parseISO(event.startAt), dateFormat, { locale: dateLocale })}
                                 </span>
                             </div>
                             {!event.isAllDay && (

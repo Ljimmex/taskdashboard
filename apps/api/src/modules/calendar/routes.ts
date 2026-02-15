@@ -8,6 +8,7 @@ import { triggerWebhook } from '../webhooks/trigger'
 import {
     canViewCalendarEvents,
     canCreateCalendarEvents,
+    canCreateReminders,
     canManageCalendarEvents,
     type WorkspaceRole,
     type TeamLevel
@@ -30,7 +31,9 @@ const createEventSchema = z.object({
     meetingLink: zSanitizedStringOptional(),
     taskId: z.string().optional().nullable(),
     isAllDay: z.boolean().optional(),
-    recurrence: z.any().optional()
+    recurrence: z.any().optional(),
+    assigneeIds: z.array(z.string()).optional(),
+    workspaceSlug: zSanitizedStringOptional()
 })
 
 const updateEventSchema = createEventSchema.partial()
@@ -112,13 +115,18 @@ async function triggerWebhookWithWorkspace(event: string, payload: any, teamId: 
 // For simplicity and security, let's enforce permission on the first team or all.
 // Let's check permissions for the first team in the list for now, or adapt `getUserPermissions`.
 
-async function checkTeamPermissions(userId: string, teamIds: string[]): Promise<boolean> {
+async function checkTeamPermissions(userId: string, teamIds: string[], type: string = 'event'): Promise<boolean> {
     if (!teamIds || teamIds.length === 0) return false
     // Check first team for now, or we can check all.
     // Let's just check the first one as "primary" context.
     const teamId = teamIds[0]
     const perms = await getUserPermissions(userId, teamId)
     if (!perms) return false
+
+    if (type === 'reminder') {
+        return canCreateReminders(perms.workspaceRole, perms.teamLevel)
+    }
+
     return canCreateCalendarEvents(perms.workspaceRole, perms.teamLevel)
 }
 
@@ -211,23 +219,26 @@ calendarRoutes.get('/', zValidator('query', calendarQuerySchema), async (c) => {
 
         console.log(`[Calendar GET] allowedTeamIds: ${JSON.stringify(allowedTeamIds)}`)
 
-        if (allowedTeamIds.length === 0) {
-            return c.json({ success: true, data: [] })
-        }
-
-        // Build overlap condition using Postgres array literal string
-        const pgArrayLiteral = `{${allowedTeamIds.join(',')}}`
-        const overlapCondition = sql`team_ids && ${pgArrayLiteral}::uuid[]`
-
         const events = await db.query.calendarEvents.findMany({
-            where: (e, { and, gte, lte, eq }) => {
+            where: (e, { and, gte, lte, eq, or, sql }) => {
                 const wheres: any[] = []
 
                 if (start) wheres.push(gte(e.startAt, new Date(start)))
                 if (end) wheres.push(lte(e.endAt, new Date(end)))
                 if (type) wheres.push(eq(e.type, type as any))
 
-                wheres.push(overlapCondition)
+                // Access Control
+                const pgArrayLiteral = `{${allowedTeamIds.join(',')}}`
+                const teamCheck = allowedTeamIds.length > 0
+                    ? sql`${e.teamIds} && ${pgArrayLiteral}::uuid[]`
+                    : sql`false`
+
+                const personalCheck = or(
+                    eq(e.createdBy, userId),
+                    sql`${userId} = ANY(${e.attendeeIds})`
+                )
+
+                wheres.push(or(teamCheck, personalCheck))
 
                 return and(...wheres)
             },
@@ -383,22 +394,65 @@ calendarRoutes.post('/', zValidator('json', createEventSchema), async (c) => {
 
         const body = c.req.valid('json')
 
+        // Validation
+        if (!body.title || !body.startAt || !body.endAt) {
+            return c.json({ error: 'Missing required fields' }, 400)
+        }
         // Validation handled by schema
         if (body.teamIds.length === 0) {
             return c.json({ error: 'At least one team ID is required' }, 400)
         }
 
+        const teamIds = Array.isArray(body.teamIds) ? body.teamIds : []
+        const attendeeIds = Array.isArray(body.assigneeIds) ? body.assigneeIds : [] // Map assigneeIds to attendeeIds
+
+        if (teamIds.length === 0 && attendeeIds.length === 0) {
+            return c.json({ error: 'Must specify team(s) or attendee(s)' }, 400)
+        }
+
         // Permission check
-        const canCreate = await checkTeamPermissions(userId, body.teamIds)
-        if (!canCreate) {
-            return c.json({ error: 'Forbidden: Cannot create events in selected teams' }, 403)
+        if (teamIds.length > 0) {
+            const canCreate = await checkTeamPermissions(userId, teamIds, body.type)
+            if (!canCreate) {
+                return c.json({ error: 'Forbidden: Cannot create events in selected teams' }, 403)
+            }
+        } else {
+            // Personal Event Scope
+            const workspaceSlug = body.workspaceSlug
+            let canAssignOthers = false
+
+            if (workspaceSlug) {
+                const workspace = await db.query.workspaces.findFirst({
+                    where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
+                })
+
+                if (workspace) {
+                    const workspaceId = workspace.id
+                    const member = await db.query.workspaceMembers.findFirst({
+                        where: (wm, { and, eq }) => and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId))
+                    })
+
+                    if (member && (member.role === 'owner' || member.role === 'admin')) {
+                        canAssignOthers = true
+                    }
+                }
+            }
+
+            // If not admin/owner, ensure only assigning self
+            if (!canAssignOthers) {
+                const otherAttendees = attendeeIds.filter((id: string) => id !== userId)
+                if (otherAttendees.length > 0) {
+                    return c.json({ error: 'Forbidden: Members can only create personal reminders for themselves' }, 403)
+                }
+            }
         }
 
         const baseEvent: NewCalendarEvent = {
             title: body.title,
             description: body.description,
-            teamIds: body.teamIds,
-            type: (body.type as any) || 'event',
+            teamIds: teamIds,
+            attendeeIds: attendeeIds,
+            type: body.type || 'event',
             startAt: new Date(body.startAt),
             endAt: new Date(body.endAt),
             meetingLink: body.meetingLink, // Save meeting link
@@ -480,7 +534,9 @@ calendarRoutes.post('/', zValidator('json', createEventSchema), async (c) => {
 
         // Webhook (trigger for the first created event)
         if (createdEvents.length > 0) {
-            await triggerWebhookWithWorkspace('calendar.created', createdEvents[0], createdEvents[0].teamIds[0])
+            if (createdEvents[0].teamIds && createdEvents[0].teamIds.length > 0) {
+                await triggerWebhookWithWorkspace('calendar.created', createdEvents[0], createdEvents[0].teamIds[0])
+            }
         }
 
         return c.json({
@@ -511,7 +567,10 @@ calendarRoutes.patch('/:id', zValidator('json', updateEventSchema), async (c) =>
         if (!existing) return c.json({ error: 'Event not found' }, 404)
 
         // Permission check on existing teams
-        const perms = await getUserPermissions(userId, existing.teamIds[0])
+        const teamId = existing.teamIds && existing.teamIds.length > 0 ? existing.teamIds[0] : null
+        if (!teamId) return c.json({ error: 'Event has no team assigned' }, 400)
+
+        const perms = await getUserPermissions(userId, teamId)
 
         const isAuthor = existing.createdBy === userId
         const canManage = perms && canManageCalendarEvents(perms.workspaceRole, perms.teamLevel)
@@ -537,7 +596,7 @@ calendarRoutes.patch('/:id', zValidator('json', updateEventSchema), async (c) =>
             .returning()
 
         // Webhook
-        await triggerWebhookWithWorkspace('calendar.updated', updated, existing.teamIds[0])
+        await triggerWebhookWithWorkspace('calendar.updated', updated, existing.teamIds![0])
 
         return c.json({ success: true, data: updated })
     } catch (error: any) {
@@ -560,7 +619,10 @@ calendarRoutes.delete('/:id', async (c) => {
         if (!existing) return c.json({ error: 'Event not found' }, 404)
 
         // Permission check
-        const perms = await getUserPermissions(userId, existing.teamIds[0])
+        const teamId = existing.teamIds && existing.teamIds.length > 0 ? existing.teamIds[0] : null
+        if (!teamId) return c.json({ error: 'Event has no team assigned' }, 400)
+
+        const perms = await getUserPermissions(userId, teamId)
 
         const isAuthor = existing.createdBy === userId
         const canManage = perms && canManageCalendarEvents(perms.workspaceRole, perms.teamLevel)
@@ -572,7 +634,7 @@ calendarRoutes.delete('/:id', async (c) => {
         await db.delete(calendarEvents).where(eq(calendarEvents.id, id))
 
         // Webhook
-        await triggerWebhookWithWorkspace('calendar.deleted', existing, existing.teamIds[0])
+        await triggerWebhookWithWorkspace('calendar.deleted', existing, existing.teamIds![0])
 
         return c.json({ success: true, message: 'Event deleted' })
     } catch (error: any) {

@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom'
 import { X, Download, Trash2, Pencil, Folder, Calendar, HardDrive, FileType, Hash, Users } from 'lucide-react'
 import { FileRecord } from '@taskdashboard/types'
 import { format } from 'date-fns'
+import { useTranslation } from 'react-i18next'
+import { pl, enUS } from 'date-fns/locale'
 
 interface FileInfoPanelProps {
     file: FileRecord | null
@@ -25,66 +27,6 @@ function getFileIcon(mimeType: string | null) {
     return '📄'
 }
 
-function getFriendlyFileType(mimeType: string | null, fileType: string | null | undefined): string {
-    if (fileType) {
-        return fileType.toUpperCase()
-    }
-    if (!mimeType) return 'Unknown'
-
-    // Common mime type mappings
-    const mimeMap: Record<string, string> = {
-        // PDF
-        'application/pdf': 'PDF',
-
-        // Word Documents
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.template': 'Word Template',
-        'application/msword': 'Word Document',
-        'application/vnd.ms-word.document.macroEnabled.12': 'Word Document',
-
-        // Excel Spreadsheets
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Spreadsheet',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.template': 'Excel Template',
-        'application/vnd.ms-excel': 'Excel Spreadsheet',
-        'application/vnd.ms-excel.sheet.macroEnabled.12': 'Excel Spreadsheet',
-
-        // PowerPoint Presentations
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.slideshow': 'PowerPoint Show',
-        'application/vnd.openxmlformats-officedocument.presentationml.template': 'PowerPoint Template',
-        'application/vnd.ms-powerpoint': 'PowerPoint',
-        'application/vnd.ms-powerpoint.presentation.macroEnabled.12': 'PowerPoint',
-
-        // Archives
-        'application/zip': 'ZIP Archive',
-        'application/x-rar-compressed': 'RAR Archive',
-        'application/x-7z-compressed': '7-Zip Archive',
-        'application/gzip': 'GZip Archive',
-        'application/x-tar': 'TAR Archive',
-
-        // Code/Text
-        'application/json': 'JSON',
-        'text/plain': 'Text File',
-        'text/html': 'HTML',
-        'text/css': 'CSS',
-        'text/javascript': 'JavaScript',
-        'application/javascript': 'JavaScript',
-        'text/typescript': 'TypeScript',
-        'text/xml': 'XML',
-        'application/xml': 'XML',
-    }
-
-    if (mimeMap[mimeType]) return mimeMap[mimeType]
-
-    // Fallback: extract subtype and format nicely
-    if (mimeType.startsWith('image/')) return `Image (${mimeType.split('/')[1].toUpperCase()})`
-    if (mimeType.startsWith('video/')) return `Video (${mimeType.split('/')[1].toUpperCase()})`
-    if (mimeType.startsWith('audio/')) return `Audio (${mimeType.split('/')[1].toUpperCase()})`
-
-    const subtype = mimeType.split('/')[1]
-    return subtype ? subtype.toUpperCase() : 'Unknown'
-}
-
 function formatFileSize(bytes: number | null): string {
     if (!bytes || bytes === 0) return '0 B'
     const k = 1024
@@ -94,6 +36,8 @@ function formatFileSize(bytes: number | null): string {
 }
 
 export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onRename }: FileInfoPanelProps) {
+    const { t, i18n } = useTranslation()
+    const currentLocale = i18n.language === 'pl' ? pl : enUS
     const panelRef = useRef<HTMLDivElement>(null)
 
     // Close on Escape
@@ -107,6 +51,66 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
         }
     }, [isOpen, onClose])
 
+    const getFriendlyFileType = (mimeType: string | null, fileType: string | null | undefined): string => {
+        if (fileType) {
+            return fileType.toUpperCase()
+        }
+        if (!mimeType) return t('files.types.unknown')
+
+        // Common mime type mappings
+        const mimeMap: Record<string, string> = {
+            // PDF
+            'application/pdf': t('files.types.pdf'),
+
+            // Word Documents
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': t('files.types.word'),
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.template': t('files.types.word'), // Reuse word
+            'application/msword': t('files.types.word'),
+            'application/vnd.ms-word.document.macroEnabled.12': t('files.types.word'),
+
+            // Excel Spreadsheets
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': t('files.types.excel'),
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.template': t('files.types.excel'), // Reuse excel
+            'application/vnd.ms-excel': t('files.types.excel'),
+            'application/vnd.ms-excel.sheet.macroEnabled.12': t('files.types.excel'),
+
+            // PowerPoint Presentations
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation': t('files.types.powerpoint'),
+            'application/vnd.openxmlformats-officedocument.presentationml.slideshow': t('files.types.powerpoint'),
+            'application/vnd.openxmlformats-officedocument.presentationml.template': t('files.types.powerpoint'),
+            'application/vnd.ms-powerpoint': t('files.types.powerpoint'),
+            'application/vnd.ms-powerpoint.presentation.macroEnabled.12': t('files.types.powerpoint'),
+
+            // Archives
+            'application/zip': t('files.types.zip'),
+            'application/x-rar-compressed': t('files.types.rar'),
+            'application/x-7z-compressed': t('files.types.7z'),
+            'application/gzip': t('files.types.gzip'),
+            'application/x-tar': t('files.types.tar'),
+
+            // Code/Text
+            'application/json': t('files.types.json'),
+            'text/plain': t('files.types.text'),
+            'text/html': t('files.types.html'),
+            'text/css': t('files.types.css'),
+            'text/javascript': t('files.types.javascript'),
+            'application/javascript': t('files.types.javascript'),
+            'text/typescript': t('files.types.typescript'),
+            'text/xml': t('files.types.xml'),
+            'application/xml': t('files.types.xml'),
+        }
+
+        if (mimeMap[mimeType]) return mimeMap[mimeType]
+
+        // Fallback: extract subtype and format nicely
+        if (mimeType.startsWith('image/')) return `${t('files.types.image')} (${mimeType.split('/')[1].toUpperCase()})`
+        if (mimeType.startsWith('video/')) return `${t('files.types.video')} (${mimeType.split('/')[1].toUpperCase()})`
+        if (mimeType.startsWith('audio/')) return `${t('files.types.audio')} (${mimeType.split('/')[1].toUpperCase()})`
+
+        const subtype = mimeType.split('/')[1]
+        return subtype ? subtype.toUpperCase() : t('files.types.unknown')
+    }
+
     if (!isOpen || !file) return null
 
     const isImage = file.mimeType?.startsWith('image/')
@@ -115,18 +119,18 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
         <>
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'} `}
                 onClick={onClose}
             />
 
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} `}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-gray-800 flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-white">File Details</h2>
+                    <h2 className="text-lg font-bold text-white">{t('files.properties.details')}</h2>
                     <button
                         onClick={onClose}
                         className="text-gray-500 hover:text-white transition-colors p-1"
@@ -164,14 +168,14 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 text-black rounded-xl font-medium hover:bg-amber-400 transition-colors"
                             >
                                 <Download size={18} />
-                                Download
+                                {t('files.actions.download')}
                             </button>
                         )}
                         {onRename && (
                             <button
                                 onClick={() => onRename(file.id)}
                                 className="p-2.5 rounded-xl text-gray-400 hover:text-white bg-[#1f1f2e] hover:bg-gray-800 border border-gray-800 transition-colors"
-                                title="Rename"
+                                title={t('files.actions.rename')}
                             >
                                 <Pencil size={18} />
                             </button>
@@ -180,7 +184,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                             <button
                                 onClick={() => onDelete(file.id)}
                                 className="p-2.5 rounded-xl text-gray-400 hover:text-red-400 bg-[#1f1f2e] hover:bg-gray-800 border border-gray-800 transition-colors"
-                                title="Delete"
+                                title={t('files.actions.delete')}
                             >
                                 <Trash2 size={18} />
                             </button>
@@ -189,12 +193,12 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
 
                     {/* File Properties */}
                     <div className="pt-4 border-t border-gray-800 space-y-3">
-                        <h4 className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-4">Properties</h4>
+                        <h4 className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-4">{t('files.properties.section_title')}</h4>
 
                         <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2 text-gray-500">
                                 <HardDrive size={14} />
-                                <span>Size</span>
+                                <span>{t('files.properties.size')}</span>
                             </div>
                             <span className="text-gray-300 font-medium">{formatFileSize(file.size)}</span>
                         </div>
@@ -202,7 +206,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                         <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2 text-gray-500">
                                 <FileType size={14} />
-                                <span>Type</span>
+                                <span>{t('files.properties.type')}</span>
                             </div>
                             <span className="text-gray-300 font-medium">{getFriendlyFileType(file.mimeType, file.fileType)}</span>
                         </div>
@@ -210,24 +214,24 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                         <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2 text-gray-500">
                                 <Calendar size={14} />
-                                <span>Created</span>
+                                <span>{t('files.properties.created')}</span>
                             </div>
-                            <span className="text-gray-300 font-medium">{format(new Date(file.createdAt), 'MMM d, yyyy')}</span>
+                            <span className="text-gray-300 font-medium">{format(new Date(file.createdAt), 'dd.MM.yyyy', { locale: currentLocale })}</span>
                         </div>
 
                         <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2 text-gray-500">
                                 <Folder size={14} />
-                                <span>Location</span>
+                                <span>{t('files.properties.location')}</span>
                             </div>
-                            <span className="text-gray-300 font-medium">{file.folderId ? 'In folder' : 'Root'}</span>
+                            <span className="text-gray-300 font-medium">{file.folderId ? t('files.messages.in_folder') : t('files.messages.root')}</span>
                         </div>
 
                         {file.teamId && (
                             <div className="flex items-center justify-between text-sm">
                                 <div className="flex items-center gap-2 text-gray-500">
                                     <Users size={14} />
-                                    <span>Team</span>
+                                    <span>{t('files.properties.team')}</span>
                                 </div>
                                 <span className="text-gray-300 font-medium font-mono text-xs">{file.teamId.slice(0, 12)}...</span>
                             </div>
@@ -236,7 +240,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                         <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2 text-gray-500">
                                 <Hash size={14} />
-                                <span>ID</span>
+                                <span>{t('files.properties.id')}</span>
                             </div>
                             <span className="text-gray-500 font-mono text-xs">{file.id.slice(0, 12)}...</span>
                         </div>

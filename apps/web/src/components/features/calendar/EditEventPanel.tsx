@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CalendarEventType } from './CalendarView'
-import { X, MapPin, Building, Monitor, Link as LinkIcon } from 'lucide-react'
+import { X, MapPin, Building, Monitor, Link as LinkIcon, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { CustomCheckbox } from './CalendarHeader'
 import { DueDatePicker } from '../tasks/components/DueDatePicker'
 import { apiFetchJson, apiFetch } from '@/lib/api'
-import { CheckCircle2 } from 'lucide-react'
 import type { CalendarEvent } from './DayEventListPanel'
-import { useTranslation } from 'react-i18next'
 
 interface EditEventPanelProps {
     event: CalendarEvent | null
@@ -16,9 +15,10 @@ interface EditEventPanelProps {
     onClose: () => void
     workspaceSlug?: string
     onUpdated?: () => void
+    canCreateTeamEvents?: boolean
 }
 
-export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdated }: EditEventPanelProps) {
+export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdated, canCreateTeamEvents = true }: EditEventPanelProps) {
     const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
 
@@ -71,6 +71,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
 
     const handleSave = async () => {
         if (!event || !title.trim()) return
+
         if (teamIds.length === 0) {
             alert('Please select at least one team')
             return
@@ -98,7 +99,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
             onClose()
         } catch (error) {
             console.error('Error updating event:', error)
-            alert('Failed to update event')
+            alert(t('calendar.panels.edit_event.alerts.update_error'))
         } finally {
             setLoading(false)
         }
@@ -125,8 +126,8 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                             ✏️
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">{t('calendar.panels.edit_event_title')}</h2>
-                            <p className="text-sm text-gray-500">{t('calendar.panels.edit_event_subtitle')}</p>
+                            <h2 className="text-lg font-semibold text-white">{t('calendar.panels.edit_event.title')}</h2>
+                            <p className="text-sm text-gray-500">{t('calendar.panels.edit_event.subtitle')}</p>
                         </div>
                     </div>
                     <button
@@ -211,106 +212,108 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                         </div>
                     </div>
 
-                    {/* Team Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            {t('calendar.panels.teams_label')} <span className="text-red-400">*</span>
-                        </label>
-                        <div className="relative group">
-                            <div className={cn(
-                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
-                                teamIds.length === 0 && "text-gray-500"
-                            )}>
-                                <Select value="" onValueChange={(val) => {
-                                    if (!teamIds.includes(val)) {
-                                        setTeamIds([...teamIds, val])
-                                    }
-                                }}>
-                                    <SelectTrigger className="w-full h-full border-none bg-transparent p-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0 focus:outline-none shadow-none text-sm font-normal">
-                                        <div className="flex flex-wrap gap-2 w-full">
-                                            {teamIds.length > 0 ? (
-                                                teamIds.map(id => {
-                                                    const team = teams.find(t => t.id === id)
-                                                    if (!team) return null
-                                                    return (
-                                                        <div key={id} onPointerDown={(e) => {
-                                                            e.preventDefault()
-                                                            e.stopPropagation()
-                                                            setTeamIds(teamIds.filter(t => t !== id))
-                                                        }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
-                                                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.color || '#666' }} />
-                                                            {team.name}
-                                                            <X size={12} className="ml-1 text-gray-500 group-hover/tag:text-red-400 transition-colors" />
-                                                        </div>
-                                                    )
-                                                })
-                                            ) : (
-                                                <span className="text-gray-500 py-1">{t('settings.organization.edit_panel.select_teams')}</span>
-                                            )}
-                                        </div>
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
-                                        {teams.map((team) => (
-                                            <SelectItem
-                                                key={team.id}
-                                                value={team.id}
-                                                className={cn(
-                                                    "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
-                                                    teamIds.includes(team.id) && "opacity-50 pointer-events-none"
+                    {/* Team Selection - Only if allowed */}
+                    {canCreateTeamEvents && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                {t('calendar.panels.teams_label')} <span className="text-red-400">*</span>
+                            </label>
+                            <div className="relative group">
+                                <div className={cn(
+                                    "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                    teamIds.length === 0 && "text-gray-500"
+                                )}>
+                                    <Select value="" onValueChange={(val) => {
+                                        if (!teamIds.includes(val)) {
+                                            setTeamIds([...teamIds, val])
+                                        }
+                                    }}>
+                                        <SelectTrigger className="w-full h-full border-none bg-transparent p-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0 focus:outline-none shadow-none text-sm font-normal">
+                                            <div className="flex flex-wrap gap-2 w-full">
+                                                {teamIds.length > 0 ? (
+                                                    teamIds.map(id => {
+                                                        const team = teams.find(t => t.id === id)
+                                                        if (!team) return null
+                                                        return (
+                                                            <div key={id} onPointerDown={(e) => {
+                                                                e.preventDefault()
+                                                                e.stopPropagation()
+                                                                setTeamIds(teamIds.filter(t => t !== id))
+                                                            }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
+                                                                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.color || '#666' }} />
+                                                                {team.name}
+                                                                <X size={12} className="ml-1 text-gray-500 group-hover/tag:text-red-400 transition-colors" />
+                                                            </div>
+                                                        )
+                                                    })
+                                                ) : (
+                                                    <span className="text-gray-500 py-1">{t('settings.organization.edit_panel.select_teams')}</span>
                                                 )}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    {team.color && (
-                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }} />
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
+                                            {teams.map((team) => (
+                                                <SelectItem
+                                                    key={team.id}
+                                                    value={team.id}
+                                                    className={cn(
+                                                        "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
+                                                        teamIds.includes(team.id) && "opacity-50 pointer-events-none"
                                                     )}
-                                                    {team.name}
-                                                    {teamIds.includes(team.id) && <CheckCircle2 className="w-3 h-3 text-amber-500 ml-auto" />}
-                                                </div>
-                                            </SelectItem>
-                                        ))}
-                                        {teams.length === 0 && (
-                                            <div className="p-3 text-xs text-gray-500 text-center">{t('settings.organization.edit_panel.no_teams_found')}</div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        {team.color && (
+                                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: team.color }} />
+                                                        )}
+                                                        {team.name}
+                                                        {teamIds.includes(team.id) && <CheckCircle2 className="w-3 h-3 text-amber-500 ml-auto" />}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                            {teams.length === 0 && (
+                                                <div className="p-3 text-xs text-gray-500 text-center">{t('settings.organization.edit_panel.no_teams_found')}</div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Meeting Type & Location */}
                     {(eventType === CalendarEventType.EVENT || eventType === CalendarEventType.MEETING) && (
                         <div className="space-y-4">
                             <div className="flex bg-[#1a1a24] p-1 rounded-full w-full">
                                 <button
-                                        onClick={() => {
-                                            setMeetingType('physical')
-                                            setMeetingLink('')
-                                        }}
-                                        className={cn(
-                                            "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
-                                            meetingType === 'physical'
-                                                ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                                : 'text-gray-500 hover:text-white'
-                                        )}
-                                    >
-                                        <Building className="w-3.5 h-3.5" />
-                                        {t('calendar.panels.in_person')}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setMeetingType('virtual')
-                                            setLocation('')
-                                        }}
-                                        className={cn(
-                                            "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
-                                            meetingType === 'virtual'
-                                                ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                                : 'text-gray-500 hover:text-white'
-                                        )}
-                                    >
-                                        <Monitor className="w-3.5 h-3.5" />
-                                        {t('calendar.panels.virtual')}
-                                    </button>
+                                    onClick={() => {
+                                        setMeetingType('physical')
+                                        setMeetingLink('')
+                                    }}
+                                    className={cn(
+                                        "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
+                                        meetingType === 'physical'
+                                            ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                                            : 'text-gray-500 hover:text-white'
+                                    )}
+                                >
+                                    <Building className="w-3.5 h-3.5" />
+                                    {t('calendar.panels.in_person')}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setMeetingType('virtual')
+                                        setLocation('')
+                                    }}
+                                    className={cn(
+                                        "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
+                                        meetingType === 'virtual'
+                                            ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                                            : 'text-gray-500 hover:text-white'
+                                    )}
+                                >
+                                    <Monitor className="w-3.5 h-3.5" />
+                                    {t('calendar.panels.virtual')}
+                                </button>
                             </div>
 
                             <div>
@@ -336,6 +339,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                     )}
                 </div>
 
+
                 {/* Footer */}
                 <div className="p-6 border-t border-gray-800 flex gap-3 bg-[#12121a] rounded-b-2xl">
                     <button
@@ -352,7 +356,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                         {loading ? t('calendar.panels.saving') : t('calendar.panels.save_changes')}
                     </button>
                 </div>
-            </div>
+            </div >
         </>
     )
 }

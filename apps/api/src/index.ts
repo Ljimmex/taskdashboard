@@ -58,19 +58,7 @@ app.use('*', secureHeaders({
     },
 }))
 
-// Rate Limiting (100 reqs per 15 min per IP)
-const limiter = rateLimiter({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
-    standardHeaders: 'draft-6', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
-    keyGenerator: (c) => {
-        // Support for proxies (Cloudflare, Render, etc.)
-        return c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for')?.split(',')[0] || 'unknown'
-    },
-})
-app.use('/api/*', limiter)
-
-// CORS
+// CORS - Must be before rate limiting to handle preflight OPTIONS requests
 app.use('*', cors({
     origin: [
         'http://localhost:5173',
@@ -88,6 +76,22 @@ app.use('*', cors({
     maxAge: 86400,
     credentials: true,
 }))
+
+// Rate Limiting (1000 reqs per 15 min per IP)
+const limiter = rateLimiter({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 1000, // Increased limit for better DX and production stability
+    standardHeaders: 'draft-6',
+    keyGenerator: (c) => {
+        return (
+            c.req.header('cf-connecting-ip') ||
+            c.req.header('x-forwarded-for')?.split(',')[0] ||
+            (c.env as any)?.remoteAddr || // Fallback for some runtimes
+            '127.0.0.1' // Default fallback
+        )
+    },
+})
+app.use('/api/*', limiter)
 
 // Logger (only in development)
 if (process.env.NODE_ENV !== 'production') {
