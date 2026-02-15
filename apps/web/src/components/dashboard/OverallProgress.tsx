@@ -1,233 +1,192 @@
-
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CalendarSmallIcon } from './icons'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ChevronDown } from 'lucide-react'
+import { ChecklistIcon, HistoryIcon, FoldersIcon, CalendarSmallIcon } from './icons'
 
 interface OverallProgressProps {
-    projects: any[]
-    currentUserId?: string
+    inProgress?: number
+    totalProjects?: number
+    upcoming?: number
 }
 
-// Helper to calculate progress strictly for the gauge
-function calculateProgress(projects: any[]) {
-    if (!projects || projects.length === 0) return { inProgress: 0, total: 0 }
-
-    // In progress = status 'active'
-    const inProgress = projects.filter(p => p.status === 'active').length
-    const total = projects.length
-
-    return { inProgress, total }
-}
-
-type DateRange = 'all_time' | 'last_year' | 'last_month' | 'last_week' | 'last_24h'
+// Chart data points - more points for smoother curve
+const chartData = [5, 8, 6, 12, 10, 15, 13, 18, 14, 20, 17, 22, 19, 25]
+const chartLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 export function OverallProgress({
-    projects = [],
-    currentUserId,
+    inProgress = 24,
+    totalProjects = 45,
+    upcoming = 12
 }: OverallProgressProps) {
     const { t } = useTranslation()
-    const [scope, setScope] = useState<'my_projects' | 'entire_workspace'>('my_projects')
-    const [dateRange, setDateRange] = useState<DateRange>('last_week')
+    const [hoveredPoint, setHoveredPoint] = useState<number | null>(9) // Show tooltip by default
 
-    // Filter projects based on scope and date range
-    const filteredProjects = useMemo(() => {
-        let result = projects;
+    // Calculate chart dimensions - BIGGER
+    const chartWidth = 280
+    const chartHeight = 140
+    const maxValue = Math.max(...chartData)
+    const minValue = Math.min(...chartData)
+    const range = maxValue - minValue || 1
 
-        // 1. Filter by Scope
-        if (scope === 'my_projects' && currentUserId) {
-            result = result.filter(p =>
-                p.ownerId === currentUserId ||
-                p.members?.some((m: any) => (m.user?.id || m.id) === currentUserId)
-            )
+    // Generate SVG path for smooth curve
+    const points = chartData.map((value, index) => {
+        const x = (index / (chartData.length - 1)) * chartWidth
+        const y = chartHeight - ((value - minValue) / range) * (chartHeight - 30) - 15
+        return { x, y, value }
+    })
+
+    // Create smooth bezier curve path
+    const createSmoothPath = (pts: typeof points) => {
+        if (pts.length < 2) return ''
+
+        let path = `M ${pts[0].x} ${pts[0].y}`
+
+        for (let i = 1; i < pts.length; i++) {
+            const prev = pts[i - 1]
+            const curr = pts[i]
+            const cpx1 = prev.x + (curr.x - prev.x) / 3
+            const cpx2 = prev.x + (2 * (curr.x - prev.x)) / 3
+            path += ` C ${cpx1} ${prev.y}, ${cpx2} ${curr.y}, ${curr.x} ${curr.y}`
         }
 
-        // 2. Filter by Date Range (using createdAt)
-        const now = new Date()
-        let cutoffDate: Date | null = null
-
-        switch (dateRange) {
-            case 'last_year':
-                cutoffDate = new Date(now.setFullYear(now.getFullYear() - 1))
-                break
-            case 'last_month':
-                cutoffDate = new Date(now.setMonth(now.getMonth() - 1))
-                break
-            case 'last_week':
-                cutoffDate = new Date(now.setDate(now.getDate() - 7))
-                break
-            case 'last_24h':
-                cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-                break
-            case 'all_time':
-            default:
-                cutoffDate = null
-        }
-
-        if (cutoffDate) {
-            result = result.filter(p => {
-                if (!p.createdAt) return false // Assume null createdAt is old or invalid? Or maybe check startDate? 
-                // Let's use createdAt as primary.
-                return new Date(p.createdAt) >= cutoffDate!
-            })
-        }
-
-        return result
-    }, [projects, scope, currentUserId, dateRange])
-
-    const { inProgress, total } = calculateProgress(filteredProjects)
-
-    // Calculate progress percentage
-    // Safeguard against division by zero
-    const percentage = total > 0 ? Math.round((inProgress / total) * 100) : 0
-
-    // Gauge Chart Dimensions (Scaled Up)
-    const width = 340 // Increased from 280
-    const height = 180 // Increased from 140
-    const cx = width / 2
-    const cy = height - 20
-    const r = 130 // Increased from 100
-    const strokeWidth = 25 // Increased from 20
-
-    // Calculate arc path
-    // Arc goes from -180 (left) to 0 (right) degrees, covering 180 degrees
-    const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
-        const angleInRadians = (angleInDegrees - 180) * Math.PI / 180.0;
-        return {
-            x: centerX + (radius * Math.cos(angleInRadians)),
-            y: centerY + (radius * Math.sin(angleInRadians))
-        };
+        return path
     }
 
-    const describeArc = (x: number, y: number, radius: number, startAngle: number, endAngle: number) => {
-        const start = polarToCartesian(x, y, radius, endAngle);
-        const end = polarToCartesian(x, y, radius, startAngle);
-        const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-        const d = [
-            "M", start.x, start.y,
-            "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
-        ].join(" ");
-
-        return d;
-    }
-
-    // Background Arc (Full semi-circle)
-    const bgArc = describeArc(cx, cy, r, 0, 180)
-
-    // Progress Arc
-    // Map percentage 0-100 to angle 0-180
-    const progressAngle = (percentage / 100) * 180
-    const progressArc = describeArc(cx, cy, r, 0, progressAngle)
-
-    // Marker Position (End of progress arc)
-    // Used for the small line/marker at the tip
-    const markerStart = polarToCartesian(cx, cy, r - strokeWidth / 2, progressAngle)
-    const markerEnd = polarToCartesian(cx, cy, r + strokeWidth / 2, progressAngle)
-
-    const getDateRangeLabel = (range: DateRange) => {
-        switch (range) {
-            case 'all_time': return t('dashboard.allTime')
-            case 'last_year': return t('dashboard.lastYear')
-            case 'last_month': return t('dashboard.lastMonth')
-            case 'last_week': return t('dashboard.lastWeek')
-            case 'last_24h': return t('dashboard.last24h')
-            default: return t('dashboard.allTime')
-        }
-    }
+    const linePath = createSmoothPath(points)
+    const areaPath = `${linePath} L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`
 
     return (
-        <div className="rounded-2xl bg-[#12121a] p-5 h-[340px] flex flex-col overflow-hidden relative">
+        <div className="rounded-2xl bg-[#12121a] p-5 h-[296px] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-white">{t('dashboard.overallProgress')}</h3>
-                {/* Scope Dropdown */}
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-[#F2CE88] transition-colors outline-none cursor-pointer">
-                            {scope === 'my_projects' ? t('dashboard.myProjects') : t('dashboard.entireWorkspace')} <ChevronDown size={14} />
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#12121a] border-[#272732] text-white">
-                        <DropdownMenuItem
-                            className="hover:bg-[#1a1a24] cursor-pointer"
-                            onClick={() => setScope('my_projects')}
-                        >
-                            {t('dashboard.myProjects')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            className="hover:bg-[#1a1a24] cursor-pointer"
-                            onClick={() => setScope('entire_workspace')}
-                        >
-                            {t('dashboard.entireWorkspace')}
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <a href="#" className="text-xs text-gray-500 hover:text-[#F2CE88] transition-colors">
+                    {t('dashboard.seeAll')}
+                </a>
             </div>
 
-            {/* Date Range Dropdown */}
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-2 w-fit px-2 py-1 rounded bg-gray-800/30 hover:bg-gray-800/50 transition-colors outline-none cursor-pointer">
-                        <CalendarSmallIcon />
-                        {getDateRangeLabel(dateRange)}
-                        <span className="ml-1 text-[8px]">▼</span>
-                    </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-[#12121a] border-[#272732] text-white z-50">
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('all_time')}>{t('dashboard.allTime')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('last_year')}>{t('dashboard.lastYear')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('last_month')}>{t('dashboard.lastMonth')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('last_week')}>{t('dashboard.lastWeek')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('last_24h')}>{t('dashboard.last24h')}</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Dropdown with calendar icon */}
+            <button className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-4 w-fit px-2 py-1 rounded bg-gray-800/30 hover:bg-gray-800/50 transition-colors">
+                <CalendarSmallIcon />
+                {t('dashboard.last7Days')}
+                <span className="ml-1 text-[8px]">▼</span>
+            </button>
 
-            {/* Gauge Chart Area */}
-            <div className="flex-1 flex flex-col items-center justify-center relative mt-4">
-                <svg width={width} height={height} className="overflow-visible">
-                    {/* Background Arc */}
-                    <path
-                        d={bgArc}
-                        fill="none"
-                        stroke="#1E1E29"
-                        strokeWidth={strokeWidth}
-                        strokeLinecap="round"
-                    />
+            {/* Content: Stats + Chart */}
+            <div className="flex flex-1 gap-3">
+                {/* Stats Column */}
+                <div className="flex flex-col gap-3 flex-shrink-0 w-[130px]">
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                            <ChecklistIcon />
+                        </div>
+                        <span className="text-xs text-gray-400">{inProgress} {t('dashboard.inProgress')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-gray-800/50 flex items-center justify-center">
+                            <HistoryIcon />
+                        </div>
+                        <span className="text-xs text-gray-400">{totalProjects} {t('dashboard.totalProjects')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-gray-800/50 flex items-center justify-center">
+                            <FoldersIcon />
+                        </div>
+                        <span className="text-xs text-gray-400">{upcoming} {t('dashboard.upcoming')}</span>
+                    </div>
+                </div>
 
-                    {/* Progress Arc */}
-                    <path
-                        d={progressArc}
-                        fill="none"
-                        stroke="#3B82F6" // Blue color
-                        strokeWidth={strokeWidth}
-                        strokeLinecap="round"
-                    />
+                {/* Chart - BIGGER */}
+                <div className="flex-1 flex flex-col justify-end min-w-0">
+                    <div className="relative">
+                        <svg
+                            width="100%"
+                            height={chartHeight}
+                            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                            preserveAspectRatio="xMidYMid meet"
+                            className="overflow-visible"
+                        >
+                            {/* Gradient definition */}
+                            <defs>
+                                <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor="#F2CE88" stopOpacity="0.4" />
+                                    <stop offset="100%" stopColor="#F2CE88" stopOpacity="0.02" />
+                                </linearGradient>
+                            </defs>
 
-                    {/* Marker at the end of progress */}
-                    <line
-                        x1={markerStart.x}
-                        y1={markerStart.y}
-                        x2={markerEnd.x}
-                        y2={markerEnd.y}
-                        stroke="#22C55E" // Green Marker
-                        strokeWidth="5"
-                        strokeLinecap="round"
-                    />
+                            {/* Area fill */}
+                            <path d={areaPath} fill="url(#chartGradient)" />
 
-                </svg>
+                            {/* Line - thicker for better visibility */}
+                            <path
+                                d={linePath}
+                                fill="none"
+                                stroke="#F2CE88"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
 
-                {/* Center Text */}
-                <div className="absolute bottom-0 flex flex-col items-center justify-end h-full pb-4">
-                    <span className="text-5xl font-bold text-white mb-2">{percentage}%</span>
-                    <span className="text-xs text-gray-400 bg-[#1a1a24] px-2 py-1 rounded">
-                        {t('dashboard.occupancyRate', { count: inProgress, total: total })}
-                    </span>
+                            {/* Interactive points - only on key positions */}
+                            {[0, 2, 4, 6, 9, 11, 13].map((idx) => {
+                                const point = points[idx]
+                                if (!point) return null
+                                return (
+                                    <g key={idx}>
+                                        <circle
+                                            cx={point.x}
+                                            cy={point.y}
+                                            r={hoveredPoint === idx ? 6 : 4}
+                                            fill={hoveredPoint === idx ? "#F2CE88" : "#12121a"}
+                                            stroke="#F2CE88"
+                                            strokeWidth="2"
+                                            className="cursor-pointer transition-all"
+                                            onMouseEnter={() => setHoveredPoint(idx)}
+                                            onMouseLeave={() => setHoveredPoint(9)}
+                                        />
+                                        {/* Tooltip */}
+                                        {hoveredPoint === idx && (
+                                            <g>
+                                                <rect
+                                                    x={point.x - 14}
+                                                    y={point.y - 30}
+                                                    width="28"
+                                                    height="20"
+                                                    rx="5"
+                                                    fill="#F2CE88"
+                                                />
+                                                <polygon
+                                                    points={`${point.x - 5},${point.y - 10} ${point.x + 5},${point.y - 10} ${point.x},${point.y - 4}`}
+                                                    fill="#F2CE88"
+                                                />
+                                                <text
+                                                    x={point.x}
+                                                    y={point.y - 16}
+                                                    textAnchor="middle"
+                                                    fontSize="11"
+                                                    fontWeight="bold"
+                                                    fill="#000"
+                                                >
+                                                    {point.value}
+                                                </text>
+                                            </g>
+                                        )}
+                                    </g>
+                                )
+                            })}
+                        </svg>
+                    </div>
+
+                    {/* X-axis labels */}
+                    <div className="flex justify-between mt-2 px-1">
+                        {chartLabels.map((label, index) => (
+                            <span
+                                key={index}
+                                className="text-[10px] text-gray-600"
+                            >
+                                {label}
+                            </span>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

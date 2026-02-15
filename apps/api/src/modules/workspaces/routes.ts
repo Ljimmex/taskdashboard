@@ -14,7 +14,7 @@ import {
     type WorkspaceRole
 } from '../../lib/permissions'
 import { encryptionKeys } from '../../db/schema/encryption'
-import { decryptPrivateKey, encryptPrivateKey } from '../../lib/server-encryption'
+import { decryptPrivateKey } from '../../lib/server-encryption'
 import { triggerWebhook } from '../webhooks/trigger'
 import { workspaceInvitesRoutes } from './invites'
 import { workspaceDefaultsRoutes } from './defaults'
@@ -605,14 +605,22 @@ workspacesRoutes.get('/:id/keys', async (c) => {
 
         // Helper to generate keys
         const generateAndSaveKeys = async (updateId?: string) => {
-            const { generateKeyPairSync } = await import('node:crypto')
+            const { generateKeyPairSync, randomBytes, createCipheriv, scryptSync } = await import('node:crypto')
             const { publicKey, privateKey } = generateKeyPairSync('rsa', {
                 modulusLength: 2048,
                 publicKeyEncoding: { type: 'spki', format: 'pem' },
                 privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
             })
 
-            const encryptedPrivateKey = encryptPrivateKey(privateKey)
+            const SECRET = process.env.BETTER_AUTH_SECRET || 'default-secret'
+            const masterKey = scryptSync(SECRET, 'salt', 32)
+            const iv = randomBytes(16)
+            const cipher = createCipheriv('aes-256-gcm', masterKey, iv)
+
+            let encrypted = cipher.update(privateKey, 'utf8', 'hex')
+            encrypted += cipher.final('hex')
+            const authTag = cipher.getAuthTag().toString('hex')
+            const encryptedPrivateKey = `${iv.toString('hex')}:${authTag}:${encrypted}`
 
             const expiresAt = new Date()
             expiresAt.setDate(expiresAt.getDate() + 90)
@@ -736,7 +744,7 @@ workspacesRoutes.post('/:id/rotate-keys', async (c) => {
         const oldPrivateKey = decryptPrivateKey(oldKeyRecord.encryptedPrivateKey)
 
         // Generate new RSA key pair
-        const { generateKeyPairSync } = await import('node:crypto')
+        const { generateKeyPairSync, randomBytes, createCipheriv, scryptSync } = await import('node:crypto')
 
         const { publicKey: newPublicKey, privateKey: newPrivateKey } = generateKeyPairSync('rsa', {
             modulusLength: 2048,
@@ -745,7 +753,15 @@ workspacesRoutes.post('/:id/rotate-keys', async (c) => {
         })
 
         // Encrypt new private key
-        const encryptedNewPrivateKey = encryptPrivateKey(newPrivateKey)
+        const SECRET = process.env.BETTER_AUTH_SECRET || 'default-secret'
+        const masterKey = scryptSync(SECRET, 'salt', 32)
+        const iv = randomBytes(16)
+        const cipher = createCipheriv('aes-256-gcm', masterKey, iv)
+
+        let encrypted = cipher.update(newPrivateKey, 'utf8', 'hex')
+        encrypted += cipher.final('hex')
+        const authTag = cipher.getAuthTag().toString('hex')
+        const encryptedNewPrivateKey = `${iv.toString('hex')}:${authTag}:${encrypted}`
 
         // Calculate new expiration (90 days from now)
         const newExpiresAt = new Date()

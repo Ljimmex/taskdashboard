@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { signUp, signIn, emailOtp } from '@/lib/auth'
+import { signUp, signIn } from '@/lib/auth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { DashboardMockup } from '@/components/auth/DashboardMockup'
 
 export const Route = createFileRoute('/register')({
     component: RegisterPage,
@@ -56,17 +55,6 @@ function RegisterPage() {
     const [teamSize, setTeamSize] = useState('1-10')
     const [industry, setIndustry] = useState('Technology')
 
-    // Email Verification State
-    const [isEmailVerification, setIsEmailVerification] = useState(false)
-
-    // Auto-generate slug for internal logic?
-    // We'll generate it on the fly or just let backend handle/backend expects it.
-    // Spec says API requires slug.
-    const generateSlug = (name: string) => {
-        return name.toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '') || 'workspace'
-    }
 
 
     const handleStep1 = (e: React.FormEvent) => {
@@ -132,12 +120,6 @@ function RegisterPage() {
             // 2. Login User
             const signInResult = await signIn.email({ email, password })
             if (signInResult.error) {
-                if ((signInResult.error as any).code === "EMAIL_NOT_VERIFIED" || signInResult.error.message === "Email not verified") {
-                    setIsEmailVerification(true)
-                    setError('')
-                    setLoading(false)
-                    return
-                }
                 setError(t('register.error.loginAfterRegister'))
                 navigate({ to: '/login' })
                 setLoading(false)
@@ -200,12 +182,6 @@ function RegisterPage() {
             // 2. Login User
             const signInResult = await signIn.email({ email, password })
             if (signInResult.error) {
-                if ((signInResult.error as any).code === "EMAIL_NOT_VERIFIED" || signInResult.error.message === "Email not verified") {
-                    setIsEmailVerification(true)
-                    setError('')
-                    setLoading(false)
-                    return
-                }
                 setError(t('register.error.loginAfterRegister'))
                 navigate({ to: '/login' })
                 setLoading(false)
@@ -304,50 +280,6 @@ function RegisterPage() {
                 return
             }
 
-            // 2. Login User (to get session for workspace creation)
-            // Note: signUp.email with autoSignIn: true (default?) might work, 
-            // but let's be explicit.
-            const signInResult = await signIn.email({
-                email,
-                password,
-            })
-
-            if (signInResult.error) {
-                if ((signInResult.error as any).code === "EMAIL_NOT_VERIFIED" || signInResult.error.message === "Email not verified") {
-                    setIsEmailVerification(true)
-                    setError('')
-                    setLoading(false)
-                    return
-                }
-                setError(t('register.error.loginAfterRegister'))
-                navigate({ to: '/login' })
-                setLoading(false)
-                return
-            }
-
-            // 3. Create Workspace
-            // We need to fetch directly because we don't have a workspace client yet
-            // Headers will be handled by browser cookies from BetterAuth
-            const slug = generateSlug(workspaceName) + '-' + Math.random().toString(36).substring(2, 6)
-
-            const wsResponse = await apiFetch('/api/workspaces', {
-                method: 'POST',
-                body: JSON.stringify({
-                    name: workspaceName,
-                    slug: slug,
-                    teamSize: teamSize,
-                    industry: industry
-                })
-            })
-
-            if (!wsResponse.ok) {
-                // Non-blocking error? Or should we block?
-                // If workspace fails, user is still registered.
-                // Let's warn but redirect.
-                console.error('Failed to create workspace', await wsResponse.text())
-                // Verify if we should show error. 
-                // Navigate anyway.
-            }
             // SUCCESS - Prompt for verification
             setSuccess(true)
             setLoading(false)
@@ -359,51 +291,6 @@ function RegisterPage() {
         } catch (err) {
             console.error(err)
             setError(t('register.error.unexpected'))
-            setLoading(false)
-        }
-    }
-
-    const [otp, setOtp] = useState('')
-
-    const handleVerifyEmail = async () => {
-        setLoading(true)
-        try {
-            const res = await emailOtp.verifyEmail({
-                email,
-                otp
-            })
-
-            if (res.error) {
-                setError(res.error.message || t('auth.error.default'))
-            } else {
-                setError('')
-                // After verification, we should try to finish the flow. 
-                // Since we interrupted Step 3 (workspace creation), we might want to try to create it now 
-                // OR just redirect to login/dashboard.
-                // For now, let's redirect to login to be safe, as session might need refresh.
-                // Or if we want to be nice, we try to sign in again.
-                // Let's just navigate to login with a success message if possible, or just plain login.
-                navigate({ to: '/login' })
-            }
-        } catch (err: any) {
-            setError(err.message || t('auth.error.default'))
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const handleResendVerification = async () => {
-        setLoading(true)
-        try {
-            await emailOtp.sendVerificationOtp({
-                email,
-                type: 'email-verification'
-            })
-            setError(t('auth.resentVerification'))
-            setTimeout(() => setError(''), 3000)
-        } catch (err) {
-            setError(t('auth.error.default'))
-        } finally {
             setLoading(false)
         }
     }
@@ -423,84 +310,6 @@ function RegisterPage() {
                         </p>
                     </div>
 
-                    {/* Step indicator */}
-                    <div className="mb-8 flex items-center gap-4">
-                        {/* Step 1 */}
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 1 ? 'bg-amber-500 text-black' : 'bg-gray-700 text-gray-400'}`}>1</div>
-                        <div className={`h-0.5 flex-1 ${step >= 2 ? 'bg-amber-500' : 'bg-gray-700'}`} />
-
-                        {/* Step 2 */}
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 2 ? 'bg-amber-500 text-black' : 'bg-gray-700 text-gray-400'}`}>2</div>
-                        <div className={`h-0.5 flex-1 ${step >= 3 ? 'bg-amber-500' : 'bg-gray-700'}`} />
-
-                        {/* Step 3 */}
-                        <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 3 ? 'bg-amber-500 text-black' : 'bg-gray-700 text-gray-400'}`}>3</div>
-                    </div>
-
-                    {error && (
-                        <div className={`mb-4 rounded-lg p-3 text-sm ${error === t('auth.resentVerification') ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                            {error}
-                        </div>
-                    )}
-
-                    {isEmailVerification ? (
-                        <div className="space-y-6">
-                            <div className="flex justify-center mb-6">
-                                <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center">
-                                    <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <div className="text-center space-y-2">
-                                <h3 className="text-xl font-semibold text-white">{t('auth.verifyEmailTitle')}</h3>
-                                <p className="text-gray-400 text-sm leading-relaxed">
-                                    {t('auth.verifyEmailDescCode')}
-                                </p>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="otp" className="text-gray-400 text-sm">{t('auth.enterCode')}</Label>
-                                    <Input
-                                        id="otp"
-                                        type="text"
-                                        value={otp}
-                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                        className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none text-center tracking-widest text-xl"
-                                        placeholder={t('auth.codePlaceholder')}
-                                        autoFocus
-                                    />
-                                </div>
-
-                                <Button
-                                    onClick={handleVerifyEmail}
-                                    disabled={loading || otp.length !== 6}
-                                    className="w-full bg-amber-500 py-6 text-black font-medium hover:bg-amber-400 rounded-full"
-                                >
-                                    {loading ? t('auth.verifying') : t('auth.verify')}
-                                </Button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleResendVerification}
-                                    className="w-full text-sm text-gray-400 hover:text-white"
-                                >
-                                    {t('auth.resendVerification')}
-                                </button>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => navigate({ to: '/login' })}
-                                className="w-full text-sm text-gray-500 hover:text-white"
-                            >
-                                {t('auth.backToLogin')}
-                            </button>
-                        </div>
-                    ) : (
-                        <>
                     {success ? (
                         <div className="rounded-lg bg-green-500/10 p-6 text-center border border-green-500/20">
                             <div className="text-4xl mb-4">✅</div>
@@ -896,10 +705,13 @@ function RegisterPage() {
                         {t('auth.marketingDesc')}
                     </p>
 
-                    {/* App Preview - Mockup */}
-                    <div className="mt-12 w-full h-[300px] overflow-hidden">
-                        <div className="w-[200%] origin-top-left transform scale-50">
-                            <DashboardMockup />
+                    {/* App Preview Image Placeholder */}
+                    <div className="mt-12 rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-8 border border-gray-800">
+                        <div className="aspect-video rounded-xl bg-[#0a0a0f] flex items-center justify-center border border-gray-800">
+                            <div className="text-center">
+                                <div className="text-6xl mb-4">📊</div>
+                                <p className="text-gray-500">{t('auth.dashboardPreview')}</p>
+                            </div>
                         </div>
                     </div>
                 </div>

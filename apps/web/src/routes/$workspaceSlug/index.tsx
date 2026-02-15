@@ -67,17 +67,6 @@ function DashboardHome() {
     }
   })
 
-  const { data: workspaceData } = useQuery({
-    queryKey: ['workspace', workspaceSlug, session?.user?.id],
-    queryFn: async () => {
-      if (!workspaceSlug || !session?.user?.id) return null
-      return apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`, {
-        headers: { 'x-user-id': session?.user?.id || '' }
-      })
-    },
-    enabled: !!workspaceSlug && !!session?.user?.id
-  })
-
   // Filter and group projects
   const { ongoingProjects, pendingProjects } = useMemo(() => {
     if (!projectsRes?.data) return { ongoingProjects: [], pendingProjects: [] }
@@ -139,8 +128,6 @@ function DashboardHome() {
     // Sort by start date ASC (nearest first)
     return filtered.sort((a: any, b: any) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
   }, [eventsRes, session?.user?.id])
-
-  const canCreateCalendarEvents = workspaceData?.userRole ? !['member', 'guest'].includes(workspaceData.userRole) : true
 
   // Handle meeting creation callback
   const handleEventCreated = async () => {
@@ -244,7 +231,7 @@ function DashboardHome() {
                   }}
                 />
               ))}
-              {events.length < 4 && canCreateCalendarEvents && (
+              {events.length < 4 && (
                 <AddTaskCard
                   key="add-meeting"
                   label={t('dashboard.addMeeting')}
@@ -257,12 +244,6 @@ function DashboardHome() {
               <div className="h-[140px] rounded-2xl bg-[#12121a] flex items-center justify-center border-2 border-dashed border-gray-800">
                 <p className="text-gray-500 text-sm">{t('dashboard.noMeetings')}</p>
               </div>
-              {canCreateCalendarEvents && (
-                <AddTaskCard
-                  label={t('dashboard.addMeeting')}
-                  onClick={() => setIsEventPanelOpen(true)}
-                />
-              )}
               <AddTaskCard
                 key="add-meeting-empty"
                 label={t('dashboard.addMeeting')}
@@ -353,7 +334,7 @@ function DashboardHome() {
             ) : (
               <div className="col-span-2 py-12 flex flex-col items-center justify-center border-2 border-dashed border-gray-800 rounded-2xl">
                 <p className="text-gray-500 mb-4">{projectFilter === 'active' ? t('dashboard.noProjectsActive') : t('dashboard.noProjectsPending')}</p>
-                {projectFilter === 'active' && workspaceData?.userRole && !['member', 'guest'].includes(workspaceData.userRole) && (
+                {projectFilter === 'active' && (
                   <button className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">{t('dashboard.createProject')}</button>
                 )}
               </div>
@@ -369,7 +350,7 @@ function DashboardHome() {
 
       {/* Right Column Section (Widgets) - Spans 4 columns */}
       <div className="lg:col-span-4 space-y-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-        <OverallProgress projects={projects} currentUserId={session?.user?.id} upcoming={events.length} />
+        <OverallProgress inProgress={projects.filter((p: any) => p.status === 'active').length} totalProjects={projects.length} upcoming={events.length} />
 
         <ChatSection
           contacts={chatContacts}
@@ -390,16 +371,13 @@ function DashboardHome() {
       </div>
 
       {/* Meeting Creation Panel (CalendarEventPanel) */}
-      {canCreateCalendarEvents && (
-        <CalendarEventPanel
-          isOpen={isEventPanelOpen}
-          onClose={() => setIsEventPanelOpen(false)}
-          onCreate={handleEventCreated}
-          defaultType={CalendarEventType.EVENT}
-          workspaceSlug={workspaceSlug}
-          canCreateEvents={canCreateCalendarEvents}
-        />
-      )}
+      <CalendarEventPanel
+        isOpen={isEventPanelOpen}
+        onClose={() => setIsEventPanelOpen(false)}
+        onCreate={handleEventCreated}
+        defaultType={CalendarEventType.EVENT}
+        workspaceSlug={workspaceSlug}
+      />
 
       {/* File Info Panel (Modal-like) */}
       <FileInfoPanel

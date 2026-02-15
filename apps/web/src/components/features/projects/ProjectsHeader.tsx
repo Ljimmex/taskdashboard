@@ -32,7 +32,6 @@ interface ProjectsHeaderProps {
     searchQuery: string
     onSearchChange: (query: string) => void
     onNewProject: () => void
-    userRole?: string
 }
 
 export function ProjectsHeader({
@@ -41,7 +40,6 @@ export function ProjectsHeader({
     searchQuery,
     onSearchChange,
     onNewProject,
-    userRole,
 }: ProjectsHeaderProps) {
     const { t } = useTranslation()
     const [searchFocused, setSearchFocused] = useState(false)
@@ -112,18 +110,16 @@ export function ProjectsHeader({
                 </button>
 
                 {/* New Project */}
-                {userRole && !['member', 'guest'].includes(userRole) && (
-                    <button
-                        onClick={onNewProject}
-                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-sm font-semibold transition-all shadow-lg shadow-amber-500/20"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        {t('projects.header.new_project')}
-                    </button>
-                )}
+                <button
+                    onClick={onNewProject}
+                    className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-sm font-semibold transition-all shadow-lg shadow-amber-500/20"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    {t('projects.header.new_project')}
+                </button>
             </div>
         </div>
     )
