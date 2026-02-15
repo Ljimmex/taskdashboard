@@ -12,7 +12,27 @@ import {
     type WorkspaceRole
 } from '../../lib/permissions'
 
-export const commentsRoutes = new Hono()
+import { type Auth } from '../../lib/auth'
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString } from '../../lib/zod-extensions'
+
+const createCommentSchema = z.object({
+    taskId: z.string(),
+    content: zSanitizedString(),
+    parentId: z.string().optional().nullable(),
+})
+
+const updateCommentSchema = z.object({
+    content: zSanitizedString(),
+})
+
+const commentsQuerySchema = z.object({
+    taskId: z.string().optional(),
+})
+
+export const commentsRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
 
 // Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -51,9 +71,9 @@ async function getWorkspaceIdFromTask(taskId: string): Promise<string | null> {
 }
 
 // GET /api/comments - List comments for a task (anyone with project access can view)
-commentsRoutes.get('/', async (c) => {
+commentsRoutes.get('/', zValidator('query', commentsQuerySchema), async (c) => {
     try {
-        const taskId = c.req.query('taskId')
+        const { taskId } = c.req.valid('query')
         if (!taskId) return c.json({ success: false, error: 'taskId is required' }, 400)
         const result = await db.select().from(taskComments).where(eq(taskComments.taskId, taskId)).orderBy(taskComments.createdAt)
         return c.json({ success: true, data: result })
@@ -64,10 +84,11 @@ commentsRoutes.get('/', async (c) => {
 })
 
 // POST /api/comments - Create comment (requires comments.create permission)
-commentsRoutes.post('/', async (c) => {
+commentsRoutes.post('/', zValidator('json', createCommentSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
-        const body = await c.req.json()
+        const user = c.get('user')
+        const userId = user.id
+        const body = c.req.valid('json')
 
         // Get workspace context
         const workspaceId = await getWorkspaceIdFromTask(body.taskId)
@@ -96,7 +117,7 @@ commentsRoutes.post('/', async (c) => {
 
         const newComment: NewTaskComment = {
             taskId: body.taskId,
-            userId: body.userId || userId,
+            userId: userId,
             content: body.content,
             parentId: body.parentId || null, // Support for replies
             likes: '[]', // Initialize empty likes array
@@ -110,11 +131,12 @@ commentsRoutes.post('/', async (c) => {
 })
 
 // PATCH /api/comments/:id - Update comment (author OR moderate permission)
-commentsRoutes.patch('/:id', async (c) => {
+commentsRoutes.patch('/:id', zValidator('json', updateCommentSchema), async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
-        const body = await c.req.json()
+        const user = c.get('user')
+        const userId = user.id
+        const body = c.req.valid('json')
 
         // Get comment to check author
         const [comment] = await db.select().from(taskComments).where(eq(taskComments.id, id)).limit(1)
@@ -152,7 +174,8 @@ commentsRoutes.patch('/:id', async (c) => {
 commentsRoutes.delete('/:id', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const user = c.get('user')
+        const userId = user.id
 
         // Get comment to check author
         const [comment] = await db.select().from(taskComments).where(eq(taskComments.id, id)).limit(1)
@@ -224,7 +247,8 @@ commentsRoutes.post('/:id/like', async (c) => {
 commentsRoutes.post('/:id/reply', async (c) => {
     try {
         const parentId = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const user = c.get('user')
+        const userId = user.id
         const body = await c.req.json()
 
         // Get parent comment to get taskId

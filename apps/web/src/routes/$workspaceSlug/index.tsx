@@ -246,6 +246,7 @@ function DashboardHome() {
               ))}
               {events.length < 4 && canCreateCalendarEvents && (
                 <AddTaskCard
+                  key="add-meeting"
                   label={t('dashboard.addMeeting')}
                   onClick={() => setIsEventPanelOpen(true)}
                 />
@@ -262,6 +263,11 @@ function DashboardHome() {
                   onClick={() => setIsEventPanelOpen(true)}
                 />
               )}
+              <AddTaskCard
+                key="add-meeting-empty"
+                label={t('dashboard.addMeeting')}
+                onClick={() => setIsEventPanelOpen(true)}
+              />
             </>
           )}
         </div>

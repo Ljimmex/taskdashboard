@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
+import { type Auth } from '../../lib/auth'
 import { eq, asc } from 'drizzle-orm'
 import { projects, projectMembers, industryTemplateStages, projectStages, type NewProject } from '../../db/schema'
 import {
@@ -12,7 +13,38 @@ import {
 import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema'
 
-export const projectsRoutes = new Hono()
+type Env = {
+    Variables: {
+        user: Auth['$Infer']['Session']['user']
+        session: Auth['$Infer']['Session']['session']
+    }
+}
+
+
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
+
+const createProjectSchema = z.object({
+    teamId: z.string(),
+    workspaceId: z.string().optional(),
+    name: zSanitizedString(),
+    description: zSanitizedStringOptional(),
+    color: zSanitizedString().optional(),
+    industryTemplateId: z.string().optional().nullable(),
+    startDate: z.string().optional().nullable(),
+    deadline: z.string().optional().nullable(),
+})
+
+const updateProjectSchema = z.object({
+    name: zSanitizedString().optional(),
+    description: zSanitizedStringOptional(),
+    status: z.enum(['pending', 'active', 'on_hold', 'completed', 'archived']).optional(),
+    deadline: z.string().optional().nullable(),
+})
+
+export const projectsRoutes = new Hono<Env>()
 
 // Helper: Get user's workspace role
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -37,11 +69,14 @@ async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLev
 // GET /api/projects - List projects (anyone logged in can see projects they have access to)
 projectsRoutes.get('/', async (c) => {
     try {
+        const user = c.get('user')
+        const userId = user.id
         const { workspaceSlug } = c.req.query()
-        // const userId = c.req.header('x-user-id') || 'temp-user-id'
 
         let workspaceId: string | null = null
-        // let userWorkspaceRole: WorkspaceRole | null = null
+        let userWorkspaceRole: WorkspaceRole | null = null
+
+
 
         if (workspaceSlug) {
             const ws = await db.query.workspaces.findFirst({
@@ -49,7 +84,11 @@ projectsRoutes.get('/', async (c) => {
             })
             if (!ws) return c.json({ success: true, data: [] })
             workspaceId = ws.id
-            // userWorkspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+            userWorkspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+            
+            if (!userWorkspaceRole) {
+                 return c.json({ success: false, error: 'Forbidden: You are not a member of this workspace' }, 403)
+            }
         }
 
         let teamIds: string[] = []
@@ -72,16 +111,6 @@ projectsRoutes.get('/', async (c) => {
                 }
 
                 // Removed strict membership check to allow users to see all projects in workspace for assignment
-                // if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
-                //     wheres.push(exists(
-                //         db.select()
-                //             .from(projectMembers)
-                //             .where(and(
-                //                 eq(projectMembers.projectId, p.id),
-                //                 eq(projectMembers.userId, userId)
-                //             ))
-                //     ))
-                // }
 
                 return wheres.length > 0 ? and(...wheres) : undefined
             },
@@ -121,7 +150,8 @@ projectsRoutes.get('/', async (c) => {
 projectsRoutes.get('/:id', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const user = c.get('user') as any
+        const userId = user.id
 
         const project = await db.query.projects.findFirst({
             where: (p, { eq }) => eq(p.id, id),
@@ -146,7 +176,7 @@ projectsRoutes.get('/:id', async (c) => {
 
         const isProjectManagerOrHigher = workspaceRole && ['owner', 'admin', 'project_manager'].includes(workspaceRole)
 
-        if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
+        if (!isProjectManagerOrHigher) {
             const isMember = await db.query.projectMembers.findFirst({
                 where: (pm, { eq, and }) => and(eq(pm.projectId, id), eq(pm.userId, userId))
             })
@@ -163,10 +193,11 @@ projectsRoutes.get('/:id', async (c) => {
 })
 
 // POST /api/projects - Create project (requires projects.create permission)
-projectsRoutes.post('/', async (c) => {
+projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
-        const body = await c.req.json()
+        const user = c.get('user') as any
+        const userId = user.id
+        const body = c.req.valid('json')
         const { teamId, workspaceId } = body
 
         if (!teamId) {
@@ -185,8 +216,8 @@ projectsRoutes.post('/', async (c) => {
         const newProject: NewProject = {
             teamId: body.teamId,
             name: body.name,
-            description: body.description || null,
-            color: body.color || undefined,
+            description: body.description,
+            color: body.color,
             industryTemplateId: body.industryTemplateId || null,
             startDate: body.startDate ? new Date(body.startDate) : null,
             deadline: body.deadline ? new Date(body.deadline) : null,
@@ -235,7 +266,9 @@ projectsRoutes.post('/', async (c) => {
         let finalWorkspaceId = workspaceId
         if (!finalWorkspaceId) {
             const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, teamId)).limit(1)
-            finalWorkspaceId = team?.workspaceId || null
+            if (team?.workspaceId) {
+                finalWorkspaceId = team.workspaceId
+            }
         }
 
         if (finalWorkspaceId) {
@@ -250,11 +283,12 @@ projectsRoutes.post('/', async (c) => {
 })
 
 // PATCH /api/projects/:id - Update project (requires projects.update permission)
-projectsRoutes.patch('/:id', async (c) => {
+projectsRoutes.patch('/:id', zValidator('json', updateProjectSchema), async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
-        const body = await c.req.json()
+        const user = c.get('user')
+        const userId = user.id
+        const body = c.req.valid('json')
 
         // Get project to find teamId
         const [project] = await db.select().from(projects).where(eq(projects.id, id)).limit(1)
@@ -295,7 +329,8 @@ projectsRoutes.patch('/:id', async (c) => {
 projectsRoutes.delete('/:id', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const user = c.get('user')
+        const userId = user.id
 
         // Get project to find teamId
         const [project] = await db.select().from(projects).where(eq(projects.id, id)).limit(1)

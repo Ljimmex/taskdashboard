@@ -68,6 +68,69 @@
             "errorMismatch": "Hasła nie są identyczne",
             "errorLength": "Hasło musi mieć minimum 8 znaków",
             "errorCode": "Kod musi mieć 6 cyfr"
+            "provider": "Błąd logowania przez {{provider}}",
+            "emailNotVerified": "Email niezweryfikowany"
+        },
+        "verifyEmail": {
+            "title": "Zweryfikuj swój email",
+            "message": "Wysłaliśmy link weryfikacyjny na Twój adres email. Sprawdź skrzynkę odbiorczą i kliknij w link, aby aktywować konto.",
+            "resend": "Wyślij ponownie email weryfikacyjny",
+            "back": "Powrót do logowania",
+            "sent": "Email weryfikacyjny wysłany!",
+            "submit": "Zweryfikuj"
+        },
+        "marketingTitle": "Zaprojektowany do",
+        "marketingTitleStrong": "Zarządzania",
+        "marketingTitle2": "Zadaniami"
+    },
+    "forgotPassword": {
+        "title": "Zresetuj swoje hasło",
+        "subtitle": "Wpisz swój adres email, aby otrzymać kod resetujący.",
+        "email": "E-mail",
+        "submit": "Wyślij kod resetujący",
+        "sending": "Wysyłanie...",
+        "successTitle": "Kod wysłany!",
+        "successMessage": "Sprawdź swoją skrzynkę pocztową. Za chwilę zostaniesz przekierowany...",
+        "backToLogin": "Pamiętasz hasło?",
+        "login": "Zaloguj się",
+        "marketingTitle": "Nie martw się!",
+        "marketingDesc": "Zresetowanie hasła jest proste. Wyślemy Ci kod na email, a Ty ustawisz nowe hasło w kilka sekund.",
+        "step1": "Wpisz swój email",
+        "step2": "Odbierz kod z emaila",
+        "step3": "Ustaw nowe hasło",
+        "error": {
+            "default": "Wystąpił nieoczekiwany błąd",
+            "send": "Nie udało się wysłać kodu"
+        },
+        "loginLink": "Zaloguj się"
+    },
+    "resetPassword": {
+        "title": "Ustaw nowe hasło",
+        "email": "E-mail",
+        "otp": "Kod z emaila (6 cyfr)",
+        "password": "Nowe hasło",
+        "confirmPassword": "Potwierdź hasło",
+        "submit": "Zresetuj hasło",
+        "resetting": "Resetowanie...",
+        "successTitle": "Hasło zmienione!",
+        "successMessage": "Możesz teraz zalogować się nowym hasłem. Za chwilę zostaniesz przekierowany...",
+        "resend": "Nie dostałeś kodu? Wyślij ponownie",
+        "backToLogin": "Pamiętasz hasło? Zaloguj się",
+        "marketingTitle": "Prawie gotowe!",
+        "marketingDesc": "Wpisz kod który otrzymałeś na email i ustaw nowe, bezpieczne hasło.",
+        "tips": {
+            "title": "💡 Wskazówki dot. hasła",
+            "length": "Minimum 8 znaków",
+            "complexity": "Użyj kombinacji liter, cyfr i symboli",
+            "common": "Unikaj oczywistych słów",
+            "unique": "Nie używaj tego samego hasła w innych miejscach"
+        },
+        "error": {
+            "mismatch": "Hasła nie są identyczne",
+            "length": "Hasło musi mieć minimum 8 znaków",
+            "codeLength": "Kod musi mieć 6 cyfr",
+            "reset": "Nie udało się zresetować hasła",
+            "default": "Wystąpił nieoczekiwany błąd"
         }
     },
     "common": {
@@ -358,6 +421,11 @@
             "loginAfterRegister": "Konto utworzone, ale błąd logowania. Spróbuj się zalogować.",
             "unexpected": "Wystąpił nieoczekiwany błąd podczas rejestracji",
             "provider": "Błąd rejestracji przez {{provider}}"
+        },
+        "success": {
+            "title": "Rejestracja pomyślna!",
+            "message": "Wysłaliśmy link weryfikacyjny na adres {{email}}. Zweryfikuj swój email, aby się zalogować.",
+            "backToLogin": "Powrót do logowania"
         }
     },
     "landing": {
@@ -507,15 +575,85 @@
         }
     },
     "settings": {
-        "title": "Ustawienia Użytkownika",
-        "subtitle": "Zarządzaj swoimi preferencjami",
-        "tabs": {
-            "account": "Konto",
-            "notification": "Powiadomienia",
-            "privacy": "Prywatność i Bezpieczeństwo",
-            "security": "Bezpieczeństwo"
-        },
         "organization": {
+            "edit_panel": {
+                "select_teams": "Wybierz zespoły...",
+                "no_teams_found": "Brak zespołów"
+            },
+            "labels": {
+                "title": "Etykiety",
+                "subtitle": "Zarządzaj etykietami przestrzeni roboczej",
+                "loading": "Ładowanie etykiet...",
+                "no_labels": "Brak etykiet",
+                "add_button": "Dodaj etykietę",
+                "name_placeholder": "Nazwa etykiety",
+                "new_name_placeholder": "Nowa nazwa etykiety",
+                "create_tooltip": "Utwórz nową etykietę",
+                "color_picker_tooltip": "Wybierz kolor",
+                "tip_header": "Wskazówka",
+                "tip_content": "Używaj spójnych kolorów dla podobnych kategorii."
+            },
+            "integrations": {
+                "title": "Integracje",
+                "subtitle": "Zarządzaj webhookami i usługami zewnętrznymi",
+                "loading_webhooks": "Ładowanie webhooków...",
+                "new_webhook_button": "Nowy Webhook",
+                "no_integrations_title": "Brak integracji",
+                "no_integrations_subtitle": "Dodaj webhook, aby rozpocząć",
+                "create_first_webhook_button": "Utwórz Webhook",
+                "delete_webhook_confirm": "Czy na pewno chcesz usunąć ten webhook?",
+                "untitled_webhook": "Webhook bez nazwy",
+                "silent_badge": "Cichy",
+                "test_title": "Testuj Webhook",
+                "logs_title": "Logi dostarczania",
+                "all_events_header": "Wszystkie zdarzenia",
+                "webhook_modal": {
+                    "add_webhook": "Dodaj Webhook",
+                    "edit_webhook": "Edytuj Webhook",
+                    "url_label": "URL Webhooka",
+                    "description_label": "Opis",
+                    "optional": "(opcjonalne)",
+                    "description_placeholder_discord": "np. Kanał alertów Discord",
+                    "description_placeholder_slack": "np. Powiadomienia Slack",
+                    "description_placeholder_generic": "np. Webhook serwera produkcyjnego",
+                    "events_label": "Zdarzenia wyzwalające",
+                    "platform": "Platforma",
+                    "other": "Inne",
+                    "silent_mode_title": "Tryb cichy",
+                    "silent_mode_description": "Nie wysyłaj powiadomień o błędach",
+                    "error_saving": "Nie udało się zapisać webhooka",
+                    "error_url_required": "URL jest wymagany",
+                    "error_no_events": "Wybierz co najmniej jedno zdarzenie",
+                    "groups": {
+                        "tasks": "Zadania",
+                        "subtasks": "Podzadania",
+                        "comments": "Komentarze",
+                        "files": "Pliki",
+                        "calendar": "Kalendarz",
+                        "members": "Członkowie"
+                    },
+                    "events": {
+                        "task_created": "Utworzono zadanie",
+                        "task_updated": "Zaktualizowano zadanie",
+                        "task_status_changed": "Zmieniono status",
+                        "task_priority_changed": "Zmieniono priorytet",
+                        "task_assigned": "Przypisano zadanie",
+                        "task_due_date_changed": "Zmieniono termin",
+                        "task_deleted": "Usunięto zadanie",
+                        "subtask_created": "Utworzono podzadanie",
+                        "subtask_updated": "Zaktualizowano podzadanie",
+                        "subtask_completed": "Ukończono podzadanie",
+                        "comment_added": "Dodano komentarz",
+                        "file_uploaded": "Przesłano plik",
+                        "file_deleted": "Usunięto plik",
+                        "calendar_created": "Utworzono wydarzenie",
+                        "calendar_updated": "Zaktualizowano wydarzenie",
+                        "calendar_deleted": "Usunięto wydarzenie",
+                        "member_added": "Dodano członka",
+                        "member_removed": "Usunięto członka"
+                    }
+                }
+            },
             "security": {
                 "title": "Bezpieczeństwo Przestrzeni",
                 "subtitle": "Zarządzaj szyfrowaniem i kluczami bezpieczeństwa.",
@@ -616,7 +754,45 @@
                     "done_button": "Gotowe",
                     "create_error": "Nie udało się utworzyć zaproszenia: {{error}}"
                 }
-            },
+            }
+        },
+        "title": "Ustawienia Użytkownika",
+        "subtitle": "Zarządzaj swoimi preferencjami",
+        "tabs": {
+            "account": "Konto",
+            "notification": "Powiadomienia",
+            "privacy": "Prywatność i Bezpieczeństwo",
+            "security": "Bezpieczeństwo"
+        },
+        "edit_panel": {
+            "title": "Edytuj członka",
+            "photo": "Zdjęcie",
+            "change_photo": "Zmień zdjęcie",
+            "remove_photo": "Usuń zdjęcie",
+            "photo_help": "Zalecane: JPG lub PNG, max 2MB.",
+            "first_name": "Imię",
+            "last_name": "Nazwisko",
+            "job_title": "Stanowisko",
+            "job_title_placeholder": "np. Senior Developer",
+            "team_level": "Poziom zespołu",
+            "select_level": "Wybierz poziom",
+            "city": "Miasto",
+            "city_placeholder": "np. Warszawa",
+            "country": "Kraj",
+            "country_placeholder": "np. Polska",
+            "email": "Adres E-mail",
+            "change_email": "Zmień e-mail",
+            "team_groups": "Grupy zespołów",
+            "select_teams": "Wybierz zespoły",
+            "no_teams_found": "Nie znaleziono zespołów",
+            "projects": "Projekty",
+            "select_projects": "Wybierz projekty",
+            "no_projects_found": "Nie znaleziono projektów",
+            "delete_member": "Usuń członka",
+            "save_changes": "Zapisz zmiany",
+            "saving": "Zapisywanie...",
+            "delete_confirmation": "Czy na pewno chcesz usunąć {{name}}? Ta akcja jest nieodwracalna.",
+            "deleting": "Usuwanie...",
             "labels": {
                 "title": "Etykiety",
                 "subtitle": "Zarządzaj etykietami dla całej przestrzeni roboczej. Zmiany będą widoczne globalnie.",
@@ -629,7 +805,8 @@
                 "add_button": "Dodaj nową etykietę",
                 "tip_header": "Wskazówka",
                 "tip_content": "Zmiany kolorów i nazw etykiet będą natychmiast widoczne we wszystkich zadaniach i projektach używających tych etykiet.",
-                "color_picker_tooltip": "Wybierz kolor"
+                "color_picker_tooltip": "Wybierz kolor",
+                "add_labels": "Dodaj etykiety"
             },
             "defaults": {
                 "priorities_title": "Priorytety zadań",
@@ -736,6 +913,101 @@
                         "member_added": "Dołączył nowy członek",
                         "member_removed": "Usunięto członka"
                     }
+                }
+            },
+            "status": {
+                "todo": "Do zrobienia",
+                "in_progress": "W toku",
+                "review": "Weryfikacja",
+                "done": "Gotowe"
+            },
+            "priority": {
+                "low": "Niski",
+                "medium": "Średni",
+                "high": "Wysoki",
+                "urgent": "Pilny"
+            },
+            "assignee": {
+                "placeholder": "Przypisz osobę...",
+                "no_results": "Nie znaleziono osób",
+                "none": "Brak przypisanych"
+            },
+            "card": {
+                "add_task": "Dodaj nowe zadanie",
+                "menu": {
+                    "edit": "Edytuj",
+                    "duplicate": "Duplikuj",
+                    "archive": "Archiwizuj",
+                    "delete": "Usuń"
+                }
+            },
+            "edit": {
+                "title": "Edytuj zadanie",
+                "edit_mode": "Tryb edycji",
+                "click_to_edit": "Kliknij aby edytować",
+                "title_label": "Tytuł zadania",
+                "select_status": "Wybierz status",
+                "select_date": "Wybierz datę...",
+                "description": "Opis",
+                "description_placeholder": "Dodaj opis...",
+                "click_to_add_description": "Kliknij aby dodać opis...",
+                "subtasks_header": "Podzadania",
+                "files_header": "Pliki",
+                "add_file": "+ Dodaj plik",
+                "no_attachments": "Brak załączników",
+                "no_attachments_hint": "Kliknij przycisk powyżej aby dodać pliki",
+                "links_header": "Linki",
+                "add_link": "+ Dodaj link",
+                "cancel": "Anuluj",
+                "save": "Zapisz zmiany",
+                "meta": {
+                    "project": "Projekt",
+                    "assignee": "Przypisane",
+                    "status": "Status",
+                    "end_date": "Termin",
+                    "priority": "Priorytet",
+                    "labels": "Etykiety"
+                },
+                "tabs": {
+                    "subtasks": "Podzadania",
+                    "files": "Pliki",
+                    "links": "Linki"
+                }
+            },
+            "create": {
+                "title": "Nowe zadanie",
+                "select_project": "Wybierz projekt",
+                "task_title": "Tytuł zadania",
+                "task_title_placeholder": "Co jest do zrobienia?",
+                "description": "Opis",
+                "description_placeholder": "Dodaj opis zadania... (wspiera Markdown)",
+                "markdown_hint": "Wskazówka: Użyj **pogrubienia**, *kursywy*, - listy",
+                "assignee": "Przypisana osoba",
+                "assignee_placeholder": "Przypisz osobę...",
+                "start_date": "Start",
+                "end_date": "Koniec",
+                "due_date_placeholder": "Termin",
+                "more_options": "Więcej opcji",
+                "less_options": "Mniej opcji",
+                "subtasks": "Zadania podrzędne",
+                "add_subtask_placeholder": "Dodaj zadanie podrzędne...",
+                "add_subtask_button": "+ Dodaj",
+                "attachments": "Załączniki",
+                "dropzone_active": "Upuść pliki tutaj...",
+                "dropzone_inactive": "Przeciągnij pliki lub kliknij aby dodać",
+                "file_type_hint": "PNG, JPG, PDF, DOCX do 100MB",
+                "file_size_error": "Następujące pliki są za duże (max 100MB):",
+                "upload_error": "Nie udało się zauploadować niektórych plików. Sprawdź konsolę.",
+                "create_another": "Stwórz kolejne",
+                "cancel": "Anuluj",
+                "create_button": "Stwórz zadanie",
+                "priority": "Priorytet",
+                "status": "Status",
+                "labels": "Etykiety",
+                "mock_projects": {
+                    "marketing": "Marketing",
+                    "development": "Development",
+                    "design_system": "Design System"
                 }
             }
         },
@@ -978,6 +1250,7 @@
             "city_placeholder": "np. Warszawa",
             "country": "Kraj",
             "country_placeholder": "np. Polska",
+            "email": "Adres E-mail",
             "change_email": "Zmień email",
             "team_groups": "Grupy Zespołowe",
             "select_teams": "Wybierz zespoły...",
@@ -1362,7 +1635,18 @@
         "add_labels": "Dodaj etykiety"
     },
     "messages": {
+        "save": "Zapisz",
         "decryptionError": "Błąd deszyfrowania wiadomości",
+        "marketingDesc": "Wybierz silne hasło, aby zabezpieczyć swoje konto.",
+        "resend": "Nie dostałeś kodu? Wyślij ponownie",
+        "tips": {
+            "title": "💡 Wskazówki dot. hasła",
+            "length": "✓ Minimum 8 znaków",
+            "complexity": "✓ Użyj liter, cyfr i symboli",
+            "common": "✓ Unikaj oczywistych słów",
+            "unique": "✓ Nie używaj tego samego hasła"
+        },
+        "error": {},
         "selectMember": "Wybierz członka zespołu, aby rozpocząć czat",
         "search": "Szukaj wiadomości...",
         "unknownUser": "Nieznany użytkownik",
@@ -1450,5 +1734,112 @@
             "symbols": "Symbole",
             "flags": "Flagi"
         }
+    },
+    "calendar": {
+        "panels": {
+            "add_event_title": "Dodaj nowe wydarzenie",
+            "add_task_title": "Dodaj nowe zadanie",
+            "add_reminder_title": "Dodaj przypomnienie",
+            "add_event_subtitle": "Zaplanuj nowe wydarzenie",
+            "add_task_subtitle": "Utwórz nowe zadanie",
+            "add_reminder_subtitle": "Ustaw przypomnienie",
+            "edit_event_title": "Edytuj wydarzenie",
+            "edit_event_subtitle": "Zaktualizuj szczegóły wydarzenia",
+            "event_details_title": "Szczegóły wydarzenia",
+            "daily_events_title": "Wydarzenia dnia",
+            "title_placeholder_event": "Tytuł wydarzenia...",
+            "title_placeholder_task": "Tytuł zadania...",
+            "description_placeholder": "Dodaj opis...",
+            "select_project": "Wybierz projekt",
+            "start_date": "Data rozpoczęcia",
+            "end_date": "Data zakończenia",
+            "due_date": "Termin",
+            "all_day": "Cały dzień",
+            "starts": "Początek",
+            "ends": "Koniec",
+            "repeat": "Powtarzanie",
+            "until": "Do (opcjonalne)",
+            "teams_label": "Zespoły",
+            "teams_help": "Wybrane wydarzenie pojawi się w kalendarzach wszystkich wybranych zespołów.",
+            "location": "Lokalizacja",
+            "meeting_link": "Link do spotkania",
+            "location_placeholder": "Dodaj adres lokalizacji...",
+            "meeting_link_placeholder": "Dodaj URL spotkania (np. Zoom, Meet)...",
+            "in_person": "Osobiście",
+            "virtual": "Wirtualnie",
+            "cancel": "Anuluj",
+            "save_changes": "Zapisz zmiany",
+            "add_event_btn": "Dodaj wydarzenie",
+            "add_task_btn": "Dodaj zadanie",
+            "set_reminder_btn": "Ustaw przypomnienie",
+            "creating": "Tworzenie...",
+            "saving": "Zapisywanie...",
+            "delete_event": "Usuń wydarzenie",
+            "created_by": "Utworzone przez",
+            "no_events_day": "Brak zaplanowanych wydarzeń na ten dzień.",
+            "add_subtasks": "Dodaj podzadania",
+            "hide_subtasks": "Ukryj podzadania",
+            "add_subtask_placeholder": "Dodaj podzadanie...",
+            "add_btn": "Dodaj",
+            "types": {
+                "event": "Wydarzenie",
+                "meeting": "Spotkanie",
+                "task": "Zadanie",
+                "reminder": "Przypomnienie"
+            },
+            "recurrence": {
+                "none": "Nie powtarzaj",
+                "daily": "Codziennie",
+                "weekly": "Co tydzień",
+                "biweekly": "Co dwa tygodnie",
+                "monthly": "Co miesiąc",
+                "quarterly": "Co kwartał",
+                "yearly": "Co rok",
+                "custom": "Niestandardowe..."
+            },
+            "date_time": "Data i czas",
+            "delete_event_confirm": "Czy na pewno chcesz usunąć to wydarzenie?",
+            "delete_error": "Nie udało się usunąć wydarzenia",
+            "all_day_event": "Wydarzenie całodniowe",
+            "event_count_one": "{{count}} Wydarzenie",
+            "event_count_other": "{{count}} Wydarzenia",
+            "event_count_many": "{{count}} Wydarzeń",
+            "event_count_few": "{{count}} Wydarzenia"
+        }
+    },
+    "tasks": {
+        "labels": {
+            "add_labels": "Dodaj etykiety",
+            "search": "Szukaj etykiet...",
+            "no_results": "Brak etykiet",
+            "create_new": "Utwórz nową etykietę",
+            "create_header": "Utwórz etykietę",
+            "name": "Nazwa",
+            "placeholder": "Nazwa etykiety...",
+            "color": "Kolor",
+            "preview": "Podgląd",
+            "add": "Utwórz",
+            "cancel": "Anuluj",
+            "task_singular": "zadanie",
+            "task_plural": "zadania"
+        },
+        "datepicker": {
+            "select_date": "Wybierz datę",
+            "time": "Czas",
+            "done": "Gotowe",
+            "today": "Dzisiaj",
+            "tomorrow": "Jutro",
+            "next_week": "W przyszłym tygodniu"
+        }
+    },
+    "toasts": {
+        "password_updated": "Hasło zostało zaktualizowane pomyślnie",
+        "verification_sent": "E-mail weryfikacyjny wysłany na nowy adres",
+        "phone_saved": "Numer telefonu zapisany",
+        "2fa_enabled": "Uwierzytelnianie dwuskładnikowe włączone",
+        "2fa_disabled": "Uwierzytelnianie dwuskładnikowe wyłączone",
+        "failed_create_item": "Nie udało się utworzyć elementu",
+        "failed_update_event": "Nie udało się zaktualizować wydarzenia",
+        "duplicate_not_implemented": "Duplikowanie nie jest jeszcze zaimplementowane na serwerze"
     }
 }

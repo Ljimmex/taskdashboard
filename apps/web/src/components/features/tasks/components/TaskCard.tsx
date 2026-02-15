@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import Markdown from 'react-markdown'
+import rehypeSanitize from 'rehype-sanitize'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
@@ -275,7 +276,7 @@ export function TaskCard({
             {/* Description */}
             {description && (
                 <div className="text-gray-500 text-xs mb-auto line-clamp-2 [&>p]:mb-0 [&>ul]:mb-0 [&>ol]:mb-0 [&>*]:inline">
-                    <Markdown>{description}</Markdown>
+                    <Markdown rehypePlugins={[rehypeSanitize]}>{description}</Markdown>
                 </div>
             )}
 

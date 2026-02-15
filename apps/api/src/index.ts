@@ -36,8 +36,39 @@ const app = new OpenAPIHono()
 // MIDDLEWARE
 // =============================================================================
 
+import { rateLimiter } from 'hono-rate-limiter'
+
 // Security headers
-app.use('*', secureHeaders())
+app.use('*', secureHeaders({
+    strictTransportSecurity: 'max-age=63072000; includeSubDomains; preload',
+    xFrameOptions: 'DENY',
+    xContentTypeOptions: 'nosniff',
+    referrerPolicy: 'strict-origin-when-cross-origin',
+    contentSecurityPolicy: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'self'"],
+        fontSrc: ["'self'", "https:", "data:"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        imgSrc: ["'self'", "data:", "https:"], // Allow images from https
+        objectSrc: ["'none'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline often needed for styled-components/emotion
+        upgradeInsecureRequests: [],
+    },
+}))
+
+// Rate Limiting (100 reqs per 15 min per IP)
+const limiter = rateLimiter({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+    standardHeaders: 'draft-6', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
+    keyGenerator: (c) => {
+        // Support for proxies (Cloudflare, Render, etc.)
+        return c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for')?.split(',')[0] || 'unknown'
+    },
+})
+app.use('/api/*', limiter)
 
 // CORS
 app.use('*', cors({
@@ -62,6 +93,25 @@ app.use('*', cors({
 if (process.env.NODE_ENV !== 'production') {
     app.use('*', logger())
 }
+
+// Global Auth Middleware (Enforce Session)
+import { authMiddleware } from './middleware/auth'
+
+app.use('/api/*', async (c, next) => {
+    // Only apply to /api routes
+    const path = c.req.path
+    if (!path.startsWith('/api')) {
+        return next()
+    }
+
+    // Public routes that don't need auth
+    const publicPaths = ['/api/auth', '/api/health', '/docs', '/openapi.json']
+    if (publicPaths.some(p => path.startsWith(p))) {
+        return next()
+    }
+
+    return authMiddleware(c, next)
+})
 
 // Pretty JSON (only in development)
 if (process.env.NODE_ENV !== 'production') {

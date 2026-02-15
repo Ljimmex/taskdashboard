@@ -177,6 +177,7 @@ export function CreateWorkspacePanel({ isOpen, onClose, onWorkspaceCreated }: Cr
                                     required
                                 >
                                     <option value="Technology">Technology / IT</option>
+                                    <option value="Gamedev">Gamedev / Games</option>
                                     <option value="Marketing">Marketing / Agency</option>
                                     <option value="Finance">Finance</option>
                                     <option value="Education">Education</option>

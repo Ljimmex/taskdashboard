@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { eq, and, inArray, sql } from 'drizzle-orm'
 import { db } from '../../db'
-import { auth } from '../../lib/auth'
+import { type Auth } from '../../lib/auth'
 import { teams, teamMembers } from '../../db/schema/teams'
 import { workspaceMembers } from '../../db/schema/workspaces'
 import { projects, projectMembers } from '../../db/schema/projects'
@@ -13,7 +13,65 @@ import {
 } from '../../lib/permissions'
 import { triggerWebhook } from '../webhooks/trigger'
 
-export const teamsRoutes = new Hono()
+type Env = {
+    Variables: {
+        user: Auth['$Infer']['Session']['user']
+        session: Auth['$Infer']['Session']['session']
+    }
+}
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
+
+const joinTeamSchema = z.object({
+    workspaceSlug: zSanitizedString(),
+    teamName: zSanitizedStringOptional(),
+    teamSlug: zSanitizedStringOptional(),
+}).refine(data => data.teamName || data.teamSlug, {
+    message: "teamName or teamSlug is required"
+})
+
+const createTeamSchema = z.object({
+    name: zSanitizedString(),
+    workspaceId: z.string().uuid().optional(),
+    workspaceSlug: zSanitizedStringOptional(),
+    description: zSanitizedStringOptional(),
+    color: zSanitizedStringOptional(),
+    members: z.array(z.any()).optional()
+})
+
+const updateTeamSchema = z.object({
+    name: zSanitizedStringOptional(),
+    description: zSanitizedStringOptional(),
+    color: zSanitizedStringOptional(),
+})
+
+const teamsQuerySchema = z.object({
+    workspaceId: z.string().optional(),
+    workspaceSlug: zSanitizedString().optional(),
+})
+
+const addTeamMemberSchema = z.object({
+    userId: z.string().optional(),
+    email: z.string().email().optional(),
+    teamLevel: z.enum(['team_lead', 'senior', 'mid', 'junior', 'intern']).optional()
+}).refine(data => data.userId || data.email, {
+    message: "userId or email is required"
+})
+
+const updateTeamMemberSchema = z.object({
+    firstName: zSanitizedStringOptional(),
+    lastName: zSanitizedStringOptional(),
+    position: zSanitizedStringOptional(),
+    city: zSanitizedStringOptional(),
+    country: zSanitizedStringOptional(),
+    teamLevel: z.enum(['team_lead', 'senior', 'mid', 'junior', 'intern']).optional(),
+    teams: z.array(z.string()).optional(),
+    projects: z.array(z.string()).optional(),
+})
+
+export const teamsRoutes = new Hono<Env>()
 
 // Helper: Get user's workspace role
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -36,10 +94,10 @@ async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLev
 }
 
 // GET /api/teams - List teams (optionally filtered by workspaceId or workspaceSlug)
-teamsRoutes.get('/', async (c) => {
-    const workspaceIdQuery = c.req.query('workspaceId')
-    const workspaceSlugQuery = c.req.query('workspaceSlug')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
+teamsRoutes.get('/', zValidator('query', teamsQuerySchema), async (c) => {
+    const { workspaceId: workspaceIdQuery, workspaceSlug: workspaceSlugQuery } = c.req.valid('query')
+    const user = c.get('user') as any
+    const userId = user.id
 
     try {
         let result: any[] = []
@@ -167,27 +225,19 @@ teamsRoutes.get('/', async (c) => {
 })
 
 // POST /api/teams/join - Join a team and workspace via invite params
-teamsRoutes.post('/join', async (c) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
-    let userId = session?.user?.id
+teamsRoutes.post('/join', zValidator('json', joinTeamSchema), async (c) => {
+    const user = c.get('user') as any
+    const userId = user.id
 
-    // Fallback to x-user-id header (common in this app's existing routes)
-    if (!userId) {
-        userId = c.req.header('x-user-id')
-    }
+    const body = c.req.valid('json')
+    const { workspaceSlug, teamName, teamSlug } = body
 
-    if (!userId) {
-        return c.json({ error: 'Unauthorized' }, 401)
-    }
-
-    const { workspaceSlug, teamName, teamSlug } = await c.req.json()
-
-    if (!workspaceSlug || (!teamName && !teamSlug)) {
-        return c.json({ error: 'workspaceSlug and teamName or teamSlug are required' }, 400)
-    }
+    // Validation handled by schema
+    // if (!workspaceSlug || (!teamName && !teamSlug)) { ... } 
 
     try {
         const result = await db.transaction(async (tx) => {
+            // ... existing logic ...
             // 1. Resolve workspace
             const ws = await tx.query.workspaces.findFirst({
                 where: (table, { eq }) => eq(table.slug, workspaceSlug)
@@ -252,14 +302,13 @@ teamsRoutes.post('/join', async (c) => {
 })
 
 // POST /api/teams - Create new team
-teamsRoutes.post('/', async (c) => {
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
+teamsRoutes.post('/', zValidator('json', createTeamSchema), async (c) => {
+    const user = c.get('user') as any
+    const userId = user.id
+    const body = c.req.valid('json')
     const { name, workspaceId: workspaceIdReq, workspaceSlug, description, color, members } = body
 
-    if (!name || (!workspaceIdReq && !workspaceSlug)) {
-        return c.json({ error: 'Name and workspaceId or workspaceSlug are required' }, 400)
-    }
+    // if (!name || (!workspaceIdReq && !workspaceSlug)) { ... } // schema handles this
 
     try {
         let workspaceId = workspaceIdReq
@@ -323,7 +372,8 @@ teamsRoutes.post('/', async (c) => {
 // GET /api/teams/:id - Get team details
 teamsRoutes.get('/:id', async (c) => {
     const id = c.req.param('id')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
+    const user = c.get('user') as any
+    const userId = user.id
 
     try {
         const team = await db.query.teams.findFirst({
@@ -365,10 +415,11 @@ teamsRoutes.get('/:id', async (c) => {
 })
 
 // PATCH /api/teams/:id - Update team
-teamsRoutes.patch('/:id', async (c) => {
+teamsRoutes.patch('/:id', zValidator('json', updateTeamSchema), async (c) => {
     const id = c.req.param('id')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
+    const user = c.get('user') as any
+    const userId = user.id
+    const body = c.req.valid('json')
 
     try {
         // Get team to find workspaceId
@@ -386,8 +437,13 @@ teamsRoutes.patch('/:id', async (c) => {
             return c.json({ error: 'Unauthorized to update team' }, 403)
         }
 
+        const updateData: any = {}
+        if (body.name !== undefined) updateData.name = body.name
+        if (body.description !== undefined) updateData.description = body.description || null
+        if (body.color !== undefined) updateData.color = body.color || null
+
         const [updated] = await db.update(teams)
-            .set({ ...body })
+            .set(updateData)
             .where(eq(teams.id, id))
             .returning()
 
@@ -405,7 +461,8 @@ teamsRoutes.patch('/:id', async (c) => {
 // DELETE /api/teams/:id - Delete team
 teamsRoutes.delete('/:id', async (c) => {
     const id = c.req.param('id')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
+    const user = c.get('user') as any
+    const userId = user.id
 
     try {
         // Get team to find workspaceId
@@ -436,10 +493,11 @@ teamsRoutes.delete('/:id', async (c) => {
 })
 
 // POST /api/teams/:id/members - Add member to team
-teamsRoutes.post('/:id/members', async (c) => {
+teamsRoutes.post('/:id/members', zValidator('json', addTeamMemberSchema), async (c) => {
     const teamId = c.req.param('id')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const { userId: memberIdToAdd, email, teamLevel: newMemberLevel = 'junior' } = await c.req.json()
+    const user = c.get('user') as any
+    const userId = user.id
+    const { userId: memberIdToAdd, email, teamLevel: newMemberLevel = 'junior' } = c.req.valid('json')
 
     try {
         // Get team to find workspaceId
@@ -504,7 +562,8 @@ teamsRoutes.post('/:id/members', async (c) => {
 teamsRoutes.delete('/:id/members/:memberId', async (c) => {
     const teamId = c.req.param('id')
     const memberId = c.req.param('memberId')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
+    const user = c.get('user') as any
+    const userId = user.id
 
     try {
         // Get team to find workspaceId
@@ -537,11 +596,12 @@ teamsRoutes.delete('/:id/members/:memberId', async (c) => {
 
 
 // PATCH /api/teams/:id/members/:memberId - Update member role and user details
-teamsRoutes.patch('/:id/members/:memberId', async (c) => {
+teamsRoutes.patch('/:id/members/:memberId', zValidator('json', updateTeamMemberSchema), async (c) => {
     const teamId = c.req.param('id')
     const memberId = c.req.param('memberId')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
+    const user = c.get('user') as any
+    const userId = user.id
+    const body = c.req.valid('json')
     const { firstName, lastName, position, city, country, teamLevel: newTeamLevel, projects: projectNames } = body
 
     console.log('PATCH member', { teamId, memberId, firstName, lastName, position, city, country, newTeamLevel })

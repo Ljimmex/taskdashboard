@@ -24,6 +24,10 @@ function LoginPage() {
     const [loading, setLoading] = useState(false)
 
     // 2FA State
+    const [isEmailVerification, setIsEmailVerification] = useState(false)
+    const [emailVerificationSent, setEmailVerificationSent] = useState(false)
+
+    // 2FA State
     const [isTwoFactor, setIsTwoFactor] = useState(false)
     const [twoFactorCode, setTwoFactorCode] = useState('')
 
@@ -45,6 +49,15 @@ function LoginPage() {
             console.log("Login result:", result)
 
             if (result.error) {
+                // Check for email verification requirement FIRST
+                if (result.error.code === "EMAIL_NOT_VERIFIED" ||
+                    result.error.message?.toLowerCase().includes("verify") ||
+                    result.error.message?.toLowerCase().includes("weryfik")) {
+                    setIsEmailVerification(true)
+                    setError('')
+                    return
+                }
+
                 // Check for 2FA requirement in error
                 if (result.error.message?.includes("2FA") ||
                     (result.error as any).code === "TWO_FACTOR_REQUIRED" ||
@@ -63,7 +76,13 @@ function LoginPage() {
                         setError('')
                         return
                     }
+                    (result.error as any).code === "TWO_FACTOR_REQUIRED") {
+                    setIsTwoFactor(true)
+                    setError('')
+                    return
                 }
+
+
 
                 // Try to translate error message if possible, otherwise fallback to server message
                 setError(result.error.message || t('auth.error.login'))
@@ -159,6 +178,17 @@ function LoginPage() {
             }
         } catch (err: any) {
             setError(err.message || t('auth.error.default'))
+    const handleResendVerification = async () => {
+        setLoading(true)
+        setError('')
+        try {
+            await authClient.emailOtp.sendVerificationOtp({
+                email,
+                type: "email-verification"
+            })
+            setEmailVerificationSent(true)
+        } catch (err) {
+            setError('Failed to resend verification email')
         } finally {
             setLoading(false)
         }
@@ -178,6 +208,36 @@ function LoginPage() {
             setTimeout(() => setError(''), 3000)
         } catch (err) {
             setError(t('auth.error.default'))
+    const [verificationCode, setVerificationCode] = useState('')
+
+    const handleVerifyEmail = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        setError('')
+        try {
+            const res = await authClient.emailOtp.verifyEmail({
+                email,
+                otp: verificationCode
+            })
+
+            if (res.error) {
+                setError(res.error.message || t('auth.error.default'))
+            } else {
+                // Verification successful, now login
+                const loginRes = await signIn.email({
+                    email,
+                    password,
+                    rememberMe
+                })
+
+                if (loginRes.error) {
+                    setError(loginRes.error.message || t('auth.error.login'))
+                } else {
+                    navigate({ to: '/dashboard' })
+                }
+            }
+        } catch (err: any) {
+            setError(err.message)
         } finally {
             setLoading(false)
         }
@@ -219,6 +279,9 @@ function LoginPage() {
                         </h1>
                         <p className="mt-2 text-gray-400">
                             {isTwoFactor ? t('auth.title2FA') : isEmailVerification ? t('auth.verifyEmailTitle') : t('auth.title')}
+                            {isTwoFactor ? t('auth.title2FA') :
+                                isEmailVerification ? t('auth.verifyEmail.title') :
+                                    t('auth.title')}
                         </p>
                     </div>
 
@@ -282,6 +345,61 @@ function LoginPage() {
                                 className="w-full text-sm text-gray-500 hover:text-white"
                             >
                                 {t('auth.backToLogin')}
+                            <div className="text-center">
+                                <h2 className="text-xl font-semibold text-white mb-2">{t('auth.verifyEmail.title')}</h2>
+                                <p className="text-gray-400 mb-6">
+                                    {t('auth.verifyEmail.message')}
+                                </p>
+                                {emailVerificationSent ? (
+                                    <div className="text-green-500 font-medium p-2 bg-green-500/10 rounded mb-4">
+                                        {t('auth.verifyEmail.sent')}
+                                    </div>
+                                ) : null}
+
+                                <form onSubmit={handleVerifyEmail} className="space-y-4">
+                                    <div className="space-y-2 text-left">
+                                        <Label htmlFor="verificationCode" className="text-gray-400 text-sm">{t('auth.code2FA')} (Email)</Label>
+                                        <Input
+                                            id="verificationCode"
+                                            type="text"
+                                            value={verificationCode}
+                                            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                            className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none text-center tracking-widest text-xl"
+                                            placeholder="000 000"
+                                            required
+                                        />
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        disabled={loading || verificationCode.length !== 6}
+                                        className="w-full bg-amber-500 py-6 text-black font-medium hover:bg-amber-400 rounded-full"
+                                    >
+                                        {loading ? t('auth.verifying') : t('auth.verifyEmail.submit')}
+                                    </Button>
+
+                                    {!emailVerificationSent && (
+                                        <Button
+                                            type="button"
+                                            onClick={handleResendVerification}
+                                            disabled={loading}
+                                            variant="ghost"
+                                            className="w-full text-amber-500 hover:text-amber-400 hover:bg-transparent"
+                                        >
+                                            {t('auth.verifyEmail.resend')}
+                                        </Button>
+                                    )}
+                                </form>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsEmailVerification(false)
+                                    setEmailVerificationSent(false)
+                                }}
+                                className="w-full text-sm text-gray-500 hover:text-white"
+                            >
+                                {t('auth.verifyEmail.back')}
                             </button>
                         </div>
                     ) : isTwoFactor ? (

@@ -13,14 +13,9 @@ import { type Auth } from '../../lib/auth'
 import { triggerWebhook } from '../webhooks/trigger'
 import type { WorkspaceRole } from '../../lib/permissions'
 
-type Env = {
-    Variables: {
-        user: Auth['$Infer']['Session']['user']
-        session: Auth['$Infer']['Session']['session']
-    }
-}
+// type Env removed
 
-const app = new Hono<Env>()
+const app = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
 
 // Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -40,14 +35,25 @@ app.use('*', authMiddleware)
 // -----------------------------------------------------------------------------
 // POST /files/upload - Get presigned URL for upload and create metadata
 // -----------------------------------------------------------------------------
+import { zSanitizedString } from '../../lib/zod-extensions'
+
+// ...
+
 const uploadSchema = z.object({
-    name: z.string().min(1),
+    name: zSanitizedString(),
     size: z.number().int().nonnegative(),
     mimeType: z.string(),
     folderId: z.string().optional(),
     workspaceId: z.string(),
-    teamId: z.string().optional().nullable(), // Make nullable to match schema
-    taskId: z.string().optional().nullable(), // Make nullable to match schema
+    teamId: z.string().optional().nullable(),
+    taskId: z.string().optional().nullable(),
+})
+
+const filesQuerySchema = z.object({
+    workspaceId: z.string(),
+    folderId: z.string().optional(),
+    search: z.string().optional(),
+    type: z.string().optional(),
 })
 
 app.post('/upload', zValidator('json', uploadSchema), async (c) => {
@@ -98,11 +104,8 @@ app.post('/upload', zValidator('json', uploadSchema), async (c) => {
 // -----------------------------------------------------------------------------
 // GET /files - List files with filters
 // -----------------------------------------------------------------------------
-app.get('/', async (c) => {
-    const workspaceId = c.req.query('workspaceId')
-    const folderId = c.req.query('folderId')
-    const search = c.req.query('search')
-    const type = c.req.query('type') // 'pdf', 'image', etc.
+app.get('/', zValidator('query', filesQuerySchema), async (c) => {
+    const { workspaceId, folderId, search, type } = c.req.valid('query')
 
     if (!workspaceId) {
         return c.json({ error: 'Workspace ID is required' }, 400)
@@ -189,13 +192,26 @@ app.get('/:id/download', async (c) => {
 // PATCH /files/:id - Rename / Move
 // -----------------------------------------------------------------------------
 const updateSchema = z.object({
-    name: z.string().optional(),
-    folderId: z.string().nullable().optional(), // Nullable to move to root
+    name: zSanitizedString().optional(),
+    folderId: z.string().nullable().optional(),
 })
 
 app.patch('/:id', zValidator('json', updateSchema), async (c) => {
     const id = c.req.param('id')
+    const user = c.get('user')
     const body = c.req.valid('json')
+
+    const file = await db.query.files.findFirst({
+        where: eq(files.id, id)
+    })
+
+    if (!file) return c.json({ error: 'File not found' }, 404)
+
+    // Check workspace membership status
+    const workspaceRole = await getUserWorkspaceRole(user.id, file.workspaceId || '')
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
 
     const [updated] = await db.update(files)
         .set({
@@ -213,6 +229,19 @@ app.patch('/:id', zValidator('json', updateSchema), async (c) => {
 // -----------------------------------------------------------------------------
 app.patch('/:id/archive', async (c) => {
     const id = c.req.param('id')
+    const user = c.get('user')
+
+    const file = await db.query.files.findFirst({
+        where: eq(files.id, id)
+    })
+
+    if (!file) return c.json({ error: 'File not found' }, 404)
+
+    // Check workspace membership status
+    const workspaceRole = await getUserWorkspaceRole(user.id, file.workspaceId || '')
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
 
     const [updated] = await db.update(files)
         .set({ isArchived: true, updatedAt: new Date() })
@@ -281,12 +310,19 @@ app.post('/:id/duplicate', async (c) => {
 // -----------------------------------------------------------------------------
 app.delete('/:id', async (c) => {
     const id = c.req.param('id')
+    const user = c.get('user')
 
     const file = await db.query.files.findFirst({
         where: eq(files.id, id)
     })
 
     if (!file) return c.json({ success: true }) // idempotent
+
+    // Check workspace membership status
+    const workspaceRole = await getUserWorkspaceRole(user.id, file.workspaceId || '')
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
 
     // Delete from R2
     if (file.r2Key) {

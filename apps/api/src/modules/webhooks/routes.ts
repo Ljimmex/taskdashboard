@@ -7,7 +7,9 @@ import { z } from 'zod'
 import { processWebhookQueue } from './worker'
 
 
-const webhooksRoutes = new Hono()
+import { type Auth } from '../../lib/auth'
+
+const webhooksRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
 
 // =============================================================================
 // SCHEMAS
@@ -32,10 +34,9 @@ const updateWebhookSchema = createWebhookSchema.partial()
 // GET /api/webhooks - List webhooks for workspace
 webhooksRoutes.get('/', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const workspaceId = c.req.query('workspaceId')
-
-        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
         if (!workspaceId) return c.json({ success: false, error: 'Workspace ID required' }, 400)
 
         // Security Check: Verify user is a member of the workspace
@@ -74,10 +75,9 @@ webhooksRoutes.get('/', async (c) => {
 // NOTE: We should ideally require permission here. The proper way is to check the workspaceId from body.
 webhooksRoutes.post('/', zValidator('json', createWebhookSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const body = c.req.valid('json')
-
-        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
 
         // Generate a random secret if not provided (usually provided by system)
         const secret = globalThis.crypto.randomUUID()
@@ -99,11 +99,10 @@ webhooksRoutes.post('/', zValidator('json', createWebhookSchema), async (c) => {
 // PATCH /api/webhooks/:id - Update webhook
 webhooksRoutes.patch('/:id', zValidator('json', updateWebhookSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const id = c.req.param('id')
         const body = c.req.valid('json')
-
-        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
 
         // 1. Get Webhook to check Workspace
         const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id)).limit(1)
@@ -132,10 +131,9 @@ webhooksRoutes.patch('/:id', zValidator('json', updateWebhookSchema), async (c) 
 // DELETE /api/webhooks/:id - Delete webhook
 webhooksRoutes.delete('/:id', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const id = c.req.param('id')
-
-        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
 
         const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id)).limit(1)
         if (!webhook) return c.json({ success: false, error: 'Not found' }, 404)
@@ -159,10 +157,9 @@ webhooksRoutes.delete('/:id', async (c) => {
 // GET /api/webhooks/:id/deliveries - View delivery logs
 webhooksRoutes.get('/:id/deliveries', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const id = c.req.param('id')
-
-        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
 
         // Need to check workspace access first via webhook
         const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id)).limit(1)
@@ -188,10 +185,9 @@ webhooksRoutes.get('/:id/deliveries', async (c) => {
 // POST /api/webhooks/:id/test - Send a test payload
 webhooksRoutes.post('/:id/test', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const id = c.req.param('id')
-
-        if (!userId) return c.json({ success: false, error: 'Unauthorized' }, 401)
 
         const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id)).limit(1)
         if (!webhook) return c.json({ success: false, error: 'Webhook not found' }, 404)

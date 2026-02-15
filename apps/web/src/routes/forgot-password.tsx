@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { forgetPassword } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,6 +32,7 @@ function ForgotPasswordPage() {
 
             if (result.error) {
                 setError(result.error.message || t('auth.error.send'))
+                setError(result.error.message || t('auth.error.default'))
             } else {
                 setSuccess(true)
                 setTimeout(() => {
@@ -58,6 +60,7 @@ function ForgotPasswordPage() {
                             <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-8" />
                         </h1>
                         <p className="mt-2 text-gray-400">{t('auth.resetPassword.title')}</p>
+                        <p className="mt-2 text-gray-400">{t('forgotPassword.title')}</p>
                     </div>
 
                     {success ? (
@@ -66,6 +69,9 @@ function ForgotPasswordPage() {
                             <h2 className="text-xl font-semibold text-white mb-2">{t('auth.resetPassword.successTitle')}</h2>
                             <p className="text-gray-400">
                                 {t('auth.resetPassword.successDesc')}
+                            <h2 className="text-xl font-semibold text-white mb-2">{t('forgotPassword.successTitle')}</h2>
+                            <p className="text-gray-400">
+                                {t('forgotPassword.successMessage')}
                             </p>
                         </div>
                     ) : (
@@ -79,6 +85,7 @@ function ForgotPasswordPage() {
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="email" className="text-gray-400 text-sm">{t('auth.resetPassword.emailLabel')}</Label>
+                                    <Label htmlFor="email" className="text-gray-400 text-sm">{t('forgotPassword.email')}</Label>
                                     <div className="relative">
                                         <Input
                                             id="email"
@@ -95,6 +102,7 @@ function ForgotPasswordPage() {
 
                                 <p className="text-sm text-gray-400">
                                     {t('auth.resetPassword.descInput')}
+                                    {t('forgotPassword.subtitle')}
                                 </p>
 
                                 <Button
@@ -109,6 +117,13 @@ function ForgotPasswordPage() {
                                     {t('auth.resetPassword.rememberPassword')}{' '}
                                     <Link to="/login" className="text-amber-500 hover:underline font-medium">
                                         {t('auth.resetPassword.backToLogin')}
+                                    {loading ? t('forgotPassword.sending') : t('forgotPassword.submit')}
+                                </Button>
+
+                                <p className="mt-6 text-center text-gray-400">
+                                    {t('forgotPassword.backToLogin')}{' '}
+                                    <Link to="/login" className="text-amber-500 hover:underline font-medium">
+                                        {t('forgotPassword.login')}
                                     </Link>
                                 </p>
                             </form>
@@ -125,6 +140,10 @@ function ForgotPasswordPage() {
                     </h2>
                     <p className="mt-6 text-lg text-gray-400">
                         {t('auth.resetPassword.desc')}
+                        {t('forgotPassword.marketingTitle')}
+                    </h2>
+                    <p className="mt-6 text-lg text-gray-400">
+                        {t('forgotPassword.marketingDesc')}
                     </p>
 
                     {/* Steps */}
@@ -140,6 +159,15 @@ function ForgotPasswordPage() {
                         <div className="flex items-center gap-4">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-700 text-white font-bold">3</div>
                             <p className="text-gray-300">{t('auth.resetPassword.step3')}</p>
+                            <p className="text-gray-300">{t('forgotPassword.step1')}</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-700 text-white font-bold">2</div>
+                            <p className="text-gray-300">{t('forgotPassword.step2')}</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-700 text-white font-bold">3</div>
+                            <p className="text-gray-300">{t('forgotPassword.step3')}</p>
                         </div>
                     </div>
                 </div>

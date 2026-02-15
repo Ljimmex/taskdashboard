@@ -3,7 +3,9 @@ import { db } from '../../db'
 import { industryTemplates, industryTemplateStages } from '../../db/schema'
 import { eq, asc } from 'drizzle-orm'
 
-const app = new Hono()
+import { type Auth } from '../../lib/auth'
+
+const app = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
 
 // =============================================================================
 // GET /api/industry-templates - List all templates with stages

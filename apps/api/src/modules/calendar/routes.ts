@@ -14,8 +14,45 @@ import {
     type TeamLevel
 } from '../../lib/permissions'
 import { generateICS } from './ical'
+import { authMiddleware } from '@/middleware/auth'
+import { type Auth } from '../../lib/auth'
 
-export const calendarRoutes = new Hono()
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
+
+const createEventSchema = z.object({
+    title: zSanitizedString(),
+    startAt: z.string(),
+    endAt: z.string(),
+    teamIds: z.array(z.string()),
+    description: zSanitizedStringOptional(),
+    type: z.enum(['event', 'meeting', 'reminder', 'task']).optional(), // Include 'task' if allowed? Enum in DB: calendar_event_type
+    meetingLink: zSanitizedStringOptional(),
+    taskId: z.string().optional().nullable(),
+    isAllDay: z.boolean().optional(),
+    recurrence: z.any().optional()
+})
+
+const updateEventSchema = createEventSchema.partial()
+
+const calendarQuerySchema = z.object({
+    start: z.string().optional(),
+    end: z.string().optional(),
+    teamId: z.string().optional(),
+    type: z.string().optional(),
+    workspaceSlug: zSanitizedString().optional(),
+})
+
+export const calendarRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
+
+// Apply auth middleware to all routes EXCEPT export
+calendarRoutes.use('*', async (c, next) => {
+    if (c.req.path.startsWith('/export')) {
+        return next()
+    }
+    return authMiddleware(c, next)
+})
 
 // Helper to get user permissions context
 async function getUserPermissions(userId: string, teamId: string) {
@@ -94,13 +131,11 @@ async function checkTeamPermissions(userId: string, teamIds: string[], type: str
 // ... existing helper `getUserPermissions` ...
 
 // GET /api/calendar - List events
-calendarRoutes.get('/', async (c) => {
+calendarRoutes.get('/', zValidator('query', calendarQuerySchema), async (c) => {
     try {
-        const session = await auth.api.getSession({ headers: c.req.raw.headers })
-        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
-
-        const userId = session.user.id
-        const { start, end, teamId, type, workspaceSlug } = c.req.query()
+        const user = c.get('user')
+        const userId = user.id
+        const { start, end, teamId, type, workspaceSlug } = c.req.valid('query')
 
         console.log(`[Calendar GET] userId=${userId} workspaceSlug=${workspaceSlug} teamId=${teamId}`)
 
@@ -349,17 +384,20 @@ calendarRoutes.get('/:id', async (c) => {
 })
 
 // POST /api/calendar - Create event
-calendarRoutes.post('/', async (c) => {
+calendarRoutes.post('/', zValidator('json', createEventSchema), async (c) => {
     try {
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
         if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
         const userId = session.user.id
 
-        const body = await c.req.json()
+        const body = c.req.valid('json')
 
         // Validation
         if (!body.title || !body.startAt || !body.endAt) {
             return c.json({ error: 'Missing required fields' }, 400)
+        // Validation handled by schema
+        if (body.teamIds.length === 0) {
+            return c.json({ error: 'At least one team ID is required' }, 400)
         }
 
         const teamIds = Array.isArray(body.teamIds) ? body.teamIds : []
@@ -411,6 +449,8 @@ calendarRoutes.post('/', async (c) => {
             teamIds: teamIds,
             attendeeIds: attendeeIds,
             type: body.type || 'event',
+            teamIds: body.teamIds,
+            type: (body.type as any) || 'event',
             startAt: new Date(body.startAt),
             endAt: new Date(body.endAt),
             meetingLink: body.meetingLink, // Save meeting link
@@ -421,6 +461,7 @@ calendarRoutes.post('/', async (c) => {
         }
 
         const eventsToInsert: NewCalendarEvent[] = []
+        // ... rest of logic for recurrence ...
 
         // Recurrence Handling (Materialization)
         if (body.recurrence) {
@@ -508,14 +549,14 @@ calendarRoutes.post('/', async (c) => {
 })
 
 // PATCH /api/calendar/:id - Update event
-calendarRoutes.patch('/:id', async (c) => {
+calendarRoutes.patch('/:id', zValidator('json', updateEventSchema), async (c) => {
     try {
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
         if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
         const userId = session.user.id
         const id = c.req.param('id')
 
-        const body = await c.req.json()
+        const body = c.req.valid('json')
 
         const existing = await db.query.calendarEvents.findFirst({
             where: (e, { eq }) => eq(e.id, id)
@@ -536,6 +577,8 @@ calendarRoutes.patch('/:id', async (c) => {
             return c.json({ error: 'Forbidden: You can only edit your own events or need manage permission' }, 403)
         }
 
+        // Handle date string to Date conversion
+        // Zod passed strings, we need to convert for updateData
         const updateData: Partial<NewCalendarEvent> = {}
         if (body.title) updateData.title = body.title
         if (body.description) updateData.description = body.description

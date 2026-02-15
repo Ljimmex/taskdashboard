@@ -6,7 +6,7 @@ import { users } from '../../db/schema/users'
 import { teams, teamMembers } from '../../db/schema/teams'
 import { projects } from '../../db/schema/projects'
 import { tasks } from '../../db/schema/tasks'
-import { auth } from '../../lib/auth'
+import { auth, type Auth } from '../../lib/auth'
 import {
     canManageWorkspaceSettings,
     canManageWorkspaceMembers,
@@ -19,7 +19,47 @@ import { triggerWebhook } from '../webhooks/trigger'
 import { workspaceInvitesRoutes } from './invites'
 import { workspaceDefaultsRoutes } from './defaults'
 
-export const workspacesRoutes = new Hono()
+type Env = {
+    Variables: {
+        user: Auth['$Infer']['Session']['user']
+        session: Auth['$Infer']['Session']['session']
+    }
+}
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
+
+const createWorkspaceSchema = z.object({
+    name: zSanitizedString(),
+    slug: zSanitizedString(),
+    teamSize: zSanitizedStringOptional(),
+    industry: zSanitizedStringOptional(),
+})
+
+const updateWorkspaceSchema = z.object({
+    name: zSanitizedStringOptional(),
+    slug: zSanitizedStringOptional(),
+    description: zSanitizedStringOptional(),
+    logo: zSanitizedStringOptional(),
+    settings: z.any().optional()
+})
+
+const addMemberSchema = z.object({
+    userId: z.string(),
+    role: z.enum(['owner', 'admin', 'member', 'guest', 'project_manager']).optional()
+})
+
+const workspaceMembersQuerySchema = z.object({
+    q: z.string().optional(),
+})
+
+const updateWorkspaceMemberSchema = z.object({
+    role: z.enum(['owner', 'admin', 'member', 'guest', 'project_manager']).optional(),
+    status: z.enum(['active', 'suspended', 'invited']).optional(),
+})
+
+export const workspacesRoutes = new Hono<Env>()
 
 // Mount sub-routes
 workspacesRoutes.route('/', workspaceInvitesRoutes)
@@ -132,7 +172,7 @@ workspacesRoutes.get('/slug/:slug', async (c) => {
 })
 
 // POST /api/workspaces - Create new workspace
-workspacesRoutes.post('/', async (c) => {
+workspacesRoutes.post('/', zValidator('json', createWorkspaceSchema), async (c) => {
     // Get Session using Better Auth
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
@@ -142,12 +182,10 @@ workspacesRoutes.post('/', async (c) => {
 
     const userId = session.user.id
 
-    const body = await c.req.json()
+    const body = c.req.valid('json')
     const { name, slug, teamSize, industry } = body
 
-    if (!name || !slug) {
-        return c.json({ error: 'Name and slug are required' }, 400)
-    }
+    // if (!name || !slug) { ... } -> schema handles this
 
     try {
         // Transaction: Create workspace AND add user as owner
@@ -182,7 +220,8 @@ workspacesRoutes.post('/', async (c) => {
 // GET /api/workspaces/:id - Get workspace details (member access)
 workspacesRoutes.get('/:id', async (c) => {
     const id = c.req.param('id')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
+    const user = c.get('user') as any
+    const userId = user.id
 
     try {
         // Check membership
@@ -203,10 +242,11 @@ workspacesRoutes.get('/:id', async (c) => {
 })
 
 // PATCH /api/workspaces/:id - Update workspace (requires workspace.manageSettings)
-workspacesRoutes.patch('/:id', async (c) => {
+workspacesRoutes.patch('/:id', zValidator('json', updateWorkspaceSchema), async (c) => {
     const id = c.req.param('id')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
+    const user = c.get('user') as any
+    const userId = user.id
+    const body = c.req.valid('json')
 
     try {
         // Get user's workspace role
@@ -260,7 +300,8 @@ workspacesRoutes.patch('/:id', async (c) => {
 // DELETE /api/workspaces/:id - Delete workspace (requires workspace.deleteWorkspace - only owner)
 workspacesRoutes.delete('/:id', async (c) => {
     const id = c.req.param('id')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
+    const user = c.get('user') as any
+    const userId = user.id
 
     try {
         // Get user's workspace role
@@ -279,7 +320,7 @@ workspacesRoutes.delete('/:id', async (c) => {
 })
 
 // POST /api/workspaces/:id/members - Add member to workspace (requires workspace.manageMembers)
-workspacesRoutes.post('/:id/members', async (c) => {
+workspacesRoutes.post('/:id/members', zValidator('json', addMemberSchema), async (c) => {
     const workspaceId = c.req.param('id')
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
@@ -288,7 +329,7 @@ workspacesRoutes.post('/:id/members', async (c) => {
     }
 
     const userId = session.user.id
-    const body = await c.req.json()
+    const body = c.req.valid('json')
     const { userId: newMemberId, role = 'member' } = body
 
     try {
@@ -318,10 +359,11 @@ workspacesRoutes.post('/:id/members', async (c) => {
 })
 
 // GET /api/workspaces/:id/members - List members of workspace (with search)
-workspacesRoutes.get('/:id/members', async (c) => {
+workspacesRoutes.get('/:id/members', zValidator('query', workspaceMembersQuerySchema), async (c) => {
     let workspaceId = c.req.param('id')
     console.log(`[DEBUG] GET /api/workspaces/${workspaceId}/members called`)
-    const query = c.req.query('q')?.toLowerCase()
+    const { q } = c.req.valid('query')
+    const query = q?.toLowerCase()
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
     if (!session?.user) {
@@ -400,12 +442,12 @@ workspacesRoutes.get('/:id/members', async (c) => {
 })
 
 // PATCH /api/workspaces/:id/members/:memberId - Update member role (requires workspace.manageMembers)
-workspacesRoutes.patch('/:id/members/:memberId', async (c) => {
+workspacesRoutes.patch('/:id/members/:memberId', zValidator('json', updateWorkspaceMemberSchema), async (c) => {
     const workspaceId = c.req.param('id')
     const memberId = c.req.param('memberId')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
-    const body = await c.req.json()
-    const { role, status } = body
+    const user = c.get('user') as any
+    const userId = user.id
+    const { role, status } = c.req.valid('json')
 
     if (!role && !status) {
         return c.json({ error: 'Role or status is required' }, 400)
@@ -450,7 +492,8 @@ workspacesRoutes.patch('/:id/members/:memberId', async (c) => {
 workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
     const workspaceId = c.req.param('id')
     const memberId = c.req.param('memberId')
-    const userId = c.req.header('x-user-id') || 'temp-user-id'
+    const user = c.get('user') as any
+    const userId = user.id
 
     try {
         // Get user's workspace role

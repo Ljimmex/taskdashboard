@@ -10,7 +10,33 @@ import {
     type TeamLevel
 } from '../../lib/permissions'
 
-export const timeRoutes = new Hono()
+import { type Auth } from '../../lib/auth'
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString } from '../../lib/zod-extensions'
+
+const createTimeEntrySchema = z.object({
+    taskId: z.string(),
+    userId: z.string().optional(),
+    description: zSanitizedString().optional(),
+    durationMinutes: z.number().int().nonnegative(),
+    startedAt: z.string().datetime().or(z.date()), // Accepts ISO string or Date object
+    endedAt: z.string().datetime().or(z.date()).optional().nullable(),
+})
+
+const startTimeEntrySchema = z.object({
+    taskId: z.string(),
+    userId: z.string().optional(),
+    description: zSanitizedString().optional(),
+})
+
+const updateTimeEntrySchema = z.object({
+    description: zSanitizedString().optional(),
+    durationMinutes: z.number().int().nonnegative().optional(),
+})
+
+export const timeRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
 
 // Helper: Get user's team level for a project's team
 async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
@@ -31,7 +57,8 @@ async function getTeamIdFromTask(taskId: string): Promise<string | null> {
 // GET /api/time - List time entries (own entries OR viewAll permission)
 timeRoutes.get('/', async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const user = c.get('user')
+        const userId = user.id
         const { taskId, startDate, endDate } = c.req.query()
         const filterUserId = c.req.query('userId')
 
@@ -69,7 +96,8 @@ timeRoutes.get('/', async (c) => {
 // GET /api/time/summary - Get time summary
 timeRoutes.get('/summary', async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const user = c.get('user')
+        const userId = user.id
         const { startDate, endDate } = c.req.query()
         const filterUserId = c.req.query('userId')
 
@@ -90,10 +118,11 @@ timeRoutes.get('/summary', async (c) => {
 })
 
 // POST /api/time - Create time entry (requires timeTracking.create permission)
-timeRoutes.post('/', async (c) => {
+timeRoutes.post('/', zValidator('json', createTimeEntrySchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
-        const body = await c.req.json()
+        const user = c.get('user')
+        const userId = user.id
+        const body = c.req.valid('json')
 
         // Get teamId from task
         const teamId = await getTeamIdFromTask(body.taskId)
@@ -125,10 +154,11 @@ timeRoutes.post('/', async (c) => {
 })
 
 // POST /api/time/start - Start timer
-timeRoutes.post('/start', async (c) => {
+timeRoutes.post('/start', zValidator('json', startTimeEntrySchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
-        const body = await c.req.json()
+        const user = c.get('user')
+        const userId = user.id
+        const body = c.req.valid('json')
 
         // Get teamId from task
         const teamId = await getTeamIdFromTask(body.taskId)
@@ -162,7 +192,8 @@ timeRoutes.post('/start', async (c) => {
 timeRoutes.patch('/:id/stop', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const user = c.get('user')
+        const userId = user.id
 
         const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
         if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
@@ -183,11 +214,12 @@ timeRoutes.patch('/:id/stop', async (c) => {
 })
 
 // PATCH /api/time/:id - Update time entry (owner OR manage permission)
-timeRoutes.patch('/:id', async (c) => {
+timeRoutes.patch('/:id', zValidator('json', updateTimeEntrySchema), async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
-        const body = await c.req.json()
+        const user = c.get('user')
+        const userId = user.id
+        const body = c.req.valid('json')
 
         const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
         if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
@@ -225,7 +257,8 @@ timeRoutes.patch('/:id', async (c) => {
 timeRoutes.delete('/:id', async (c) => {
     try {
         const id = c.req.param('id')
-        const userId = c.req.header('x-user-id') || 'temp-user-id'
+        const user = c.get('user')
+        const userId = user.id
 
         const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
         if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)

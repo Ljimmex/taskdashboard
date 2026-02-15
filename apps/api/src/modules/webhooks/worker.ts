@@ -4,6 +4,59 @@ import { eq, and, lte, sql } from 'drizzle-orm'
 import { WebhookAdapters } from './adapters'
 
 /**
+ * Validates that a URL does not point to a private network address (SSRF protection).
+ * Checks for localhost, private IP ranges, and AWS metadata service.
+ */
+function isPrivateUrl(urlStr: string): boolean {
+    try {
+        const url = new URL(urlStr)
+        const hostname = url.hostname
+
+        // 1. Block localhost
+        if (hostname === 'localhost' || hostname === '::1' || hostname === '0.0.0.0') return true
+
+        // 2. Block numeric IP addresses that are private
+        // IPv4 regex pattern for private ranges
+        // 10.x.x.x
+        // 172.16.x.x - 172.31.x.x
+        // 192.168.x.x
+        // 127.x.x.x (Loopback)
+        // 169.254.x.x (Link-local / Cloud Metadata)
+        
+        // Simple check if it looks like an IP
+        const isIP = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)
+        
+        if (isIP) {
+            const parts = hostname.split('.').map(Number)
+            
+            // 10.0.0.0/8
+            if (parts[0] === 10) return true
+            
+            // 172.16.0.0/12
+            if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true
+            
+            // 192.168.0.0/16
+            if (parts[0] === 192 && parts[1] === 168) return true
+            
+            // 127.0.0.0/8
+            if (parts[0] === 127) return true
+            
+            // 169.254.0.0/16
+            if (parts[0] === 169 && parts[1] === 254) return true
+        }
+
+        // Note: This does not protect against DNS rebinding attacks where a domain resolves to a private IP.
+        // For full protection, a custom HTTP agent that validates the resolved IP address is required.
+        // But this covers the immediate requirement.
+
+        return false
+    } catch (e) {
+        // Invalid URL is considered "unsafe" or at least unusable
+        return true
+    }
+}
+
+/**
  * The Webhook Worker processes the persistent job queue.
  * It uses a "FOR UPDATE SKIP LOCKED" strategy to safely allow multiple 
  * instances to process the same queue without race conditions.
@@ -84,6 +137,11 @@ async function deliverWebhook(job: any) {
         // 3. PREPARE REQUEST
         const request = await adapter(job, config)
         requestHeaders = request.headers
+
+        // SSRF PROTECTION
+        if (isPrivateUrl(request.url)) {
+            throw new Error(`Blocked restricted URL: ${request.url}`)
+        }
 
         console.log(`[Webhook Worker] Sending to ${request.url}`)
         console.log(`[Webhook Worker] Body: ${request.body}`)

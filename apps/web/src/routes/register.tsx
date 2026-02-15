@@ -22,6 +22,12 @@ export const Route = createFileRoute('/register')({
 
 type Step = 1 | 2 | 3
 
+export const generateSlug = (name: string) => {
+    return name.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'workspace'
+}
+
 function RegisterPage() {
     const { t } = useTranslation()
     const navigate = useNavigate()
@@ -61,6 +67,7 @@ function RegisterPage() {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '') || 'workspace'
     }
+
 
     const handleStep1 = (e: React.FormEvent) => {
         e.preventDefault()
@@ -266,6 +273,10 @@ function RegisterPage() {
         }
     }
 
+    const [success, setSuccess] = useState(false)
+
+    // ... (generateSlug and other helpers)
+
     const handleStep3 = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
@@ -282,8 +293,7 @@ function RegisterPage() {
                 email,
                 password,
                 name: `${firstName} ${lastName}`.trim(),
-                // image removed
-                position, // BetterAuth hook will catch this
+                position,
                 gender,
                 birthDate: birthDateStr,
             } as any)
@@ -338,13 +348,17 @@ function RegisterPage() {
                 // Verify if we should show error. 
                 // Navigate anyway.
             }
+            // SUCCESS - Prompt for verification
+            setSuccess(true)
+            setLoading(false)
 
-            navigate({ to: `/${slug}` })
+            // NOTE: Workspace creation is skipped here because we cannot login the user 
+            // before they verify their email. The workspace will need to be created 
+            // after they verify and log in for the first time.
 
         } catch (err) {
             console.error(err)
             setError(t('register.error.unexpected'))
-        } finally {
             setLoading(false)
         }
     }
@@ -404,7 +418,9 @@ function RegisterPage() {
                         <h1 className="text-3xl font-bold text-white">
                             <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-8" />
                         </h1>
-                        <p className="mt-2 text-gray-400">{t('register.title')}</p>
+                        <p className="mt-2 text-gray-400">
+                            {success ? t('register.success.title') : t('register.title')}
+                        </p>
                     </div>
 
                     {/* Step indicator */}
@@ -485,6 +501,42 @@ function RegisterPage() {
                         </div>
                     ) : (
                         <>
+                    {success ? (
+                        <div className="rounded-lg bg-green-500/10 p-6 text-center border border-green-500/20">
+                            <div className="text-4xl mb-4">✅</div>
+                            <h2 className="text-xl font-semibold text-white mb-2">{t('register.success.title')}</h2>
+                            <p className="text-gray-400 mb-6">
+                                {t('register.success.message', { email })}
+                            </p>
+                            <Link
+                                to="/login"
+                                className="inline-block w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 text-black font-medium rounded-full transition-colors"
+                            >
+                                {t('register.success.backToLogin')}
+                            </Link>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Step indicator */}
+                            <div className="mb-8 flex items-center gap-4">
+                                {/* Step 1 */}
+                                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 1 ? 'bg-amber-500 text-black' : 'bg-gray-700 text-gray-400'}`}>1</div>
+                                <div className={`h-0.5 flex-1 ${step >= 2 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+
+                                {/* Step 2 */}
+                                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 2 ? 'bg-amber-500 text-black' : 'bg-gray-700 text-gray-400'}`}>2</div>
+                                <div className={`h-0.5 flex-1 ${step >= 3 ? 'bg-amber-500' : 'bg-gray-700'}`} />
+
+                                {/* Step 3 */}
+                                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step >= 3 ? 'bg-amber-500 text-black' : 'bg-gray-700 text-gray-400'}`}>3</div>
+                            </div>
+
+                            {error && (
+                                <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-500">
+                                    {error}
+                                </div>
+                            )}
+
                             {/* Step 1: Account */}
                             {step === 1 && (
                                 <form onSubmit={handleStep1} className="space-y-5">
@@ -855,3 +907,4 @@ function RegisterPage() {
         </div>
     )
 }
+

@@ -1,10 +1,11 @@
+
 import { Hono } from 'hono'
 import { db } from '../../db'
 import {
     tasks, subtasks, taskActivityLog, taskComments,
     type NewTask, type NewSubtask, type NewTaskComment
 } from '../../db/schema/tasks'
-import { auth } from '../../lib/auth'
+import { auth, type Auth } from '../../lib/auth'
 import { projects, projectMembers } from '../../db/schema/projects'
 import { eq, desc } from 'drizzle-orm'
 import {
@@ -19,7 +20,59 @@ import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema/teams'
 import { syncTaskToCalendar, deleteTaskCalendarEvent } from '../calendar/sync'
 
-export const tasksRoutes = new Hono()
+type Env = {
+    Variables: {
+        user: Auth['$Infer']['Session']['user']
+        session: Auth['$Infer']['Session']['session']
+    }
+}
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
+
+const subtaskSchema = z.object({
+    title: zSanitizedString(),
+    description: zSanitizedStringOptional(),
+    status: zSanitizedStringOptional(),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+})
+
+const createTaskSchema = z.object({
+    title: zSanitizedString(),
+    description: zSanitizedStringOptional(),
+    status: zSanitizedStringOptional(),
+    priority: zSanitizedStringOptional(),
+    assigneeId: z.string().optional().nullable(),
+    dueDate: z.string().optional().nullable(),
+    startDate: z.string().optional().nullable(),
+    meetingLink: zSanitizedStringOptional(),
+    estimatedHours: z.coerce.number().optional().nullable(),
+    links: z.array(z.any()).optional(),
+    type: z.enum(['task', 'meeting']).optional(),
+    projectId: z.string(),
+    subtasks: z.array(subtaskSchema).optional(),
+    labels: z.array(z.string().or(z.object({ id: z.string() }))).optional().nullable(),
+    reporterId: z.string().optional(), // Should be set from session, but schema might allow it if not strictly filtered
+    assignees: z.array(z.string()).optional()
+})
+
+const updateTaskSchema = createTaskSchema.partial().extend({
+    progress: z.number().optional(),
+    isArchived: z.boolean().optional(),
+})
+
+const tasksQuerySchema = z.object({
+    projectId: z.string().optional(),
+    status: z.string().optional(),
+    priority: z.string().optional(),
+    assigneeId: z.string().optional(),
+    isArchived: z.string().optional(),
+    type: z.enum(['task', 'meeting']).optional(),
+    workspaceSlug: zSanitizedString().optional(),
+})
+
+export const tasksRoutes = new Hono<Env>()
 
 // Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -65,13 +118,12 @@ async function getWorkspaceIdFromProject(projectId: string): Promise<string | nu
 // =============================================================================
 
 // GET /api/tasks - List tasks (filtered by project membership)
-tasksRoutes.get('/', async (c) => {
+tasksRoutes.get('/', zValidator('query', tasksQuerySchema), async (c) => {
     try {
-        const session = await auth.api.getSession({ headers: c.req.raw.headers })
-        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
-        const userId = session.user.id
+        const user = c.get('user') as any
+        const userId = user.id
 
-        const { projectId, status, priority, assigneeId, isArchived, type, workspaceSlug } = c.req.query()
+        const { projectId, status, priority, assigneeId, isArchived, type, workspaceSlug } = c.req.valid('query')
 
         let userWorkspaceRole: WorkspaceRole | null = null
         let projectIdsUserCanAccess: string[] | null = null
@@ -101,7 +153,7 @@ tasksRoutes.get('/', async (c) => {
                         where: (p, { inArray, and, exists }) => {
                             const wheres: any[] = [inArray(p.teamId, teamIds)]
 
-                            if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
+                            if (!isProjectManagerOrHigher) {
                                 wheres.push(exists(
                                     db.select()
                                         .from(projectMembers)
@@ -206,9 +258,11 @@ tasksRoutes.get('/:id', async (c) => {
         })
         if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
 
-        const session = await auth.api.getSession({ headers: c.req.raw.headers })
-        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
-        const userId = session.user.id
+        // const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        // if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        // const userId = session.user.id
+        const user = c.get('user') as any
+        const userId = user.id
 
         // Get teamId from project
         const teamId = await getTeamIdFromProject(task.projectId)
@@ -231,7 +285,7 @@ tasksRoutes.get('/:id', async (c) => {
 
         const isProjectManagerOrHigher = workspaceRole && ['owner', 'admin', 'project_manager'].includes(workspaceRole)
 
-        if (!isProjectManagerOrHigher && userId !== 'temp-user-id') {
+        if (!isProjectManagerOrHigher) {
             const isMember = await db.query.projectMembers.findFirst({
                 where: (pm, { eq, and }) => and(eq(pm.projectId, task.projectId), eq(pm.userId, userId))
             })
@@ -297,7 +351,7 @@ tasksRoutes.get('/:id', async (c) => {
         }))
 
         // Fetch project stages for the task's project
-        console.log(`🔍 Fetching stages for task ${id} (project ${task.projectId})`)
+        console.log(`🔍 Fetching stages for task ${id}(project ${task.projectId})`)
         const stages = await db.query.projectStages.findMany({
             where: (s, { eq }) => eq(s.projectId, task.projectId),
             orderBy: (s, { asc }) => [asc(s.position)]
@@ -334,19 +388,19 @@ function formatTimeAgo(date: Date): string {
 
     if (minutes < 1) return 'przed chwilą'
     if (minutes < 60) return `${minutes} min temu`
-    if (hours < 24) return `${hours} godz. temu`
+    if (hours < 24) return `${hours} godz.temu`
     if (days < 7) return `${days} dni temu`
     return date.toLocaleDateString('pl-PL')
 }
 
 // POST /api/tasks - Create task (requires tasks.create permission)
-tasksRoutes.post('/', async (c) => {
+tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
     try {
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
         if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
         const userId = session.user.id
 
-        const body = await c.req.json()
+        const body = c.req.valid('json')
 
         console.log('📝 Creating task:', { userId, title: body.title, projectId: body.projectId })
 
@@ -369,6 +423,8 @@ tasksRoutes.post('/', async (c) => {
 
         if (!canCreateTasks(workspaceRole, teamLevel) && userId !== 'temp-user-id') {
             console.warn('🚫 Unauthorized to create tasks:', { userId, workspaceRole, teamLevel })
+        if (!canCreateTasks(null, teamLevel)) {
+            console.warn('🚫 Unauthorized to create tasks:', { userId, teamLevel })
             return c.json({ success: false, error: 'Unauthorized to create tasks' }, 403)
         }
 
@@ -376,7 +432,7 @@ tasksRoutes.post('/', async (c) => {
 
         // For reporterId, if temp-user-id, try to find the first member of the team to use as reporter
         let reporterId = body.reporterId || userId
-        if (reporterId === 'temp-user-id' || reporterId === '') {
+        if (reporterId === '') {
             const firstMember = await db.query.teamMembers.findFirst({
                 where: (tm, { eq }) => eq(tm.teamId, teamId)
             })
@@ -489,14 +545,16 @@ tasksRoutes.post('/', async (c) => {
 })
 
 // PATCH /api/tasks/:id - Update task (requires tasks.update OR is assignee)
-tasksRoutes.patch('/:id', async (c) => {
+tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
     try {
         const id = c.req.param('id')
-        const session = await auth.api.getSession({ headers: c.req.raw.headers })
-        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
-        const userId = session.user.id
+        // const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        // if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        // const userId = session.user.id
+        const user = c.get('user') as any
+        const userId = user.id
 
-        const body = await c.req.json()
+        const body = c.req.valid('json')
 
         // Get task
         const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
@@ -654,10 +712,9 @@ tasksRoutes.patch('/:id', async (c) => {
             }
         }
 
-        // Ensure new assignee is a member of the project
         if (body.assigneeId && body.assigneeId !== task.assigneeId) {
             const isMember = await db.query.projectMembers.findFirst({
-                where: (pm, { eq, and }) => and(eq(pm.projectId, updated.projectId), eq(pm.userId, body.assigneeId))
+                where: (pm, { eq, and }) => and(eq(pm.projectId, updated.projectId), eq(pm.userId, body.assigneeId as string))
             })
 
             if (!isMember) {
@@ -681,9 +738,11 @@ tasksRoutes.patch('/:id', async (c) => {
 tasksRoutes.delete('/:id', async (c) => {
     try {
         const id = c.req.param('id')
-        const session = await auth.api.getSession({ headers: c.req.raw.headers })
-        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
-        const userId = session.user.id
+        // const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        // if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        // const userId = session.user.id
+        const user = c.get('user') as any
+        const userId = user.id
 
         // Get task
         const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
@@ -733,9 +792,11 @@ tasksRoutes.delete('/:id', async (c) => {
 tasksRoutes.patch('/:id/move', async (c) => {
     try {
         const id = c.req.param('id')
-        const session = await auth.api.getSession({ headers: c.req.raw.headers })
-        if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
-        const userId = session.user.id
+        // const session = await auth.api.getSession({ headers: c.req.raw.headers })
+        // if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
+        // const userId = session.user.id
+        const user = c.get('user') as any
+        const userId = user.id
 
         const body = await c.req.json()
 
@@ -899,13 +960,13 @@ tasksRoutes.patch('/:taskId/subtasks/:subtaskId', async (c) => {
         const metadata: any = { subtask_id: subtaskId }
 
         if (body.isCompleted !== undefined && body.isCompleted !== oldSubtask.isCompleted) {
-            details = body.isCompleted ? `ukończył(a) podzadanie: ${updated.title}` : `przywrócił(a) podzadanie: ${updated.title}`
+            details = body.isCompleted ? `ukończył(a) podzadanie: ${updated.title} ` : `przywrócił(a) podzadanie: ${updated.title} `
         } else if (body.status !== undefined && body.status !== oldSubtask.status) {
-            details = `zmienił(a) status podzadania "${updated.title}" na: ${body.status}`
+            details = `zmienił(a) status podzadania "${updated.title}" na: ${body.status} `
             metadata.from = oldSubtask.status
             metadata.to = body.status
         } else if (body.priority !== undefined && body.priority !== oldSubtask.priority) {
-            details = `zmienił(a) priorytet podzadania "${updated.title}" na: ${body.priority}`
+            details = `zmienił(a) priorytet podzadania "${updated.title}" na: ${body.priority} `
             metadata.from = oldSubtask.priority
             metadata.to = body.priority
         } else if (body.title !== undefined && body.title !== oldSubtask.title) {
@@ -915,7 +976,7 @@ tasksRoutes.patch('/:taskId/subtasks/:subtaskId', async (c) => {
         if (details) {
             await db.insert(taskActivityLog).values({
                 taskId: taskId,
-                userId: userId === 'temp-user-id' ? (await db.query.users.findFirst())?.id || 'temp-id' : userId,
+                userId: userId,
                 activityType: 'subtask_updated',
                 newValue: details,
                 oldValue: oldSubtask.title,
@@ -1283,7 +1344,7 @@ tasksRoutes.post('/bulk/move', async (c) => {
         return c.json({
             success: true,
             data: { updated, count: updated.length },
-            message: `${updated.length} task(s) moved to ${status}`
+            message: `${updated.length} task(s) moved to ${status} `
         })
     } catch (error) {
         console.error('Error bulk moving tasks:', error)

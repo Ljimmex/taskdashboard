@@ -5,7 +5,26 @@ import { workspaceMembers } from '../../db/schema/workspaces'
 import { eq, and } from 'drizzle-orm'
 import type { WorkspaceRole } from '../../lib/permissions'
 
-export const filtersRoutes = new Hono()
+import { type Auth } from '../../lib/auth'
+
+import { z } from 'zod'
+import { zValidator } from '@hono/zod-validator'
+import { zSanitizedString } from '../../lib/zod-extensions'
+
+const createFilterSchema = z.object({
+    workspaceSlug: zSanitizedString(),
+    name: zSanitizedString(),
+    filters: z.record(z.any()), // flexible JSON
+    isShared: z.boolean().optional(),
+})
+
+const updateFilterSchema = z.object({
+    name: zSanitizedString().optional(),
+    filters: z.record(z.any()).optional(),
+    isShared: z.boolean().optional(),
+})
+
+export const filtersRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
 
 // Helper: Get user's workspace role (blocks suspended members)
 async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
@@ -29,11 +48,9 @@ async function getUserWorkspaceRole(userId: string, workspaceId: string): Promis
 filtersRoutes.get('/', async (c) => {
     try {
         const workspaceSlug = c.req.query('workspaceSlug')
-        const userId = c.req.header('x-user-id') // TODO: Get from auth middleware
 
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
+        const user = c.get('user')
+        const userId = user.id
 
         // Get workspace ID from slug
         let workspaceId: string | undefined
@@ -96,20 +113,13 @@ filtersRoutes.get('/', async (c) => {
 // POST /api/filters - Create new filter preset
 // =============================================================================
 
-filtersRoutes.post('/', async (c) => {
+filtersRoutes.post('/', zValidator('json', createFilterSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
 
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
-
-        const body = await c.req.json()
+        const body = c.req.valid('json')
         const { workspaceSlug, name, filters, isShared } = body
-
-        if (!workspaceSlug || !name || !filters) {
-            return c.json({ success: false, error: 'Missing required fields' }, 400)
-        }
 
         // Get workspace ID from slug
         const workspace = await db.query.workspaces.findFirst({
@@ -147,14 +157,11 @@ filtersRoutes.post('/', async (c) => {
 // PUT /api/filters/:id - Update filter preset
 // =============================================================================
 
-filtersRoutes.put('/:id', async (c) => {
+filtersRoutes.put('/:id', zValidator('json', updateFilterSchema), async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const id = c.req.param('id')
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         // Check ownership
         const existing = await db.query.savedFilters.findFirst({
@@ -165,7 +172,7 @@ filtersRoutes.put('/:id', async (c) => {
             return c.json({ success: false, error: 'Filter not found or not owned' }, 404)
         }
 
-        const body = await c.req.json()
+        const body = c.req.valid('json')
         const { name, filters, isShared } = body
 
         const [updated] = await db.update(savedFilters)
@@ -191,12 +198,9 @@ filtersRoutes.put('/:id', async (c) => {
 
 filtersRoutes.delete('/:id', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const id = c.req.param('id')
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         // Check ownership
         const existing = await db.query.savedFilters.findFirst({
@@ -222,12 +226,9 @@ filtersRoutes.delete('/:id', async (c) => {
 
 filtersRoutes.post('/:id/default', async (c) => {
     try {
-        const userId = c.req.header('x-user-id')
+        const user = c.get('user')
+        const userId = user.id
         const id = c.req.param('id')
-
-        if (!userId) {
-            return c.json({ success: false, error: 'Unauthorized' }, 401)
-        }
 
         // Get the filter and its workspace
         const filter = await db.query.savedFilters.findFirst({
