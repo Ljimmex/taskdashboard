@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Calendar, Clock, MapPin, Video, Edit3, Trash2, ExternalLink } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { CalendarEventType } from './CalendarView'
@@ -24,6 +25,7 @@ function getTypeColor(type?: CalendarEventType) {
         default: return { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' }
     }
 }
+
 
 function getTypeLabel(type?: CalendarEventType, t?: any) {
     switch (type) {
@@ -68,6 +70,7 @@ export function ViewEventPanel({
 
     const handleDelete = async () => {
         if (!event) return
+        if (!confirm(t('calendar.panels.view_event.delete_confirm'))) return
         if (!confirm(t('calendar.panels.delete_event_confirm'))) return
 
         try {
@@ -78,6 +81,11 @@ export function ViewEventPanel({
                 onClose()
                 onDeleted?.()
             } else {
+                alert(t('calendar.panels.view_event.delete_error'))
+            }
+        } catch (err) {
+            console.error('Delete error:', err)
+            alert(t('calendar.panels.view_event.delete_error'))
                 alert(t('calendar.panels.delete_error'))
             }
         } catch (err) {
@@ -111,6 +119,14 @@ export function ViewEventPanel({
                             {getTypeIcon(event.type)}
                         </div>
                         <div>
+                            <h2 className="text-lg font-semibold text-white">{t('calendar.panels.view_event.title')}</h2>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium uppercase tracking-wider ${colors.bg} ${colors.text}`}>
+                                    {event.type === CalendarEventType.EVENT ? t('calendar.panels.types.event') :
+                                        event.type === CalendarEventType.MEETING ? t('calendar.panels.types.meeting') :
+                                            event.type === CalendarEventType.TASK ? t('calendar.panels.types.task') :
+                                                event.type === CalendarEventType.REMINDER ? t('calendar.panels.types.reminder') :
+                                                    t('calendar.panels.types.event')}
                             <h2 className="text-lg font-semibold text-white">{t('calendar.panels.event_details_title')}</h2>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium uppercase tracking-wider ${colors.bg} ${colors.text}`}>
@@ -125,6 +141,7 @@ export function ViewEventPanel({
                                 <button
                                     onClick={() => onEdit(event)}
                                     className="p-2 text-gray-400 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+                                    title={t('calendar.actions.edit')}
                                     title={t('calendar.panels.edit_event_title')}
                                 >
                                     <Edit3 size={18} />
@@ -132,6 +149,7 @@ export function ViewEventPanel({
                                 <button
                                     onClick={handleDelete}
                                     className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                    title={t('calendar.actions.delete')}
                                     title={t('calendar.panels.delete_event')}
                                 >
                                     <Trash2 size={18} />
@@ -163,6 +181,7 @@ export function ViewEventPanel({
 
                     {/* Date & Time */}
                     <div className="space-y-3">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.fields.date_time')}</h3>
                         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.panels.date_time')}</h3>
                         <div className="bg-[#1a1a24] rounded-xl p-4 space-y-3">
                             <div className="flex items-center gap-3">
@@ -182,6 +201,7 @@ export function ViewEventPanel({
                             {event.isAllDay && (
                                 <div className="flex items-center gap-3">
                                     <Clock size={16} className="text-amber-400" />
+                                    <span className="text-sm text-amber-400 font-medium">{t('calendar.fields.all_day')}</span>
                                     <span className="text-sm text-amber-400 font-medium">{t('calendar.panels.all_day_event')}</span>
                                 </div>
                             )}
@@ -191,6 +211,7 @@ export function ViewEventPanel({
                     {/* Location */}
                     {event.location && (
                         <div className="space-y-3">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.fields.location')}</h3>
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.panels.location')}</h3>
                             <div className="bg-[#1a1a24] rounded-xl p-4">
                                 <div className="flex items-center gap-3">
@@ -204,6 +225,7 @@ export function ViewEventPanel({
                     {/* Meeting Link */}
                     {event.meetingLink && (
                         <div className="space-y-3">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.fields.meeting_link')}</h3>
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.panels.meeting_link')}</h3>
                             <div className="bg-[#1a1a24] rounded-xl p-4">
                                 <a
@@ -223,6 +245,7 @@ export function ViewEventPanel({
                     {/* Creator */}
                     {event.creator && (
                         <div className="space-y-3">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.fields.created_by')}</h3>
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.panels.created_by')}</h3>
                             <div className="bg-[#1a1a24] rounded-xl p-4">
                                 <div className="flex items-center gap-3">

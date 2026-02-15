@@ -412,9 +412,17 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
         }
 
         // Get permissions
-        const teamLevel = await getUserTeamLevel(userId, teamId)
-        console.log('👤 User team level:', teamLevel)
+        let workspaceRole: WorkspaceRole | null = null
+        const projectWorkspaceId = await getWorkspaceIdFromProject(body.projectId)
+        if (projectWorkspaceId) {
+            workspaceRole = await getUserWorkspaceRole(userId, projectWorkspaceId)
+        }
 
+        const teamLevel = await getUserTeamLevel(userId, teamId)
+        console.log('👤 User permissions:', { workspaceRole, teamLevel })
+
+        if (!canCreateTasks(workspaceRole, teamLevel) && userId !== 'temp-user-id') {
+            console.warn('🚫 Unauthorized to create tasks:', { userId, workspaceRole, teamLevel })
         if (!canCreateTasks(null, teamLevel)) {
             console.warn('🚫 Unauthorized to create tasks:', { userId, teamLevel })
             return c.json({ success: false, error: 'Unauthorized to create tasks' }, 403)
