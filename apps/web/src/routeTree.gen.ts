@@ -115,11 +115,11 @@ export interface FileRoutesByFullPath {
   '/$workspaceSlug/calendar': typeof WorkspaceSlugCalendarRoute
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
-  '/$workspaceSlug/files': typeof WorkspaceSlugFilesIndexRoute
-  '/$workspaceSlug/messages': typeof WorkspaceSlugMessagesIndexRoute
-  '/$workspaceSlug/projects': typeof WorkspaceSlugProjectsIndexRoute
-  '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
-  '/$workspaceSlug/projects/$projectId': typeof WorkspaceSlugProjectsProjectIdIndexRoute
+  '/$workspaceSlug/files/': typeof WorkspaceSlugFilesIndexRoute
+  '/$workspaceSlug/messages/': typeof WorkspaceSlugMessagesIndexRoute
+  '/$workspaceSlug/projects/': typeof WorkspaceSlugProjectsIndexRoute
+  '/$workspaceSlug/team/': typeof WorkspaceSlugTeamIndexRoute
+  '/$workspaceSlug/projects/$projectId/': typeof WorkspaceSlugProjectsProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -168,11 +168,11 @@ export interface FileRouteTypes {
     | '/$workspaceSlug/calendar'
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
-    | '/$workspaceSlug/files'
-    | '/$workspaceSlug/messages'
-    | '/$workspaceSlug/projects'
-    | '/$workspaceSlug/team'
-    | '/$workspaceSlug/projects/$projectId'
+    | '/$workspaceSlug/files/'
+    | '/$workspaceSlug/messages/'
+    | '/$workspaceSlug/projects/'
+    | '/$workspaceSlug/team/'
+    | '/$workspaceSlug/projects/$projectId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -294,35 +294,35 @@ declare module '@tanstack/react-router' {
     '/$workspaceSlug/team/': {
       id: '/$workspaceSlug/team/'
       path: '/team'
-      fullPath: '/$workspaceSlug/team'
+      fullPath: '/$workspaceSlug/team/'
       preLoaderRoute: typeof WorkspaceSlugTeamIndexRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
     '/$workspaceSlug/projects/': {
       id: '/$workspaceSlug/projects/'
       path: '/projects'
-      fullPath: '/$workspaceSlug/projects'
+      fullPath: '/$workspaceSlug/projects/'
       preLoaderRoute: typeof WorkspaceSlugProjectsIndexRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
     '/$workspaceSlug/messages/': {
       id: '/$workspaceSlug/messages/'
       path: '/messages'
-      fullPath: '/$workspaceSlug/messages'
+      fullPath: '/$workspaceSlug/messages/'
       preLoaderRoute: typeof WorkspaceSlugMessagesIndexRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
     '/$workspaceSlug/files/': {
       id: '/$workspaceSlug/files/'
       path: '/files'
-      fullPath: '/$workspaceSlug/files'
+      fullPath: '/$workspaceSlug/files/'
       preLoaderRoute: typeof WorkspaceSlugFilesIndexRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
     '/$workspaceSlug/projects/$projectId/': {
       id: '/$workspaceSlug/projects/$projectId/'
       path: '/projects/$projectId'
-      fullPath: '/$workspaceSlug/projects/$projectId'
+      fullPath: '/$workspaceSlug/projects/$projectId/'
       preLoaderRoute: typeof WorkspaceSlugProjectsProjectIdIndexRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
