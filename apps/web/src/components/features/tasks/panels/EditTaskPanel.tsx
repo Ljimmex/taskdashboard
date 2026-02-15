@@ -160,7 +160,6 @@ export function EditTaskPanel({
     teamMembers = [],
     availableLabels: propAvailableLabels = [],
     onCreateLabel: propOnCreateLabel,
-    workspaceSlug,
     userId,
 }: EditTaskPanelProps) {
     const { t } = useTranslation()
