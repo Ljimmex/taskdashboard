@@ -1,5 +1,4 @@
 {
-  "id": "84bb8a05-b08d-4b1a-bad1-474052b03341",
   "id": "58437291-c7af-4ed0-9ace-22b573a27bbf",
   "prevId": "3360358d-1e06-4380-9c9b-3599e79faa8f",
   "version": "7",
@@ -2869,15 +2868,6 @@
           "name": "team_ids",
           "type": "uuid[]",
           "primaryKey": false,
-          "notNull": false,
-          "default": "'{}'"
-        },
-        "attendee_ids": {
-          "name": "attendee_ids",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{}'"
           "notNull": true
         },
         "type": {
@@ -2947,7 +2937,6 @@
           "to": [
             "public"
           ],
-          "using": "team_ids && ARRAY(SELECT team_id FROM team_members WHERE user_id = auth.uid()::text) OR auth.uid()::text = ANY(attendee_ids) OR created_by = auth.uid()::text"
           "using": "team_ids && ARRAY(SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)"
         },
         "Team members can create events": {

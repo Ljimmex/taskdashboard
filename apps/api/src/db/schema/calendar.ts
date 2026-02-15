@@ -18,8 +18,7 @@ export const calendarEvents = pgTable('calendar_events', {
     allDay: boolean('all_day').default(false).notNull(),
     recurrence: jsonb('recurrence'),
     taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'set null' }),
-    teamIds: uuid('team_ids').array().default([]), // List of team IDs
-    attendeeIds: text('attendee_ids').array().default([]), // List of user IDs (for personal events/reminders)
+    teamIds: uuid('team_ids').array().notNull(), // List of team IDs
     type: calendarEventTypeEnum('type').default('event').notNull(),
     meetingLink: varchar('meeting_link', { length: 512 }),
     createdBy: text('created_by').notNull().references(() => users.id),
@@ -27,8 +26,8 @@ export const calendarEvents = pgTable('calendar_events', {
 }, (_table) => [
     pgPolicy("Team members can view events", {
         for: "select",
-        // Check if event's teamIds overlap with user's teamIds OR user is in attendeeIds OR user is creator
-        using: sql`team_ids && ARRAY(SELECT team_id FROM team_members WHERE user_id = auth.uid()::text) OR auth.uid()::text = ANY(attendee_ids) OR created_by = auth.uid()::text`,
+        // Check if event's teamIds overlap with user's teamIds
+        using: sql`team_ids && ARRAY(SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)`,
     }),
     pgPolicy("Team members can create events", {
         for: "insert",

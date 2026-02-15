@@ -300,10 +300,6 @@ export function canCreateCalendarEvents(workspaceRole: WorkspaceRole | null, tea
     return hasPermission(workspaceRole, teamLevel, 'calendar', 'createEvents')
 }
 
-export function canCreateReminders(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
-    return hasPermission(workspaceRole, teamLevel, 'calendar', 'createReminders')
-}
-
 export function canManageCalendarEvents(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
     return hasPermission(workspaceRole, teamLevel, 'calendar', 'manageEvents')
 }
@@ -392,7 +388,6 @@ export const permissions = {
     // Calendar
     canViewCalendarEvents,
     canCreateCalendarEvents,
-    canCreateReminders,
     canManageCalendarEvents,
     // Hierarchy
     isWorkspaceRoleAtLeast,

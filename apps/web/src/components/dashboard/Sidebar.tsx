@@ -23,20 +23,6 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
 
     const { data: session } = useSession()
 
-    const { data: workspaceData } = useQuery({
-        queryKey: ['workspace', workspaceSlug, session?.user?.id],
-        queryFn: async () => {
-            if (!workspaceSlug || !session?.user?.id) return null
-            return apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`, {
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
-        },
-        enabled: !!workspaceSlug && !!session?.user?.id
-    })
-
-    const userRole = workspaceData?.userRole
-    const canManageSettings = userRole === 'owner' || userRole === 'admin'
-
     // Fetch teams count
     const { data: teams } = useQuery({
         queryKey: ['teams', workspaceSlug],
@@ -132,26 +118,24 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
             <div className="border-t border-gray-800/50 mx-3 mt-2" />
 
             {/* Organisation Settings */}
-            {canManageSettings && (
-                <div className="px-3 pt-2">
-                    <button
-                        onClick={() => setIsSettingsOpen(true)}
-                        onMouseEnter={() => setHoveredItem('settings')}
-                        onMouseLeave={() => setHoveredItem(null)}
-                        className={`flex items-center gap-3 px-3 py-2 w-full rounded-lg transition-all ${hoveredItem === 'settings' || isSettingsOpen
-                            ? 'bg-[#1a1a24] text-[#F2CE88]'
-                            : 'text-gray-500 hover:bg-gray-800/30'
-                            }`}
-                    >
-                        <div className="w-6 h-6 flex items-center justify-center">
-                            {hoveredItem === 'settings' || isSettingsOpen ? icons.settings.gold : icons.settings.gray}
-                        </div>
-                        <span className={`text-sm whitespace-nowrap ${hoveredItem === 'settings' || isSettingsOpen ? 'text-[#F2CE88] font-medium' : 'text-gray-500'}`}>
-                            {t('dashboard.settings')}
-                        </span>
-                    </button>
-                </div>
-            )}
+            <div className="px-3 pt-2">
+                <button
+                    onClick={() => setIsSettingsOpen(true)}
+                    onMouseEnter={() => setHoveredItem('settings')}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    className={`flex items-center gap-3 px-3 py-2 w-full rounded-lg transition-all ${hoveredItem === 'settings' || isSettingsOpen
+                        ? 'bg-[#1a1a24] text-[#F2CE88]'
+                        : 'text-gray-500 hover:bg-gray-800/30'
+                        }`}
+                >
+                    <div className="w-6 h-6 flex items-center justify-center">
+                        {hoveredItem === 'settings' || isSettingsOpen ? icons.settings.gold : icons.settings.gray}
+                    </div>
+                    <span className={`text-sm whitespace-nowrap ${hoveredItem === 'settings' || isSettingsOpen ? 'text-[#F2CE88] font-medium' : 'text-gray-500'}`}>
+                        {t('dashboard.settings')}
+                    </span>
+                </button>
+            </div>
 
             {/* Logout */}
             <div className="px-3 py-2">
@@ -221,12 +205,10 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
             <WorkspaceSwitcher />
 
             {/* Settings Panel */}
-            {canManageSettings && (
-                <OrganizationSettingsPanel
-                    isOpen={isSettingsOpen}
-                    onClose={() => setIsSettingsOpen(false)}
-                />
-            )}
+            <OrganizationSettingsPanel
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+            />
 
         </aside>
     )

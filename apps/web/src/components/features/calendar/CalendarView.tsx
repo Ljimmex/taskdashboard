@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, addMonths, subMonths, isSameMonth, isSameDay, format, parseISO, isWeekend } from 'date-fns'
-import { enUS, pl } from 'date-fns/locale'
-import { useTranslation } from 'react-i18next'
+import { enUS } from 'date-fns/locale'
 import { CalendarHeader, type ProjectOption, type MemberOption } from './CalendarHeader'
 import { CalendarEventPanel } from './CalendarEventPanel'
 import { DayEventListPanel, type CalendarEvent } from './DayEventListPanel'
@@ -11,7 +10,6 @@ import { EditEventPanel } from './EditEventPanel'
 import { TaskDetailsPanel } from '@/components/features/tasks/panels/TaskDetailsPanel'
 import { cn } from '@/lib/utils'
 import { apiFetch, apiFetchJson } from '@/lib/api'
-import { useSession } from '@/lib/auth'
 
 // Enum mirroring backend - Exported so CalendarHeader can use it
 export enum CalendarEventType {
@@ -43,12 +41,9 @@ interface Event {
 }
 
 export function CalendarView() {
-    const { t, i18n } = useTranslation() // Get i18n instance
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug/calendar' })
     const [currentDate, setCurrentDate] = useState(new Date())
     const [events, setEvents] = useState<Event[]>([])
-    const { data: session } = useSession()
-    const [userRole, setUserRole] = useState<string | null>(null)
 
     // Filter State
     const [selectedTypes, setSelectedTypes] = useState<CalendarEventType[]>([
@@ -144,22 +139,6 @@ export function CalendarView() {
         fetchEvents()
         fetchFiltersData()
     }, [fetchEvents, fetchFiltersData, currentDate])
-
-    useEffect(() => {
-        const fetchWorkspaceRole = async () => {
-            if (!workspaceSlug || !session?.user?.id) return
-            try {
-                const data = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`, {
-                    headers: { 'x-user-id': session?.user?.id || '' }
-                })
-                setUserRole(data?.userRole || null)
-            } catch {
-                setUserRole(null)
-            }
-        }
-
-        fetchWorkspaceRole()
-    }, [workspaceSlug, session?.user?.id])
 
     // --- Date Navigation Logic ---
     const handlePrev = () => {
@@ -305,10 +284,6 @@ export function CalendarView() {
             return true
         })
 
-    const canCreateTeamEvents = userRole ? !['member', 'guest'].includes(userRole) : true
-    const canCreatePersonalEvents = userRole === 'member'
-    const canCreateCalendarEvents = canCreateTeamEvents || canCreatePersonalEvents
-
     // --- View Logic ---
     let daysToRender: Date[] = []
     let gridCols = 7
@@ -335,22 +310,14 @@ export function CalendarView() {
         gridCols = 1
     }
 
-    // Generate week days dynamically based on locale
-    const start = startOfWeek(new Date(), { weekStartsOn: weekStartDay === 'monday' ? 1 : 0 })
-    const weekDays = Array.from({ length: 7 }).map((_, i) => {
-        const d = new Date(start)
-        d.setDate(d.getDate() + i)
-        return format(d, 'EEE', { locale: i18n.language === 'pl' ? pl : enUS })
-    })
+    const weekDays = weekStartDay === 'monday'
+        ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
     // Adjust headers based on showWeekends for Month view, or just use daysToRender for Week/Day
     const visibleHeaders = view === 'month'
-        ? (showWeekends ? weekDays : weekDays.filter((_, i) => {
-            // Monday start: Sat(5), Sun(6). Sunday start: Sun(0), Sat(6)
-            if (weekStartDay === 'monday') return i < 5
-            return i > 0 && i < 6
-        }))
-        : daysToRender.map(d => format(d, 'EEE', { locale: i18n.language === 'pl' ? pl : enUS }))
+        ? (showWeekends ? weekDays : weekDays.filter(d => d !== 'Sat' && d !== 'Sun'))
+        : daysToRender.map(d => format(d, 'EEE'))
 
     return (
         <div className="flex h-full w-full bg-[#12121a] rounded-2xl overflow-hidden font-sans">
@@ -448,14 +415,13 @@ export function CalendarView() {
                                         })()}
 
                                         {/* Click to add interaction area (simplified) */}
-                                        {canCreateCalendarEvents && (
-                                            <div
-                                                className="absolute inset-0 z-0 left-14"
-                                                onClick={() => {
-                                                    setIsEventPanelOpen(true)
-                                                }}
-                                            />
-                                        )}
+                                        <div
+                                            className="absolute inset-0 z-0 left-14"
+                                            onClick={() => {
+                                                // Ideally pass this time to create panel
+                                                setIsEventPanelOpen(true)
+                                            }}
+                                        />
 
                                         {/* Events */}
                                         <div className="absolute top-0 left-14 right-0 bottom-0 pointer-events-none">
@@ -562,19 +528,17 @@ export function CalendarView() {
 
                                         {/* Add Event Button (visible on hover) */}
                                         {/* Show in all views for easy creation */}
-                                        {canCreateCalendarEvents && (
-                                            <div className="mt-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedDay(day)
-                                                        setIsEventPanelOpen(true)
-                                                    }}
-                                                    className="w-full py-1 text-[10px] text-gray-500 border border-white/10 border-dashed rounded bg-white/5 hover:bg-white/10 hover:text-gray-300 transition-all flex items-center justify-center gap-1"
-                                                >
-                                                    <span>+</span> {t('calendar.actions.add')}
-                                                </button>
-                                            </div>
-                                        )}
+                                        <div className="mt-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedDay(day)
+                                                    setIsEventPanelOpen(true)
+                                                }}
+                                                className="w-full py-1 text-[10px] text-gray-500 border border-white/10 border-dashed rounded bg-white/5 hover:bg-white/10 hover:text-gray-300 transition-all flex items-center justify-center gap-1"
+                                            >
+                                                <span>+</span> Add
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )
@@ -590,7 +554,6 @@ export function CalendarView() {
                 workspaceSlug={workspaceSlug}
                 onCreate={handleRefresh}
                 initialDate={selectedDay || undefined}
-                canCreateEvents={canCreateTeamEvents}
             />
 
             {/* Day Event List Panel */}
@@ -623,7 +586,6 @@ export function CalendarView() {
                     onClose={() => { setIsEditPanelOpen(false); setSelectedEvent(null) }}
                     workspaceSlug={workspaceSlug}
                     onUpdated={handleRefresh}
-                    canCreateTeamEvents={canCreateTeamEvents}
                 />
             )}
 

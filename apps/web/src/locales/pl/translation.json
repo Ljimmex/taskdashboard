@@ -14,60 +14,11 @@
         "code2FA": "Kod 2FA z aplikacji",
         "verify2FA": "Zaloguj się",
         "backToLogin": "Powrót do logowania",
-        "verifyEmailTitle": "Zweryfikuj swój email",
-        "verifyEmailDesc": "Wysłaliśmy link weryfikacyjny na Twój adres email. Sprawdź skrzynkę odbiorczą i kliknij w link, aby aktywować konto.",
-        "resendVerification": "Wyślij ponownie email weryfikacyjny",
-        "resentVerification": "Wysłano ponownie!",
-        "verifyEmailDescCode": "Wpisz kod weryfikacyjny, który wysłaliśmy na Twój adres email.",
-        "enterCode": "Wpisz kod",
-        "codePlaceholder": "123456",
-        "verify": "Zweryfikuj",
-        "marketingTitle": "Designed For",
-        "marketingTitleStrong": "Task",
-        "marketingTitle2": "Management",
         "marketingDesc": "Zarządzaj swoimi projektami i zadaniami z dowolnego miejsca. Analizuj postępy i rozwijaj swój zespół!",
         "dashboardPreview": "Dashboard Preview",
         "error": {
             "default": "Wystąpił nieoczekiwany błąd",
             "login": "Błąd logowania",
-            "provider": "Błąd logowania przez {{provider}}"
-        },
-        "resetPassword": {
-            "title": "Zresetuj swoje hasło",
-            "subtitle": "Nie martw się!",
-            "desc": "Zresetowanie hasła jest proste. Wyślemy Ci kod na email, a Ty ustawisz nowe hasło w kilka sekund.",
-            "step1": "Wpisz swój email",
-            "step2": "Odbierz kod z emaila",
-            "step3": "Ustaw nowe hasło",
-            "emailLabel": "E-mail",
-            "sendCode": "Wyślij kod resetujący",
-            "sending": "Wysyłanie...",
-            "backToLogin": "Zaloguj się",
-            "rememberPassword": "Pamiętasz hasło?",
-            "successTitle": "Kod wysłany!",
-            "successDesc": "Sprawdź swoją skrzynkę pocztową. Za chwilę zostaniesz przekierowany...",
-            "errorDefault": "Wystąpił nieoczekiwany błąd",
-            "errorSend": "Nie udało się wysłać kodu",
-            "descInput": "Wyślemy Ci 6-cyfrowy kod na podany adres email, którego użyjesz do zresetowania hasła.",
-            "newPasswordTitle": "Ustaw nowe hasło",
-            "newPasswordSubtitle": "Prawie gotowe!",
-            "newPasswordDesc": "Wpisz kod który otrzymałeś na email i ustaw nowe, bezpieczne hasło.",
-            "codeLabel": "Kod z emaila (6 cyfr)",
-            "newPasswordLabel": "Nowe hasło",
-            "confirmPasswordLabel": "Potwierdź hasło",
-            "resetButton": "Zresetuj hasło",
-            "resetting": "Resetowanie...",
-            "resendCode": "Nie dostałeś kodu? Wyślij ponownie",
-            "successResetTitle": "Hasło zmienione!",
-            "successResetDesc": "Możesz teraz zalogować się nowym hasłem. Za chwilę zostaniesz przekierowany...",
-            "tipsTitle": "Wskazówki dot. hasła",
-            "tip1": "Minimum 8 znaków",
-            "tip2": "Użyj kombinacji liter, cyfr i symboli",
-            "tip3": "Unikaj oczywistych słów",
-            "tip4": "Nie używaj tego samego hasła w innych miejscach",
-            "errorMismatch": "Hasła nie są identyczne",
-            "errorLength": "Hasło musi mieć minimum 8 znaków",
-            "errorCode": "Kod musi mieć 6 cyfr"
             "provider": "Błąd logowania przez {{provider}}",
             "emailNotVerified": "Email niezweryfikowany"
         },
@@ -142,7 +93,6 @@
         "error": "Wystąpił błąd",
         "saving": "Zapisywanie...",
         "uploading": "Przesyłanie...",
-        "sending": "Wysyłanie...",
         "save_changes": "Zapisz zmiany",
         "feature_coming_soon": "Ta funkcja będzie dostępna wkrótce."
     },
@@ -173,15 +123,6 @@
         "noFiles": "Brak przesłanych plików",
         "overallProgress": "Całkowity postęp",
         "last7Days": "Ostatnie 7 dni",
-        "myProjects": "Moje projekty",
-        "entireWorkspace": "Cały obszar roboczy",
-        "report": "Raport",
-        "allTime": "Cały okres",
-        "lastYear": "Ostatni rok",
-        "lastMonth": "Ostatni miesiąc",
-        "lastWeek": "Ostatni tydzień",
-        "last24h": "Ostatnie 24h",
-        "occupancyRate": "Wskaźnik realizacji {{count}}/{{total}}",
         "inProgress": "W trakcie",
         "totalProjects": "Wszystkie projekty",
         "upcoming": "Nadchodzące",
@@ -215,147 +156,6 @@
             "defaults": "Domyślne",
             "integrations": "Integracje",
             "security": "Bezpieczeństwo"
-        }
-    },
-    "calendar": {
-        "scope": {
-            "label": "Zakres",
-            "team": "Zespoły",
-            "personal": "Osobiste"
-        },
-        "fields": {
-            "teams": "Zespoły",
-            "members": "Członkowie",
-            "date_time": "Data i czas",
-            "all_day": "Cały dzień",
-            "starts": "Początek",
-            "ends": "Koniec",
-            "repeat": "Powtarzaj",
-            "until": "Do",
-            "location": "Lokalizacja",
-            "meeting_link": "Link do spotkania",
-            "created_by": "Utworzone przez"
-        },
-        "placeholders": {
-            "select_teams": "Wybierz zespoły...",
-            "select_members": "Wybierz członków...",
-            "no_teams_found": "Nie znaleziono zespołów",
-            "no_members_found": "Nie znaleziono członków",
-            "start_date": "Data początkowa",
-            "end_date": "Data końcowa",
-            "add_location": "Dodaj adres lokalizacji...",
-            "add_meeting_url": "Dodaj link do spotkania (np. Zoom, Meet)...",
-            "title_event": "Tytuł wydarzenia...",
-            "title_reminder": "Tytuł przypomnienia...",
-            "description": "Dodaj opis..."
-        },
-        "actions": {
-            "create": "Utwórz wydarzenie",
-            "creating": "Tworzenie...",
-            "add": "Dodaj",
-            "add_event": "Dodaj Wydarzenie",
-            "set_reminder": "Ustaw Przypomnienie",
-            "cancel": "Anuluj",
-            "save": "Zapisz Zmiany",
-            "saving": "Zapisywanie...",
-            "in_person": "Osobiste",
-            "virtual": "Wirtualne",
-            "delete": "Usuń",
-            "edit": "Edytuj",
-            "filter": "Filtruj",
-            "export": "Eksportuj",
-            "today": "Dzisiaj",
-            "month": "Miesiąc",
-            "week": "Tydzień",
-            "day": "Dzień",
-            "schedule_setting": "Ustawienia harmonogramu",
-            "view_options": "Opcje widoku",
-            "show_weekends": "Pokaż weekendy",
-            "start_of_week": "Początek tygodnia",
-            "monday": "Poniedziałek",
-            "sunday": "Niedziela",
-            "clear_filters": "Wyczyść filtry",
-            "sync_calendar": "Synchronizuj z Kalendarzem"
-        },
-        "types": {
-            "event": "Wydarzenia",
-            "task": "Zadania",
-            "reminder": "Przypomnienia",
-            "meeting": "Spotkania"
-        },
-        "recurrence": {
-            "none": "Brak",
-            "daily": "Codziennie",
-            "weekly": "Co tydzień",
-            "biweekly": "Co 2 tygodnie",
-            "monthly": "Co miesiąc",
-            "quarterly": "Co kwartał",
-            "yearly": "Co rok",
-            "custom": "Niestandardowe",
-            "forever": "Zawsze"
-        },
-        "hints": {
-            "team_selection": "Wybrane wydarzenie pojawi się w kalendarzach wszystkich wybranych zespołów."
-        },
-        "panels": {
-            "view_event": {
-                "title": "Szczegóły wydarzenia",
-                "created_by": "Utworzone przez",
-                "delete_confirm": "Czy na pewno chcesz usunąć to wydarzenie?",
-                "delete_error": "Nie udało się usunąć wydarzenia"
-            },
-            "edit_event": {
-                "title": "Edytuj wydarzenie",
-                "subtitle": "Zaktualizuj szczegóły wydarzenia",
-                "alerts": {
-                    "select_team": "Proszę wybrać przynajmniej jeden zespół",
-                    "update_error": "Nie udało się zaktualizować wydarzenia"
-                }
-            },
-            "add_event": {
-                "title_event": "Dodaj nowe wydarzenie",
-                "title_reminder": "Dodaj przypomnienie",
-                "subtitle_event": "Zaplanuj nowe wydarzenie",
-                "subtitle_reminder": "Ustaw przypomnienie"
-            },
-            "day_list": {
-                "title": "Wydarzenia dnia",
-                "count_one": "{{count}} Wydarzenie",
-                "count_few": "{{count}} Wydarzenia",
-                "count_many": "{{count}} Wydarzeń",
-                "count_other": "{{count}} Wydarzeń",
-                "no_events": "Brak zaplanowanych wydarzeń na ten dzień."
-            },
-            "common": {
-                "title_placeholder_event": "Tytuł wydarzenia",
-                "title_placeholder_reminder": "Tytuł przypomnienia",
-                "desc_placeholder": "Dodaj opis",
-                "date_time": "Data i czas",
-                "all_day": "Cały dzień",
-                "location": "Lokalizacja",
-                "alerts": {
-                    "select_team": "Wybierz zespół",
-                    "select_member": "Wybierz członka"
-                }
-            },
-            "types": {
-                "event": "Wydarzenie",
-                "meeting": "Spotkanie",
-                "reminder": "Przypomnienie",
-                "task": "Zadanie"
-            }
-        },
-        "export": {
-            "title": "Eksport Kalendarza",
-            "desc": "Eksportuj kalendarz workspace do PDF lub iCal.",
-            "sync_title": "Synchronizacja z zewn. aplikacjami",
-            "copy_link": "Kopiuj link subskrypcji",
-            "link_copied": "Link skopiowany!",
-            "sync_desc": "Synchronizuj swój harmonogram z zewnętrznym kalendarzem – np. Google Calendar lub Apple Calendar. Po dodaniu linku do wybranego kalendarza, wydarzenia będą aktualizowane automatycznie. Pamiętaj jednak, że zmiany w zewnętrznym kalendarzu mogą byc widoczne z opóźnieniem.",
-            "sync_instructions": "Instrukcje synchronizacji",
-            "google_help": "Pomoc Google Calendar",
-            "apple_iphone": "Apple Calendar (iPhone)",
-            "apple_mac": "Apple Calendar (Mac)"
         }
     },
     "register": {
@@ -1241,7 +1041,6 @@
             "photo_help": "Wybierz zdjęcie do 4MB.",
             "first_name": "Imię",
             "last_name": "Nazwisko",
-            "email": "Email",
             "job_title": "Stanowisko",
             "job_title_placeholder": "np. Product Designer",
             "team_level": "Poziom w Zespole",
@@ -1293,8 +1092,6 @@
         "retry": "Spróbuj ponownie"
     },
     "projects": {
-        "noProjectsFound": "Brak projektów",
-        "createFirstProject": "Utwórz pierwszy projekt",
         "gantt": {
             "task_name": "Nazwa Zadania",
             "start_date": "Data Rozpoczęcia",
@@ -1402,126 +1199,6 @@
             "week": "Tydzień",
             "add_task": "Dodaj zadanie",
             "more_tasks": "+{{count}} więcej"
-        }
-    },
-    "tasks": {
-        "status": {
-            "todo": "Do zrobienia",
-            "in_progress": "W toku",
-            "review": "Weryfikacja",
-            "done": "Gotowe"
-        },
-        "priority": {
-            "low": "Niski",
-            "medium": "Średni",
-            "high": "Wysoki",
-            "urgent": "Pilny"
-        },
-        "assignee": {
-            "placeholder": "Przypisz osobę...",
-            "no_results": "Nie znaleziono osób",
-            "none": "Brak przypisanych"
-        },
-        "card": {
-            "add_task": "Dodaj nowe zadanie",
-            "menu": {
-                "edit": "Edytuj",
-                "duplicate": "Duplikuj",
-                "archive": "Archiwizuj",
-                "delete": "Usuń"
-            }
-        },
-        "labels": {
-            "task_singular": "Zadanie",
-            "task_plural": "Zadania",
-            "search": "Szukaj etykiet...",
-            "create_new": "Utwórz nową etykietę",
-            "no_results": "Brak etykiet",
-            "create_header": "Utwórz Etykietę",
-            "name": "Nazwa",
-            "color": "Kolor",
-            "preview": "Podgląd",
-            "add": "Utwórz",
-            "cancel": "Anuluj",
-            "placeholder": "np. Błąd, Funkcja, Design",
-            "add_labels": "Dodaj etykiety"
-        },
-        "datepicker": {
-            "select_date": "Wybierz datę",
-            "time": "Czas",
-            "done": "Gotowe",
-            "today": "Dzisiaj",
-            "tomorrow": "Jutro",
-            "next_week": "W przyszłym tygodniu"
-        },
-        "edit": {
-            "title": "Edytuj zadanie",
-            "edit_mode": "Tryb edycji",
-            "click_to_edit": "Kliknij aby edytować",
-            "title_label": "Tytuł zadania",
-            "select_status": "Wybierz status",
-            "select_date": "Wybierz datę...",
-            "description": "Opis",
-            "description_placeholder": "Dodaj opis...",
-            "click_to_add_description": "Kliknij aby dodać opis...",
-            "subtasks_header": "Podzadania",
-            "files_header": "Pliki",
-            "add_file": "+ Dodaj plik",
-            "no_attachments": "Brak załączników",
-            "no_attachments_hint": "Kliknij przycisk powyżej aby dodać pliki",
-            "links_header": "Linki",
-            "add_link": "+ Dodaj link",
-            "cancel": "Anuluj",
-            "save": "Zapisz zmiany",
-            "meta": {
-                "project": "Projekt",
-                "assignee": "Przypisane",
-                "status": "Status",
-                "end_date": "Termin",
-                "priority": "Priorytet",
-                "labels": "Etykiety"
-            },
-            "tabs": {
-                "subtasks": "Podzadania",
-                "files": "Pliki",
-                "links": "Linki"
-            }
-        },
-        "create": {
-            "title": "Nowe zadanie",
-            "select_project": "Wybierz projekt",
-            "task_title": "Tytuł zadania",
-            "task_title_placeholder": "Co jest do zrobienia?",
-            "description": "Opis",
-            "description_placeholder": "Dodaj opis zadania... (wspiera Markdown)",
-            "markdown_hint": "Wskazówka: Użyj **pogrubienia**, *kursywy*, - listy",
-            "assignee": "Przypisana osoba",
-            "assignee_placeholder": "Przypisz osobę...",
-            "start_date": "Start",
-            "end_date": "Koniec",
-            "due_date_placeholder": "Termin",
-            "more_options": "Więcej opcji",
-            "less_options": "Mniej opcji",
-            "subtasks": "Zadania podrzędne",
-            "add_subtask_placeholder": "Dodaj zadanie podrzędne...",
-            "add_subtask_button": "+ Dodaj",
-            "attachments": "Załączniki",
-            "dropzone_active": "Upuść pliki tutaj...",
-            "dropzone_inactive": "Przeciągnij pliki lub kliknij aby dodać",
-            "file_type_hint": "PNG, JPG, PDF, DOCX do 100MB",
-            "file_size_error": "Następujące pliki są za duże (max 100MB):",
-            "upload_error": "Nie udało się zauploadować niektórych plików. Sprawdź konsolę.",
-            "create_another": "Stwórz kolejne",
-            "cancel": "Anuluj",
-            "create_button": "Stwórz zadanie",
-            "priority": "Priorytet",
-            "status": "Status",
-            "labels": "Etykiety",
-            "mock_projects": {
-                "marketing": "Marketing",
-                "development": "Development",
-                "design_system": "Design System"
-            }
         }
     },
     "board": {

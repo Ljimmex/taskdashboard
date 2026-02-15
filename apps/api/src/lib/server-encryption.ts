@@ -1,4 +1,4 @@
-import { createDecipheriv, scryptSync, randomBytes, createCipheriv } from 'node:crypto'
+import { createDecipheriv, scryptSync } from 'node:crypto'
 
 const SECRET = process.env.BETTER_AUTH_SECRET || 'default-secret-do-not-use-in-production'
 const ALGORITHM = 'aes-256-gcm'
@@ -34,21 +34,4 @@ export function decryptPrivateKey(encryptedString: string): string {
     decrypted += decipher.final('utf8')
 
     return decrypted
-}
-
-/**
- * Encrypts a private key string using the master key
- * @param privateKey The plain text private key
- * @returns Format: "iv:authTag:encryptedData" (hex encoded)
- */
-export function encryptPrivateKey(privateKey: string): string {
-    const key = getMasterKey()
-    const iv = randomBytes(16)
-    const cipher = createCipheriv(ALGORITHM, key, iv)
-
-    let encrypted = cipher.update(privateKey, 'utf8', 'hex')
-    encrypted += cipher.final('hex')
-    const authTag = cipher.getAuthTag().toString('hex')
-
-    return `${iv.toString('hex')}:${authTag}:${encrypted}`
 }
