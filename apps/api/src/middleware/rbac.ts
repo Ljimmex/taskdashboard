@@ -2,9 +2,7 @@
 import { Context, Next } from 'hono'
 import { createMiddleware } from 'hono/factory'
 import { db } from '../db'
-import { roles, rolePermissions, permissions } from '../db/schema/rbac'
-import { eq, and } from 'drizzle-orm'
-import { auth } from '../lib/auth'
+import { rolePermissions } from '../db/schema/rbac'
 
 // In-memory cache for role permissions to reduce DB hits
 // RoleID -> Set<PermissionID>
@@ -51,7 +49,7 @@ export const requirePermission = (requiredPermission: string) => createMiddlewar
     // CHECK WORKSPACE CONTEXT
     // Try to find workspaceId from params or body
     const workspaceId = c.req.param('workspaceId') || c.req.param('id')
-    
+
     // If request is strictly workspace related
     if (workspaceId) {
         const member = await db.query.workspaceMembers.findFirst({
@@ -62,7 +60,7 @@ export const requirePermission = (requiredPermission: string) => createMiddlewar
             if (member.status === 'suspended') {
                 return c.json({ error: 'Forbidden: Member suspended' }, 403)
             }
-            
+
             // Check if member's role has the required permission
             // The member.role is a string like 'owner', 'admin', 'member' which matches roles.id
             const rolePerms = rolePermissionCache.get(member.role)
@@ -75,7 +73,7 @@ export const requirePermission = (requiredPermission: string) => createMiddlewar
     // CHECK TEAM CONTEXT
     // If accessing team resources
     const teamId = c.req.param('teamId') || (c.req.path.includes('/teams/') ? c.req.param('id') : null)
-    
+
     if (teamId && !hasAccess) {
         const teamMember = await db.query.teamMembers.findFirst({
             where: (tm, { and, eq }) => and(eq(tm.teamId, teamId), eq(tm.userId, userId))
@@ -83,7 +81,7 @@ export const requirePermission = (requiredPermission: string) => createMiddlewar
 
         if (teamMember) {
             // Check team role permissions
-            const rolePerms = rolePermissionCache.get(teamMember.role)
+            const rolePerms = rolePermissionCache.get(teamMember.teamLevel)
             if (rolePerms && rolePerms.has(requiredPermission)) {
                 hasAccess = true
             }
@@ -91,7 +89,7 @@ export const requirePermission = (requiredPermission: string) => createMiddlewar
 
         // Fallback: Check if Workspace Admin has access to this team resource
         if (!hasAccess) {
-             const team = await db.query.teams.findFirst({
+            const team = await db.query.teams.findFirst({
                 where: (t, { eq }) => eq(t.id, teamId),
                 columns: { workspaceId: true }
             })
@@ -102,11 +100,11 @@ export const requirePermission = (requiredPermission: string) => createMiddlewar
                 })
 
                 if (wsMember) {
-                     const rolePerms = rolePermissionCache.get(wsMember.role)
-                     // Usually admins have almost all permissions, but let's check explicitly
-                     if (rolePerms && rolePerms.has(requiredPermission)) {
-                         hasAccess = true
-                     }
+                    const rolePerms = rolePermissionCache.get(wsMember.role)
+                    // Usually admins have almost all permissions, but let's check explicitly
+                    if (rolePerms && rolePerms.has(requiredPermission)) {
+                        hasAccess = true
+                    }
                 }
             }
         }

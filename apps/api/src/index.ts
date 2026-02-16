@@ -110,7 +110,7 @@ app.use('/api/*', async (c, next) => {
     }
 
     // Public routes that don't need auth
-    const publicPaths = ['/api/auth', '/api/health', '/docs', '/openapi.json']
+    const publicPaths = ['/api/auth', '/api/health', '/api/workspaces/invites/resolve', '/docs', '/openapi.json']
     if (publicPaths.some(p => path.startsWith(p))) {
         return next()
     }
