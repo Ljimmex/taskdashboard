@@ -34,7 +34,8 @@ interface Task {
     endDate: string | null
     dueDate: string | null
     assigneeId: string | null
-    assignee?: { id: string; name: string; avatar?: string }
+    assignees?: string[]
+    assigneeDetails?: { id: string; name: string; avatar?: string; image?: string }[]
     priority: 'low' | 'medium' | 'high' | 'urgent'
     subtasksCount?: number
     subtasksCompleted?: number
@@ -110,7 +111,8 @@ function ProjectsPage() {
                         endDate: t.dueDate || null,
                         subtaskCount: t.subtasksCount,
                         subtaskCompleted: t.subtasksCompleted,
-                        assignees: t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.image }] : []
+                        assigneeDetails: t.assigneeDetails || (t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.image || t.assignee.avatar }] : []),
+                        assignees: t.assignees || (t.assignee ? [t.assignee.id] : [])
                     }))
                     setTasks(mappedTasks)
                 }
@@ -155,7 +157,8 @@ function ProjectsPage() {
                 ...t,
                 startDate: t.startDate || null,
                 endDate: t.dueDate || null,
-                assignees: t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.image }] : []
+                assigneeDetails: t.assigneeDetails || (t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.image || t.assignee.avatar }] : []),
+                assignees: t.assignees || (t.assignee ? [t.assignee.id] : [])
             }))
             setTasks(mappedTasks)
         }

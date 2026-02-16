@@ -10,6 +10,7 @@ interface TaskPopoverProps {
         priority?: 'low' | 'medium' | 'high' | 'urgent'
         assignee?: { name: string; image?: string }
         assignees?: { name: string; image?: string }[]
+        assigneeDetails?: { id: string; name: string; avatar?: string; image?: string }[]
         subtasksCount?: number
         subtasksCompleted?: number
         commentsCount?: number
@@ -27,7 +28,7 @@ const priorityConfig = {
 
 export function TaskPopover({ task, projectColor }: TaskPopoverProps) {
     const priority = task.priority ? priorityConfig[task.priority] : null
-    const assignees = task.assignees || (task.assignee ? [task.assignee] : [])
+    const assignees = task.assigneeDetails || task.assignees || ((task as any).assignee ? [(task as any).assignee] : [])
 
     return (
         <div

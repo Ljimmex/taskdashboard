@@ -536,9 +536,11 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
 
             if (projectIds.length > 0) {
                 await tx.update(tasks)
-                    .set({ assigneeId: null })
+                    .set({
+                        assignees: sql`array_remove(${tasks.assignees}, ${memberId})`
+                    })
                     .where(and(
-                        eq(tasks.assigneeId, memberId),
+                        sql`${memberId} = ANY(${tasks.assignees})`,
                         inArray(tasks.projectId, projectIds)
                     ))
             }
