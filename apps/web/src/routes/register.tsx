@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signUp, signIn, emailOtp } from '@/lib/auth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -36,12 +36,21 @@ function RegisterPage() {
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
 
+    const params = new URLSearchParams(window.location.search)
     // Step 1 data
-    const [email, setEmail] = useState('')
+    const [email, setEmail] = useState(params.get('email') || '')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [confirmPassword, setConfirmPassword] = useState('')
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+    // Sync email from URL
+    useEffect(() => {
+        const emailParam = new URLSearchParams(window.location.search).get('email')
+        if (emailParam && !email) {
+            setEmail(emailParam)
+        }
+    }, [])
 
     // Step 2 data
     const [firstName, setFirstName] = useState('')
@@ -341,7 +350,7 @@ function RegisterPage() {
                 setError('')
                 navigate({
                     to: '/login',
-                    search: (prev: any) => ({ ...prev })
+                    search: (prev: any) => ({ ...prev, email })
                 })
             }
         } catch (err: any) {

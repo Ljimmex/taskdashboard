@@ -125,9 +125,12 @@ function InvitePage() {
         <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-[#12121a] rounded-2xl p-8 space-y-8">
                 <div className="text-center">
-                    <div className="w-20 h-20 bg-gradient-to-br from-[#F2CE88] to-orange-400 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl font-bold text-black shadow-lg shadow-orange-500/20 overflow-hidden">
+                    <div className={`w-20 h-20 mx-auto mb-6 flex items-center justify-center overflow-hidden ${!wsInvite?.workspace?.logo
+                            ? "bg-gradient-to-br from-[#F2CE88] to-orange-400 rounded-2xl shadow-lg shadow-orange-500/20 text-3xl font-bold text-black"
+                            : ""
+                        }`}>
                         {wsInvite?.workspace?.logo ? (
-                            <img src={wsInvite.workspace.logo} alt={teamName} className="w-full h-full object-cover" />
+                            <img src={wsInvite.workspace.logo} alt={teamName} className="w-full h-full object-contain" />
                         ) : (
                             teamName?.charAt(0)
                         )}

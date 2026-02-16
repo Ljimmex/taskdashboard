@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { signIn, authClient, emailOtp } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
@@ -16,7 +16,8 @@ export const Route = createFileRoute('/login')({
 function LoginPage() {
     const { t } = useTranslation()
     const navigate = useNavigate()
-    const [email, setEmail] = useState('')
+    const params = new URLSearchParams(window.location.search)
+    const [email, setEmail] = useState(params.get('email') || '')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [rememberMe, setRememberMe] = useState(false)
@@ -30,6 +31,14 @@ function LoginPage() {
     // Email Verification State
     const [isEmailVerification, setIsEmailVerification] = useState(false)
     const [otp, setOtp] = useState('')
+
+    // Sync email from URL if it changes (e.g. redirected with email)
+    useEffect(() => {
+        const emailParam = new URLSearchParams(window.location.search).get('email')
+        if (emailParam && !email) {
+            setEmail(emailParam)
+        }
+    }, [])
 
     const getCallbackURL = () => {
         const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'
@@ -73,11 +82,11 @@ function LoginPage() {
     }
 
     const handlePostAuthActions = async (userId: string) => {
-        const params = new URLSearchParams(window.location.search)
-        const inviteId = params.get('invite')
-        const workspaceSlug = params.get('workspace')
-        const teamSlug = params.get('team')
-        const redirect = params.get('redirect')
+        const searchParams = new URLSearchParams(window.location.search)
+        const inviteId = searchParams.get('invite')
+        const workspaceSlug = searchParams.get('workspace')
+        const teamSlug = searchParams.get('team')
+        const redirect = searchParams.get('redirect')
 
         if (inviteId) {
             try {
@@ -145,7 +154,10 @@ function LoginPage() {
                         await handlePostAuthActions(loginRes.data.user.id)
                     }
                 } else {
-                    navigate({ to: '/login', search: (prev: any) => ({ ...prev }) })
+                    navigate({
+                        to: '/login',
+                        search: (prev: any) => ({ ...prev, email })
+                    })
                     setIsEmailVerification(false)
                     setError(t('auth.verifyEmail.success'))
                 }
@@ -207,23 +219,22 @@ function LoginPage() {
             }
 
             if (result.error) {
-                if (result.error.code === "EMAIL_NOT_VERIFIED" ||
+                // Determine if it's email verification or 2FA/forbidden
+                const isUnverified = result.error.code === "EMAIL_NOT_VERIFIED" ||
                     result.error.message?.toLowerCase().includes("verify") ||
-                    result.error.message?.toLowerCase().includes("weryfik")) {
+                    result.error.message?.toLowerCase().includes("weryfik")
+
+                if (isUnverified) {
                     setIsEmailVerification(true)
                     setError('')
                     return
                 }
 
-                if (result.error.message?.includes("2FA") ||
-                    (result.error as any).code === "TWO_FACTOR_REQUIRED" ||
-                    result.error.status === 403) {
-
-                    if (result.error.message?.includes("required") || result.error.status === 403) {
-                        setIsTwoFactor(true)
-                        setError('')
-                        return
-                    }
+                // If it's a 403 and NOT unverified, it's likely 2FA or some other forbidden state
+                if (result.error.status === 403 || result.error.message?.includes("2FA") || (result.error as any).code === "TWO_FACTOR_REQUIRED") {
+                    setIsTwoFactor(true)
+                    setError('')
+                    return
                 }
 
                 setError(result.error.message || t('auth.error.login'))
