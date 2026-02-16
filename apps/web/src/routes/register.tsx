@@ -292,7 +292,7 @@ function RegisterPage() {
             if (!wsResponse.ok) {
                 console.error('Failed to create workspace', await wsResponse.text())
             }
-            
+
             setSuccess(true)
             setLoading(false)
 
@@ -339,7 +339,10 @@ function RegisterPage() {
                 setError(res.error.message || t('auth.error.default'))
             } else {
                 setError('')
-                navigate({ to: '/login' })
+                navigate({
+                    to: '/login',
+                    search: (prev: any) => ({ ...prev })
+                })
             }
         } catch (err: any) {
             setError(err.message || t('auth.error.default'))

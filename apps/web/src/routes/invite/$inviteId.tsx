@@ -39,8 +39,12 @@ function InvitePage() {
     const handleJoin = async () => {
         if (!session?.user) {
             // User not logged in, redirect to login
-            const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search)
-            window.location.href = `/login?redirect=${redirectUrl}`
+            const searchParams = new URLSearchParams(window.location.search)
+            searchParams.set('invite', inviteId)
+            searchParams.set('workspace', workspaceSlug)
+            searchParams.set('redirect', window.location.pathname)
+
+            window.location.href = `/login?${searchParams.toString()}`
             return
         }
 

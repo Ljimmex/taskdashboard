@@ -72,27 +72,66 @@ function LoginPage() {
         }
     }
 
+    const handlePostAuthActions = async (userId: string) => {
+        const params = new URLSearchParams(window.location.search)
+        const inviteId = params.get('invite')
+        const workspaceSlug = params.get('workspace')
+        const teamSlug = params.get('team')
+        const redirect = params.get('redirect')
+
+        if (inviteId) {
+            try {
+                const acceptResponse = await apiFetch(`/api/workspaces/invites/accept/${inviteId}`, {
+                    method: 'POST',
+                    headers: { 'x-user-id': userId }
+                })
+
+                if (acceptResponse.ok) {
+                    const data = await acceptResponse.json()
+                    const targetSlug = data.workspaceSlug || data.data?.workspaceSlug
+                    navigate({ to: targetSlug ? `/${targetSlug}` : '/dashboard' })
+                    return
+                }
+            } catch (err) {
+                console.error('Invite acceptance failed:', err)
+            }
+        }
+
+        if (workspaceSlug && teamSlug) {
+            try {
+                await apiFetch('/api/teams/join', {
+                    method: 'POST',
+                    headers: { 'x-user-id': userId },
+                    body: JSON.stringify({ workspaceSlug, teamSlug })
+                })
+                navigate({ to: `/${workspaceSlug}` })
+                return
+            } catch (err) {
+                console.error('Team join failed:', err)
+            }
+        }
+
+        if (redirect) {
+            window.location.href = decodeURIComponent(redirect)
+        } else {
+            navigate({ to: '/dashboard' })
+        }
+    }
+
     const handleVerifyEmail = async (e?: React.FormEvent) => {
         if (e) e.preventDefault()
         setLoading(true)
         setError('')
 
-        // Use otp or verificationCode depending on which input is being used
-        // In the original code, there were two different inputs for this.
-        // I will assume 'otp' is the primary one used in the first verification view.
-        const codeToUse = otp
-
         try {
             const res = await emailOtp.verifyEmail({
                 email,
-                otp: codeToUse
+                otp: otp
             })
 
             if (res.error) {
                 setError(res.error.message || t('auth.error.default'))
             } else {
-                // Verification successful, now login
-                // If we have password, try to sign in again
                 if (password) {
                     const loginRes = await signIn.email({
                         email,
@@ -102,14 +141,13 @@ function LoginPage() {
 
                     if (loginRes.error) {
                         setError(loginRes.error.message || t('auth.error.login'))
-                    } else {
-                        navigate({ to: '/dashboard' })
+                    } else if (loginRes.data?.user) {
+                        await handlePostAuthActions(loginRes.data.user.id)
                     }
                 } else {
-                    // Just navigate to dashboard or login
-                    navigate({ to: '/login' })
+                    navigate({ to: '/login', search: (prev: any) => ({ ...prev }) })
                     setIsEmailVerification(false)
-                    setError(t('auth.verifyEmail.success')) // Optional success message
+                    setError(t('auth.verifyEmail.success'))
                 }
             }
         } catch (err: any) {
@@ -132,7 +170,12 @@ function LoginPage() {
             if (res.error) {
                 setError(res.error.message || t('auth.error.login'))
             } else {
-                navigate({ to: '/dashboard' })
+                const sessionRes = await authClient.getSession()
+                if (sessionRes.data?.user) {
+                    await handlePostAuthActions(sessionRes.data.user.id)
+                } else {
+                    navigate({ to: '/dashboard' })
+                }
             }
         } catch (err: any) {
             setError(err.message)
@@ -155,7 +198,6 @@ function LoginPage() {
 
             console.log("Login result:", result)
 
-            // Check for 2FA requirement FIRST (BetterAuth returns success with twoFactorRedirect: true)
             const data = result.data as any
             if (data?.twoFactorRedirect || data?.twoFactor) {
                 console.log("2FA required, showing form...")
@@ -165,7 +207,6 @@ function LoginPage() {
             }
 
             if (result.error) {
-                // Check for email verification requirement
                 if (result.error.code === "EMAIL_NOT_VERIFIED" ||
                     result.error.message?.toLowerCase().includes("verify") ||
                     result.error.message?.toLowerCase().includes("weryfik")) {
@@ -174,7 +215,6 @@ function LoginPage() {
                     return
                 }
 
-                // Fallback: Check for 2FA requirement in error (if handled differently by server)
                 if (result.error.message?.includes("2FA") ||
                     (result.error as any).code === "TWO_FACTOR_REQUIRED" ||
                     result.error.status === 403) {
@@ -186,37 +226,11 @@ function LoginPage() {
                     }
                 }
 
-                // General error
                 setError(result.error.message || t('auth.error.login'))
-            } else {
-                const params = new URLSearchParams(window.location.search)
-                const workspaceSlug = params.get('workspace')
-                const teamSlug = params.get('team')
-
-                if (workspaceSlug && teamSlug) {
-                    try {
-                        const activeUserId = result.data?.user.id
-                        await apiFetch('/api/teams/join', {
-                            method: 'POST',
-                            headers: {
-                                'x-user-id': activeUserId || ''
-                            },
-                            body: JSON.stringify({
-                                workspaceSlug,
-                                teamSlug
-                            })
-                        })
-                        navigate({ to: `/${workspaceSlug}` })
-                        return
-                    } catch (joinErr) {
-                        console.error('Login auto-join failed', joinErr)
-                    }
-                }
-
-                navigate({ to: '/dashboard' })
+            } else if (result.data?.user) {
+                await handlePostAuthActions(result.data.user.id)
             }
         } catch (err: any) {
-            // Catch explicit EMAIL_NOT_VERIFIED if thrown
             if ((err as any)?.code === "EMAIL_NOT_VERIFIED" || (err as any)?.message === "Email not verified") {
                 setIsEmailVerification(true)
                 setError('')
