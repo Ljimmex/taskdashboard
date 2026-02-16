@@ -116,12 +116,7 @@ export function DayTaskListPanel({
                                     description={task.description || ''}
                                     priority={(task.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low'}
                                     status={task.status || 'todo'}
-                                    assignees={task.assignee ? [{
-                                        id: task.assignee.id || 'unknown',
-                                        name: task.assignee.name,
-                                        avatar: task.assignee.image
-                                    }] : []}
-                                    type={task.type === 'meeting' ? 'meeting' : 'task'}
+                                    assigneeDetails={task.assigneeDetails || []}
                                 />
                             </div>
                         ))

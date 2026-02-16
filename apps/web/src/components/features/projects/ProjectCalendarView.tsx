@@ -277,12 +277,31 @@ export function ProjectCalendarView({
                                                 className={`p-3 rounded-lg border-l-4 cursor-pointer hover:opacity-80 transition-opacity ${getPriorityColor(task.priority || 'medium')}`}
                                             >
                                                 <div className="text-sm font-medium text-white mb-1 line-clamp-2">{task.title}</div>
-                                                {task.assignee && (
+                                                {task.assigneeDetails && task.assigneeDetails.length > 0 && (
                                                     <div className="flex items-center gap-2 mt-2">
-                                                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[10px] text-black font-bold">
-                                                            {task.assignee.name?.charAt(0)}
+                                                        <div className="flex -space-x-1.5">
+                                                            {task.assigneeDetails.slice(0, 2).map((assignee, aIdx) => (
+                                                                <div
+                                                                    key={assignee.id || aIdx}
+                                                                    className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[10px] text-black font-bold border border-[#16161f]"
+                                                                    title={assignee.name}
+                                                                >
+                                                                    {assignee.image || assignee.avatar ? (
+                                                                        <img src={assignee.image || assignee.avatar} alt={assignee.name} className="w-full h-full rounded-full object-cover" />
+                                                                    ) : (
+                                                                        assignee.name?.charAt(0)
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                            {task.assigneeDetails.length > 2 && (
+                                                                <div className="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center text-[8px] text-gray-400 font-bold border border-[#16161f]">
+                                                                    +{task.assigneeDetails.length - 2}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <span className="text-xs text-gray-400">{task.assignee.name}</span>
+                                                        {task.assigneeDetails.length === 1 && (
+                                                            <span className="text-[10px] text-gray-400 truncate">{task.assigneeDetails[0].name}</span>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
