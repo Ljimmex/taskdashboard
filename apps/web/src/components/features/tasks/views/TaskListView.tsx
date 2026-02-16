@@ -27,6 +27,9 @@ interface TaskListViewProps {
     columns?: any[] // Added for dynamic status labels
     priorities?: { id: string; name: string; color: string }[] // Dynamic priorities
     onSort?: (by: string, dir: 'asc' | 'desc') => void
+    userRole?: string
+    userId?: string
+    onQuickUpdate?: (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string; assignees?: string[] }) => void
 }
 
 // Custom checkbox component
@@ -136,8 +139,8 @@ const AssigneeAvatars = ({ assignees }: { assignees: { id: string; name: string;
                         className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[10px] font-semibold text-black border-2 border-[#12121a]"
                         title={assignee.name}
                     >
-                        {assignee.avatar ? (
-                            <img src={assignee.avatar} alt={assignee.name} className="w-full h-full rounded-full object-cover" />
+                        {(assignee.avatar || (assignee as any).image) ? (
+                            <img src={assignee.avatar || (assignee as any).image} alt={assignee.name} className="w-full h-full rounded-full object-cover" />
                         ) : (
                             assignee.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
                         )}
@@ -169,16 +172,24 @@ const RowMenu = ({
     onEdit,
     onDelete,
     onDuplicate,
-    onArchive
+    onArchive,
+    userRole,
+    onAssignToMe,
+    isAssignedToMe
 }: {
     onEdit?: () => void
     onDelete?: () => void
     onDuplicate?: () => void
     onArchive?: () => void
+    userRole?: string
+    onAssignToMe?: () => void
+    isAssignedToMe?: boolean
 }) => {
     const { t } = useTranslation()
     const [open, setOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
+
+    const canManageTasks = userRole !== 'member' && userRole !== 'guest'
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -213,33 +224,55 @@ const RowMenu = ({
                         <div className="hidden group-hover/item:block"><PencilIconGold /></div>
                         {t('tasks.card.menu.edit')}
                     </button>
-                    {/* Duplicate */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setOpen(false) }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item"
-                    >
-                        <div className="group-hover/item:hidden"><DuplicateIcon /></div>
-                        <div className="hidden group-hover/item:block"><DuplicateIconGold /></div>
-                        {t('tasks.card.menu.duplicate')}
-                    </button>
-                    {/* Archive */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onArchive?.(); setOpen(false) }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item"
-                    >
-                        <div className="group-hover/item:hidden"><ArchiveIcon /></div>
-                        <div className="hidden group-hover/item:block"><ArchiveIconGold /></div>
-                        {t('tasks.card.menu.archive')}
-                    </button>
-                    {/* Delete */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onDelete?.(); setOpen(false) }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-red-400 transition-colors group/item"
-                    >
-                        <div className="group-hover/item:hidden"><TrashIcon /></div>
-                        <div className="hidden group-hover/item:block"><TrashRedIcon /></div>
-                        {t('tasks.card.menu.delete')}
-                    </button>
+
+                    {!isAssignedToMe && (canManageTasks || userRole === 'member') && onAssignToMe && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onAssignToMe(); setOpen(false) }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="group-hover/item:hidden">
+                                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#545454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="#545454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="hidden group-hover/item:block">
+                                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#F2CE88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="#F2CE88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            {t('tasks.card.menu.assign_to_me')}
+                        </button>
+                    )}
+
+                    {canManageTasks && (
+                        <>
+                            {/* Duplicate */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setOpen(false) }}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item"
+                            >
+                                <div className="group-hover/item:hidden"><DuplicateIcon /></div>
+                                <div className="hidden group-hover/item:block"><DuplicateIconGold /></div>
+                                {t('tasks.card.menu.duplicate')}
+                            </button>
+                            {/* Archive */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onArchive?.(); setOpen(false) }}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item"
+                            >
+                                <div className="group-hover/item:hidden"><ArchiveIcon /></div>
+                                <div className="hidden group-hover/item:block"><ArchiveIconGold /></div>
+                                {t('tasks.card.menu.archive')}
+                            </button>
+                            {/* Delete */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onDelete?.(); setOpen(false) }}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-red-400 transition-colors group/item"
+                            >
+                                <div className="group-hover/item:hidden"><TrashIcon /></div>
+                                <div className="hidden group-hover/item:block"><TrashRedIcon /></div>
+                                {t('tasks.card.menu.delete')}
+                            </button>
+                        </>
+                    )}
                 </div>
             )}
         </div>
@@ -260,7 +293,10 @@ export function TaskListView({
     onTaskArchive,
     selectedTasks = [],
     columns = [],
-    priorities = []
+    priorities = [],
+    userRole,
+    userId,
+    onQuickUpdate
 }: TaskListViewProps) {
     const { t, i18n } = useTranslation()
     const [sortColumn, setSortColumn] = useState<SortColumn | null>(null)
@@ -324,7 +360,7 @@ export function TaskListView({
 
     return (
         <div className="rounded-2xl bg-[#12121a]">
-            <div className="overflow-x-auto overflow-y-visible">
+            <div className="overflow-x-auto overflow-y-visible custom-gantt-scroll">
                 <table className="w-full">
                     <thead>
                         <tr className="border-b border-gray-800">
@@ -388,6 +424,20 @@ export function TaskListView({
                                         onDelete={() => onTaskDelete?.(task.id)}
                                         onDuplicate={() => onTaskDuplicate?.(task.id)}
                                         onArchive={() => onTaskArchive?.(task.id)}
+                                        userRole={userRole}
+                                        isAssignedToMe={userId ? task.assignees?.some(a => a.id === userId) : false}
+                                        onAssignToMe={() => {
+                                            if (userId && onQuickUpdate) {
+                                                const currentAssigneeIds = task.assignees?.map(a => a.id) || []
+                                                onQuickUpdate({
+                                                    id: task.id,
+                                                    title: task.title,
+                                                    priority: task.priority,
+                                                    assignees: [...currentAssigneeIds, userId],
+                                                    assigneeId: userId // Backend expects singular assigneeId
+                                                })
+                                            }
+                                        }}
                                     />
                                 </td>
                             </tr>

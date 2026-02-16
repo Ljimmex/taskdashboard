@@ -5,13 +5,12 @@ export interface Task {
     startDate: string | null
     endDate: string | null
     dueDate?: string | null
-    assigneeId: string | null
     description?: string
-    assignee?: { id: string; name: string; image?: string }
+    assignees?: string[]
+    assigneeDetails?: { id: string; name: string; avatar?: string; image?: string }[]
     subtasksCount?: number
     subtasksCompleted?: number
     commentsCount?: number
     priority?: 'low' | 'medium' | 'high' | 'urgent'
     status: string
-    type?: 'task' | 'meeting'
 }

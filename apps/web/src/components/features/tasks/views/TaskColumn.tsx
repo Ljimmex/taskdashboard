@@ -16,7 +16,6 @@ import {
 import {
     FlagIcon,
     CloseIcon,
-    UserIcon,
     CalendarSmallIcon,
     CheckIcon,
     SortIcon,
@@ -51,7 +50,7 @@ interface TaskColumnProps {
     members?: { id: string; name: string; avatar?: string }[]
     taskCount?: number
     color?: string
-    onAddTask?: (taskData: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string; startDate?: string }) => void
+    onAddTask?: (taskData: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string; startDate?: string }) => void
     onTaskClick?: (taskId: string) => void
     onTaskEdit?: (taskId: string) => void
     onTaskDelete?: (taskId: string) => void
@@ -67,6 +66,7 @@ interface TaskColumnProps {
     onAddRule?: () => void
     onDeleteColumn?: () => void
     dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
+    userRole?: string
 }
 
 // Status configuration with colors and icons
@@ -89,16 +89,15 @@ function QuickAddTask({
 }: {
     status: string
     members?: { id: string; name: string; avatar?: string }[]
-    onAdd: (data: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string; startDate?: string }) => void
+    onAdd: (data: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string; startDate?: string }) => void
     onClose: () => void
 }) {
     const { t } = useTranslation()
     const [title, setTitle] = useState('')
     const [priority, setPriority] = useState('medium')
     const [showPriority, setShowPriority] = useState(false)
-    const [showAssignee, setShowAssignee] = useState(false)
     const [showDate, setShowDate] = useState(false)
-    const [assigneeId, setAssigneeId] = useState<string | null>(null)
+    const [selectedAssignees, setSelectedAssignees] = useState<Assignee[]>([])
     const [dueDate, setDueDate] = useState<string | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
@@ -119,7 +118,7 @@ function QuickAddTask({
                 title: title.trim(),
                 priority,
                 status,
-                assigneeId: assigneeId || undefined,
+                assignees: selectedAssignees.map(a => a.id),
                 dueDate: dueDate || undefined,
                 startDate: today
             })
@@ -217,47 +216,21 @@ function QuickAddTask({
             {/* Bottom actions - no attachment button */}
             <div className="flex items-center justify-between pt-2 border-t border-gray-800">
                 <div className="flex items-center gap-2 relative">
-                    {/* Assignee */}
-                    <div>
-                        <button
-                            onClick={() => { setShowAssignee(!showAssignee); setShowDate(false); setShowPriority(false) }}
-                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${assigneeId ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500 hover:text-white'}`}
-                        >
-                            {assigneeId && members?.find(m => m.id === assigneeId)?.avatar ? (
-                                <img src={members.find(m => m.id === assigneeId)?.avatar} alt="Assignee" className="w-full h-full rounded-full object-cover" />
-                            ) : (
-                                <UserIcon />
-                            )}
-                        </button>
-                        {showAssignee && members && (
-                            <div className="absolute top-full left-0 mt-2 w-48 bg-[#1a1a24] rounded-lg shadow-xl border border-gray-800 py-1 z-30 max-h-60 overflow-y-auto">
-                                <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('board.column.quick_add.assign_to')}</div>
-                                {members.map(member => (
-                                    <button
-                                        key={member.id}
-                                        onClick={() => { setAssigneeId(member.id); setShowAssignee(false) }}
-                                        className={`w-full flex items-center gap-2 px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors ${assigneeId === member.id ? 'text-amber-400 bg-amber-500/10' : 'text-gray-300'}`}
-                                    >
-                                        <div className="w-5 h-5 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
-                                            {member.avatar ? (
-                                                <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-[9px] text-gray-400">
-                                                    {member.name.substring(0, 2).toUpperCase()}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <span className="truncate">{member.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                    {/* Assignee Picker */}
+                    <div className="mr-2">
+                        <AssigneePicker
+                            selectedAssignees={selectedAssignees}
+                            availableAssignees={(members || []).map(m => ({ id: m.id, name: m.name, avatar: m.avatar }))}
+                            onSelect={setSelectedAssignees}
+                            placeholder=""
+                            maxVisible={1}
+                        />
                     </div>
 
                     {/* Date */}
                     <div>
                         <button
-                            onClick={() => { setShowDate(!showDate); setShowAssignee(false); setShowPriority(false) }}
+                            onClick={() => { setShowDate(!showDate); setShowPriority(false) }}
                             className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dueDate ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500 hover:text-white'}`}
                         >
                             <CalendarSmallIcon />
@@ -323,7 +296,7 @@ export function QuickEditTask({
 }: {
     task: { id: string; title: string; priority: string; dueDate?: string; assignees?: { id: string; name: string; avatar?: string }[] }
     members?: { id: string; name: string; avatar?: string }[]
-    onUpdate: (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string }) => void
+    onUpdate: (data: { id: string; title: string; priority: string; assignees?: string[]; dueDate?: string }) => void
     onClose: () => void
 }) {
     const { t } = useTranslation()
@@ -391,7 +364,7 @@ export function QuickEditTask({
                 id: task.id,
                 title: title.trim(),
                 priority,
-                assigneeId: selectedAssignees[0]?.id || undefined,
+                assignees: selectedAssignees.map(a => a.id),
                 dueDate: dueDate || undefined
             })
             onClose()
@@ -513,7 +486,8 @@ function ColumnMenu({
     onMoveAllCards,
     onArchiveAll,
     onAddRule,
-    onDeleteColumn
+    onDeleteColumn,
+    userRole
 }: {
     onClose: () => void
     onRename?: () => void
@@ -524,10 +498,13 @@ function ColumnMenu({
     onArchiveAll?: () => void
     onAddRule?: () => void
     onDeleteColumn?: () => void
+    userRole?: string
 }) {
     const { t } = useTranslation()
     const menuRef = useRef<HTMLDivElement>(null)
     const [view, setView] = useState<'main' | 'colors'>('main')
+
+    const canEditColumn = userRole && !['member', 'guest'].includes(userRole)
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -597,25 +574,27 @@ function ColumnMenu({
             className="absolute right-0 top-8 z-20 w-52 bg-[#1a1a24] rounded-xl shadow-2xl overflow-hidden border border-gray-800"
         >
             {/* Group 1: Configuration */}
-            <MenuSection title={t('board.column.menu.config')}>
-                <MenuItem
-                    icon={<EditIconDefault />}
-                    label={t('board.column.menu.rename')}
-                    onClick={onRename}
-                />
-                <MenuItem
-                    icon={<HashIcon />}
-                    label={t('board.column.menu.wip_limit')}
-                    onClick={onSetWipLimit}
-                />
-                <MenuItem
-                    icon={<PaletteIcon />}
-                    label={t('board.column.menu.change_color')}
-                    onClick={() => setView('colors')}
-                />
-            </MenuSection>
+            {canEditColumn && (
+                <MenuSection title={t('board.column.menu.config')}>
+                    <MenuItem
+                        icon={<EditIconDefault />}
+                        label={t('board.column.menu.rename')}
+                        onClick={onRename}
+                    />
+                    <MenuItem
+                        icon={<HashIcon />}
+                        label={t('board.column.menu.wip_limit')}
+                        onClick={onSetWipLimit}
+                    />
+                    <MenuItem
+                        icon={<PaletteIcon />}
+                        label={t('board.column.menu.change_color')}
+                        onClick={() => setView('colors')}
+                    />
+                </MenuSection>
+            )}
 
-            <div className="border-t border-gray-800" />
+            {canEditColumn && <div className="border-t border-gray-800" />}
 
             {/* Group 2: Sort & Filter */}
             <MenuSection title={t('board.column.menu.sort_title')}>
@@ -633,41 +612,49 @@ function ColumnMenu({
             <div className="border-t border-gray-800" />
 
             {/* Group 3: Bulk Actions */}
-            <MenuSection title={t('board.column.menu.bulk_title')}>
-                <MenuItem
-                    icon={<ArrowRightSmallIcon />}
-                    label={t('board.column.menu.move_all')}
-                    onClick={onMoveAllCards}
-                />
-                <MenuItem
-                    icon={<ArchiveIconDefault />}
-                    label={t('board.column.menu.archive_all')}
-                    onClick={onArchiveAll}
-                />
-            </MenuSection>
+            {/* Group 3: Bulk Actions */}
+            {canEditColumn && (
+                <MenuSection title={t('board.column.menu.bulk_title')}>
+                    <MenuItem
+                        icon={<ArrowRightSmallIcon />}
+                        label={t('board.column.menu.move_all')}
+                        onClick={onMoveAllCards}
+                    />
+                    <MenuItem
+                        icon={<ArchiveIconDefault />}
+                        label={t('board.column.menu.archive_all')}
+                        onClick={onArchiveAll}
+                    />
+                </MenuSection>
+            )}
 
             <div className="border-t border-gray-800" />
 
             {/* Group 4: Automation (Pro) */}
-            <MenuSection title={t('board.column.menu.auto_title')}>
-                <MenuItem
-                    icon={<ZapIcon />}
-                    label={t('board.column.menu.add_rule')}
-                    onClick={onAddRule}
-                />
-            </MenuSection>
-
-            <div className="border-t border-gray-800" />
+            {canEditColumn && (
+                <>
+                    <MenuSection title={t('board.column.menu.auto_title')}>
+                        <MenuItem
+                            icon={<ZapIcon />}
+                            label={t('board.column.menu.add_rule')}
+                            onClick={onAddRule}
+                        />
+                    </MenuSection>
+                    <div className="border-t border-gray-800" />
+                </>
+            )}
 
             {/* Group 5: Danger Zone */}
-            <MenuSection>
-                <MenuItem
-                    icon={<DeleteIconDefault />}
-                    label={t('board.column.menu.delete_column')}
-                    onClick={onDeleteColumn}
-                    danger
-                />
-            </MenuSection>
+            {canEditColumn && (
+                <MenuSection>
+                    <MenuItem
+                        icon={<DeleteIconDefault />}
+                        label={t('board.column.menu.delete_column')}
+                        onClick={onDeleteColumn}
+                        danger
+                    />
+                </MenuSection>
+            )}
         </div>
     )
 }
@@ -693,12 +680,15 @@ export function TaskColumn({
     color,
     children,
     dragHandleProps,
-    members
-}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[] }) {
+    members,
+    userRole
+}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[]; userRole?: string }) {
     const [showQuickAdd, setShowQuickAdd] = useState(false)
     const [showColumnMenu, setShowColumnMenu] = useState(false)
     const [isRenaming, setIsRenaming] = useState(false)
     const [renameTitle, setRenameTitle] = useState('')
+
+    const canEditColumn = userRole && !['member', 'guest'].includes(userRole)
 
     const config = useStatusConfig()[status] || {
         label: title,
@@ -707,7 +697,7 @@ export function TaskColumn({
         textColor: 'text-gray-400'
     }
 
-    const handleQuickAdd = (data: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string }) => {
+    const handleQuickAdd = (data: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string }) => {
         onAddTask?.(data)
     }
 
@@ -744,10 +734,12 @@ export function TaskColumn({
                         />
                     ) : (
                         <h3
-                            className="font-semibold text-white text-sm cursor-pointer hover:text-amber-400 transition-colors"
+                            className={`font-semibold text-white text-sm transition-colors ${canEditColumn ? 'cursor-pointer hover:text-amber-400' : ''}`}
                             onDoubleClick={() => {
-                                setRenameTitle(title || config.label)
-                                setIsRenaming(true)
+                                if (canEditColumn) {
+                                    setRenameTitle(title || config.label)
+                                    setIsRenaming(true)
+                                }
                             }}
                         >
                             {title || config.label}
@@ -807,6 +799,7 @@ export function TaskColumn({
                         onArchiveAll={onArchiveAll}
                         onAddRule={onAddRule}
                         onDeleteColumn={onDeleteColumn}
+                        userRole={userRole}
                     />
                 )}
             </div>

@@ -212,8 +212,14 @@ export function EditTaskPanel({
             setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : undefined)
             setLinks((task as any).links || [])
             setActiveTab('subtasks')
-            // Deduplicate assignees by ID
-            const rawAssignees = task.assignees?.map(a => ({ id: a.id, name: a.name, avatar: a.avatar })) || []
+            // Deduplicate assignees by ID and include image support
+            const sourceAssignees = task.assigneeDetails || task.assignees || []
+            const rawAssignees = (sourceAssignees as any[]).map(a => ({
+                id: a.id,
+                name: a.name,
+                avatar: a.avatar,
+                image: a.image
+            })) || []
             const uniqueAssignees = Array.from(new Map(rawAssignees.map(a => [a.id, a])).values())
             setSelectedAssignees(uniqueAssignees)
             // Resolve label IDs to objects

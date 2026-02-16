@@ -425,9 +425,9 @@ export function ProjectTimelineView({
                                                     <div className="flex-1 min-w-0">
                                                         <div className="text-[10px] font-medium text-white truncate">{task.title}</div>
                                                     </div>
-                                                    {task.assignee && (
+                                                    {task.assigneeDetails && task.assigneeDetails.length > 0 && (
                                                         <div className="w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[8px] text-black font-bold ml-1 flex-shrink-0">
-                                                            {task.assignee.name?.charAt(0)}
+                                                            {task.assigneeDetails[0].name?.charAt(0)}
                                                         </div>
                                                     )}
                                                 </button>
@@ -494,10 +494,14 @@ export function ProjectTimelineView({
                                                     className={`w-full p-2 rounded-lg border-l-2 text-left shadow-sm group hover:scale-[1.02] active:scale-95 transition-all bg-[#1a1a24] hover:bg-[#20202b] border-gray-700/50 hover:border-amber-500/50 ${getPriorityColor(task.priority || 'medium')}`}
                                                 >
                                                     <div className="text-xs font-medium text-gray-200 truncate leading-tight mb-1">{task.title}</div>
-                                                    {task.assignee && (
+                                                    {task.assigneeDetails && task.assigneeDetails.length > 0 && (
                                                         <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100">
-                                                            <div className="w-3.5 h-3.5 rounded-full bg-gray-600 border border-gray-500" />
-                                                            <span className="text-[10px] text-gray-400">{task.assignee.name.split(' ')[0]}</span>
+                                                            <div className="w-3.5 h-3.5 rounded-full bg-gray-600 border border-gray-500 overflow-hidden">
+                                                                {(task.assigneeDetails[0].image || task.assigneeDetails[0].avatar) ? (
+                                                                    <img src={task.assigneeDetails[0].image || task.assigneeDetails[0].avatar} alt="" className="w-full h-full object-cover" />
+                                                                ) : null}
+                                                            </div>
+                                                            <span className="text-[10px] text-gray-400">{task.assigneeDetails[0].name.split(' ')[0]}</span>
                                                         </div>
                                                     )}
                                                 </button>

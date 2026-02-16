@@ -202,8 +202,8 @@ export function TaskDetailsPanel({
         .map(id => availableLabels.find(l => l.id === id))
         .filter((l): l is Label => !!l)
 
-    // Assignees (from task props)
-    const assignees = task?.assignees?.map(a => ({ id: a.id, name: a.name, avatar: a.avatar })) || []
+    // Assignees (from task props - favor assigneeDetails for rich info)
+    const assignees = task?.assigneeDetails || task?.assignees || []
 
     // Comments (from props)
     const comments = propComments
@@ -350,10 +350,10 @@ export function TaskDetailsPanel({
                             <div className="w-64 overflow-hidden">
                                 {assignees.length > 0 ? (
                                     <div className="flex items-center gap-1 flex-wrap">
-                                        {assignees.map(a => (
+                                        {assignees.map((a: any) => (
                                             <div key={a.id} className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded-full">
-                                                {a.avatar ? (
-                                                    <img src={a.avatar} alt={a.name} className="w-5 h-5 rounded-full" />
+                                                {a.avatar || (a as any).image ? (
+                                                    <img src={a.avatar || (a as any).image} alt={a.name} className="w-5 h-5 rounded-full" />
                                                 ) : (
                                                     <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[10px] font-bold text-black">
                                                         {a.name.charAt(0).toUpperCase()}

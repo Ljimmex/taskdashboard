@@ -7,7 +7,7 @@ import {
 } from '../../db/schema/tasks'
 import { auth, type Auth } from '../../lib/auth'
 import { projects, projectMembers } from '../../db/schema/projects'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, arrayContains } from 'drizzle-orm'
 import {
     canCreateTasks,
     canUpdateTasks,
@@ -43,7 +43,7 @@ const createTaskSchema = z.object({
     description: zSanitizedStringOptional(),
     status: zSanitizedStringOptional(),
     priority: zSanitizedStringOptional(),
-    assigneeId: z.string().optional().nullable(),
+    // assigneeId removed
     dueDate: z.string().optional().nullable(),
     startDate: z.string().optional().nullable(),
     meetingLink: zSanitizedStringOptional(),
@@ -66,7 +66,7 @@ const tasksQuerySchema = z.object({
     projectId: z.string().optional(),
     status: z.string().optional(),
     priority: z.string().optional(),
-    assigneeId: z.string().optional(),
+    assigneeId: z.string().optional(), // Keep query param for filtering, but implementation will check array
     isArchived: z.string().optional(),
     type: z.enum(['task', 'meeting']).optional(),
     workspaceSlug: zSanitizedString().optional(),
@@ -201,21 +201,39 @@ tasksRoutes.get('/', zValidator('query', tasksQuerySchema), async (c) => {
                 }
                 if (status) wheres.push(eq(t.status, status as any))
                 if (priority) wheres.push(eq(t.priority, priority as any))
-                if (assigneeId) wheres.push(eq(t.assigneeId, assigneeId))
+
+                // Use arrayContains for assignees array
+                if (assigneeId) wheres.push(arrayContains(t.assignees, [assigneeId]))
+
                 if (type) wheres.push(eq(t.type, type as any))
                 if (isArchived !== undefined) wheres.push(eq(t.isArchived, isArchived === 'true'))
 
                 return wheres.length > 0 ? and(...wheres) : undefined
             },
             with: {
-                assignee: {
-                    columns: { id: true, name: true, image: true }
-                },
+                // assignee removed
                 subtasks: true,
                 comments: true,
             },
             orderBy: (t, { desc }) => [desc(t.createdAt)]
         })
+
+        // Collect all assignee IDs to fetch details
+        const allAssigneeIds = new Set<string>()
+        result.forEach(t => {
+            if (t.assignees) {
+                t.assignees.forEach(id => allAssigneeIds.add(id))
+            }
+        })
+
+        const usersMap = new Map<string, any>()
+        if (allAssigneeIds.size > 0) {
+            const usersList = await db.query.users.findMany({
+                where: (u, { inArray }) => inArray(u.id, Array.from(allAssigneeIds)),
+                columns: { id: true, name: true, image: true }
+            })
+            usersList.forEach(u => usersMap.set(u.id, u))
+        }
 
         // Map data to include counts for frontend
         const dataWithCounts = await Promise.all(result.map(async task => {
@@ -225,13 +243,17 @@ tasksRoutes.get('/', zValidator('query', tasksQuerySchema), async (c) => {
                 columns: { id: true }
             })
 
+            const assignees = (task.assignees || []).map(id => usersMap.get(id)).filter(Boolean)
+
             return {
                 ...task,
                 subtasksCount: task.subtasks?.length || 0,
                 subtasksCompleted: task.subtasks?.filter((c: any) => c.isCompleted || c.status === 'done').length || 0,
                 commentsCount: task.comments?.length || 0,
                 attachmentCount: fileCount.length,
-                assignee: task.assignee || null
+                assignee: assignees.length > 0 ? assignees[0] : null, // Legacy support
+                assignees: task.assignees || [], // Return IDs for compatibility if needed
+                assigneeDetails: assignees // New rich info field
             }
         }))
 
@@ -247,14 +269,10 @@ tasksRoutes.get('/:id', async (c) => {
     try {
         const id = c.req.param('id')
 
-        // Use query with relations to get assignee
+        // Use query with relations
         const task = await db.query.tasks.findFirst({
             where: (t, { eq }) => eq(t.id, id),
-            with: {
-                assignee: {
-                    columns: { id: true, name: true, image: true }
-                }
-            }
+            // assignee removed from with
         })
         if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
 
@@ -322,11 +340,14 @@ tasksRoutes.get('/:id', async (c) => {
         }))
 
         // Build assignees array for frontend
-        const assignees = task.assignee ? [{
-            id: task.assignee.id,
-            name: task.assignee.name || 'Unknown',
-            avatar: task.assignee.image
-        }] : []
+        const assigneesIds = task.assignees || []
+        let assignees: any[] = []
+        if (assigneesIds.length > 0) {
+            assignees = await db.query.users.findMany({
+                where: (u, { inArray }) => inArray(u.id, assigneesIds),
+                columns: { id: true, name: true, image: true }
+            })
+        }
 
         // Fetch comments from database
         const comments = await db.query.taskComments.findMany({
@@ -364,7 +385,9 @@ tasksRoutes.get('/:id', async (c) => {
                 ...task,
                 subtasks: taskSubitems,
                 labels: task.labels || [], // Labels are now stored directly on task as text[]
-                assignees,
+                assignees: task.assignees || [],
+                assigneeDetails: assignees,
+                assignee: assignees.length > 0 ? assignees[0] : null, // Legacy
                 activities: mappedActivities,
                 comments: mappedComments,
                 stages, // Return project stages for status display
@@ -429,41 +452,43 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
             }
         }
 
-            const assigneeId = body.assigneeId || (body.assignees && body.assignees.length > 0 ? body.assignees[0] : null)
+        const assignees = body.assignees || []
 
-            // For reporterId, if temp-user-id, try to find the first member of the team to use as reporter
-            let reporterId = body.reporterId || userId
-            if (reporterId === '') {
-                const firstMember = await db.query.teamMembers.findFirst({
-                    where: (tm, { eq }) => eq(tm.teamId, teamId)
-                })
-                if (firstMember) {
-                    reporterId = firstMember.userId
-                    console.log('ℹ️ Using fallback reporterId:', reporterId)
-                }
+        // For reporterId, if temp-user-id, try to find the first member of the team to use as reporter
+        let reporterId = body.reporterId || userId
+        if (reporterId === '') {
+            const firstMember = await db.query.teamMembers.findFirst({
+                where: (tm, { eq }) => eq(tm.teamId, teamId)
+            })
+            if (firstMember) {
+                reporterId = firstMember.userId
+                console.log('ℹ️ Using fallback reporterId:', reporterId)
             }
+        }
 
-            const newTask: NewTask = {
-                projectId: body.projectId,
-                type: body.type || 'task',
-                title: body.title,
-                description: body.description || null,
-                status: body.type === 'meeting' ? 'scheduled' : (body.status || 'todo'),
-                priority: body.priority || 'medium',
-                assigneeId,
-                reporterId,
-                dueDate: body.dueDate ? new Date(body.dueDate) : null,
-                startDate: body.startDate ? new Date(body.startDate) : null,
-                meetingLink: body.meetingLink || null,
-                estimatedHours: body.estimatedHours || null,
-                links: body.links || [],
-            }
+        const newTask: NewTask = {
+            projectId: body.projectId,
+            type: body.type || 'task',
+            title: body.title,
+            description: body.description || null,
+            status: body.type === 'meeting' ? 'scheduled' : (body.status || 'todo'),
+            priority: body.priority || 'medium',
+            // assigneeId removed
+            assignees: assignees,
+            reporterId,
+            dueDate: body.dueDate ? new Date(body.dueDate) : null,
+            startDate: body.startDate ? new Date(body.startDate) : null,
+            meetingLink: body.meetingLink || null,
+            estimatedHours: body.estimatedHours || null,
+            links: body.links || [],
+        }
 
-            const [created] = await db.insert(tasks).values(newTask).returning()
-            console.log('✅ Task created:', created.id)
+        const [created] = await db.insert(tasks).values(newTask).returning()
+        console.log('✅ Task created:', created.id)
 
-            // Ensure assignee is a member of the project
-            if (assigneeId) {
+        // Ensure assignees are members of the project
+        if (assignees.length > 0) {
+            for (const assigneeId of assignees) {
                 const isMember = await db.query.projectMembers.findFirst({
                     where: (pm, { eq, and }) => and(eq(pm.projectId, created.projectId), eq(pm.userId, assigneeId))
                 })
@@ -477,73 +502,74 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
                     })
                 }
             }
-
-            // Handle Subtasks (using the dedicated subtasks table)
-            if (body.subtasks && Array.isArray(body.subtasks)) {
-                console.log('🌿 Creating subtasks:', body.subtasks.length)
-                for (const sub of body.subtasks) {
-                    await db.insert(subtasks).values({
-                        taskId: created.id,
-                        title: sub.title,
-                        description: sub.description || null,
-                        status: sub.status || 'todo',
-                        priority: sub.priority || 'medium',
-                        isCompleted: sub.status === 'done' || sub.status === 'completed'
-                    })
-                }
-            }
-
-            // Handle Labels (if provided) - update the task's labels array directly
-            if (body.labels && Array.isArray(body.labels)) {
-                const labelIds = body.labels.map((label: string | { id: string }) =>
-                    typeof label === 'string' ? label : label.id
-                ).filter(Boolean)
-
-                if (labelIds.length > 0) {
-                    await db.update(tasks).set({ labels: labelIds }).where(eq(tasks.id, created.id))
-                }
-            }
-
-            await db.insert(taskActivityLog).values({ taskId: created.id, userId: reporterId, activityType: 'created', newValue: created.title })
-
-            // 📅 Sync to Calendar
-            if (created.dueDate) {
-                await syncTaskToCalendar(created, userId)
-            }
-
-            // TRIGGER WEBHOOK
-            const workspaceId = await getWorkspaceIdFromProject(created.projectId)
-            if (workspaceId) {
-                // Fetch status name and priorities
-                const [statusStage, workspace] = await Promise.all([
-                    created.status ? db.query.projectStages.findFirst({
-                        where: (s, { eq }) => eq(s.id, created.status!),
-                        columns: { name: true }
-                    }) : null,
-                    db.query.workspaces.findFirst({
-                        where: (w, { eq }) => eq(w.id, workspaceId),
-                        columns: { priorities: true }
-                    })
-                ])
-
-                const priorityObj = workspace?.priorities?.find((p: any) => p.id === created.priority)
-                const priorityName = priorityObj?.name || created.priority
-                const priorityColor = priorityObj?.color
-
-                triggerWebhook('task.created', {
-                    ...created,
-                    statusName: statusStage?.name || created.status,
-                    priorityName,
-                    priorityColor
-                }, workspaceId)
-            }
-
-            return c.json({ success: true, data: created }, 201)
-        } catch (error) {
-            console.error('💥 Error creating task:', error)
-            return c.json({ success: false, error: 'Failed to create task', details: error instanceof Error ? error.message : String(error) }, 500)
         }
-    })
+
+        // Handle Subtasks (using the dedicated subtasks table)
+        if (body.subtasks && Array.isArray(body.subtasks)) {
+            console.log('🌿 Creating subtasks:', body.subtasks.length)
+            for (const sub of body.subtasks) {
+                await db.insert(subtasks).values({
+                    taskId: created.id,
+                    title: sub.title,
+                    description: sub.description || null,
+                    status: sub.status || 'todo',
+                    priority: sub.priority || 'medium',
+                    isCompleted: sub.status === 'done' || sub.status === 'completed'
+                })
+            }
+        }
+
+        // Handle Labels (if provided) - update the task's labels array directly
+        if (body.labels && Array.isArray(body.labels)) {
+            const labelIds = body.labels.map((label: string | { id: string }) =>
+                typeof label === 'string' ? label : label.id
+            ).filter(Boolean)
+
+            if (labelIds.length > 0) {
+                await db.update(tasks).set({ labels: labelIds }).where(eq(tasks.id, created.id))
+            }
+        }
+
+        await db.insert(taskActivityLog).values({ taskId: created.id, userId: reporterId, activityType: 'created', newValue: created.title })
+
+        // 📅 Sync to Calendar
+        if (created.dueDate) {
+            await syncTaskToCalendar(created, userId)
+        }
+
+        // TRIGGER WEBHOOK
+        const workspaceId = await getWorkspaceIdFromProject(created.projectId)
+        if (workspaceId) {
+            // Fetch status name and priorities
+            const [statusStage, workspace] = await Promise.all([
+                created.status ? db.query.projectStages.findFirst({
+                    where: (s, { eq }) => eq(s.id, created.status!),
+                    columns: { name: true }
+                }) : null,
+                db.query.workspaces.findFirst({
+                    where: (w, { eq }) => eq(w.id, workspaceId),
+                    columns: { priorities: true }
+                })
+            ])
+
+            const priorityObj = workspace?.priorities?.find((p: any) => p.id === created.priority)
+            const priorityName = priorityObj?.name || created.priority
+            const priorityColor = priorityObj?.color
+
+            triggerWebhook('task.created', {
+                ...created,
+                statusName: statusStage?.name || created.status,
+                priorityName,
+                priorityColor
+            }, workspaceId)
+        }
+
+        return c.json({ success: true, data: created }, 201)
+    } catch (error) {
+        console.error('💥 Error creating task:', error)
+        return c.json({ success: false, error: 'Failed to create task', details: error instanceof Error ? error.message : String(error) }, 500)
+    }
+})
 
 // PATCH /api/tasks/:id - Update task (requires tasks.update OR is assignee)
 tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
@@ -577,15 +603,55 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
         const teamLevel = await getUserTeamLevel(userId, teamId)
 
         // Allow if: has update permission OR is assignee
-        const isAssignee = task.assigneeId === userId
+        const isAssignee = task.assignees?.includes(userId)
         if (!canUpdateTasks(workspaceRole, teamLevel) && !isAssignee) {
             return c.json({ success: false, error: 'Unauthorized to update task' }, 403)
         }
 
         // Check if trying to assign - requires assign permission
-        if (body.assigneeId !== undefined && body.assigneeId !== task.assigneeId) {
+        if (body.assignees !== undefined) {
+            // ALlow self-assignment if the user is assigning to themselves or adding themselves
+            // For simplicity, if modifying assignees, check permission unless just adding/removing self?
+            // User requested "Assign to me" functionality.
+
+            // If user is just adding themselves or removing themselves, maybe allow?
+            // But generalized: check permission.
+            // Re-implement self-assignment check properly for arrays if needed.
+            // For now, stick to permission check.
             if (!canAssignTasks(workspaceRole, teamLevel)) {
-                return c.json({ success: false, error: 'Unauthorized to assign tasks' }, 403)
+                // Check if it's a self-assignment (adding self)
+                const newAssignees = body.assignees || []
+                const oldAssignees = task.assignees || []
+
+                // If the only difference is adding/removing self, allow it?
+                // Or broadly, if user is in newAssignees...
+
+                // Let's rely on standard permissions for now or simple "assign to me" check from before
+                // The previous fix allowed if body.assigneeId === userId.
+                // Here body.assignees is array.
+
+                const isSelfAssign = newAssignees.includes(userId) && newAssignees.length === oldAssignees.length + 1 && oldAssignees.every(id => newAssignees.includes(id))
+                // Or just simpler: if user is not an admin, they can only assign themselves?
+
+                if (!isSelfAssign) {
+                    // Strict check
+                    return c.json({ success: false, error: 'Unauthorized to assign tasks' }, 403)
+                }
+            }
+
+            // Ensure new assignees are project members
+            const newAssignees = body.assignees || []
+            for (const assigneeId of newAssignees) {
+                const isMember = await db.query.projectMembers.findFirst({
+                    where: (pm, { eq, and }) => and(eq(pm.projectId, task.projectId), eq(pm.userId, assigneeId))
+                })
+                if (!isMember) {
+                    await db.insert(projectMembers).values({
+                        projectId: task.projectId,
+                        userId: assigneeId,
+                        role: 'member'
+                    })
+                }
             }
         }
 
@@ -594,7 +660,7 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
         if (body.description !== undefined) updateData.description = body.description
         if (body.status !== undefined) updateData.status = body.status
         if (body.priority !== undefined) updateData.priority = body.priority
-        if (body.assigneeId !== undefined) updateData.assigneeId = body.assigneeId
+        if (body.assignees !== undefined) updateData.assignees = body.assignees
         if (body.dueDate !== undefined) updateData.dueDate = body.dueDate ? new Date(body.dueDate) : null
         if (body.startDate !== undefined) updateData.startDate = body.startDate ? new Date(body.startDate) : null
         if (body.meetingLink !== undefined) updateData.meetingLink = body.meetingLink
@@ -630,20 +696,38 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
                 }, workspaceId)
             }
 
-            // Assignee Change - fetch user names for display
-            if (body.assigneeId !== undefined && body.assigneeId !== task.assigneeId) {
-                const [oldUser, newUser] = await Promise.all([
-                    task.assigneeId ? db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, task.assigneeId!), columns: { name: true } }) : null,
-                    updated.assigneeId ? db.query.users.findFirst({ where: (u, { eq }) => eq(u.id, updated.assigneeId!), columns: { name: true } }) : null
-                ])
+            // Assignees Change - fetch user names for display
+            if (body.assignees !== undefined) {
+                const oldAssignees = task.assignees || []
+                const newAssignees = updated.assignees || []
 
-                triggerWebhook('task.assigned', {
-                    taskId: id,
-                    oldAssignee: oldUser?.name || 'Unassigned',
-                    newAssignee: newUser?.name || 'Unassigned',
-                    task: updated,
-                    title: updated.title
-                }, workspaceId)
+                // Check if changed (naive check: different length or different items)
+                const hasChanged = oldAssignees.length !== newAssignees.length || !oldAssignees.every(id => newAssignees.includes(id))
+
+                if (hasChanged) {
+                    // Fetch names for all involved users
+                    const allUserIds = Array.from(new Set([...oldAssignees, ...newAssignees]))
+                    let userMap = new Map<string, string>()
+
+                    if (allUserIds.length > 0) {
+                        const users = await db.query.users.findMany({
+                            where: (u, { inArray }) => inArray(u.id, allUserIds),
+                            columns: { id: true, name: true }
+                        })
+                        users.forEach(u => userMap.set(u.id, u.name || 'Unknown'))
+                    }
+
+                    const oldNames = oldAssignees.map(id => userMap.get(id) || 'Unknown').join(', ')
+                    const newNames = newAssignees.map(id => userMap.get(id) || 'Unknown').join(', ')
+
+                    triggerWebhook('task.assigned', {
+                        taskId: id,
+                        oldAssignees: oldNames || 'Unassigned',
+                        newAssignees: newNames || 'Unassigned',
+                        task: updated,
+                        title: updated.title
+                    }, workspaceId)
+                }
             }
 
             // Due Date Change - use proper date comparison
@@ -713,18 +797,20 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
             }
         }
 
-        if (body.assigneeId && body.assigneeId !== task.assigneeId) {
-            const isMember = await db.query.projectMembers.findFirst({
-                where: (pm, { eq, and }) => and(eq(pm.projectId, updated.projectId), eq(pm.userId, body.assigneeId as string))
-            })
-
-            if (!isMember) {
-                console.log('➕ Adding new assignee to project members:', body.assigneeId)
-                await db.insert(projectMembers).values({
-                    projectId: updated.projectId,
-                    userId: body.assigneeId,
-                    role: 'member'
+        if (body.assignees) {
+            for (const assigneeId of body.assignees) {
+                const isMember = await db.query.projectMembers.findFirst({
+                    where: (pm, { eq, and }) => and(eq(pm.projectId, updated.projectId), eq(pm.userId, assigneeId))
                 })
+
+                if (!isMember) {
+                    console.log('➕ Adding new assignee to project members:', assigneeId)
+                    await db.insert(projectMembers).values({
+                        projectId: updated.projectId,
+                        userId: assigneeId,
+                        role: 'member'
+                    })
+                }
             }
         }
 
@@ -821,7 +907,7 @@ tasksRoutes.patch('/:id/move', async (c) => {
         const teamLevel = await getUserTeamLevel(userId, teamId)
 
         // Allow move if can update tasks or is assignee
-        const isAssignee = task.assigneeId === userId
+        const isAssignee = task.assignees?.includes(userId)
         if (!canUpdateTasks(workspaceRole, teamLevel) && !isAssignee) {
             return c.json({ success: false, error: 'Unauthorized to move task' }, 403)
         }

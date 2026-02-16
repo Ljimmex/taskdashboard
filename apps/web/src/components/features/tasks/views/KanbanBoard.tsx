@@ -37,6 +37,8 @@ function SortableTask({
     isEditing,
     onQuickUpdate,
     onCancelEdit,
+    userRole,
+    userId,
 }: {
     task: TaskCardProps
     members?: { id: string; name: string; avatar?: string }[]
@@ -47,8 +49,10 @@ function SortableTask({
     onTaskDuplicate?: (id: string) => void
     onTaskArchive?: (id: string) => void
     isEditing?: boolean
-    onQuickUpdate?: (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string }) => void
+    onQuickUpdate?: (data: { id: string; title: string; priority: string; assignees?: string[]; dueDate?: string }) => void
     onCancelEdit?: () => void
+    userRole?: string
+    userId?: string
 }) {
     const {
         attributes,
@@ -95,6 +99,9 @@ function SortableTask({
                     onDelete={() => onTaskDelete?.(task.id)}
                     onDuplicate={() => onTaskDuplicate?.(task.id)}
                     onArchive={() => onTaskArchive?.(task.id)}
+                    userRole={userRole}
+                    userId={userId}
+                    onQuickUpdate={onQuickUpdate}
                 />
             )}
         </div>
@@ -122,7 +129,7 @@ function SortableColumn({
     column: { id: string; title: string; status: any; color?: string }
     tasks: TaskCardProps[]
     members?: { id: string; name: string; avatar?: string }[]
-    onAddTask?: (data?: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string; startDate?: string }) => void
+    onAddTask?: (data?: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string; startDate?: string }) => void
     onTaskClick?: (id: string) => void
     onTaskEdit?: (id: string) => void
     onTaskDelete?: (id: string) => void
@@ -204,13 +211,15 @@ interface KanbanBoardProps {
     onTaskFullEdit?: (taskId: string) => void
     onTaskDelete?: (taskId: string) => void
     onTaskDuplicate?: (taskId: string) => void
-    onAddTask?: (columnId: string, data?: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string; startDate?: string }) => void
+    onAddTask?: (columnId: string, data?: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string; startDate?: string }) => void
     onAddColumn?: (title: string, color: string) => void
     onRenameColumn?: (columnId: string, newName: string) => void
     onChangeColumnColor?: (columnId: string, color: string) => void
     onDeleteColumn?: (columnId: string) => void
     onMoveAllCards?: (columnId: string) => void
-    onQuickUpdate?: (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string }) => void
+    onQuickUpdate?: (data: { id: string; title: string; priority: string; assignees?: string[]; dueDate?: string }) => void
+    userRole?: string
+    userId?: string
 }
 
 export function KanbanBoard({
@@ -231,6 +240,8 @@ export function KanbanBoard({
     onDeleteColumn,
     onMoveAllCards,
     onQuickUpdate,
+    userRole,
+    userId,
 }: KanbanBoardProps) {
     const [activeColumn, setActiveColumn] = useState<any | null>(null)
     const [activeTask, setActiveTask] = useState<TaskCardProps | null>(null)
@@ -367,7 +378,7 @@ export function KanbanBoard({
                 onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex-1 flex gap-6 overflow-x-auto pb-4 min-h-0">
+                <div className="flex-1 flex gap-6 overflow-x-auto pb-4 min-h-0 custom-gantt-scroll">
                     <SortableContext items={columnsId} strategy={horizontalListSortingStrategy}>
                         {columns.map(column => (
                             <SortableColumn
@@ -405,7 +416,8 @@ export function KanbanBoard({
                                                 onQuickUpdate?.(data)
                                                 setEditingTaskId(null)
                                             }}
-                                            onCancelEdit={() => setEditingTaskId(null)}
+                                            userRole={userRole}
+                                            userId={userId}
                                         />
                                     ))}
                                 </SortableContext>

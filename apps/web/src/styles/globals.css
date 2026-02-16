@@ -132,23 +132,30 @@ input:-webkit-autofill:active {
    ============================================================================= */
 
 .custom-gantt-scroll::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+  height: 10px; /* Slightly taller for easier horizontal clicking */
+  width: 6px;
 }
 
 .custom-gantt-scroll::-webkit-scrollbar-track {
-  background: rgba(31, 31, 46, 0.5);
-  border-radius: 10px;
+  background: #0e0e12;
+  border-radius: 4px;
 }
 
 .custom-gantt-scroll::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.2);
-  border-radius: 10px;
-  border: 2px solid transparent;
+  background: #2a2a35;
+  border-radius: 4px;
+  border: 2px solid #0e0e12; /* Creates padding effect */
   background-clip: content-box;
 }
 
 .custom-gantt-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.4);
-  background-clip: content-box;
+  background: #3f3f4e;
+  border-color: #0e0e12;
+}
+
+/* Ensure horizontal scrollbar is at the bottom edge */
+.custom-gantt-scroll {
+  /* This ensures the scrollbar is always visible or at least behaves predictably */
+  scrollbar-color: #2a2a35 #0e0e12;
+  scrollbar-width: thin;
 }

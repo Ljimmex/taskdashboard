@@ -28,7 +28,6 @@ export const tasks = pgTable('tasks', {
     description: text('description'),
     status: text('status').default('todo').notNull(),
     priority: text('priority').default('medium').notNull(), // References workspace.priorities[].id
-    assigneeId: text('assignee_id').references(() => users.id, { onDelete: 'set null' }),
     reporterId: text('reporter_id').notNull().references(() => users.id),
     startDate: timestamp('start_date'),
     dueDate: timestamp('due_date'),
@@ -39,6 +38,8 @@ export const tasks = pgTable('tasks', {
     isArchived: boolean('is_archived').default(false).notNull(),
     // Labels stored as JSONB array of label IDs (references workspace.labels)
     labels: text('labels').array().default([]),
+    // Assignees stored as array of user IDs (simple list, no FK constraint)
+    assignees: text('assignees').array().default([]),
     // Links stored as JSONB array of link objects
     links: jsonb('links').default([]).$type<TaskLink[]>(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -161,10 +162,9 @@ export const taskActivityLog = pgTable('task_activity_log', {
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
     project: one(projects, { fields: [tasks.projectId], references: [projects.id] }),
-    assignee: one(users, { fields: [tasks.assigneeId], references: [users.id] }),
     reporter: one(users, { fields: [tasks.reporterId], references: [users.id] }),
     subtasks: many(subtasks),
-    // Note: labels are stored as text[] on tasks.labels, not as a relation
+    // Note: labels match assignees are stored as arrays on task record directly
     comments: many(taskComments),
     timeEntries: many(timeEntries),
     activityLog: many(taskActivityLog),

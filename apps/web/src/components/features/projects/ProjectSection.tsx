@@ -19,6 +19,7 @@ interface ProjectSectionProps {
     onAddTask?: (date?: Date) => void
     onDayClick?: (date: Date, tasks: Task[]) => void
     onProjectClick?: (projectId: string) => void
+    userRole?: string
 }
 
 export function ProjectSection({
@@ -31,8 +32,11 @@ export function ProjectSection({
     onAddTask,
     onDayClick,
     onProjectClick,
+    userRole,
 }: ProjectSectionProps) {
     const [isExpanded, setIsExpanded] = useState(true)
+
+    const canEditProject = userRole && !['member', 'guest'].includes(userRole)
 
     return (
         <div className="bg-[#16161f] rounded-xl border border-gray-700/50 overflow-hidden mb-4 shadow-sm">
@@ -63,9 +67,11 @@ export function ProjectSection({
                     >
                         <Plus size={16} />
                     </button>
-                    <button className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                        <MoreHorizontal size={16} />
-                    </button>
+                    {canEditProject && (
+                        <button className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                            <MoreHorizontal size={16} />
+                        </button>
+                    )}
                     <button
                         onClick={() => onProjectClick?.(project.id)}
                         className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"

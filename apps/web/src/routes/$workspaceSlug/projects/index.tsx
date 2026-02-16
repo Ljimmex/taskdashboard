@@ -449,6 +449,7 @@ function ProjectsPage() {
                         onProjectClick={(projectId) => {
                             navigate({ to: `/${workspaceSlug}/projects/${projectId}` })
                         }}
+                        userRole={currentWorkspace?.userRole}
                     />
                 ))}
 

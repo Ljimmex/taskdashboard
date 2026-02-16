@@ -1321,6 +1321,142 @@
         "error_loading": "Failed to load teams",
         "retry": "Retry"
     },
+    "tasks": {
+        "header": {
+            "search": "Search tasks...",
+            "search_members": "Search people...",
+            "filter": "Filter",
+            "sort": "Sort",
+            "new_task": "New Task"
+        },
+        "priority": {
+            "low": "Low",
+            "medium": "Medium",
+            "high": "High",
+            "urgent": "Urgent"
+        },
+        "assignee": {
+            "placeholder": "Assign people...",
+            "no_results": "No results found",
+            "none": "None assigned"
+        },
+        "details": {
+            "title": "Task Details",
+            "description": "Description",
+            "status": "Status",
+            "priority": "Priority",
+            "assignees": "Assignees",
+            "due_date": "Due date"
+        },
+        "status": {
+            "todo": "To-Do",
+            "in_progress": "In Progress",
+            "review": "Review",
+            "done": "Done"
+        },
+        "card": {
+            "add_task": "Add new task",
+            "menu": {
+                "edit": "Edit",
+                "duplicate": "Duplicate",
+                "archive": "Archive",
+                "delete": "Delete",
+                "assign_to_me": "Assign to me"
+            }
+        },
+        "labels": {
+            "task_singular": "Task",
+            "task_plural": "Tasks",
+            "add_labels": "Add Labels",
+            "search": "Search labels...",
+            "create_new": "Create new label",
+            "no_results": "No labels found",
+            "create_header": "Create Label",
+            "name": "Name",
+            "color": "Color",
+            "preview": "Preview",
+            "add": "Create",
+            "cancel": "Cancel",
+            "placeholder": "e.g. Bug, Feature, Design"
+        },
+        "datepicker": {
+            "select_date": "Select date",
+            "time": "Time",
+            "done": "Done",
+            "today": "Today",
+            "tomorrow": "Tomorrow",
+            "next_week": "Next Week"
+        },
+        "edit": {
+            "title": "Edit Task",
+            "edit_mode": "Edit mode",
+            "click_to_edit": "Click to edit",
+            "title_label": "Task Title",
+            "select_status": "Select status",
+            "select_date": "Select date...",
+            "description": "Description",
+            "description_placeholder": "Add description...",
+            "click_to_add_description": "Click to add description...",
+            "subtasks_header": "Subtasks",
+            "files_header": "Files",
+            "add_file": "+ Add file",
+            "no_attachments": "No attachments",
+            "no_attachments_hint": "Click button above to add files",
+            "links_header": "Links",
+            "add_link": "+ Add link",
+            "cancel": "Cancel",
+            "save": "Save changes",
+            "meta": {
+                "project": "Project",
+                "assignee": "Assignee",
+                "status": "Status",
+                "end_date": "End Date",
+                "priority": "Priority",
+                "labels": "Labels"
+            },
+            "tabs": {
+                "subtasks": "Subtasks",
+                "files": "Files",
+                "links": "Links"
+            }
+        },
+        "create": {
+            "title": "New Task",
+            "select_project": "Select project",
+            "task_title": "Task title",
+            "task_title_placeholder": "What needs to be done?",
+            "description": "Description",
+            "description_placeholder": "Add task description... (supports Markdown)",
+            "markdown_hint": "Tip: Use **bold**, *italics*, - lists",
+            "assignee": "Assignee",
+            "assignee_placeholder": "Assign person...",
+            "start_date": "Start",
+            "end_date": "End",
+            "due_date_placeholder": "Due date",
+            "more_options": "More options",
+            "less_options": "Less options",
+            "subtasks": "Subtasks",
+            "add_subtask_placeholder": "Add subtask...",
+            "add_subtask_button": "+ Add",
+            "attachments": "Attachments",
+            "dropzone_active": "Drop files here...",
+            "dropzone_inactive": "Drag files or click to add",
+            "file_type_hint": "PNG, JPG, PDF, DOCX up to 100MB",
+            "file_size_error": "The following files are too large (max 100MB):",
+            "upload_error": "Failed to upload some files. Check console.",
+            "create_another": "Create another",
+            "cancel": "Cancel",
+            "create_button": "Create task",
+            "priority": "Priority",
+            "status": "Status",
+            "labels": "Labels",
+            "mock_projects": {
+                "marketing": "Marketing",
+                "development": "Development",
+                "design_system": "Design System"
+            }
+        }
+    },
     "projects": {
         "noProjectsFound": "No projects found",
         "createFirstProject": "Create your first project",
@@ -1431,126 +1567,6 @@
             "week": "Week",
             "add_task": "Add task",
             "more_tasks": "+{{count}} more"
-        }
-    },
-    "tasks": {
-        "status": {
-            "todo": "To Do",
-            "in_progress": "In Progress",
-            "review": "Review",
-            "done": "Done"
-        },
-        "priority": {
-            "low": "Low",
-            "medium": "Medium",
-            "high": "High",
-            "urgent": "Urgent"
-        },
-        "assignee": {
-            "placeholder": "Assign person...",
-            "no_results": "No people found",
-            "none": "No assignees"
-        },
-        "card": {
-            "add_task": "Add new task",
-            "menu": {
-                "edit": "Edit task",
-                "duplicate": "Duplicate",
-                "archive": "Archive",
-                "delete": "Delete"
-            }
-        },
-        "labels": {
-            "task_singular": "Task",
-            "task_plural": "Tasks",
-            "add_labels": "Add Labels",
-            "search": "Search labels...",
-            "create_new": "Create new label",
-            "no_results": "No labels found",
-            "create_header": "Create Label",
-            "name": "Name",
-            "placeholder": "Label name...",
-            "color": "Color",
-            "preview": "Preview",
-            "add": "Create",
-            "cancel": "Cancel"
-        },
-        "datepicker": {
-            "select_date": "Select date",
-            "time": "Time",
-            "done": "Done",
-            "today": "Today",
-            "tomorrow": "Tomorrow",
-            "next_week": "Next Week"
-        },
-        "edit": {
-            "title": "Edit Task",
-            "edit_mode": "Edit mode",
-            "click_to_edit": "Click to edit",
-            "title_label": "Task Title",
-            "select_status": "Select status",
-            "select_date": "Select date...",
-            "description": "Description",
-            "description_placeholder": "Add description...",
-            "click_to_add_description": "Click to add description...",
-            "subtasks_header": "Subtasks",
-            "files_header": "Files",
-            "add_file": "+ Add file",
-            "no_attachments": "No attachments",
-            "no_attachments_hint": "Click button above to add files",
-            "links_header": "Links",
-            "add_link": "+ Add link",
-            "cancel": "Cancel",
-            "save": "Save changes",
-            "meta": {
-                "project": "Project",
-                "assignee": "Assignee",
-                "status": "Status",
-                "end_date": "End Date",
-                "priority": "Priority",
-                "labels": "Labels"
-            },
-            "tabs": {
-                "subtasks": "Subtasks",
-                "files": "Files",
-                "links": "Links"
-            }
-        },
-        "create": {
-            "title": "New Task",
-            "select_project": "Select project",
-            "task_title": "Task title",
-            "task_title_placeholder": "What needs to be done?",
-            "description": "Description",
-            "description_placeholder": "Add task description... (supports Markdown)",
-            "markdown_hint": "Tip: Use **bold**, *italics*, - lists",
-            "assignee": "Assignee",
-            "assignee_placeholder": "Assign person...",
-            "start_date": "Start",
-            "end_date": "End",
-            "due_date_placeholder": "Due date",
-            "more_options": "More options",
-            "less_options": "Less options",
-            "subtasks": "Subtasks",
-            "add_subtask_placeholder": "Add subtask...",
-            "add_subtask_button": "+ Add",
-            "attachments": "Attachments",
-            "dropzone_active": "Drop files here...",
-            "dropzone_inactive": "Drag files or click to add",
-            "file_type_hint": "PNG, JPG, PDF, DOCX up to 100MB",
-            "file_size_error": "The following files are too large (max 100MB):",
-            "upload_error": "Failed to upload some files. Check console.",
-            "create_another": "Create another",
-            "cancel": "Cancel",
-            "create_button": "Create task",
-            "priority": "Priority",
-            "status": "Status",
-            "labels": "Labels",
-            "mock_projects": {
-                "marketing": "Marketing",
-                "development": "Development",
-                "design_system": "Design System"
-            }
         }
     },
     "board": {
@@ -1771,8 +1787,8 @@
             "files": "Files",
             "upload": "Drag and drop or Browse upload",
             "sort_by": "Sort by: {{value}}",
-            "view_grid": "Grid view",
-            "view_list": "List view",
+            "view_grid": "Grid",
+            "view_list": "List",
             "filter_type": "Filter by type",
             "filter_date": "Filter by date",
             "all_types": "All types",

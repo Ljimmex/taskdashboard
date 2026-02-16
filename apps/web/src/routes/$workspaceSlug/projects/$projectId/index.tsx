@@ -31,8 +31,8 @@ interface Task {
   startDate: string | null
   endDate: string | null
   dueDate: string | null
-  assigneeId: string | null
-  assignee?: { id: string; name: string; avatar?: string; image?: string }
+  assignees?: string[]
+  assigneeDetails?: { id: string; name: string; avatar?: string; image?: string }[]
   priority: 'low' | 'medium' | 'high' | 'urgent'
   subtasksCount?: number
   subtasksCompleted?: number
@@ -184,7 +184,8 @@ function ProjectDetailPage() {
       team.members?.map((m: any) => ({
         id: m.userId || m.user?.id,
         name: m.user?.name || t('common.unknown'),
-        avatar: m.user?.image
+        avatar: m.user?.image,
+        image: m.user?.image
       })) || []
     ) || []
 
@@ -286,7 +287,7 @@ function ProjectDetailPage() {
     setShowCreateTaskPanel(true)
   }
 
-  const handleKanbanAddTask = (columnId: string, data?: { title: string; priority: string; status: string; assigneeId?: string; dueDate?: string }) => {
+  const handleKanbanAddTask = (columnId: string, data?: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string }) => {
     if (data) {
       handleCreateTask({ ...data, status: columnId })
     } else {
@@ -295,7 +296,7 @@ function ProjectDetailPage() {
     }
   }
 
-  const handleQuickUpdateTask = async (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string }) => {
+  const handleQuickUpdateTask = async (data: { id: string; title: string; priority: string; assignees?: string[]; dueDate?: string }) => {
     try {
       const res = await apiFetch(`/api/tasks/${data.id}`, {
         method: 'PATCH',
@@ -376,7 +377,7 @@ function ProjectDetailPage() {
         priority: data.priority,
         status: data.status,
         dueDate: data.dueDate,
-        assigneeId: data.assigneeIds?.[0] || null,
+        assignees: data.assigneeIds || [],
         labels: data.labelIds || [],
         links: data.links || [],
       }
@@ -594,8 +595,11 @@ function ProjectDetailPage() {
       if (!matchesSearch) return false
 
       // 2. Assigned to Me / Specific Assignees
-      if (filters.assignedToMe && t.assigneeId !== session?.user?.id) return false
-      if (filters.assigneeIds.length > 0 && (!t.assigneeId || !filters.assigneeIds.includes(t.assigneeId))) return false
+      if (filters.assignedToMe && !t.assignees?.includes(session?.user?.id || '')) return false
+      if (filters.assigneeIds.length > 0) {
+        const hasMatchingAssignee = t.assignees?.some(id => filters.assigneeIds.includes(id))
+        if (!hasMatchingAssignee) return false
+      }
 
       // 3. Priorities
       if (filters.priorities.length > 0 && !filters.priorities.includes(t.priority)) return false
@@ -690,7 +694,7 @@ function ProjectDetailPage() {
         title: t.title,
         description: t.description || '',
         priority: (t.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low',
-        assignees: t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.avatar || t.assignee.image }] : [],
+        assigneeDetails: (t.assigneeDetails || (Array.isArray(t.assignees) && typeof t.assignees[0] === 'object' ? t.assignees : [])) as any[],
         type: 'task' as const,
         status: t.status,
         dueDate: t.dueDate || undefined,
@@ -712,7 +716,7 @@ function ProjectDetailPage() {
       title: t.title,
       description: t.description || '',
       priority: (t.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low',
-      assignees: t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.avatar || t.assignee.image }] : [],
+      assigneeDetails: (t.assigneeDetails || (Array.isArray(t.assignees) && typeof t.assignees[0] === 'object' ? t.assignees : [])) as any[],
       status: t.status,
       statusLabel: getStageTitle(t.status),
       dueDate: t.dueDate || undefined,
@@ -930,6 +934,8 @@ function ProjectDetailPage() {
               onChangeColumnColor={handleChangeStageColor}
               onDeleteColumn={handleDeleteStage}
               onColumnReorder={handleReorderStages}
+              userRole={currentWorkspace?.userRole}
+              userId={session?.user?.id}
             />
           </div>
         )}
@@ -951,6 +957,9 @@ function ProjectDetailPage() {
               setSortBy(field)
               setSortDirection(dir)
             }}
+            userRole={currentWorkspace?.userRole}
+            userId={session?.user?.id}
+            onQuickUpdate={handleQuickUpdateTask}
           />
         )}
 

@@ -7,6 +7,7 @@ export interface Assignee {
     name: string
     email?: string
     avatar?: string
+    image?: string
     role?: string
 }
 
@@ -19,7 +20,7 @@ interface AssigneePickerProps {
 }
 
 // Avatar component
-const Avatar = ({ name, avatar, size = 'md' }: { name: string; avatar?: string; size?: 'sm' | 'md' | 'lg' }) => {
+const Avatar = ({ name, avatar, image, size = 'md' }: { name: string; avatar?: string; image?: string; size?: 'sm' | 'md' | 'lg' }) => {
     const sizeClasses = {
         sm: 'w-6 h-6 text-[9px]',
         md: 'w-8 h-8 text-[10px]',
@@ -28,10 +29,12 @@ const Avatar = ({ name, avatar, size = 'md' }: { name: string; avatar?: string; 
 
     const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 
-    if (avatar) {
+    const userImage = avatar || image
+
+    if (userImage) {
         return (
             <img
-                src={avatar}
+                src={userImage}
                 alt={name}
                 className={cn('rounded-full object-cover', sizeClasses[size])}
             />
@@ -134,7 +137,7 @@ export function AssigneePicker({
                                 key={assignee.id}
                                 className="flex items-center gap-1 group"
                             >
-                                <Avatar name={assignee.name} avatar={assignee.avatar} size="sm" />
+                                <Avatar name={assignee.name} avatar={assignee.avatar} image={assignee.image} size="sm" />
                                 <span className="text-xs text-gray-300">{assignee.name.split(' ')[0]}</span>
                                 <button
                                     onClick={(e) => handleRemoveAssignee(e, assignee.id)}
@@ -215,7 +218,7 @@ export function AssigneePicker({
                                                 : 'hover:bg-gray-800'
                                         )}
                                     >
-                                        <Avatar name={assignee.name} avatar={assignee.avatar} size="md" />
+                                        <Avatar name={assignee.name} avatar={assignee.avatar} image={assignee.image} size="md" />
                                         <div className="flex-1 text-left">
                                             <div className="text-sm text-white font-medium">{assignee.name}</div>
                                             {assignee.role && (

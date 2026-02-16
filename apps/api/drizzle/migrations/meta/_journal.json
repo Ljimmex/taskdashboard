@@ -57,6 +57,20 @@
       "when": 1771188490793,
       "tag": "0007_loving_stardust",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1771244755261,
+      "tag": "0008_useful_champions",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1771245000739,
+      "tag": "0009_funny_toad",
+      "breakpoints": true
     }
   ]
 }

@@ -36,10 +36,23 @@ export function OverallProgress({
         const map = new Map<string, Set<string>>() // projectId -> Set<stageId> (final stages)
         projects.forEach(p => {
             const finalStageIds = new Set<string>()
-            if (p.stages && Array.isArray(p.stages)) {
+            let maxPositionStage: any = null
+
+            if (p.stages && Array.isArray(p.stages) && p.stages.length > 0) {
                 p.stages.forEach((s: any) => {
                     if (s.isFinal) finalStageIds.add(s.id)
+
+                    // Track max position stage as fallback
+                    if (!maxPositionStage || (s.position !== undefined && s.position > maxPositionStage.position)) {
+                        maxPositionStage = s
+                    }
                 })
+
+                // Fallback: If no stage is explicitly final, use the one with highest position
+                // This handles user-created projects where stages default to isFinal: false
+                if (finalStageIds.size === 0 && maxPositionStage) {
+                    finalStageIds.add(maxPositionStage.id)
+                }
             }
             map.set(p.id, finalStageIds)
         })
