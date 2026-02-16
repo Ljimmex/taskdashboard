@@ -76,7 +76,7 @@ function LoginPage() {
         if (e) e.preventDefault()
         setLoading(true)
         setError('')
-        
+
         // Use otp or verificationCode depending on which input is being used
         // In the original code, there were two different inputs for this.
         // I will assume 'otp' is the primary one used in the first verification view.
@@ -94,22 +94,22 @@ function LoginPage() {
                 // Verification successful, now login
                 // If we have password, try to sign in again
                 if (password) {
-                     const loginRes = await signIn.email({
+                    const loginRes = await signIn.email({
                         email,
                         password,
                         rememberMe
                     })
 
                     if (loginRes.error) {
-                         setError(loginRes.error.message || t('auth.error.login'))
+                        setError(loginRes.error.message || t('auth.error.login'))
                     } else {
                         navigate({ to: '/dashboard' })
                     }
                 } else {
                     // Just navigate to dashboard or login
-                     navigate({ to: '/login' })
-                     setIsEmailVerification(false)
-                     setError(t('auth.verifyEmail.success')) // Optional success message
+                    navigate({ to: '/login' })
+                    setIsEmailVerification(false)
+                    setError(t('auth.verifyEmail.success')) // Optional success message
                 }
             }
         } catch (err: any) {
@@ -155,8 +155,17 @@ function LoginPage() {
 
             console.log("Login result:", result)
 
+            // Check for 2FA requirement FIRST (BetterAuth returns success with twoFactorRedirect: true)
+            const data = result.data as any
+            if (data?.twoFactorRedirect || data?.twoFactor) {
+                console.log("2FA required, showing form...")
+                setIsTwoFactor(true)
+                setError('')
+                return
+            }
+
             if (result.error) {
-                // Check for email verification requirement FIRST
+                // Check for email verification requirement
                 if (result.error.code === "EMAIL_NOT_VERIFIED" ||
                     result.error.message?.toLowerCase().includes("verify") ||
                     result.error.message?.toLowerCase().includes("weryfik")) {
@@ -165,28 +174,20 @@ function LoginPage() {
                     return
                 }
 
-                // Check for 2FA requirement in error
+                // Fallback: Check for 2FA requirement in error (if handled differently by server)
                 if (result.error.message?.includes("2FA") ||
                     (result.error as any).code === "TWO_FACTOR_REQUIRED" ||
                     result.error.status === 403) {
 
-                     if (result.error.message === "Two factor authentication required" || result.error.status === 403) {
+                    if (result.error.message?.includes("required") || result.error.status === 403) {
                         setIsTwoFactor(true)
                         setError('')
                         return
                     }
-
-                    // Try to translate error message if possible, otherwise fallback to server message
-                    setError(result.error.message || t('auth.error.login'))
-                } else if ((result.data as any)?.twoFactor || (result.data as any)?.twoFactorRedirect) {
-                    // Handle 2FA
-                    console.log("2FA required, showing form...")
-                    setIsTwoFactor(true)
-                    setError('')
-                } else {
-                     // Try to translate error message if possible, otherwise fallback to server message
-                    setError(result.error.message || t('auth.error.login'))
                 }
+
+                // General error
+                setError(result.error.message || t('auth.error.login'))
             } else {
                 const params = new URLSearchParams(window.location.search)
                 const workspaceSlug = params.get('workspace')
