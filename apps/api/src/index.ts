@@ -68,8 +68,6 @@ app.use('*', cors({
     origin: [
         'http://localhost:5173',
         'http://localhost:3000',
-        'https://taskdashboard.pages.dev',
-        'https://*.taskdashboard.pages.dev',
         'https://taskdashboard-api.onrender.com',
         'https://taskdashboard-web.onrender.com',
         'https://zadanoapp.com',

@@ -32,12 +32,14 @@ export const r2Client = new S3Client({
 })
 
 export const getUploadUrl = async (key: string, contentType: string) => {
+    console.log(`📡 Generating presigned URL for bucket: ${R2_BUCKET_NAME}, key: ${key}, type: ${contentType}`)
     const command = new PutObjectCommand({
         Bucket: R2_BUCKET_NAME,
         Key: key,
         ContentType: contentType,
     })
-    return await getSignedUrl(r2Client, command, { expiresIn: 3600 })
+    const url = await getSignedUrl(r2Client, command, { expiresIn: 3600 })
+    return url
 }
 
 export const getDownloadUrl = async (key: string, filename?: string) => {
