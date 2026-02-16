@@ -173,16 +173,34 @@ export function useUploadFile() {
 
             // 3. Upload file to R2 using presigned URL
             const finalUploadUrl = uploadUrl.startsWith('http') ? uploadUrl : `https://${uploadUrl}`
-            const uploadToR2 = await fetch(finalUploadUrl, {
-                method: 'PUT',
-                body: file,
-                headers: {
-                    'Content-Type': file.type || 'application/octet-stream',
-                }
-            })
 
-            if (!uploadToR2.ok) {
-                throw new Error('Failed to upload file to storage')
+            try {
+                const uploadToR2 = await fetch(finalUploadUrl, {
+                    method: 'PUT',
+                    body: file,
+                    headers: {
+                        'Content-Type': file.type || 'application/octet-stream',
+                    }
+                })
+
+                if (!uploadToR2.ok) {
+                    const status = uploadToR2.status
+                    const text = await uploadToR2.text().catch(() => 'No error body')
+                    console.error('R2 Upload failed:', { status, text })
+                    throw new Error(`Storage upload failed (${status}): ${text}`)
+                }
+            } catch (err: any) {
+                const urlObj = new URL(finalUploadUrl);
+                const baseUrl = `${urlObj.origin}${urlObj.pathname}`;
+                console.error('Direct upload fetch failed:', {
+                    error: err,
+                    target: baseUrl,
+                    method: 'PUT'
+                })
+                if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+                    throw new Error(`Upload failed: Network or CORS error when connecting to ${urlObj.host}. Please ensure Cloudflare R2 CORS allows PUT from this domain.`)
+                }
+                throw err
             }
 
             onProgress?.(100)

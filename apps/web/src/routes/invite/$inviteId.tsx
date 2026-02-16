@@ -32,7 +32,7 @@ function InvitePage() {
     // Legacy Reconstruction logic
     const searchParams = new URLSearchParams(window.location.search)
     const teamName = wsInvite ? wsInvite.workspace?.name : inviteId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-    const inviterName = wsInvite ? 'Workspace Admin' : (searchParams.get('inviter') || 'Team Admin')
+    const inviterName = wsInvite ? (wsInvite.inviter?.name || 'Workspace Admin') : (searchParams.get('inviter') || 'Team Admin')
     const inviterRole = searchParams.get('role') || 'Team Lead'
     const workspaceSlug = searchParams.get('workspace') || (wsInvite?.workspace?.slug) || 'demo'
 
@@ -95,7 +95,7 @@ function InvitePage() {
     if (joined) {
         return (
             <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">
-                <div className="max-w-md w-full bg-[#12121a] border border-gray-800 rounded-2xl p-8 text-center space-y-6">
+                <div className="max-w-md w-full bg-[#12121a] rounded-2xl p-8 text-center space-y-6">
                     <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2">
                             <path d="M20 6L9 17l-5-5" />
@@ -119,10 +119,14 @@ function InvitePage() {
 
     return (
         <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-[#12121a] border border-gray-800 rounded-2xl p-8 space-y-8">
+            <div className="max-w-md w-full bg-[#12121a] rounded-2xl p-8 space-y-8">
                 <div className="text-center">
-                    <div className="w-20 h-20 bg-gradient-to-br from-[#F2CE88] to-orange-400 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl font-bold text-black shadow-lg shadow-orange-500/20">
-                        {teamName?.charAt(0)}
+                    <div className="w-20 h-20 bg-gradient-to-br from-[#F2CE88] to-orange-400 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl font-bold text-black shadow-lg shadow-orange-500/20 overflow-hidden">
+                        {wsInvite?.workspace?.logo ? (
+                            <img src={wsInvite.workspace.logo} alt={teamName} className="w-full h-full object-cover" />
+                        ) : (
+                            teamName?.charAt(0)
+                        )}
                     </div>
                     <h1 className="text-2xl font-bold text-white mb-2">Join {wsInvite ? 'Workspace' : 'Team'}</h1>
                     <p className="text-gray-400 text-sm">
@@ -131,9 +135,13 @@ function InvitePage() {
                 </div>
 
                 <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-[#1a1a24] border border-gray-800 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white">
-                            {inviterName?.charAt(0)}
+                    <div className="p-4 rounded-xl bg-[#1a1a24] flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white overflow-hidden">
+                            {wsInvite?.inviter?.image ? (
+                                <img src={wsInvite.inviter.image} alt={inviterName} className="w-full h-full object-cover" />
+                            ) : (
+                                inviterName?.charAt(0)
+                            )}
                         </div>
                         <div>
                             <div className="text-sm font-medium text-white">Invited by {inviterName}</div>
@@ -147,13 +155,13 @@ function InvitePage() {
                 </div>
 
                 {error && (
-                    <div className="p-3 rounded-lg bg-red-500/10 text-red-500 text-sm border border-red-500/20">
+                    <div className="p-3 rounded-lg bg-red-500/10 text-red-500 text-sm ">
                         {error}
                     </div>
                 )}
 
                 {(wsError && !isLegacyTeamInvite) && (
-                    <div className="p-3 rounded-lg bg-red-500/10 text-red-500 text-sm border border-red-500/20 text-center">
+                    <div className="p-3 rounded-lg bg-red-500/10 text-red-500 text-sm  text-center">
                         This invitation is invalid or has expired.
                     </div>
                 )}

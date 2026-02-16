@@ -6,7 +6,7 @@ services:
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
     region: frankfurt
-    plan: free
+    plan: starter
     envVars:
       - key: NODE_ENV
         value: production

@@ -196,11 +196,18 @@ workspaceInvitesRoutes.get('/invites/resolve/:token', async (c) => {
             columns: { name: true, slug: true, logo: true }
         })
 
+        // Fetch inviter info
+        const inviter = await db.query.users.findFirst({
+            where: (u, { eq }) => eq(u.id, invite.invitedBy),
+            columns: { name: true, image: true }
+        })
+
         return c.json({
             success: true,
             data: {
                 ...invite,
-                workspace
+                workspace,
+                inviter
             }
         })
     } catch (error) {
