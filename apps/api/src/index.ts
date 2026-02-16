@@ -32,6 +32,10 @@ import { webhooksRoutes } from './modules/webhooks/routes'
 // Create OpenAPI Hono app
 const app = new OpenAPIHono()
 
+console.log('🚀 API initializing...')
+console.log('🌍 Environment:', process.env.NODE_ENV || 'development')
+console.log('📡 Expected Port:', process.env.PORT || 3000)
+
 // =============================================================================
 // MIDDLEWARE
 // =============================================================================
