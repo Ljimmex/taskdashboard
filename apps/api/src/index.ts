@@ -54,6 +54,7 @@ app.use('*', secureHeaders({
         objectSrc: ["'none'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline often needed for styled-components/emotion
+        connectSrc: ["'self'", "https:", "wss:", "https://*.supabase.co", "wss://*.supabase.co", "https://taskdashboard-api.onrender.com"],
         upgradeInsecureRequests: [],
     },
 }))

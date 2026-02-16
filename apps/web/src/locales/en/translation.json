@@ -180,6 +180,7 @@
         "last24h": "Last 24h",
         "occupancyRate": "Occupancy rate {{count}}/{{total}}",
         "inProgress": "In Progress",
+        "completed": "Completed",
         "totalProjects": "Total Project",
         "upcoming": "Upcoming",
         "filter": "Filter",

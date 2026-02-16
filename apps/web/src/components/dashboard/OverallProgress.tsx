@@ -8,48 +8,60 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ChevronDown } from 'lucide-react'
+import { useTasks } from '@/hooks/useTasks'
+
 
 interface OverallProgressProps {
     projects: any[]
     currentUserId?: string
+    workspaceSlug?: string
 }
 
-// Helper to calculate progress strictly for the gauge
-function calculateProgress(projects: any[]) {
-    if (!projects || projects.length === 0) return { inProgress: 0, total: 0 }
-
-    // In progress = status 'active'
-    const inProgress = projects.filter(p => p.status === 'active').length
-    const total = projects.length
-
-    return { inProgress, total }
-
-}
 type DateRange = 'all_time' | 'last_year' | 'last_month' | 'last_week' | 'last_24h'
-
 
 export function OverallProgress({
     projects = [],
     currentUserId,
-
+    workspaceSlug
 }: OverallProgressProps) {
     const { t } = useTranslation()
     const [scope, setScope] = useState<'my_projects' | 'entire_workspace'>('my_projects')
     const [dateRange, setDateRange] = useState<DateRange>('last_week')
 
-    // Filter projects based on scope and date range
-    const filteredProjects = useMemo(() => {
+    // Fetch tasks
+    const { data: tasks = [] } = useTasks(workspaceSlug)
+
+    // Build a map of project stages to identify "final" (done) stages
+    const projectFinalStages = useMemo(() => {
+        const map = new Map<string, Set<string>>() // projectId -> Set<stageId> (final stages)
+        projects.forEach(p => {
+            const finalStageIds = new Set<string>()
+            if (p.stages && Array.isArray(p.stages)) {
+                p.stages.forEach((s: any) => {
+                    if (s.isFinal) finalStageIds.add(s.id)
+                })
+            }
+            map.set(p.id, finalStageIds)
+        })
+        return map
+    }, [projects])
+
+    // Filter projects based on scope (to know which tasks to include)
+    const validProjectIds = useMemo(() => {
         let result = projects;
 
-        // 1. Filter by Scope
+        // Filter by Scope (My Projects vs All)
         if (scope === 'my_projects' && currentUserId) {
             result = result.filter(p =>
                 p.ownerId === currentUserId ||
                 p.members?.some((m: any) => (m.user?.id || m.id) === currentUserId)
             )
         }
+        return new Set(result.map(p => p.id))
+    }, [projects, scope, currentUserId])
 
-        // 2. Filter by Date Range (using createdAt)
+    // Calculate Task Stats
+    const stats = useMemo(() => {
         const now = new Date()
         let cutoffDate: Date | null = null
 
@@ -71,33 +83,42 @@ export function OverallProgress({
                 cutoffDate = null
         }
 
-        if (cutoffDate) {
-            result = result.filter(p => {
-                if (!p.createdAt) return false // Assume null createdAt is old or invalid? Or maybe check startDate? 
-                // Let's use createdAt as primary.
-                return new Date(p.createdAt) >= cutoffDate!
-            })
-        }
+        let filteredTasks = tasks.filter(task => {
+            // 1. Must belong to a valid project (based on scope)
+            if (!validProjectIds.has(task.projectId)) return false
 
-        return result
-    }, [projects, scope, currentUserId, dateRange])
+            // 2. Date Filter (Created At)
+            if (cutoffDate && (!task.createdAt || new Date(task.createdAt) < cutoffDate)) return false
 
-    const { inProgress, total } = calculateProgress(filteredProjects)
+            return true
+        })
+
+        const total = filteredTasks.length
+        const completed = filteredTasks.filter(task => {
+            const finalStages = projectFinalStages.get(task.projectId)
+            // Check if status is "done", "completed" OR matches a final stage ID
+            // Check if status is "done", "completed" OR matches a final stage ID
+            const status = task.status as string
+            return status === 'done' ||
+                status === 'completed' ||
+                (finalStages && task.status && finalStages.has(task.status))
+        }).length
+
+        return { total, completed }
+    }, [tasks, validProjectIds, dateRange, projectFinalStages])
 
     // Calculate progress percentage
-    // Safeguard against division by zero
-    const percentage = total > 0 ? Math.round((inProgress / total) * 100) : 0
+    const percentage = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
 
-    // Gauge Chart Dimensions (Scaled Up)
-    const width = 340 // Increased from 280
-    const height = 180 // Increased from 140
+    // Gauge Chart Dimensions
+    const width = 340
+    const height = 180
     const cx = width / 2
     const cy = height - 20
-    const r = 130 // Increased from 100
-    const strokeWidth = 25 // Increased from 20
+    const r = 130
+    const strokeWidth = 25
 
     // Calculate arc path
-    // Arc goes from -180 (left) to 0 (right) degrees, covering 180 degrees
     const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
         const angleInRadians = (angleInDegrees - 180) * Math.PI / 180.0;
         return {
@@ -118,16 +139,11 @@ export function OverallProgress({
         return d;
     }
 
-    // Background Arc (Full semi-circle)
     const bgArc = describeArc(cx, cy, r, 0, 180)
-
-    // Progress Arc
-    // Map percentage 0-100 to angle 0-180
     const progressAngle = (percentage / 100) * 180
     const progressArc = describeArc(cx, cy, r, 0, progressAngle)
 
-    // Marker Position (End of progress arc)
-    // Used for the small line/marker at the tip
+    // Marker Position
     const markerStart = polarToCartesian(cx, cy, r - strokeWidth / 2, progressAngle)
     const markerEnd = polarToCartesian(cx, cy, r + strokeWidth / 2, progressAngle)
 
@@ -143,10 +159,10 @@ export function OverallProgress({
     }
 
     return (
-        <div className="rounded-2xl bg-[#12121a] p-5 h-[340px] flex flex-col overflow-hidden relative">
+        <div className="rounded-2xl bg-[#12121a] p-5 h-[340px] flex flex-col overflow-hidden relative transition-all duration-300 hover:shadow-lg hover:shadow-black/20">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-white">{t('dashboard.overallProgress')}</h3>
+                <h3 className="font-semibold text-white">Postęp Zadań</h3>
                 {/* Scope Dropdown */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -205,9 +221,11 @@ export function OverallProgress({
                     <path
                         d={progressArc}
                         fill="none"
-                        stroke="#3B82F6" // Blue color
+                        stroke="#F2CE88" // Amber/Gold Color
                         strokeWidth={strokeWidth}
                         strokeLinecap="round"
+                        className="transition-all duration-1000 ease-out"
+                        style={{ filter: 'drop-shadow(0 0 8px rgba(242, 206, 136, 0.2))' }}
                     />
 
                     {/* Marker at the end of progress */}
@@ -216,22 +234,22 @@ export function OverallProgress({
                         y1={markerStart.y}
                         x2={markerEnd.x}
                         y2={markerEnd.y}
-                        stroke="#22C55E" // Green Marker
-                        strokeWidth="5"
+                        stroke="#FFF" // White Marker
+                        strokeWidth="4"
                         strokeLinecap="round"
+                        className="transition-all duration-1000 ease-out"
                     />
 
                 </svg>
 
                 {/* Center Text */}
                 <div className="absolute bottom-0 flex flex-col items-center justify-end h-full pb-4">
-                    <span className="text-5xl font-bold text-white mb-2">{percentage}%</span>
-                    <span className="text-xs text-gray-400 bg-[#1a1a24] px-2 py-1 rounded">
-                        {t('dashboard.occupancyRate', { count: inProgress, total: total })}
+                    <span className="text-5xl font-bold text-white mb-2 tracking-tight">{percentage}%</span>
+                    <span className="text-xs text-gray-400 bg-[#1a1a24] px-3 py-1.5 rounded-full">
+                        {t('dashboard.completed')}: {stats.completed} / {stats.total}
                     </span>
                 </div>
             </div>
         </div>
     );
 }
-

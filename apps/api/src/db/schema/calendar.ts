@@ -2,6 +2,7 @@ import { pgTable, uuid, varchar, text, timestamp, boolean, jsonb, pgPolicy, pgEn
 import { relations, sql } from 'drizzle-orm'
 import { users } from './users'
 import { tasks } from './tasks'
+import { workspaces } from './workspaces'
 
 // =============================================================================
 // CALENDAR EVENTS TABLE
@@ -22,6 +23,7 @@ export const calendarEvents = pgTable('calendar_events', {
     attendeeIds: text('attendee_ids').array().default([]), // List of user IDs (for personal events/reminders)
     type: calendarEventTypeEnum('type').default('event').notNull(),
     meetingLink: varchar('meeting_link', { length: 512 }),
+    workspaceId: text('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
     createdBy: text('created_by').notNull().references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (_table) => [

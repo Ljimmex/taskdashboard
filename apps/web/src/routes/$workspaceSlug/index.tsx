@@ -14,10 +14,9 @@ import { CalendarEventPanel } from '@/components/features/calendar/CalendarEvent
 import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { useFiles } from '@/hooks/useFiles'
 import { FileInfoPanel } from '@/components/features/files/FileInfoPanel'
+import { CreateProjectPanel } from '@/components/features/projects/CreateProjectPanel'
 import { FileRecord } from '@taskdashboard/types'
 import { useTranslation } from 'react-i18next'
-
-
 
 export const Route = createFileRoute('/$workspaceSlug/')({
   component: DashboardHome,
@@ -32,6 +31,7 @@ function DashboardHome() {
   const [projectFilter, setProjectFilter] = useState<'active' | 'pending'>('active')
   const [projectPage, setProjectPage] = useState(0)
   const [isEventPanelOpen, setIsEventPanelOpen] = useState(false)
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
 
   // File Modal State
   const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
@@ -146,6 +146,11 @@ function DashboardHome() {
   const handleEventCreated = async () => {
     await queryClient.invalidateQueries({ queryKey: ['calendar_events', workspaceSlug] })
     setIsEventPanelOpen(false)
+  }
+
+  const handleProjectCreated = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['projects', workspaceSlug] })
+    setIsCreateProjectOpen(false)
   }
 
   // File Actions
@@ -349,7 +354,7 @@ function DashboardHome() {
               <div className="col-span-2 py-12 flex flex-col items-center justify-center border-2 border-dashed border-gray-800 rounded-2xl">
                 <p className="text-gray-500 mb-4">{projectFilter === 'active' ? t('dashboard.noProjectsActive') : t('dashboard.noProjectsPending')}</p>
                 {projectFilter === 'active' && workspaceData?.userRole && !['member', 'guest'].includes(workspaceData.userRole) && (
-                  <button className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">{t('dashboard.createProject')}</button>
+                  <button onClick={() => setIsCreateProjectOpen(true)} className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">{t('dashboard.createProject')}</button>
                 )}
               </div>
             )}
@@ -364,7 +369,11 @@ function DashboardHome() {
 
       {/* Right Column Section (Widgets) - Spans 4 columns */}
       <div className="lg:col-span-4 space-y-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-        <OverallProgress projects={projects} currentUserId={session?.user?.id} />
+        <OverallProgress
+          projects={projects}
+          currentUserId={session?.user?.id}
+          workspaceSlug={workspaceSlug}
+        />
         <ChatSection
           contacts={chatContacts}
           onSeeAll={() => navigate({ to: `/${workspaceSlug}/messages` })}
@@ -395,6 +404,14 @@ function DashboardHome() {
           userRole={workspaceData?.userRole}
         />
       )}
+
+      {/* Create Project Panel */}
+      <CreateProjectPanel
+        isOpen={isCreateProjectOpen}
+        onClose={() => setIsCreateProjectOpen(false)}
+        onSuccess={handleProjectCreated}
+        workspaceId={workspaceData?.id}
+      />
 
       {/* File Info Panel (Modal-like) */}
       <FileInfoPanel

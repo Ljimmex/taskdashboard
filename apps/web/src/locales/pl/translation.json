@@ -180,6 +180,7 @@
         "last24h": "Ostatnie 24h",
         "occupancyRate": "Wskaźnik realizacji {{count}}/{{total}}",
         "inProgress": "W trakcie",
+        "completed": "Ukończone",
         "totalProjects": "Wszystkie projekty",
         "upcoming": "Nadchodzące",
         "filter": "Filtruj",
