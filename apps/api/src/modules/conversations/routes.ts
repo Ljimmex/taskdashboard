@@ -12,6 +12,19 @@ import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { zSanitizedString } from '../../lib/zod-extensions'
 
+const encryptedMessageSchema = z.object({
+    v: z.number(),
+    ct: z.string(),
+    iv: z.string(),
+    tag: z.string(),
+    keys: z.record(z.string())
+})
+
+const messageContentSchema = z.union([
+    zSanitizedString(),
+    encryptedMessageSchema
+])
+
 const createConversationSchema = z.object({
     teamId: z.string().optional().nullable(),
     workspaceId: z.string().optional(),
@@ -37,14 +50,14 @@ const typingSchema = z.object({
 })
 
 const createMessageSchema = z.object({
-    content: zSanitizedString(),
+    content: messageContentSchema,
     attachments: z.array(z.any()).optional(), // Define stricter attachment schema if possible
     senderId: z.string().optional(), // usually userId but can be overridden?
     replyToId: z.string().optional()
 })
 
 const appendMessageSchema = z.object({
-    content: zSanitizedString(),
+    content: messageContentSchema,
     attachments: z.array(z.any()).optional()
 })
 

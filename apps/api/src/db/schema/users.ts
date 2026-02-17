@@ -22,6 +22,13 @@ export const users = pgTable('users', {
     phoneNumber: varchar('phone_number', { length: 20 }),
     phoneNumberVerified: boolean('phone_number_verified').default(false).notNull(),
     twoFactorEnabled: boolean('two_factor_enabled').default(false).notNull(),
+    
+    // E2E Encryption Keys
+    publicKey: text('public_key'), // PEM format
+    encryptedPrivateKey: text('encrypted_private_key'), // Encrypted with user password (client-side)
+    keySalt: text('key_salt'), // Salt for password -> key derivation
+    keyIv: text('key_iv'), // IV for private key encryption
+
     firstName: varchar('first_name', { length: 100 }),
     lastName: varchar('last_name', { length: 100 }),
     description: text('description'),

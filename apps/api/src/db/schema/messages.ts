@@ -26,7 +26,13 @@ export const conversations = pgTable('conversations', {
     messages: jsonb('messages').default([]).$type<Array<{
         id: string
         senderId: string
-        content: string
+        content: string | { // Legacy string or E2E Envelope
+            v: number
+            ct: string
+            iv: string
+            tag: string
+            keys: Record<string, string> // userId -> encrypted DEK
+        }
         timestamp: string
         edited: boolean
         editedAt?: string
@@ -86,7 +92,13 @@ export type NewConversation = typeof conversations.$inferInsert
 export interface ConversationMessage {
     id: string
     senderId: string
-    content: string
+    content: string | {
+        v: number
+        ct: string
+        iv: string
+        tag: string
+        keys: Record<string, string>
+    }
     timestamp: string
     edited: boolean
     editedAt?: string

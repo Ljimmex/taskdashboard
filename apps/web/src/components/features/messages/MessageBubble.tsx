@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { decryptWithFallback } from '@/lib/crypto'
+import { decryptWithFallback, decryptMessage, MessageEnvelope } from '@/lib/crypto'
 import type { ConversationMessage } from '@taskdashboard/types'
 import { Edit2, Smile, MoreVertical, Check, CheckCheck } from 'lucide-react'
 import { EmojiPicker } from './EmojiPicker'
@@ -48,7 +48,7 @@ export function MessageBubble({
     const isDeleted = (message as any).isDeleted // Cast for now
     const isSystem = message.senderId === 'system' || (message as any).isSystem
 
-    const [decryptedContent, setDecryptedContent] = useState(message.content)
+    const [decryptedContent, setDecryptedContent] = useState<string>('')
     const [decryptedReplyContent, setDecryptedReplyContent] = useState<string | null>(null)
     const [systemInfo, setSystemInfo] = useState<{ action: string, actorId: string } | null>(null)
     const { t, i18n } = useTranslation()
@@ -61,66 +61,110 @@ export function MessageBubble({
             return
         }
 
-        if (isSystem) {
-            try {
-                const sysData = JSON.parse(message.content)
-                if (sysData.type === 'system') {
-                    setSystemInfo(sysData)
-                    return
+        const content = message.content
+
+        // Handle string content (Legacy or JSON-stringified)
+        if (typeof content === 'string') {
+            if (isSystem) {
+                try {
+                    const sysData = JSON.parse(content)
+                    if (sysData.type === 'system') {
+                        setSystemInfo(sysData)
+                        return
+                    }
+                } catch (e) {
+                    // Fallback
                 }
-            } catch (e) {
-                // Fallback
             }
-        }
-
-        const decrypt = async () => {
-            const allKeys = [privateKey, ...(historyKeys || [])].filter(Boolean) as CryptoKey[]
-            if (allKeys.length === 0) return
-
+            
+            // Try to parse as encrypted packet (Legacy V1)
             try {
-                // Try to parse as encrypted packet
-                const packet = JSON.parse(message.content)
+                const packet = JSON.parse(content)
                 if (packet.v === '1' && packet.data && packet.key && packet.iv) {
+                     const allKeys = [privateKey, ...(historyKeys || [])].filter(Boolean) as CryptoKey[]
+                     if (allKeys.length === 0) return
+
                     decryptWithFallback(packet, allKeys)
                         .then(plainText => setDecryptedContent(plainText))
                         .catch(err => {
                             console.warn('Decryption failed for message (unrecoverable):', message.id, err)
                             setDecryptedContent('🔒 ' + (t('messages.decryptionError') || 'Encrypted message (key unavailable)'))
                         })
-                } else {
-                    setDecryptedContent(message.content)
+                    return
                 }
             } catch (e) {
-                // Not a valid JSON or encrypted packet - treat as plain text
-                setDecryptedContent(message.content)
+                // Not JSON or V1 packet -> Plain text
+                setDecryptedContent(content)
+                return
             }
+            
+            // Fallback for string
+            setDecryptedContent(content)
+        } 
+        // Handle Object content (V2 Envelope)
+        else if (typeof content === 'object' && content !== null && 'v' in content) {
+             const envelope = content as unknown as MessageEnvelope
+             if (envelope.v === 2) {
+                 if (!privateKey) {
+                      setDecryptedContent('🔒 ' + (t('messages.waitingForKey') || 'Waiting for key...'))
+                      return
+                 }
+                 decryptMessage(envelope, currentUserId, privateKey)
+                    .then(plainText => setDecryptedContent(plainText))
+                    .catch(err => {
+                         console.warn('V2 Decryption failed:', err)
+                         setDecryptedContent('🔒 ' + (t('messages.decryptionError') || 'Decryption failed'))
+                    })
+             } else {
+                 setDecryptedContent('Unknown message version')
+             }
+        } else {
+            // Unknown type
+            setDecryptedContent('Unsupported message format')
         }
-        decrypt()
-    }, [message.content, privateKey, historyKeys, isDeleted, isSystem])
+
+    }, [message.content, privateKey, historyKeys, isDeleted, isSystem, currentUserId])
 
     // Decrypt reply content
     useEffect(() => {
-        const allKeys = [privateKey, ...(historyKeys || [])].filter(Boolean) as CryptoKey[]
-        if (!replyToMessage || allKeys.length === 0) {
-            setDecryptedReplyContent(replyToMessage?.content || null)
+        if (!replyToMessage) {
+            setDecryptedReplyContent(null)
             return
         }
+        
+        const content = replyToMessage.content
+        const allKeys = [privateKey, ...(historyKeys || [])].filter(Boolean) as CryptoKey[]
 
-        const decryptReply = async () => {
-            try {
-                const packet = JSON.parse(replyToMessage.content)
-                if (packet.v === '1') {
-                    const plainText = await decryptWithFallback(packet, allKeys)
-                    setDecryptedReplyContent(plainText)
-                } else {
-                    setDecryptedReplyContent(replyToMessage.content)
+        // Helper to set reply content safely
+        const setReply = (text: string) => setDecryptedReplyContent(text)
+
+        if (typeof content === 'string') {
+             try {
+                const packet = JSON.parse(content)
+                if (packet.v === '1' && allKeys.length > 0) {
+                    decryptWithFallback(packet, allKeys)
+                        .then(setReply)
+                        .catch(() => setReply(content))
+                    return
                 }
             } catch (e) {
-                setDecryptedReplyContent(replyToMessage.content)
+                setReply(content)
+                return
             }
+            setReply(content)
+        } else if (typeof content === 'object' && content !== null && 'v' in content) {
+             const envelope = content as unknown as MessageEnvelope
+             if (envelope.v === 2 && privateKey) {
+                 decryptMessage(envelope, currentUserId, privateKey)
+                    .then(setReply)
+                    .catch(() => setReply('🔒 Encrypted Reply'))
+             } else {
+                 setReply('🔒 Encrypted Reply')
+             }
         }
-        decryptReply()
-    }, [replyToMessage, privateKey, historyKeys])
+
+    }, [replyToMessage, privateKey, historyKeys, currentUserId])
+
 
 
     // State for actions

@@ -12,6 +12,11 @@ export interface User {
     status: UserStatus
     createdAt: Date
     updatedAt: Date
+    // E2E Keys
+    publicKey?: string | null
+    encryptedPrivateKey?: string | null
+    keySalt?: string | null
+    keyIv?: string | null
 }
 
 export type UserRole = 'admin' | 'manager' | 'member'
@@ -175,10 +180,18 @@ export interface Conversation {
     lastMessageAt?: string
 }
 
+export interface EncryptedMessageEnvelope {
+    v: number
+    ct: string
+    iv: string
+    tag: string
+    keys: Record<string, string>
+}
+
 export interface ConversationMessage {
     id: string
     senderId: string
-    content: string
+    content: string | EncryptedMessageEnvelope
     timestamp: string
     edited: boolean
     editedAt?: string

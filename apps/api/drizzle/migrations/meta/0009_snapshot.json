@@ -1,6 +1,6 @@
 {
-  "id": "39c49fcc-ec1d-4ee0-bb73-7a24f8ba5570",
-  "prevId": "059a9e3f-24e7-4e2f-8959-441d5f7bd948",
+  "id": "e85e6f06-df84-4220-8382-37fd889920c6",
+  "prevId": "ccd4ec6c-8ceb-40e5-8034-55c1e875051d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -442,6 +442,30 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "public_key": {
+          "name": "public_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "encrypted_private_key": {
+          "name": "encrypted_private_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "key_salt": {
+          "name": "key_salt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "key_iv": {
+          "name": "key_iv",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "first_name": {
           "name": "first_name",

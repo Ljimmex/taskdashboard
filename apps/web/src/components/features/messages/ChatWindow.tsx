@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { useEncryption } from '@/hooks/useEncryption'
-import { encryptHybrid, decryptWithFallback } from '@/lib/crypto'
+import { decryptWithFallback, decryptMessage, MessageEnvelope, encryptMessage, importPublicKey } from '@/lib/crypto'
 import { useSession } from '@/lib/auth'
 import { formatDistanceToNow } from 'date-fns'
 import { pl, enUS } from 'date-fns/locale'
@@ -37,7 +37,7 @@ export function ChatWindow({
     const recipient = members.find(m => m.id === recipientUserId)
 
     // 2a. Get Encryption Keys
-    const { keys, historyKeys } = useEncryption(workspaceId)
+    const { publicKey, privateKey } = useEncryption()
 
     // 2. Fetch or create conversation for this user pair
     const { data: conversation } = useQuery({
@@ -94,7 +94,7 @@ export function ChatWindow({
 
     // Decrypt messages for search indexing
     useEffect(() => {
-        if (!messages.length || !keys?.privateKey) return
+        if (!messages.length || !privateKey) return
 
         const decryptAll = async () => {
             const newCache: Record<string, string> = { ...decryptedCache }
@@ -104,56 +104,72 @@ export function ChatWindow({
                 // Skip if already decrypted
                 if (newCache[msg.id]) continue
 
-                try {
-                    // Check if message is a system message or deleted placeholder first
-                    if (msg.isDeleted) {
-                        newCache[msg.id] = 'Usunięto wiadomość'
-                        hasChanges = true
-                        continue
-                    }
+                // Case 1: Deleted
+                if (msg.isDeleted) {
+                    newCache[msg.id] = 'Usunięto wiadomość'
+                    hasChanges = true
+                    continue
+                }
 
-                    // Try parsing as JSON first
-                    let parsed
-                    try {
-                        parsed = JSON.parse(msg.content)
-                    } catch {
-                        // Plain text
-                        newCache[msg.id] = msg.content
-                        hasChanges = true
-                        continue
-                    }
-
-                    // System message check
-                    if (parsed.type === 'system') {
-                        const actionText = parsed.action === 'pin' ? 'pinned a message.' : 'unpinned a message.'
-                        // Simplified for search index - exact formatting happens in Bubble
-                        newCache[msg.id] = `${parsed.actorId === currentUserId ? 'You' : 'User'} ${actionText}`
-                        hasChanges = true
-                        continue
-                    }
-
-                    // Encrypted check
-                    if (parsed.v === '1' && parsed.data && parsed.key && parsed.iv) {
+                // Case 2: V2 Encryption (Object)
+                if (typeof msg.content === 'object' && msg.content !== null && 'v' in msg.content) {
+                    const envelope = msg.content as unknown as MessageEnvelope
+                    if (envelope.v === 2 && privateKey) {
                         try {
-                            const allKeys = [keys?.privateKey, ...(historyKeys || []).map(k => k.privateKey)].filter(Boolean) as CryptoKey[]
-                            const decrypted = await decryptWithFallback(parsed, allKeys)
+                            const decrypted = await decryptMessage(envelope, currentUserId, privateKey)
                             newCache[msg.id] = decrypted
                             hasChanges = true
-                        } catch (err) {
-                            // Decryption failed (e.g. wrong key), keep original content for search? 
-                            // Or maybe skip indexing this message?
-                            // Let's just use a placeholder so it doesn't crash or spam
-                            newCache[msg.id] = '🔒 ' + (t('messages.decryptionError') || 'Encrypted message (key unavailable)')
+                        } catch (e) {
+                            newCache[msg.id] = '🔒 ' + (t('messages.decryptionError') || 'Decryption failed')
                             hasChanges = true
                         }
-                    } else {
-                        // Just JSON content?
+                    }
+                    continue
+                }
+
+                // Case 3: String Content (Legacy V1 or Plain)
+                if (typeof msg.content === 'string') {
+                    try {
+                        // Try parsing as JSON first
+                        let parsed
+                        try {
+                            parsed = JSON.parse(msg.content)
+                        } catch {
+                            // Plain text (not JSON)
+                            newCache[msg.id] = msg.content
+                            hasChanges = true
+                            continue
+                        }
+
+                        // System message check
+                        if (parsed.type === 'system') {
+                            const actionText = parsed.action === 'pin' ? 'pinned a message.' : 'unpinned a message.'
+                            // Simplified for search index - exact formatting happens in Bubble
+                            newCache[msg.id] = `${parsed.actorId === currentUserId ? 'You' : 'User'} ${actionText}`
+                            hasChanges = true
+                            continue
+                        }
+
+                        // Encrypted check (Legacy V1)
+                        if (parsed.v === '1' && parsed.data && parsed.key && parsed.iv) {
+                            try {
+                                const allKeys = [privateKey].filter(Boolean) as CryptoKey[]
+                                const decrypted = await decryptWithFallback(parsed, allKeys)
+                                newCache[msg.id] = decrypted
+                                hasChanges = true
+                            } catch (err) {
+                                newCache[msg.id] = '🔒 ' + (t('messages.decryptionError') || 'Encrypted message (key unavailable)')
+                                hasChanges = true
+                            }
+                        } else {
+                            // Just JSON content?
+                            newCache[msg.id] = msg.content
+                            hasChanges = true
+                        }
+                    } catch (e) {
                         newCache[msg.id] = msg.content
                         hasChanges = true
                     }
-                } catch (e) {
-                    newCache[msg.id] = msg.content
-                    hasChanges = true
                 }
             }
 
@@ -163,7 +179,7 @@ export function ChatWindow({
         }
 
         decryptAll()
-    }, [messages, keys?.privateKey, historyKeys])
+    }, [messages, privateKey, currentUserId, t])
 
     // Mark as read when messages load
     useEffect(() => {
@@ -189,7 +205,7 @@ export function ChatWindow({
         if (showPinnedOnly && !msg.isPinned) return false
 
         if (showSearch && searchQuery) {
-            const contentToSearch = decryptedCache[msg.id] || msg.content
+            const contentToSearch = decryptedCache[msg.id] || (typeof msg.content === 'string' ? msg.content : '')
             return contentToSearch.toLowerCase().includes(searchQuery.toLowerCase())
         }
         return true
@@ -268,12 +284,34 @@ export function ChatWindow({
                 await queryClient.invalidateQueries({ queryKey: ['conversation', currentUserId, recipientUserId] })
             }
 
-            // Encrypt message if public key is available
-            let finalContent = content
-            if (keys?.publicKey) {
+            // Encrypt message
+            let finalContent: string | MessageEnvelope = content
+            if (publicKey) {
                 try {
-                    const packet = await encryptHybrid(content, keys.publicKey)
-                    finalContent = JSON.stringify(packet)
+                    // Fetch all recipient public keys
+                    const recipientKeys: Record<string, CryptoKey> = {}
+                    
+                    // Add our own key
+                    recipientKeys[currentUserId] = publicKey
+
+                    // Add recipient key
+                    const recipientId = recipientUserId
+                    const keysRes = await apiFetchJson<Record<string, string>>('/api/users/public-keys', {
+                        method: 'POST',
+                        body: JSON.stringify({ userIds: [recipientId] })
+                    })
+                    
+                    if (keysRes[recipientId]) {
+                         const recipientPubKey = await importPublicKey(keysRes[recipientId])
+                         recipientKeys[recipientId] = recipientPubKey
+                         
+                         // V2 Encryption
+                         const envelope = await encryptMessage(content, recipientKeys)
+                         finalContent = envelope // Pass object directly
+                    } else {
+                        console.warn('Recipient public key not found, sending unencrypted (or fail?)')
+                    }
+
                 } catch (err) {
                     console.error('Encryption failed:', err)
                     alert(t('messages.failedToSend'))
@@ -344,15 +382,27 @@ export function ChatWindow({
         // Focus will automatically move to input due to sticky state
     }
 
-    // Called when user submits the edit from the main input
     const handleEditSubmit = async (messageId: string, newContent: string) => {
         if (!conversation?.id) return
 
         try {
-            let finalContent = newContent
-            if (keys?.publicKey) {
-                const packet = await encryptHybrid(newContent, keys.publicKey)
-                finalContent = JSON.stringify(packet)
+            let finalContent: string | MessageEnvelope = newContent
+            
+            if (publicKey && recipientUserId) {
+                 const recipientKeys: Record<string, CryptoKey> = {}
+                 recipientKeys[currentUserId] = publicKey
+                 
+                 const keysRes = await apiFetchJson<Record<string, string>>('/api/users/public-keys', {
+                     method: 'POST',
+                     body: JSON.stringify({ userIds: [recipientUserId] })
+                 })
+                 
+                 if (keysRes[recipientUserId]) {
+                      const recipientPubKey = await importPublicKey(keysRes[recipientUserId])
+                      recipientKeys[recipientUserId] = recipientPubKey
+                      const envelope = await encryptMessage(newContent, recipientKeys)
+                      finalContent = envelope
+                 }
             }
 
             await apiFetchJson(`/api/conversations/${conversation.id}/messages/${messageId}`, {
@@ -522,7 +572,7 @@ export function ChatWindow({
                     <div className="flex flex-col space-y-2">
                         {messages.filter((msg: any) => {
                             if (!searchQuery) return false
-                            const contentToSearch = decryptedCache[msg.id] || msg.content
+                            const contentToSearch = decryptedCache[msg.id] || (typeof msg.content === 'string' ? msg.content : '')
                             return contentToSearch.toLowerCase().includes(searchQuery.toLowerCase())
                         }).length === 0 ? (
                             <div className="flex flex-col items-center justify-center pt-20 text-gray-500 opacity-50">
@@ -532,10 +582,10 @@ export function ChatWindow({
                         ) : (
                             messages.filter((msg: any) => {
                                 if (!searchQuery) return false
-                                const contentToSearch = decryptedCache[msg.id] || msg.content
+                                const contentToSearch = decryptedCache[msg.id] || (typeof msg.content === 'string' ? msg.content : '')
                                 return contentToSearch.toLowerCase().includes(searchQuery.toLowerCase())
                             }).map((msg: any) => {
-                                const decryptedContent = decryptedCache[msg.id] || msg.content
+                                const decryptedContent = decryptedCache[msg.id] || (typeof msg.content === 'string' ? msg.content : '')
                                 const isMe = msg.senderId === currentUserId
                                 const senderName = isMe ? t('messages.you') : (msg.senderId === 'system' ? t('messages.system') : recipient?.name || t('messages.user'))
                                 const avatar = isMe ? session?.user?.image : recipient?.avatar
@@ -619,8 +669,8 @@ export function ChatWindow({
                                             domId={`message-${msg.id}`}
                                             message={msg}
                                             currentUserId={currentUserId}
-                                            privateKey={keys?.privateKey}
-                                            historyKeys={(historyKeys || []).map(k => k.privateKey)}
+                                            privateKey={privateKey || undefined}
+                                            historyKeys={privateKey ? [privateKey] : []}
                                             senderAvatar={
                                                 (msg.senderId === currentUserId
                                                     ? session?.user?.image

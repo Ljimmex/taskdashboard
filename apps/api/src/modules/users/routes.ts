@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '../../db'
 import { users } from '../../db/schema/users'
 import { authMiddleware } from '@/middleware/auth'
@@ -51,6 +51,11 @@ const updateUserSchema = z.object({
     city: zSanitizedStringOptional(),
     country: zSanitizedStringOptional(),
     timezone: zSanitizedStringOptional(),
+    // E2E Keys
+    publicKey: z.string().optional(),
+    encryptedPrivateKey: z.string().optional(),
+    keySalt: z.string().optional(),
+    keyIv: z.string().optional(),
 })
 
 usersRoutes.patch('/me', zValidator('json', updateUserSchema), async (c) => {
@@ -67,6 +72,36 @@ usersRoutes.patch('/me', zValidator('json', updateUserSchema), async (c) => {
         .returning()
 
     return c.json(updatedUser)
+})
+
+// -----------------------------------------------------------------------------
+// POST /api/users/public-keys - Batch fetch public keys
+// -----------------------------------------------------------------------------
+const publicKeysSchema = z.object({
+    userIds: z.array(z.string())
+})
+
+usersRoutes.post('/public-keys', zValidator('json', publicKeysSchema), async (c) => {
+    const { userIds } = c.req.valid('json')
+    
+    if (userIds.length === 0) {
+        return c.json({})
+    }
+
+    // Fetch users (only public keys)
+    const result = await db.select({
+        id: users.id,
+        publicKey: users.publicKey
+    })
+    .from(users)
+    .where(inArray(users.id, userIds))
+
+    const map: Record<string, string | null> = {}
+    result.forEach(r => {
+        if (r.id) map[r.id] = r.publicKey
+    })
+
+    return c.json(map)
 })
 
 // -----------------------------------------------------------------------------

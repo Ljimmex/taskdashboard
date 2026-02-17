@@ -65,7 +65,13 @@ export function useKeyRotation(workspaceId: string) {
                     (conversation.messages as ConversationMessage[]).map(async (msg) => {
                         try {
                             // Parse encrypted content
-                            const parsed = JSON.parse(msg.content)
+                            const content = msg.content
+                            if (typeof content !== 'string') {
+                                // TODO: Handle V2 Key Rotation (decrypt DEK and re-encrypt DEK)
+                                return msg
+                            }
+
+                            const parsed = JSON.parse(content)
 
                             // Use the old private key from the server
                             const allAvailableKeys = [oldPrivateKeyCrypto]

@@ -28,7 +28,10 @@ export function ConversationItem({
 
     // Get last message
     const lastMessage = messages[messages.length - 1]
-    const lastMessageText = lastMessage?.content?.substring(0, 50) || t('messages.noMessagesYet')
+    const content = lastMessage?.content
+    const lastMessageText = typeof content === 'string' 
+        ? (content.substring(0, 50) || t('messages.noMessagesYet'))
+        : (content ? '🔒 Encrypted Message' : t('messages.noMessagesYet'))
 
     // Get other participant (for direct conversations)
     const otherParticipantId = conversation.participants?.find((id: string) => id !== currentUserId)

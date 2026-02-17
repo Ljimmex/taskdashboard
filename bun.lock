@@ -24,6 +24,7 @@
         "@taskdashboard/types": "workspace:*",
         "@taskdashboard/utils": "workspace:*",
         "better-auth": "^1.4.7",
+        "dotenv": "^17.2.3",
         "drizzle-orm": "^0.36.0",
         "hono": "^4.7.4",
         "hono-rate-limiter": "^0.5.3",
@@ -35,7 +36,6 @@
       "devDependencies": {
         "@types/bun": "^1.1.14",
         "@types/nodemailer": "^7.0.4",
-        "dotenv": "^17.2.3",
         "drizzle-kit": "^0.30.5",
         "typescript": "^5.7.2",
       },
