@@ -184,7 +184,7 @@ conversationsRoutes.get('/direct', async (c) => {
             .limit(1)
 
         if (!directConversation) {
-            return c.json({ success: false, error: 'Conversation not found' }, 404)
+            return c.json({ success: true, conversation: null }, 200)
         }
 
         return c.json({ success: true, conversation: directConversation })

@@ -4,7 +4,7 @@ import { db } from '@/db'
 import { twoFactor } from 'better-auth/plugins'
 import { emailOTP } from 'better-auth/plugins'
 import * as schema from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and, lt } from 'drizzle-orm'
 import { sendOTPEmail } from './email'
 
 // Better Auth configuration
@@ -160,6 +160,25 @@ export const auth = betterAuth({
 
     // Hooks to set first_name and last_name from name
     databaseHooks: {
+        session: {
+            create: {
+                before: async (session) => {
+                    // 1. Cleanup expired sessions
+                    await db.delete(schema.sessions)
+                        .where(lt(schema.sessions.expiresAt, new Date()))
+
+                    // 2. Remove existing session for same user/UA (Deduplication)
+                    if (session.userId && session.userAgent) {
+                        await db.delete(schema.sessions)
+                            .where(and(
+                                eq(schema.sessions.userId, session.userId),
+                                eq(schema.sessions.userAgent, session.userAgent)
+                            ))
+                    }
+                    return { data: session }
+                }
+            }
+        },
         user: {
             create: {
                 after: async (user) => {

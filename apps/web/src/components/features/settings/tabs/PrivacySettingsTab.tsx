@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSession } from '@/lib/auth'
 import { authClient } from '@/lib/auth'
+import { apiFetch } from '@/lib/api'
 import { Laptop, Shield, Phone, XCircle, Loader2 } from 'lucide-react'
 import { UAParser } from 'ua-parser-js'
 import { countryCodes } from '@/constants/countryCodes'
@@ -234,7 +235,7 @@ export function PrivacySettingsTab() {
 
     const handleRevokeSession = async (sessionId: string) => {
         try {
-            await authClient.revokeSession({ token: sessionId })
+            await apiFetch(`/api/sessions/${sessionId}`, { method: 'DELETE' })
             await fetchSessions()
         } catch (err: any) {
             console.error(err)

@@ -51,9 +51,9 @@ export function ChatWindow({
                     'x-user-id': currentUserId
                 }
             })
-            if (!res.ok) return null // 404 = no conversation yet, not an error
+            if (!res.ok) return null // Handle actual errors
             const data = await res.json()
-            return data.conversation
+            return data.conversation // May be null if not found (200 OK)
         },
         enabled: !!currentUserId && !!recipientUserId
     })
