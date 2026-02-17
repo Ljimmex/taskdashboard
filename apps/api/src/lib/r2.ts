@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, CopyObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // These envs will be available in the Cloudflare Worker context
@@ -57,6 +57,22 @@ export const deleteFile = async (key: string) => {
         Key: key,
     })
     return await r2Client.send(command)
+}
+
+export const checkFileExists = async (key: string) => {
+    try {
+        const command = new HeadObjectCommand({
+            Bucket: R2_BUCKET_NAME,
+            Key: key,
+        })
+        await r2Client.send(command)
+        return true
+    } catch (error: any) {
+        if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+            return false
+        }
+        throw error
+    }
 }
 
 export const copyFile = async (sourceKey: string, destinationKey: string) => {

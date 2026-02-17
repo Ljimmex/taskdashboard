@@ -6,7 +6,7 @@ import { db } from '../../db'
 import { files, NewFileRecord } from '../../db/schema/files'
 // workspaceMembers accessed via db.query, no direct import needed
 
-import { getUploadUrl, getDownloadUrl, deleteFile } from '../../lib/r2'
+import { getUploadUrl, getDownloadUrl, deleteFile, checkFileExists } from '../../lib/r2'
 import { authMiddleware } from '@/middleware/auth'
 
 import { type Auth } from '../../lib/auth'
@@ -181,6 +181,13 @@ app.get('/:id/download', async (c) => {
 
     if (!file || !file.r2Key) {
         return c.json({ error: 'File not found' }, 404)
+    }
+
+    // Verify if file exists in R2
+    const exists = await checkFileExists(file.r2Key)
+    if (!exists) {
+        console.warn(`File missing in R2: ${file.r2Key}`)
+        return c.json({ error: 'File content missing in storage' }, 404)
     }
 
     const downloadUrl = await getDownloadUrl(file.r2Key, file.name)
