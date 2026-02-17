@@ -629,6 +629,63 @@ teamsRoutes.delete('/:id/members/:memberId', async (c) => {
         await db.delete(teamMembers)
             .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, memberId)))
 
+        // AUTO-REMOVE FROM PROJECTS
+        // 1. Get projects associated with this team
+        const teamProjects = await db.select({ id: projects.id })
+            .from(projects)
+            .where(eq(projects.teamId, teamId))
+
+        const linkedProjects = await db.select({ id: projects.id })
+            .from(projects)
+            .innerJoin(projectTeams, eq(projects.id, projectTeams.projectId))
+            .where(eq(projectTeams.teamId, teamId))
+
+        const allProjectIds = Array.from(new Set([
+            ...teamProjects.map(p => p.id),
+            ...linkedProjects.map(p => p.id)
+        ]))
+
+        if (allProjectIds.length > 0) {
+            // For each project, check if user is in another team that is also assigned to the project
+            for (const projectId of allProjectIds) {
+                // Get all teams for this project
+                const projectTeamIds = await db.select({ teamId: projectTeams.teamId })
+                    .from(projectTeams)
+                    .where(eq(projectTeams.projectId, projectId))
+                    .then(res => res.map(r => r.teamId))
+                
+                // Add primary team
+                const [primaryTeam] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, projectId))
+                if (primaryTeam?.teamId) projectTeamIds.push(primaryTeam.teamId)
+
+                // Remove the current teamId from the list of "other" teams
+                const otherTeamIds = projectTeamIds.filter(tid => tid !== teamId)
+
+                if (otherTeamIds.length > 0) {
+                    // Check if user is member of any OTHER team
+                    const inOtherTeam = await db.query.teamMembers.findFirst({
+                        where: (tm, { inArray, and, eq }) => and(
+                            eq(tm.userId, memberId),
+                            inArray(tm.teamId, otherTeamIds)
+                        )
+                    })
+
+                    if (inOtherTeam) {
+                        // User is in another team for this project, KEEP access
+                        continue
+                    }
+                }
+
+                // If we get here, user has no other team granting access to this project
+                // Remove from project_members
+                await db.delete(projectMembers)
+                    .where(and(
+                        eq(projectMembers.projectId, projectId),
+                        eq(projectMembers.userId, memberId)
+                    ))
+            }
+        }
+
         // TRIGGER WEBHOOK
         triggerWebhook('team.member_removed', { teamId, userId: memberId }, team.workspaceId)
 

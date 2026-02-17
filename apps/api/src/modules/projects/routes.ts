@@ -101,17 +101,29 @@ projectsRoutes.get('/', async (c) => {
             if (teamIds.length === 0) return c.json({ success: true, data: [] })
         }
 
-
+        const isProjectManagerOrHigher = userWorkspaceRole && ['owner', 'admin', 'project_manager'].includes(userWorkspaceRole)
 
         const result = await db.query.projects.findMany({
-            where: (p, { inArray, and }) => {
+            where: (p, { inArray, and, exists, eq }) => {
                 const wheres: any[] = []
 
                 if (teamIds.length > 0) {
                     wheres.push(inArray(p.teamId, teamIds))
                 }
 
-                // Removed strict membership check to allow users to see all projects in workspace for assignment
+                // Filter by membership if not manager
+                if (!isProjectManagerOrHigher) {
+                    wheres.push(
+                        exists(
+                            db.select()
+                                .from(projectMembers)
+                                .where(and(
+                                    eq(projectMembers.projectId, p.id),
+                                    eq(projectMembers.userId, userId)
+                                ))
+                        )
+                    )
+                }
 
                 return wheres.length > 0 ? and(...wheres) : undefined
             },

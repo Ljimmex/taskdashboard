@@ -393,15 +393,17 @@ function ProjectsPage() {
 
     return (
         <>
-            {/* Header */}
-            <ProjectsHeader
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onNewProject={handleNewProject}
-                userRole={currentWorkspace?.userRole}
-            />
+            {/* Header - Only show if we have projects */}
+            {projects.length > 0 && (
+                <ProjectsHeader
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    onNewProject={handleNewProject}
+                    userRole={currentWorkspace?.userRole}
+                />
+            )}
 
             {/* Loading State */}
             {loading && (
@@ -410,21 +412,52 @@ function ProjectsPage() {
                 </div>
             )}
 
-            {/* Projects */}
-            {!loading && filteredProjects.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                    <p className="mb-4">{t('projects.noProjectsFound')}</p>
+            {/* No Projects State (Global) */}
+            {!loading && projects.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
+                    <div className="w-16 h-16 mb-6 rounded-2xl bg-[#1a1a24] flex items-center justify-center">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
+                            <path d="M3 3h18v18H3z" />
+                            <path d="M12 8v8" />
+                            <path d="M8 12h8" />
+                        </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-white mb-2">{t('projects.noProjectsFound')}</h3>
+                    <p className="text-gray-500 max-w-sm text-center mb-8">
+                        {currentWorkspace?.userRole && !['member', 'guest'].includes(currentWorkspace.userRole) 
+                            ? "Create your first project to get started with task management."
+                            : "You don't have access to any projects in this workspace yet."}
+                    </p>
+                    
                     {currentWorkspace?.userRole && !['member', 'guest'].includes(currentWorkspace.userRole) && (
                         <button
                             onClick={handleNewProject}
-                            className="px-4 py-2 rounded-lg bg-amber-500 text-black font-medium hover:bg-amber-400 transition-colors"
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20"
                         >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
                             {t('projects.createFirstProject')}
                         </button>
                     )}
                 </div>
             )}
 
+            {/* No Matches State (Search) */}
+            {!loading && projects.length > 0 && filteredProjects.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+                    <p className="mb-4">No projects match your search.</p>
+                    <button 
+                        onClick={() => setSearchQuery('')}
+                        className="text-amber-500 hover:text-amber-400"
+                    >
+                        Clear search
+                    </button>
+                </div>
+            )}
+
+            {/* Projects List */}
             {!loading &&
                 filteredProjects.map((project) => (
                     <ProjectSection
