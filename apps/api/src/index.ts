@@ -81,10 +81,10 @@ app.use('*', cors({
     credentials: true,
 }))
 
-// Rate Limiting (1000 reqs per 15 min per IP)
+// Rate Limiting (5000 reqs per 15 min per IP)
 const limiter = rateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 1000, // Increased limit for better DX and production stability
+    limit: 5000, // Increased limit for dev/testing
     standardHeaders: 'draft-6',
     keyGenerator: (c) => {
         return (

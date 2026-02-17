@@ -59,7 +59,7 @@ export const auth = betterAuth({
     // Security
     rateLimit: {
         window: 60, // 1 minute
-        max: 100, // 100 requests per minute (more reasonable for SPA navigation)
+        max: 1000, // Increased for dev/testing
     },
 
     // OAuth Social Providers
