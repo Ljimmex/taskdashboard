@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Phone, Video, MoreVertical, Search, FileText, Bell, Pin, X } from 'lucide-react'
 import { MessageBubble } from './MessageBubble'
 import { MessageInput } from './MessageInput'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { useEncryption } from '@/hooks/useEncryption'
@@ -27,6 +27,7 @@ export function ChatWindow({
 }: ChatWindowProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const [isSending, setIsSending] = useState(false)
+    const queryClient = useQueryClient()
     const { data: session } = useSession()
     const { t, i18n } = useTranslation()
     const locale = i18n.language === 'pl' ? pl : enUS
@@ -43,18 +44,16 @@ export function ChatWindow({
         queryKey: ['conversation', currentUserId, recipientUserId],
         queryFn: async () => {
             if (!currentUserId || !recipientUserId) return null
-            try {
-                // Try fetching existing conversation
-                const res = await apiFetchJson<any>(`/api/conversations/direct?userId1=${currentUserId}&userId2=${recipientUserId}`, {
-                    headers: {
-                        'x-user-id': currentUserId
-                    }
-                })
-                return res.conversation
-            } catch (err) {
-                // If 404, it will be created on first message
-                return null
-            }
+            // Use apiFetch (not apiFetchJson) to avoid throwing on 404
+            // 404 is expected when no prior DM exists between these users
+            const res = await apiFetch(`/api/conversations/direct?userId1=${currentUserId}&userId2=${recipientUserId}`, {
+                headers: {
+                    'x-user-id': currentUserId
+                }
+            })
+            if (!res.ok) return null // 404 = no conversation yet, not an error
+            const data = await res.json()
+            return data.conversation
         },
         enabled: !!currentUserId && !!recipientUserId
     })
@@ -265,6 +264,8 @@ export function ChatWindow({
                     })
                 })
                 conversationId = createRes.conversation.id
+                // Invalidate the conversation query so it picks up the newly created conversation
+                await queryClient.invalidateQueries({ queryKey: ['conversation', currentUserId, recipientUserId] })
             }
 
             // Encrypt message if public key is available
