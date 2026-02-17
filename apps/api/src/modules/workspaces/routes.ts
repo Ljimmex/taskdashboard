@@ -620,13 +620,14 @@ workspacesRoutes.get('/:id/keys', async (c) => {
             expiresAt.setDate(expiresAt.getDate() + 90)
 
             if (updateId) {
-                // Update existing corrupted record
+                // Update existing corrupted record — clear history since old keys are unrecoverable
                 await db.update(encryptionKeys)
                     .set({
                         publicKey,
                         encryptedPrivateKey,
                         expiresAt,
-                        rotatedAt: new Date()
+                        rotatedAt: new Date(),
+                        history: []
                     })
                     .where(eq(encryptionKeys.id, updateId))
             } else {
@@ -639,7 +640,7 @@ workspacesRoutes.get('/:id/keys', async (c) => {
                 })
             }
 
-            return { publicKey, privateKey, expiresAt, history: [] as any[] }
+            return { publicKey, privateKey, expiresAt, history: [] as any[], regenerated: true }
         }
 
         // Fetch keys from DB
@@ -648,7 +649,7 @@ workspacesRoutes.get('/:id/keys', async (c) => {
             .where(eq(encryptionKeys.workspaceId, workspaceId))
             .limit(1)
 
-        let keyData: { publicKey: string; privateKey: string; expiresAt: Date | null; history: any[] }
+        let keyData: { publicKey: string; privateKey: string; expiresAt: Date | null; history: any[]; regenerated?: boolean }
 
         if (keys.length === 0) {
             console.log(`Keys missing for workspace ${workspaceId}, generating new ones...`)
@@ -679,13 +680,11 @@ workspacesRoutes.get('/:id/keys', async (c) => {
                     history: decryptedHistory
                 }
             } catch (decError) {
-                console.error('Keys corrupted for workspace', workspaceId)
-                // STOP: No more self-healing regeneration. This causes permanent data loss if secret changed.
-                return c.json({
-                    error: 'Decryption failed for workspace keys',
-                    message: 'Workspace keys are corrupted or server secret is misconfigured. Cannot proceed to avoid data loss.',
-                    code: 'DECRYPTION_FAILED'
-                }, 500)
+                console.warn('⚠️ Keys corrupted for workspace', workspaceId, '- old keys are unrecoverable, regenerating fresh keys')
+                // The old private key cannot be decrypted (BETTER_AUTH_SECRET likely changed).
+                // Old messages encrypted with the lost key are permanently unrecoverable.
+                // Regenerate fresh keys so new messages can be encrypted/decrypted going forward.
+                keyData = await generateAndSaveKeys(keyRecord.id)
             }
         }
 
@@ -695,7 +694,8 @@ workspacesRoutes.get('/:id/keys', async (c) => {
                 publicKey: keyData.publicKey,
                 privateKey: keyData.privateKey,
                 expiresAt: keyData.expiresAt,
-                history: (keyData as any).history || []
+                history: (keyData as any).history || [],
+                regenerated: !!(keyData as any).regenerated
             }
         })
     } catch (error) {
@@ -735,7 +735,12 @@ workspacesRoutes.post('/:id/rotate-keys', async (c) => {
         }
 
         const oldKeyRecord = oldKeys[0]
-        const oldPrivateKey = decryptPrivateKey(oldKeyRecord.encryptedPrivateKey)
+        let oldPrivateKey: string | null = null
+        try {
+            oldPrivateKey = decryptPrivateKey(oldKeyRecord.encryptedPrivateKey)
+        } catch (e) {
+            console.warn('⚠️ Cannot decrypt old private key during rotation — old messages will remain encrypted')
+        }
 
         // Generate new RSA key pair
         const { generateKeyPairSync } = await import('node:crypto')
@@ -778,7 +783,7 @@ workspacesRoutes.post('/:id/rotate-keys', async (c) => {
         // Return old private key (for re-encryption) + new keys
         return c.json({
             data: {
-                oldPrivateKey: oldPrivateKey,
+                oldPrivateKey: oldPrivateKey, // null if old key was unrecoverable
                 oldPublicKey: oldKeyRecord.publicKey,
                 newPublicKey: newPublicKey,
                 newPrivateKey: newPrivateKey, // Frontend needs this to save to IndexedDB

@@ -144,7 +144,7 @@ export function ChatWindow({
                             // Decryption failed (e.g. wrong key), keep original content for search? 
                             // Or maybe skip indexing this message?
                             // Let's just use a placeholder so it doesn't crash or spam
-                            newCache[msg.id] = t('messages.decryptionError') || 'Decryption Error'
+                            newCache[msg.id] = '🔒 ' + (t('messages.decryptionError') || 'Encrypted message (key unavailable)')
                             hasChanges = true
                         }
                     } else {

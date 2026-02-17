@@ -188,7 +188,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                                     {selectedMember.image ? (
                                                         <img src={selectedMember.image} alt="" className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <span className="text-xs text-gray-400">{selectedMember.name.charAt(0)}</span>
+                                                        <span className="text-xs text-gray-400">{(selectedMember.name || selectedMember.email || '?').charAt(0)}</span>
                                                     )}
                                                 </div>
                                                 <div>
@@ -246,7 +246,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                                                     {m.image ? (
                                                                         <img src={m.image} alt="" className="w-full h-full object-cover" />
                                                                     ) : (
-                                                                        <span className="text-xs text-gray-400">{m.name.charAt(0)}</span>
+                                                                        <span className="text-xs text-gray-400">{(m.name || m.email || '?').charAt(0)}</span>
                                                                     )}
                                                                 </div>
                                                                 <div>

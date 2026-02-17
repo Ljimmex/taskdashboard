@@ -85,7 +85,7 @@ export function MessageBubble({
                         .then(plainText => setDecryptedContent(plainText))
                         .catch(err => {
                             console.warn('Decryption failed for message (unrecoverable):', message.id, err)
-                            setDecryptedContent(t('messages.decryptionError') || 'Unable to decrypt message')
+                            setDecryptedContent('🔒 ' + (t('messages.decryptionError') || 'Encrypted message (key unavailable)'))
                         })
                 } else {
                     setDecryptedContent(message.content)
