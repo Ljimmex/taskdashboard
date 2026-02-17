@@ -1,6 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { importPublicKey, importPrivateKey, encryptHybrid, decryptWithFallback } from '@/lib/crypto'
-import { keyStorage } from '@/lib/keyStorage'
 import type { Conversation, ConversationMessage } from '@taskdashboard/types'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 
@@ -46,7 +45,6 @@ export function useKeyRotation(workspaceId: string) {
             console.log('🔐 Importing old and new keys...')
             const oldPrivateKeyCrypto = await importPrivateKey(rotationData.oldPrivateKey)
             const newPublicKeyCrypto = await importPublicKey(rotationData.newPublicKey)
-            const newPrivateKeyCrypto = await importPrivateKey(rotationData.newPrivateKey)
 
             // 3. Fetch ALL conversations in workspace
             console.log('📨 Fetching all conversations...')
@@ -69,9 +67,8 @@ export function useKeyRotation(workspaceId: string) {
                             // Parse encrypted content
                             const parsed = JSON.parse(msg.content)
 
-                            // Collect all available keys (old current + legacy history)
-                            const historyKeys = await keyStorage.getKeyHistory(workspaceId)
-                            const allAvailableKeys = [oldPrivateKeyCrypto, ...historyKeys.map(h => h.privateKey)]
+                            // Use the old private key from the server
+                            const allAvailableKeys = [oldPrivateKeyCrypto]
 
                             // Decrypt with ALL available keys (Fallback strategy)
                             const decrypted = await decryptWithFallback(parsed, allAvailableKeys)
@@ -105,10 +102,8 @@ export function useKeyRotation(workspaceId: string) {
                 }
             }
 
-            // 6. Update local key storage with new keys
-            console.log('💾 Updating local key storage...')
-            await keyStorage.deleteKeys(workspaceId)
-            await keyStorage.saveKeys(workspaceId, newPublicKeyCrypto, newPrivateKeyCrypto)
+            // Keys are now on the server — no local storage needed
+            console.log('✅ Keys updated on server, clients will fetch on next request')
 
             console.log(`✅ Key rotation complete! Re-encrypted ${totalMessagesReEncrypted} messages`)
 

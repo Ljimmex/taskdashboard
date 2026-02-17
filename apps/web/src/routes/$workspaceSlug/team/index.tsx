@@ -255,7 +255,7 @@ export default function TeamPage() {
     })
 
     const inviteMemberMutation = useMutation({
-        mutationFn: async (data: { teamId: string; email?: string; userId?: string; role: string }) => {
+        mutationFn: async (data: { teamId: string; email?: string; userId?: string; teamLevel: string }) => {
             return apiFetchJson<any>(`/api/teams/${data.teamId}/members`, {
                 method: 'POST',
                 headers: {
@@ -334,7 +334,7 @@ export default function TeamPage() {
                     inviteMemberMutation.mutate({
                         teamId: targetTeamId,
                         userId: userId,
-                        role: data.role || 'member'
+                        teamLevel: data.role || 'mid'
                     })
                 })
             } else if (data.emails) {
@@ -342,7 +342,7 @@ export default function TeamPage() {
                     inviteMemberMutation.mutate({
                         teamId: targetTeamId,
                         email: email,
-                        role: data.role || 'member'
+                        teamLevel: data.role || 'mid'
                     })
                 })
             }

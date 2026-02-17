@@ -198,12 +198,17 @@ function ProjectDetailPage() {
     async function fetchData() {
       try {
         setLoading(true)
-        const [projectData, tasksData] = await Promise.all([
-          apiFetchJson<any>(`/api/projects/${projectId}`),
+        // Use apiFetch for project to handle 403/404 gracefully (user may not be a member)
+        const [projectRes, tasksData] = await Promise.all([
+          apiFetch(`/api/projects/${projectId}`),
           apiFetchJson<any>(`/api/tasks?projectId=${projectId}`),
         ])
 
-        if (projectData.success) setProject(projectData.data)
+        if (projectRes.ok) {
+          const projectData = await projectRes.json()
+          if (projectData.success) setProject(projectData.data)
+        }
+        // If 403 or 404, project stays null → shows "Project not found" gracefully
         if (tasksData.success) {
           // Deduplicate tasks by ID
           const uniqueTasks = Array.from(new Map((tasksData.data || []).map((t: any) => [t.id, t])).values()) as Task[]

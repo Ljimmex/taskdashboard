@@ -60,12 +60,20 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
         queryKey: ['workspace-members-search', workspaceId, searchQuery],
         queryFn: async () => {
             if (!workspaceId) return []
-            const json = await apiFetchJson<{ data: WorkspaceMember[] }>(`/api/workspaces/${workspaceId}/members?q=${searchQuery}`, {
+            const json = await apiFetchJson<{ data: any[] }>(`/api/workspaces/${workspaceId}/members?q=${searchQuery}`, {
                 headers: {
                     'x-user-id': session?.user?.id || ''
                 }
             })
-            return json.data
+            // API returns { user: {id, name, email, image}, role, status }
+            // Map to flat WorkspaceMember shape expected by the component
+            return (json.data || []).map((m: any) => ({
+                id: m.user?.id || m.id,
+                name: m.user?.name || m.name || '',
+                email: m.user?.email || m.email || '',
+                image: m.user?.image || m.image,
+                position: m.user?.position || m.position,
+            })) as WorkspaceMember[]
         },
         enabled: isOpen && activeTab === 'email' && !!workspaceId && searchQuery.length >= 2
     })

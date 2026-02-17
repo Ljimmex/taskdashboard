@@ -172,7 +172,7 @@ export function OverallProgress({
     }
 
     return (
-        <div className="rounded-2xl bg-[#12121a] p-5 h-[340px] flex flex-col overflow-hidden relative transition-all duration-300 hover:shadow-lg hover:shadow-black/20">
+        <div className="rounded-2xl bg-[#12121a] p-5 h-[340px] flex flex-col relative transition-all duration-300 hover:shadow-lg hover:shadow-black/20">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-white">Postęp Zadań</h3>
@@ -183,16 +183,16 @@ export function OverallProgress({
                             {scope === 'my_projects' ? t('dashboard.myProjects') : t('dashboard.entireWorkspace')} <ChevronDown size={14} />
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#12121a] border-[#272732] text-white">
+                    <DropdownMenuContent align="end" className="bg-[#12121a] border-[#272732] text-white z-50">
                         <DropdownMenuItem
-                            className="hover:bg-[#1a1a24] cursor-pointer"
-                            onClick={() => setScope('my_projects')}
+                            className={`cursor-pointer ${scope === 'my_projects' ? 'bg-[#1a1a24] text-[#F2CE88]' : 'hover:bg-[#1a1a24]'}`}
+                            onSelect={() => setScope('my_projects')}
                         >
                             {t('dashboard.myProjects')}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            className="hover:bg-[#1a1a24] cursor-pointer"
-                            onClick={() => setScope('entire_workspace')}
+                            className={`cursor-pointer ${scope === 'entire_workspace' ? 'bg-[#1a1a24] text-[#F2CE88]' : 'hover:bg-[#1a1a24]'}`}
+                            onSelect={() => setScope('entire_workspace')}
                         >
                             {t('dashboard.entireWorkspace')}
                         </DropdownMenuItem>
@@ -210,11 +210,11 @@ export function OverallProgress({
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="bg-[#12121a] border-[#272732] text-white z-50">
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('all_time')}>{t('dashboard.allTime')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('last_year')}>{t('dashboard.lastYear')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('last_month')}>{t('dashboard.lastMonth')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('last_week')}>{t('dashboard.lastWeek')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onClick={() => setDateRange('last_24h')}>{t('dashboard.last24h')}</DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('all_time')}>{t('dashboard.allTime')}</DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('last_year')}>{t('dashboard.lastYear')}</DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('last_month')}>{t('dashboard.lastMonth')}</DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('last_week')}>{t('dashboard.lastWeek')}</DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('last_24h')}>{t('dashboard.last24h')}</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 

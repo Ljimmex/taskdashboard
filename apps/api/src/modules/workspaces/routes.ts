@@ -605,8 +605,15 @@ workspacesRoutes.get('/:id/keys', async (c) => {
             return c.json({ error: 'Access denied' }, 403)
         }
 
-        // Helper to generate keys
-        const generateAndSaveKeys = async (updateId?: string) => {
+        // Fetch keys from DB
+        const keys = await db.select()
+            .from(encryptionKeys)
+            .where(eq(encryptionKeys.workspaceId, workspaceId))
+            .limit(1)
+
+        // If no keys exist yet, generate them (first time only)
+        if (keys.length === 0) {
+            console.log(`Keys missing for workspace ${workspaceId}, generating new ones...`)
             const { generateKeyPairSync } = await import('node:crypto')
             const { publicKey, privateKey } = generateKeyPairSync('rsa', {
                 modulusLength: 2048,
@@ -614,93 +621,127 @@ workspacesRoutes.get('/:id/keys', async (c) => {
                 privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
             })
 
-            const encryptedPrivateKey = encryptPrivateKey(privateKey)
-
+            const encrypted = encryptPrivateKey(privateKey)
             const expiresAt = new Date()
-            expiresAt.setDate(expiresAt.getDate() + 90)
+            expiresAt.setDate(expiresAt.getDate() + 365) // 1 year expiry
 
-            if (updateId) {
-                // Update existing corrupted record — clear history since old keys are unrecoverable
-                await db.update(encryptionKeys)
-                    .set({
-                        publicKey,
-                        encryptedPrivateKey,
-                        expiresAt,
-                        rotatedAt: new Date(),
-                        history: []
-                    })
-                    .where(eq(encryptionKeys.id, updateId))
-            } else {
-                // Insert new record
-                await db.insert(encryptionKeys).values({
+            await db.insert(encryptionKeys).values({
+                workspaceId,
+                publicKey,
+                encryptedPrivateKey: encrypted,
+                expiresAt
+            })
+
+            return c.json({
+                data: {
                     workspaceId,
                     publicKey,
-                    encryptedPrivateKey,
-                    expiresAt
-                })
-            }
-
-            return { publicKey, privateKey, expiresAt, history: [] as any[], regenerated: true }
-        }
-
-        // Fetch keys from DB
-        const keys = await db.select()
-            .from(encryptionKeys)
-            .where(eq(encryptionKeys.workspaceId, workspaceId))
-            .limit(1)
-
-        let keyData: { publicKey: string; privateKey: string; expiresAt: Date | null; history: any[]; regenerated?: boolean }
-
-        if (keys.length === 0) {
-            console.log(`Keys missing for workspace ${workspaceId}, generating new ones...`)
-            keyData = await generateAndSaveKeys()
-        } else {
-            const keyRecord = keys[0]
-            try {
-                const decrypted = decryptPrivateKey(keyRecord.encryptedPrivateKey)
-
-                // Decrypt history too
-                const decryptedHistory = (keyRecord.history || []).map(h => {
-                    try {
-                        return {
-                            publicKey: h.publicKey,
-                            privateKey: decryptPrivateKey(h.encryptedPrivateKey),
-                            rotatedAt: h.rotatedAt
-                        }
-                    } catch (e) {
-                        console.error('Failed to decrypt historical key', e)
-                        return null
-                    }
-                }).filter(Boolean)
-
-                keyData = {
-                    publicKey: keyRecord.publicKey,
-                    privateKey: decrypted,
-                    expiresAt: keyRecord.expiresAt,
-                    history: decryptedHistory
+                    privateKey,
+                    expiresAt,
+                    history: []
                 }
-            } catch (decError) {
-                console.warn('⚠️ Keys corrupted for workspace', workspaceId, '- old keys are unrecoverable, regenerating fresh keys')
-                // The old private key cannot be decrypted (BETTER_AUTH_SECRET likely changed).
-                // Old messages encrypted with the lost key are permanently unrecoverable.
-                // Regenerate fresh keys so new messages can be encrypted/decrypted going forward.
-                keyData = await generateAndSaveKeys(keyRecord.id)
-            }
+            })
         }
+
+        // Keys exist — try to decrypt the private key
+        const keyRecord = keys[0]
+        let decryptedPrivateKey: string
+
+        try {
+            decryptedPrivateKey = decryptPrivateKey(keyRecord.encryptedPrivateKey)
+        } catch (decError) {
+            // Keys are corrupted (BETTER_AUTH_SECRET likely changed).
+            // This is safe to auto-regenerate now because IndexedDB was removed,
+            // so all clients get the same fresh key from the server. No key churn loop.
+            console.warn('⚠️ Keys corrupted for workspace', workspaceId, '- regenerating fresh keys')
+
+            const { generateKeyPairSync } = await import('node:crypto')
+            const { publicKey: newPub, privateKey: newPriv } = generateKeyPairSync('rsa', {
+                modulusLength: 2048,
+                publicKeyEncoding: { type: 'spki', format: 'pem' },
+                privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+            })
+
+            const encrypted = encryptPrivateKey(newPriv)
+            const expiresAt = new Date()
+            expiresAt.setDate(expiresAt.getDate() + 365)
+
+            await db.update(encryptionKeys)
+                .set({
+                    publicKey: newPub,
+                    encryptedPrivateKey: encrypted,
+                    expiresAt,
+                    rotatedAt: new Date(),
+                    history: [] // Old keys were unrecoverable anyway
+                })
+                .where(eq(encryptionKeys.id, keyRecord.id))
+
+            return c.json({
+                data: {
+                    workspaceId,
+                    publicKey: newPub,
+                    privateKey: newPriv,
+                    expiresAt,
+                    history: []
+                }
+            })
+        }
+
+        // Decrypt history keys (for fallback decryption of old messages)
+        const decryptedHistory = (keyRecord.history || []).map(h => {
+            try {
+                return {
+                    publicKey: h.publicKey,
+                    privateKey: decryptPrivateKey(h.encryptedPrivateKey),
+                    rotatedAt: h.rotatedAt
+                }
+            } catch (e) {
+                console.warn('Skipping undecryptable historical key')
+                return null
+            }
+        }).filter(Boolean)
 
         return c.json({
             data: {
-                workspaceId: workspaceId,
-                publicKey: keyData.publicKey,
-                privateKey: keyData.privateKey,
-                expiresAt: keyData.expiresAt,
-                history: (keyData as any).history || [],
-                regenerated: !!(keyData as any).regenerated
+                workspaceId,
+                publicKey: keyRecord.publicKey,
+                privateKey: decryptedPrivateKey,
+                expiresAt: keyRecord.expiresAt,
+                history: decryptedHistory
             }
         })
     } catch (error) {
         console.error('Error fetching/generating keys:', error)
         return c.json({ error: 'Failed to fetch encryption keys', details: String(error) }, 500)
+    }
+})
+
+// DELETE /api/workspaces/:id/keys/reset - Delete corrupted keys so fresh ones generate (owner only)
+workspacesRoutes.delete('/:id/keys/reset', async (c) => {
+    const workspaceId = c.req.param('id')
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+
+    if (!session?.user) {
+        return c.json({ error: 'Unauthorized' }, 401)
+    }
+
+    try {
+        const workspace = await db.query.workspaces.findFirst({
+            where: (ws, { eq }) => eq(ws.id, workspaceId)
+        })
+
+        if (!workspace || workspace.ownerId !== session.user.id) {
+            return c.json({ error: 'Only workspace owner can reset keys' }, 403)
+        }
+
+        await db.delete(encryptionKeys)
+            .where(eq(encryptionKeys.workspaceId, workspaceId))
+
+        console.log(`🗑️ Encryption keys deleted for workspace ${workspaceId} — fresh keys will generate on next request`)
+        return c.json({ message: 'Keys deleted. Fresh keys will be generated on next access.' })
+    } catch (error) {
+        console.error('Error resetting keys:', error)
+        return c.json({ error: 'Failed to reset keys', details: String(error) }, 500)
     }
 })
 
