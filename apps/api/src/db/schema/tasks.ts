@@ -40,6 +40,8 @@ export const tasks = pgTable('tasks', {
     labels: text('labels').array().default([]),
     // Assignees stored as array of user IDs (simple list, no FK constraint)
     assignees: text('assignees').array().default([]),
+    // Dependencies stored as array of task IDs
+    dependsOn: text('depends_on').array().default([]),
     // Links stored as JSONB array of link objects
     links: jsonb('links').default([]).$type<TaskLink[]>(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -85,6 +87,8 @@ export const subtasks = pgTable('subtasks', {
     title: varchar('title', { length: 255 }).notNull(),
     description: text('description'),
     isCompleted: boolean('is_completed').default(false).notNull(),
+    assigneeId: text('assignee_id').references(() => users.id),
+    dependsOn: text('depends_on').array().default([]),
     position: integer('position').default(0).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     completedAt: timestamp('completed_at'),
@@ -170,6 +174,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
 
 export const subtasksRelations = relations(subtasks, ({ one }) => ({
     task: one(tasks, { fields: [subtasks.taskId], references: [tasks.id] }),
+    assignee: one(users, { fields: [subtasks.assigneeId], references: [users.id] }),
 }))
 
 export const taskCommentsRelations = relations(taskComments, ({ one, many }) => ({

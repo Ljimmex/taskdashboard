@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useParams } from '@tanstack/react-router'
 import Markdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
 import { usePanelStore } from '../../../../lib/panelStore'
@@ -18,6 +19,7 @@ import type { TaskCardProps } from '../components/TaskCard'
 import { SubtaskList, type Subtask } from '../subtasks/SubtaskList'
 import type { Assignee } from '../components/AssigneePicker'
 import { useTaskFiles } from '../../../../hooks/useTaskFiles'
+import { useTasks } from '../../../../hooks/useTasks'
 
 // Subtask type is imported from SubtaskList
 
@@ -50,7 +52,7 @@ interface TaskDetailsPanelProps {
     availableLabels?: Label[]
     onCreateLabel?: (name: string, color: string) => Promise<Label | undefined>
     stages?: { id: string; name: string; color: string; position: number }[]
-    teamMembers?: { id: string; name: string; avatar?: string }[]
+    teamMembers?: Assignee[]
 }
 
 // File type icons
@@ -75,9 +77,15 @@ const FileTypeIcon = ({ type }: { type: string }) => {
 }
 
 // Avatar component
-const Avatar = ({ name, size = 'sm' }: { name: string; size?: 'sm' | 'md' }) => {
+const Avatar = ({ name, image, avatar, size = 'sm' }: { name: string; image?: string; avatar?: string; size?: 'sm' | 'md' }) => {
     const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2)
     const sizeClass = size === 'sm' ? 'w-6 h-6 text-[10px]' : 'w-8 h-8 text-xs'
+
+    const imageUrl = image || avatar
+    if (imageUrl) {
+        return <img src={imageUrl} alt={name} className={`${sizeClass} rounded-full object-cover`} />
+    }
+
     return (
         <div className={`${sizeClass} rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center font-semibold text-black`}>
             {initials}
@@ -134,12 +142,19 @@ export function TaskDetailsPanel({
     onArchive,
     availableLabels: propAvailableLabels,
     stages = [],
+    teamMembers = [],
 }: TaskDetailsPanelProps) {
     const { t, i18n } = useTranslation()
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
     const [activeTab, setActiveTab] = useState<'subtasks' | 'comments' | 'shared' | 'activity'>(task?.type === 'meeting' ? 'comments' : 'subtasks')
     const [sharedView, setSharedView] = useState<'files' | 'links'>('files')
     const panelRef = useRef<HTMLDivElement>(null)
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
+
+    // Fetch tasks to resolve dependencies
+    const { data: allTasks = [] } = useTasks(workspaceSlug)
+    const dependsOnIds = (task as any)?.dependsOn || []
+    const dependentTasks = allTasks.filter(t => dependsOnIds.includes(t.id))
 
     // Fetch task files
     const { data: taskFiles = [] } = useTaskFiles(task?.id)
@@ -422,6 +437,23 @@ export function TaskDetailsPanel({
                                 )}
                             </div>
                         </div>
+
+                        {/* Depends On - Read Only */}
+                        {dependentTasks.length > 0 && (
+                            <div className="flex items-start gap-4">
+                                <span className="text-sm text-gray-500 w-24 pt-0.5 flex-shrink-0">{t('tasks.create.dependencies')}</span>
+                                <div className="w-64">
+                                    <div className="flex flex-col gap-1">
+                                        {dependentTasks.map(t => (
+                                            <div key={t.id} className="flex items-center gap-2 px-2 py-1 rounded bg-gray-800/50 border border-gray-700">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                                                <span className="text-xs text-gray-300 truncate">{t.title}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -483,6 +515,7 @@ export function TaskDetailsPanel({
                             <SubtaskList
                                 subtasks={subtasks}
                                 readOnly={true}
+                                availableAssignees={teamMembers}
                                 onToggle={(subtaskId) => {
                                     handleSubtaskToggle(subtaskId)
                                 }}

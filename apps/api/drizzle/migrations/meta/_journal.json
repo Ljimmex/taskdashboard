@@ -71,6 +71,20 @@
       "when": 1771334518268,
       "tag": "0009_daffy_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1771423525214,
+      "tag": "0010_sturdy_war_machine",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1771452496923,
+      "tag": "0011_narrow_darkstar",
+      "breakpoints": true
     }
   ]
 }

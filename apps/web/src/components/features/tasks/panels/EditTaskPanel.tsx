@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { useParams } from '@tanstack/react-router'
 import { usePanelStore } from '../../../../lib/panelStore'
 import type { Label } from '../../labels/LabelBadge'
 import { LabelPicker } from '../../labels/LabelPicker'
 import { FilePicker } from '../../files/FilePicker'
 import { useTaskFiles, useAttachFile, useRemoveFileFromTask } from '../../../../hooks/useTaskFiles'
+import { useTasks } from '../../../../hooks/useTasks'
 import {
     DocumentIcon,
     DocumentIconGold,
@@ -35,6 +37,7 @@ interface EditTaskPanelProps {
         assigneeIds?: string[]
         labelIds?: string[]
         links?: TaskLink[]
+        dependsOn?: string[]
     }) => void
     subtasks?: Subtask[]
     onSubtaskToggle?: (subtaskId: string) => void
@@ -145,6 +148,74 @@ const StatusSelector = ({
     )
 }
 
+const DependsOnSelector = ({
+    selectedIds,
+    availableTasks,
+    onChange
+}: {
+    selectedIds: string[]
+    availableTasks: any[]
+    onChange: (ids: string[]) => void
+}) => {
+    const { t } = useTranslation()
+    const [isOpen, setIsOpen] = useState(false)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setIsOpen(false)
+            }
+        }
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside)
+            return () => document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [isOpen])
+
+    return (
+        <div className="relative" ref={containerRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 transition-colors"
+            >
+                <span className="text-white">
+                    {selectedIds.length === 0 ? t('tasks.create.dependencies_placeholder') : t('tasks.create.dependencies_count', { count: selectedIds.length })}
+                </span>
+                <ChevronDown size={14} className="text-gray-400" />
+            </button>
+            {isOpen && (
+                <div className="absolute left-0 top-full mt-1 w-64 bg-[#1a1a24] rounded-lg border border-gray-800 shadow-xl z-50 max-h-64 overflow-y-auto p-1">
+                    {availableTasks.map(task => {
+                        const isSelected = selectedIds.includes(task.id)
+                        return (
+                            <button
+                                key={task.id}
+                                onClick={() => {
+                                    if (isSelected) {
+                                        onChange(selectedIds.filter(id => id !== task.id))
+                                    } else {
+                                        onChange([...selectedIds, task.id])
+                                    }
+                                }}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-gray-300 rounded-md hover:bg-gray-800 transition-colors"
+                            >
+                                <div className={`w-3 h-3 rounded border flex items-center justify-center ${isSelected ? 'bg-amber-500 border-amber-500' : 'border-gray-600'}`}>
+                                    {isSelected && <Check size={10} className="text-black" />}
+                                </div>
+                                <span className="truncate flex-1">{task.title}</span>
+                            </button>
+                        )
+                    })}
+                    {availableTasks.length === 0 && (
+                        <div className="p-3 text-center text-xs text-gray-500">{t('tasks.create.no_tasks_available')}</div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
 export function EditTaskPanel({
     task,
     isOpen,
@@ -163,6 +234,7 @@ export function EditTaskPanel({
     userId,
 }: EditTaskPanelProps) {
     const { t } = useTranslation()
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
     const [activeTab, setActiveTab] = useState<'subtasks' | 'shared' | 'links'>('subtasks')
     const [links, setLinks] = useState<TaskLink[]>([])
     const [showLinkInput, setShowLinkInput] = useState(false)
@@ -177,6 +249,7 @@ export function EditTaskPanel({
     const [dueDate, setDueDate] = useState<string | undefined>(undefined)
     const [selectedAssignees, setSelectedAssignees] = useState<Assignee[]>([])
     const [selectedLabels, setSelectedLabels] = useState<Label[]>([])
+    const [selectedDependsOn, setSelectedDependsOn] = useState<string[]>([])
     const [isEditingTitle, setIsEditingTitle] = useState(false)
     const [isEditingDescription, setIsEditingDescription] = useState(false)
     const [showFilePicker, setShowFilePicker] = useState(false)
@@ -185,6 +258,10 @@ export function EditTaskPanel({
     const { data: taskFiles } = useTaskFiles(task?.id)
     const attachFile = useAttachFile()
     const removeFile = useRemoveFileFromTask()
+
+    // Fetch available tasks for dependencies
+    const { data: allTasks = [] } = useTasks(workspaceSlug)
+    const availableTasks = allTasks.filter(t => t.id !== task?.id)
 
     // Labels - use useMemo to prevent recreation on every render
     const defaultLabels: Label[] = [
@@ -211,14 +288,15 @@ export function EditTaskPanel({
             setStatus(task.status || stages[0]?.id || '')
             setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : undefined)
             setLinks((task as any).links || [])
+            setSelectedDependsOn((task as any).dependsOn || [])
             setActiveTab('subtasks')
             // Deduplicate assignees by ID and include image support
             const sourceAssignees = task.assigneeDetails || task.assignees || []
             const rawAssignees = (sourceAssignees as any[]).map(a => ({
                 id: a.id,
                 name: a.name,
-                avatar: a.avatar,
-                image: a.image
+                avatar: a.avatar || a.image,
+                image: a.image || a.avatar
             })) || []
             const uniqueAssignees = Array.from(new Map(rawAssignees.map(a => [a.id, a])).values())
             setSelectedAssignees(uniqueAssignees)
@@ -268,6 +346,7 @@ export function EditTaskPanel({
             assigneeIds: selectedAssignees.map(a => a.id),
             labelIds: selectedLabels.map(l => l.id),
             links: links,
+            dependsOn: selectedDependsOn,
         })
         onClose()
     }
@@ -383,6 +462,15 @@ export function EditTaskPanel({
                                 />
                             </div>
                         </div>
+
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-500 w-20">{t('tasks.create.dependencies')}</span>
+                            <DependsOnSelector
+                                selectedIds={selectedDependsOn}
+                                availableTasks={availableTasks}
+                                onChange={setSelectedDependsOn}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -446,6 +534,7 @@ export function EditTaskPanel({
                             </div>
                             <SubtaskList
                                 subtasks={subtasks}
+                                availableAssignees={teamMembers}
                                 onToggle={(subtaskId) => {
                                     onSubtaskToggle?.(subtaskId)
                                 }}

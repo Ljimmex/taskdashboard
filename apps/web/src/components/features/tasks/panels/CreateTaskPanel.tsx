@@ -14,6 +14,8 @@ import {
     ChevronDoubleRightIcon,
 } from '../components/TaskIcons'
 import { apiFetch, apiFetchJson } from '@/lib/api'
+import { useTasks } from '@/hooks/useTasks'
+import { Check, ChevronDown } from 'lucide-react'
 
 interface Project {
     id: string
@@ -49,8 +51,9 @@ interface NewTaskData {
     meetingLink?: string
     labels: string[]
     projectId?: string
-    subtasks: { title: string; description: string }[]
+    subtasks: { title: string; description: string; assigneeId?: string; dependsOn?: string[] }[]
     estimate?: string
+    dependsOn?: string[]
 }
 
 // Default labels
@@ -69,6 +72,74 @@ const MOCK_PROJECTS = [
     { id: 'development', name: 'Development' },
     { id: 'design', name: 'Design System' },
 ]
+
+const DependsOnSelector = ({
+    selectedIds,
+    availableTasks,
+    onChange
+}: {
+    selectedIds: string[]
+    availableTasks: any[]
+    onChange: (ids: string[]) => void
+}) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setIsOpen(false)
+            }
+        }
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside)
+            return () => document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [isOpen])
+
+    return (
+        <div className="relative" ref={containerRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 text-sm text-gray-300 transition-colors"
+            >
+                <span className="text-lg">🔗</span>
+                <span>
+                    {selectedIds.length === 0 ? 'Zależy od...' : `${selectedIds.length} zależności`}
+                </span>
+                <ChevronDown size={14} className="text-gray-400" />
+            </button>
+            {isOpen && (
+                <div className="absolute left-0 top-full mt-1 w-64 bg-[#1a1a24] rounded-lg border border-gray-800 shadow-xl z-50 max-h-64 overflow-y-auto p-1">
+                    {availableTasks.map(task => {
+                        const isSelected = selectedIds.includes(task.id)
+                        return (
+                            <button
+                                key={task.id}
+                                onClick={() => {
+                                    if (isSelected) {
+                                        onChange(selectedIds.filter(id => id !== task.id))
+                                    } else {
+                                        onChange([...selectedIds, task.id])
+                                    }
+                                }}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-left text-gray-300 rounded-md hover:bg-gray-800 transition-colors"
+                            >
+                                <div className={`w-3 h-3 rounded border flex items-center justify-center ${isSelected ? 'bg-amber-500 border-amber-500' : 'border-gray-600'}`}>
+                                    {isSelected && <Check size={10} className="text-black" />}
+                                </div>
+                                <span className="truncate flex-1">{task.title}</span>
+                            </button>
+                        )
+                    })}
+                    {availableTasks.length === 0 && (
+                        <div className="p-3 text-center text-xs text-gray-500">Brak innych zadań</div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
 
 // Dropdown Component
 const Dropdown = ({
@@ -133,8 +204,9 @@ export function CreateTaskPanel({
     const [startDate, setStartDate] = useState('')
     const [labels, setLabels] = useState<Label[]>([])
     const [projectId, setProjectId] = useState(defaultProject || projects[0]?.id || '')
-    const [subtasks, setSubtasks] = useState<{ title: string; description: string }[]>([])
+    const [subtasks, setSubtasks] = useState<{ title: string; description: string; assigneeId?: string; dependsOn?: string[] }[]>([])
     const [newSubtask, setNewSubtask] = useState('')
+    const [dependsOn, setDependsOn] = useState<string[]>([])
     const [editingSubtaskIndex, setEditingSubtaskIndex] = useState<number | null>(null)
     const [attachments, setAttachments] = useState<File[]>([])
     const [isDragging, setIsDragging] = useState(false)
@@ -142,11 +214,17 @@ export function CreateTaskPanel({
     const [currentStages, setCurrentStages] = useState<any[]>([])
     const [showMore, setShowMore] = useState(false)
 
+    // Fetch available tasks for dependencies
+    const { data: allTasks = [] } = useTasks(workspaceSlug)
+    // Filter tasks from same project? Usually depends on can be cross-project or same.
+    // For simplicity, allow all visible tasks.
+    const availableTasks = allTasks
+
     // Item type is always 'task' now
     const itemType = 'task'
 
     // Use props if provided, otherwise fall back to local state
-    const [localAvailableLabels, setLocalAvailableLabels] = useState<Label[]>(DEFAULT_LABELS)
+    const [localAvailableLabels, setLocalAvailableLabels] = useState<Label[]>(workspaceSlug ? [] : DEFAULT_LABELS)
     const availableLabels = propAvailableLabels || localAvailableLabels
 
     // Fetch labels from workspace when panel opens
@@ -159,6 +237,8 @@ export function CreateTaskPanel({
                     }
                 })
                 .catch(err => console.error('Failed to fetch labels:', err))
+        } else if (!workspaceSlug && !propAvailableLabels) {
+            setLocalAvailableLabels(DEFAULT_LABELS)
         }
     }, [isOpen, workspaceSlug, propAvailableLabels])
 
@@ -248,6 +328,7 @@ export function CreateTaskPanel({
         setLabels([])
         setSubtasks([])
         setNewSubtask('')
+        setDependsOn([])
         setShowMore(false)
         setAttachments([])
         setEditingSubtaskIndex(null)
@@ -271,6 +352,7 @@ export function CreateTaskPanel({
             projectId: projectId || undefined,
             labels: labels as any,
             subtasks: subtasks.filter(s => s.title.trim()),
+            dependsOn: dependsOn,
         })
 
         // Upload files if task was created successfully
@@ -349,7 +431,7 @@ export function CreateTaskPanel({
     }
 
     // Update subtask description
-    const updateSubtask = (index: number, updates: Partial<{ title: string; description: string }>) => {
+    const updateSubtask = (index: number, updates: Partial<{ title: string; description: string; assigneeId?: string; dependsOn?: string[] }>) => {
         const updated = [...subtasks]
         updated[index] = { ...updated[index], ...updates }
         setSubtasks(updated)
@@ -621,6 +703,19 @@ export function CreateTaskPanel({
                     {/* Extended Options */}
                     {showMore && (
                         <div className="space-y-4 pt-4 ">
+                            {/* Depends On */}
+                            <div>
+                                <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
+                                    <span className="text-lg">🔗</span>
+                                    {t('tasks.create.dependencies')}
+                                </label>
+                                <DependsOnSelector
+                                    selectedIds={dependsOn}
+                                    availableTasks={availableTasks}
+                                    onChange={setDependsOn}
+                                />
+                            </div>
+
                             {/* Subtasks - only for tasks */}
                             {itemType === 'task' && (
                                 <div>
@@ -635,13 +730,31 @@ export function CreateTaskPanel({
                                                 className="bg-gray-800/50 rounded-xl overflow-hidden"
                                             >
                                                 <div className="flex items-center gap-3 px-4 py-3">
-                                                    <div className="w-5 h-5 rounded-md flex-shrink-0" />
+                                                    {subtask.assigneeId ? (
+                                                        <div className="flex-shrink-0">
+                                                            {(() => {
+                                                                const member = teamMembers.find(m => m.id === subtask.assigneeId)
+                                                                if (!member) return <div className="w-5 h-5 rounded-md border-2 border-gray-600 flex-shrink-0" />
+                                                                const initials = member.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                                                                if (member.avatar) {
+                                                                    return <img src={member.avatar} alt={member.name} className="w-5 h-5 rounded-full object-cover" />
+                                                                }
+                                                                return (
+                                                                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center font-semibold text-black text-[9px]">
+                                                                        {initials}
+                                                                    </div>
+                                                                )
+                                                            })()}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-5 h-5 rounded-md border-2 border-gray-600 flex-shrink-0" />
+                                                    )}
                                                     <span className="text-sm text-white flex-1 font-medium">{subtask.title}</span>
 
                                                     <button
                                                         onClick={() => setEditingSubtaskIndex(editingSubtaskIndex === index ? null : index)}
                                                         className="p-1 text-gray-500 hover:text-amber-400 transition-colors"
-                                                        title="Edytuj szczegóły"
+                                                        title={t('tasks.create.subtasks_edit_details')}
                                                     >
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                             <path d={editingSubtaskIndex === index ? "M18 15L12 9L6 15" : "M6 9L12 15L18 9"} />
@@ -657,15 +770,25 @@ export function CreateTaskPanel({
                                                     </button>
                                                 </div>
                                                 {editingSubtaskIndex === index && (
-                                                    <div className="px-4 pb-3 pt-0 space-y-3">
-                                                        <div>
-                                                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Opis</label>
+                                                    <div className="px-4 pb-3 pt-0 flex items-start gap-4">
+                                                        <div className="flex-1">
+                                                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">{t('tasks.create.subtasks_description_label')}</label>
                                                             <textarea
                                                                 value={subtask.description}
                                                                 onChange={(e) => updateSubtask(index, { description: e.target.value })}
-                                                                placeholder="Dodaj opis tego zadania..."
+                                                                placeholder={t('tasks.create.subtasks_description_placeholder')}
                                                                 rows={2}
                                                                 className="w-full text-xs text-gray-400 bg-gray-900/50 rounded-lg p-3 placeholder-gray-600 outline-none resize-none focus:border-amber-500/50 transition-colors"
+                                                            />
+                                                        </div>
+                                                        <div className="w-48">
+                                                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">{t('tasks.create.subtasks_assignee_label')}</label>
+                                                            <AssigneePicker
+                                                                selectedAssignees={teamMembers.filter(m => m.id === subtask.assigneeId) as any}
+                                                                availableAssignees={teamMembers as any}
+                                                                onSelect={(assignees) => updateSubtask(index, { assigneeId: assignees[0]?.id })}
+                                                                maxVisible={1}
+                                                                placeholder={t('tasks.create.subtasks_assignee_placeholder')}
                                                             />
                                                         </div>
                                                     </div>
@@ -858,7 +981,7 @@ export function CreateTaskPanel({
                         </div>
                     </div>
                 </div>
-            </div>
+            </div >
         </>
     )
 }

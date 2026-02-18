@@ -15,6 +15,7 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { SubtaskItem, type Subtask } from './SubtaskItem'
+import type { Assignee } from '../components/AssigneePicker'
 
 // Re-export Subtask type
 export type { Subtask } from './SubtaskItem'
@@ -27,6 +28,7 @@ interface SubtaskListProps {
     onEdit?: (subtaskId: string, updates: Partial<Subtask>) => void
     onDelete?: (subtaskId: string) => void
     onAdd?: (title: string, afterId?: string) => void
+    availableAssignees?: Assignee[]
 }
 
 // Add Subtask Input
@@ -111,6 +113,7 @@ export function SubtaskList({
     onEdit,
     onDelete,
     onAdd,
+    availableAssignees = []
 }: SubtaskListProps) {
     const [addingAfterId, setAddingAfterId] = useState<string | null>(null)
 
@@ -170,9 +173,34 @@ export function SubtaskList({
 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
-                                    <span className={`text-sm font-medium ${isCompleted ? 'text-gray-500 line-through' : 'text-white'}`}>
-                                        {subtask.title}
-                                    </span>
+                                    <div className="flex items-center gap-2 justify-between">
+                                        <span className={`text-sm font-medium ${isCompleted ? 'text-gray-500 line-through' : 'text-white'}`}>
+                                            {subtask.title}
+                                        </span>
+                                        {/* Assignee and Dependencies - Read Only */}
+                                        <div className="flex items-center gap-2">
+                                            {subtask.dependsOn && subtask.dependsOn.length > 0 && (
+                                                <div className="p-0.5 text-amber-500" title="Zależności">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M12 17h.01" />
+                                                        <path d="M12 14h.01" />
+                                                        <path d="M12 11h.01" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                            {subtask.assignee && (
+                                                <div title={subtask.assignee.name}>
+                                                    {(subtask.assignee.avatar || subtask.assignee.image) ? (
+                                                        <img src={subtask.assignee.avatar || subtask.assignee.image} alt={subtask.assignee.name} className="w-5 h-5 rounded-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center font-semibold text-black text-[9px]">
+                                                            {subtask.assignee.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                     {/* Description */}
                                     {subtask.description && (
                                         <p className="text-xs text-gray-500 mt-1 line-clamp-2">{subtask.description}</p>
@@ -213,6 +241,8 @@ export function SubtaskList({
                             isAddingAfter={addingAfterId === subtask.id}
                             onAddAfterSubmit={(title) => handleAddAfter(subtask.id, title)}
                             onAddAfterCancel={() => setAddingAfterId(null)}
+                            availableAssignees={availableAssignees}
+                            otherSubtasks={subtasks.filter(s => s.id !== subtask.id)}
                         />
                     ))}
                 </SortableContext>

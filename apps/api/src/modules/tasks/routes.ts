@@ -34,6 +34,8 @@ import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extens
 const subtaskSchema = z.object({
     title: zSanitizedString(),
     description: zSanitizedStringOptional(),
+    assigneeId: z.string().optional().nullable(),
+    dependsOn: z.array(z.string()).optional()
 })
 
 const createTaskSchema = z.object({
@@ -52,7 +54,8 @@ const createTaskSchema = z.object({
     subtasks: z.array(subtaskSchema).optional(),
     labels: z.array(z.string().or(z.object({ id: z.string() }))).optional().nullable(),
     reporterId: z.string().optional(), // Should be set from session, but schema might allow it if not strictly filtered
-    assignees: z.array(z.string()).optional()
+    assignees: z.array(z.string()).optional(),
+    dependsOn: z.array(z.string()).optional()
 })
 
 const updateTaskSchema = createTaskSchema.partial().extend({
@@ -311,7 +314,15 @@ tasksRoutes.get('/:id', async (c) => {
         }
 
         // Fetch subitems (from dedicated subtasks table)
-        const taskSubitems = await db.select().from(subtasks).where(eq(subtasks.taskId, id)).orderBy(subtasks.position)
+        const taskSubitems = await db.query.subtasks.findMany({
+            where: (s, { eq }) => eq(s.taskId, id),
+            with: {
+                assignee: {
+                    columns: { id: true, name: true, image: true }
+                }
+            },
+            orderBy: (s, { asc }) => [asc(s.position)]
+        })
 
         // Labels are now stored directly on task.labels as text[]
 
@@ -474,6 +485,7 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
             // assigneeId removed
             assignees: assignees,
             reporterId,
+            dependsOn: body.dependsOn || [],
             dueDate: body.dueDate ? new Date(body.dueDate) : null,
             startDate: body.startDate ? new Date(body.startDate) : null,
             meetingLink: body.meetingLink || null,
@@ -510,7 +522,9 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
                     taskId: created.id,
                     title: sub.title,
                     description: sub.description || null,
-                    isCompleted: false
+                    isCompleted: false,
+                    assigneeId: sub.assigneeId || null,
+                    dependsOn: sub.dependsOn || []
                 })
             }
         }
@@ -666,6 +680,7 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
         if (body.progress !== undefined) updateData.progress = body.progress
         if (body.isArchived !== undefined) updateData.isArchived = body.isArchived
         if (body.labels !== undefined) updateData.labels = body.labels
+        if (body.dependsOn !== undefined) updateData.dependsOn = body.dependsOn
 
         const [updated] = await db.update(tasks).set(updateData).where(eq(tasks.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Task not found' }, 404)
@@ -946,7 +961,15 @@ tasksRoutes.patch('/:id/move', async (c) => {
 tasksRoutes.get('/:id/subtasks', async (c) => {
     try {
         const id = c.req.param('id')
-        const result = await db.select().from(subtasks).where(eq(subtasks.taskId, id)).orderBy(subtasks.position)
+        const result = await db.query.subtasks.findMany({
+            where: (s, { eq }) => eq(s.taskId, id),
+            with: {
+                assignee: {
+                    columns: { id: true, name: true, image: true }
+                }
+            },
+            orderBy: (s, { asc }) => [asc(s.position)]
+        })
         return c.json({ success: true, data: result })
     } catch (error) {
         console.error('Error fetching subtasks:', error)
@@ -966,7 +989,9 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
             taskId: id,
             title: body.title,
             description: body.description || null,
-            isCompleted: body.isCompleted || false
+            isCompleted: body.isCompleted || false,
+            assigneeId: body.assigneeId || null,
+            dependsOn: body.dependsOn || []
         } as NewSubtask).returning()
 
         // Log activity
@@ -1018,6 +1043,8 @@ tasksRoutes.patch('/:taskId/subtasks/:subtaskId', async (c) => {
             updateData.completedAt = body.isCompleted ? new Date() : null
         }
         if (body.position !== undefined) updateData.position = body.position
+        if (body.assigneeId !== undefined) updateData.assigneeId = body.assigneeId
+        if (body.dependsOn !== undefined) updateData.dependsOn = body.dependsOn
 
         const [updated] = await db.update(subtasks).set(updateData).where(eq(subtasks.id, subtaskId)).returning()
         if (!updated) return c.json({ success: false, error: 'Subtask not found' }, 404)

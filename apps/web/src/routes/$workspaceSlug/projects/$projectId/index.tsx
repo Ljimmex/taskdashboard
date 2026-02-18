@@ -372,6 +372,7 @@ function ProjectDetailPage() {
     assigneeIds?: string[]
     labelIds?: string[]
     links?: any[]
+    dependsOn?: string[]
   }) => {
     try {
       // Transform data to match API expectations
@@ -385,6 +386,7 @@ function ProjectDetailPage() {
         assignees: data.assigneeIds || [],
         labels: data.labelIds || [],
         links: data.links || [],
+        dependsOn: data.dependsOn || [],
       }
 
       const res = await apiFetch(`/api/tasks/${data.id}`, {
