@@ -49,7 +49,7 @@ interface NewTaskData {
     meetingLink?: string
     labels: string[]
     projectId?: string
-    subtasks: { title: string; description: string; status: string; priority: string }[]
+    subtasks: { title: string; description: string }[]
     estimate?: string
 }
 
@@ -133,7 +133,7 @@ export function CreateTaskPanel({
     const [startDate, setStartDate] = useState('')
     const [labels, setLabels] = useState<Label[]>([])
     const [projectId, setProjectId] = useState(defaultProject || projects[0]?.id || '')
-    const [subtasks, setSubtasks] = useState<{ title: string; description: string; status: string; priority: string }[]>([])
+    const [subtasks, setSubtasks] = useState<{ title: string; description: string }[]>([])
     const [newSubtask, setNewSubtask] = useState('')
     const [editingSubtaskIndex, setEditingSubtaskIndex] = useState<number | null>(null)
     const [attachments, setAttachments] = useState<File[]>([])
@@ -343,15 +343,13 @@ export function CreateTaskPanel({
             setSubtasks([...subtasks, {
                 title: newSubtask.trim(),
                 description: '',
-                status: 'todo',
-                priority: 'medium'
             }])
             setNewSubtask('')
         }
     }
 
     // Update subtask description
-    const updateSubtask = (index: number, updates: Partial<{ title: string; description: string; status: string; priority: string }>) => {
+    const updateSubtask = (index: number, updates: Partial<{ title: string; description: string }>) => {
         const updated = [...subtasks]
         updated[index] = { ...updated[index], ...updates }
         setSubtasks(updated)
@@ -494,8 +492,6 @@ export function CreateTaskPanel({
                                         setSubtasks(templateData.subtasks.map(s => ({
                                             title: s.title,
                                             description: s.description || '',
-                                            status: 'todo',
-                                            priority: s.priority || 'medium'
                                         })))
                                         setShowMore(true) // Expand to show subtasks
                                     }
@@ -641,26 +637,7 @@ export function CreateTaskPanel({
                                                 <div className="flex items-center gap-3 px-4 py-3">
                                                     <div className="w-5 h-5 rounded-md flex-shrink-0" />
                                                     <span className="text-sm text-white flex-1 font-medium">{subtask.title}</span>
-                                                    <div className="flex items-center gap-2">
-                                                        {/* Status Badge */}
-                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium capitalize ${subtask.status === 'todo' ? 'bg-indigo-500/10 text-indigo-400' :
-                                                            subtask.status === 'in_progress' ? 'bg-amber-500/10 text-amber-400' :
-                                                                subtask.status === 'review' ? 'bg-purple-500/10 text-purple-400' :
-                                                                    'bg-emerald-500/10 text-emerald-400'
-                                                            }`}>
-                                                            {subtask.status === 'todo' ? 'To Do' :
-                                                                subtask.status === 'in_progress' ? 'In Progress' :
-                                                                    subtask.status === 'review' ? 'Review' : 'Done'}
-                                                        </span>
-                                                        {/* Priority Badge */}
-                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${subtask.priority === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                                                            subtask.priority === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                                                                subtask.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
-                                                                    'bg-green-500/20 text-green-400'
-                                                            }`}>
-                                                            {subtask.priority}
-                                                        </span>
-                                                    </div>
+
                                                     <button
                                                         onClick={() => setEditingSubtaskIndex(editingSubtaskIndex === index ? null : index)}
                                                         className="p-1 text-gray-500 hover:text-amber-400 transition-colors"
@@ -681,34 +658,6 @@ export function CreateTaskPanel({
                                                 </div>
                                                 {editingSubtaskIndex === index && (
                                                     <div className="px-4 pb-3 pt-0 space-y-3">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="flex-1">
-                                                                <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Status</label>
-                                                                <select
-                                                                    value={subtask.status}
-                                                                    onChange={(e) => updateSubtask(index, { status: e.target.value })}
-                                                                    className="w-full bg-gray-900 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
-                                                                >
-                                                                    <option value="todo">To-Do</option>
-                                                                    <option value="in_progress">W trakcie</option>
-                                                                    <option value="review">Recenzja</option>
-                                                                    <option value="done">Gotowe</option>
-                                                                </select>
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Priorytet</label>
-                                                                <select
-                                                                    value={subtask.priority}
-                                                                    onChange={(e) => updateSubtask(index, { priority: e.target.value as any })}
-                                                                    className="w-full bg-gray-900 rounded-lg p-2 text-xs text-white outline-none focus:border-amber-500/50"
-                                                                >
-                                                                    <option value="low">Niski</option>
-                                                                    <option value="medium">Średni</option>
-                                                                    <option value="high">Wysoki</option>
-                                                                    <option value="urgent">Pilne</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
                                                         <div>
                                                             <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Opis</label>
                                                             <textarea

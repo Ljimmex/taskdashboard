@@ -1,7 +1,7 @@
 import { createFileRoute, useParams, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ProjectsHeader } from '@/components/features/projects/ProjectsHeader'
+import { ProjectsHeader, type ProjectFilterState } from '@/components/features/projects/ProjectsHeader'
 import { ProjectSection } from '@/components/features/projects/ProjectSection'
 import { CreateProjectPanel } from '@/components/features/projects/CreateProjectPanel'
 import { CreateTaskPanel } from '@/components/features/tasks/panels/CreateTaskPanel'
@@ -11,6 +11,7 @@ import { DayTaskListPanel } from '@/components/features/projects/DayTaskListPane
 import { useSession } from '@/lib/auth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { useTranslation } from 'react-i18next'
+import { useMemo } from 'react'
 
 export const Route = createFileRoute('/$workspaceSlug/projects/')({
     component: ProjectsPage,
@@ -65,6 +66,11 @@ function ProjectsPage() {
     const [selectedDayTasks, setSelectedDayTasks] = useState<Task[]>([])
     const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null)
     const [showDayListPanel, setShowDayListPanel] = useState(false)
+
+    // Filter & Sort state
+    const [projectFilters, setProjectFilters] = useState<ProjectFilterState>({ priorities: [], statuses: [], assigneeIds: [] })
+    const [sortBy, setSortBy] = useState<string | null>(null)
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
     // Fetch workspaces to get current workspaceId
     const { data: workspaces } = useQuery({
@@ -127,9 +133,44 @@ function ProjectsPage() {
 
 
 
-    // Group tasks by project
+    // Filter tasks by active filters
+    const filteredTasks = useMemo(() => {
+        let result = tasks
+        if (projectFilters.priorities.length > 0) {
+            result = result.filter(t => projectFilters.priorities.includes(t.priority))
+        }
+        if (projectFilters.statuses.length > 0) {
+            result = result.filter(t => projectFilters.statuses.includes(t.status))
+        }
+        if (projectFilters.assigneeIds.length > 0) {
+            result = result.filter(t => {
+                const ids = t.assignees || (t.assigneeId ? [t.assigneeId] : [])
+                return ids.some((id: string) => projectFilters.assigneeIds.includes(id))
+            })
+        }
+        // Sort
+        if (sortBy) {
+            result = [...result].sort((a, b) => {
+                let cmp = 0
+                if (sortBy === 'priority') {
+                    const order: Record<string, number> = { urgent: 3, high: 2, medium: 1, low: 0 }
+                    cmp = (order[a.priority] ?? 0) - (order[b.priority] ?? 0)
+                } else if (sortBy === 'dueDate') {
+                    cmp = (a.dueDate || '').localeCompare(b.dueDate || '')
+                } else if (sortBy === 'title') {
+                    cmp = (a.title || '').localeCompare(b.title || '')
+                } else if (sortBy === 'createdAt') {
+                    cmp = ((a as any).createdAt || '').localeCompare((b as any).createdAt || '')
+                }
+                return sortDirection === 'asc' ? cmp : -cmp
+            })
+        }
+        return result
+    }, [tasks, projectFilters, sortBy, sortDirection])
+
+    // Group filtered+sorted tasks by project
     const tasksByProject = new Map<string, Task[]>()
-    tasks.forEach((task) => {
+    filteredTasks.forEach((task) => {
         if (!tasksByProject.has(task.projectId)) {
             tasksByProject.set(task.projectId, [])
         }
@@ -402,6 +443,25 @@ function ProjectsPage() {
                     onSearchChange={setSearchQuery}
                     onNewProject={handleNewProject}
                     userRole={currentWorkspace?.userRole}
+                    onFilterChange={setProjectFilters}
+                    onSort={(field, dir) => { setSortBy(field); setSortDirection(dir) }}
+                    availablePriorities={currentWorkspace?.priorities}
+                    availableStatuses={[
+                        ...new Set(projects.flatMap(p => (p.stages || []).map((s: any) => JSON.stringify({ value: s.id, label: s.name }))))
+                    ].map(s => JSON.parse(s))}
+                    members={(() => {
+                        const all = teamsData?.flatMap((t: any) => t.members?.map((m: any) => ({
+                            id: m.userId,
+                            name: m.user.name,
+                            avatar: m.user.image,
+                        })) || []) || []
+                        const seen = new Set<string>()
+                        return all.filter((m: any) => {
+                            if (seen.has(m.id)) return false
+                            seen.add(m.id)
+                            return true
+                        })
+                    })()}
                 />
             )}
 
@@ -424,11 +484,11 @@ function ProjectsPage() {
                     </div>
                     <h3 className="text-xl font-semibold text-white mb-2">{t('projects.noProjectsFound')}</h3>
                     <p className="text-gray-500 max-w-sm text-center mb-8">
-                        {currentWorkspace?.userRole && !['member', 'guest'].includes(currentWorkspace.userRole) 
+                        {currentWorkspace?.userRole && !['member', 'guest'].includes(currentWorkspace.userRole)
                             ? "Create your first project to get started with task management."
                             : "You don't have access to any projects in this workspace yet."}
                     </p>
-                    
+
                     {currentWorkspace?.userRole && !['member', 'guest'].includes(currentWorkspace.userRole) && (
                         <button
                             onClick={handleNewProject}
@@ -448,7 +508,7 @@ function ProjectsPage() {
             {!loading && projects.length > 0 && filteredProjects.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                     <p className="mb-4">No projects match your search.</p>
-                    <button 
+                    <button
                         onClick={() => setSearchQuery('')}
                         className="text-amber-500 hover:text-amber-400"
                     >

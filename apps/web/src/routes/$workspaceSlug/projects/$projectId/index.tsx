@@ -709,10 +709,14 @@ function ProjectDetailPage() {
         subtaskCompleted: t.subtasksCompleted || 0,
         commentCount: t.commentsCount || 0,
         attachmentCount: t.attachmentCount || 0,
-        labels: t.labels || [],
+        labels: (t.labels || []).map((lid: any) => {
+          if (typeof lid === 'object' && lid.id) return lid
+          const found = workspaceLabels.find((wl: any) => wl.id === lid)
+          return found || { id: lid, name: lid, color: '#6b7280' }
+        }),
       }))
     }))
-  }, [project?.stages, filteredTasks])
+  }, [project?.stages, filteredTasks, workspaceLabels])
 
   // List view tasks with FULL data
   const listViewTasks = useMemo(() => {
@@ -731,10 +735,14 @@ function ProjectDetailPage() {
       subtaskCompleted: t.subtasksCompleted || 0,
       commentCount: t.commentsCount || 0,
       attachmentCount: t.attachmentCount || 0,
-      labels: t.labels || [],
+      labels: (t.labels || []).map((lid: any) => {
+        if (typeof lid === 'object' && lid.id) return lid
+        const found = workspaceLabels.find((wl: any) => wl.id === lid)
+        return found || { id: lid, name: lid, color: '#6b7280' }
+      }),
       type: 'task' as const,
     }))
-  }, [filteredTasks, project?.stages])
+  }, [filteredTasks, project?.stages, workspaceLabels])
 
   const VIEW_TABS: { id: ViewMode; label: string; Icon: any }[] = [
     { id: 'kanban', label: t('board.header.kanban'), Icon: LayoutGrid },
@@ -913,6 +921,7 @@ function ProjectDetailPage() {
                 }}
                 members={teamMembers}
                 availableLabels={workspaceLabels}
+                availablePriorities={currentWorkspace?.priorities}
                 availableStatuses={project?.stages?.map(s => ({ value: s.id, label: s.name })) || []}
               />
             )

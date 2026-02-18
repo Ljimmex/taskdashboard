@@ -2,55 +2,17 @@ import { useState, useRef, useEffect } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '../../../../lib/utils'
-import { StatusBadge } from '../components/StatusBadge'
-import {
-    PriorityUrgentIcon,
-    PriorityHighIcon,
-    PriorityMediumIcon,
-    PriorityLowIcon,
-} from '../components/TaskIcons'
-
-// Default statuses if none provided
-const DEFAULT_STATUSES = [
-    { id: 'todo', name: 'Do zrobienia' },
-    { id: 'in_progress', name: 'W trakcie' },
-    { id: 'review', name: 'Do przeglądu' },
-    { id: 'done', name: 'Ukończone' },
-]
 
 // Types
 export interface Subtask {
     id: string
     title: string
     description?: string | null
-    status: 'todo' | 'in_progress' | 'review' | 'done' | string
-    priority: 'urgent' | 'high' | 'medium' | 'low' | string
     isCompleted: boolean
-}
-
-// Priority config with icons
-const priorityConfig: Record<string, { Icon: React.ComponentType<{ size?: number }>; label: string }> = {
-    urgent: { Icon: PriorityUrgentIcon, label: 'Pilne' },
-    high: { Icon: PriorityHighIcon, label: 'Wysoki' },
-    medium: { Icon: PriorityMediumIcon, label: 'Średni' },
-    low: { Icon: PriorityLowIcon, label: 'Niski' },
-}
-
-// Priority Badge Component using our icons
-const PriorityBadge = ({ priority }: { priority: string }) => {
-    const config = priorityConfig[priority] || priorityConfig.medium
-    const Icon = config.Icon
-    return (
-        <span className="flex items-center gap-1 text-[10px] font-medium text-gray-400">
-            <Icon size={12} />
-            <span>{config.label}</span>
-        </span>
-    )
 }
 
 interface SubtaskItemProps {
     subtask: Subtask
-    availableStatuses?: { id: string; name: string }[]
     onToggle?: () => void
     onEdit?: (updates: Partial<Subtask>) => void
     onDelete?: () => void
@@ -62,7 +24,6 @@ interface SubtaskItemProps {
 
 export function SubtaskItem({
     subtask,
-    availableStatuses = DEFAULT_STATUSES,
     onToggle,
     onEdit,
     onDelete,
@@ -89,7 +50,7 @@ export function SubtaskItem({
     const inputRef = useRef<HTMLInputElement>(null)
     const addAfterInputRef = useRef<HTMLInputElement>(null)
 
-    const isCompleted = subtask.status === 'done' || subtask.isCompleted
+    const isCompleted = subtask.isCompleted
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -150,7 +111,7 @@ export function SubtaskItem({
         }
     }
 
-    const priorities = ['urgent', 'high', 'medium', 'low']
+
 
     return (
         <>
@@ -220,10 +181,6 @@ export function SubtaskItem({
                                         {subtask.title}
                                     </span>
                                 )}
-                                <div className="flex items-center gap-2 mt-1">
-                                    <StatusBadge status={subtask.status} />
-                                    <PriorityBadge priority={subtask.priority} />
-                                </div>
                             </div>
 
                             {/* Action Buttons */}
@@ -287,54 +244,6 @@ export function SubtaskItem({
                                                 </svg>
                                                 Edytuj
                                             </button>
-
-                                            {/* Status Submenu */}
-                                            <div className="border-t border-gray-800">
-                                                <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase">
-                                                    Status
-                                                </div>
-                                                {availableStatuses.map((s) => (
-                                                    <button
-                                                        key={s.id}
-                                                        onClick={() => {
-                                                            onEdit?.({ status: s.id, isCompleted: s.id === 'done' })
-                                                            setShowMenu(false)
-                                                        }}
-                                                        className={cn(
-                                                            'flex items-center gap-2 w-full px-3 py-1.5 text-xs transition-colors',
-                                                            subtask.status === s.id
-                                                                ? 'bg-gray-800 text-[#F2CE88]'
-                                                                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                                                        )}
-                                                    >
-                                                        <StatusBadge status={s.id} />
-                                                    </button>
-                                                ))}
-                                            </div>
-
-                                            {/* Priority Submenu */}
-                                            <div className="border-t border-gray-800">
-                                                <div className="px-3 py-1.5 text-[10px] font-bold text-gray-500 uppercase">
-                                                    Priorytet
-                                                </div>
-                                                {priorities.map((p) => (
-                                                    <button
-                                                        key={p}
-                                                        onClick={() => {
-                                                            onEdit?.({ priority: p })
-                                                            setShowMenu(false)
-                                                        }}
-                                                        className={cn(
-                                                            'flex items-center gap-2 w-full px-3 py-1.5 text-xs transition-colors',
-                                                            subtask.priority === p
-                                                                ? 'bg-gray-800 text-[#F2CE88]'
-                                                                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                                                        )}
-                                                    >
-                                                        <PriorityBadge priority={p} />
-                                                    </button>
-                                                ))}
-                                            </div>
 
                                             <div className="border-t border-gray-800">
                                                 <button

@@ -84,8 +84,6 @@ export const subtasks = pgTable('subtasks', {
     taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
     title: varchar('title', { length: 255 }).notNull(),
     description: text('description'),
-    status: text('status').default('todo').notNull(),
-    priority: taskPriorityEnum('priority').default('medium').notNull(),
     isCompleted: boolean('is_completed').default(false).notNull(),
     position: integer('position').default(0).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

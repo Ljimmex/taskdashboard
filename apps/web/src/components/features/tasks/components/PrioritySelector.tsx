@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
@@ -50,7 +49,6 @@ export function PrioritySelector({
     size = 'md',
     className,
 }: PrioritySelectorProps) {
-    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const [isOpen, setIsOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
@@ -103,7 +101,7 @@ export function PrioritySelector({
                 style={{ color: selected.color }}
             >
                 <SelectedIcon size={iconSize} />
-                <span>{t(`tasks.priority.${selected.id}` as any, { defaultValue: selected.name })}</span>
+                <span>{selected.name}</span>
                 <svg
                     width="12"
                     height="12"
@@ -134,7 +132,7 @@ export function PrioritySelector({
                                 )}
                             >
                                 <Icon size={18} />
-                                <span style={{ color: priority.color }}>{t(`tasks.priority.${priority.id}` as any, { defaultValue: priority.name })}</span>
+                                <span style={{ color: priority.color }}>{priority.name}</span>
                                 {value === priority.id && (
                                     <svg
                                         width="14"
@@ -159,7 +157,6 @@ export function PrioritySelector({
 
 // Compact badge variant (display only)
 export function PriorityBadge({ priority, size = 'sm' }: { priority: string; size?: 'sm' | 'md' }) {
-    const { t } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
 
     const { data: workspace } = useQuery({
@@ -191,7 +188,7 @@ export function PriorityBadge({ priority, size = 'sm' }: { priority: string; siz
             style={{ color: config.color }}
         >
             <Icon size={iconSize} />
-            {t(`tasks.priority.${config.id}` as any, { defaultValue: config.name })}
+            {config.name}
         </span>
     )
 }

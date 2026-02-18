@@ -34,8 +34,6 @@ import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extens
 const subtaskSchema = z.object({
     title: zSanitizedString(),
     description: zSanitizedStringOptional(),
-    status: zSanitizedStringOptional(),
-    priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
 })
 
 const createTaskSchema = z.object({
@@ -512,9 +510,7 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
                     taskId: created.id,
                     title: sub.title,
                     description: sub.description || null,
-                    status: sub.status || 'todo',
-                    priority: sub.priority || 'medium',
-                    isCompleted: sub.status === 'done' || sub.status === 'completed'
+                    isCompleted: false
                 })
             }
         }
@@ -970,9 +966,7 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
             taskId: id,
             title: body.title,
             description: body.description || null,
-            status: body.status || 'todo',
-            priority: body.priority || 'medium',
-            isCompleted: body.status === 'done' || body.status === 'completed' || body.isCompleted || false
+            isCompleted: body.isCompleted || false
         } as NewSubtask).returning()
 
         // Log activity
@@ -988,20 +982,9 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
         if (task) {
             const workspaceId = await getWorkspaceIdFromProject(task.projectId)
             if (workspaceId) {
-                // Fetch workspace priorities
-                const workspace = await db.query.workspaces.findFirst({
-                    where: (w, { eq }) => eq(w.id, workspaceId),
-                    columns: { priorities: true }
-                })
-                const priorityObj = workspace?.priorities?.find((p: any) => p.id === created.priority)
-                const priorityName = priorityObj?.name || created.priority
-                const priorityColor = priorityObj?.color
-
                 triggerWebhook('subtask.created', {
                     ...created,
-                    taskTitle: task.title,
-                    priorityName,
-                    priorityColor
+                    taskTitle: task.title
                 }, workspaceId)
             }
         }
@@ -1030,12 +1013,9 @@ tasksRoutes.patch('/:taskId/subtasks/:subtaskId', async (c) => {
         const updateData: any = { updatedAt: new Date() }
         if (body.title !== undefined) updateData.title = body.title
         if (body.description !== undefined) updateData.description = body.description
-        if (body.status !== undefined) updateData.status = body.status
-        if (body.priority !== undefined) updateData.priority = body.priority
         if (body.isCompleted !== undefined) {
             updateData.isCompleted = body.isCompleted
             updateData.completedAt = body.isCompleted ? new Date() : null
-            if (body.isCompleted && !body.status) updateData.status = 'done'
         }
         if (body.position !== undefined) updateData.position = body.position
 
@@ -1048,14 +1028,6 @@ tasksRoutes.patch('/:taskId/subtasks/:subtaskId', async (c) => {
 
         if (body.isCompleted !== undefined && body.isCompleted !== oldSubtask.isCompleted) {
             details = body.isCompleted ? `ukończył(a) podzadanie: ${updated.title} ` : `przywrócił(a) podzadanie: ${updated.title} `
-        } else if (body.status !== undefined && body.status !== oldSubtask.status) {
-            details = `zmienił(a) status podzadania "${updated.title}" na: ${body.status} `
-            metadata.from = oldSubtask.status
-            metadata.to = body.status
-        } else if (body.priority !== undefined && body.priority !== oldSubtask.priority) {
-            details = `zmienił(a) priorytet podzadania "${updated.title}" na: ${body.priority} `
-            metadata.from = oldSubtask.priority
-            metadata.to = body.priority
         } else if (body.title !== undefined && body.title !== oldSubtask.title) {
             details = `zmienił(a) nazwę podzadania z "${oldSubtask.title}" na "${updated.title}"`
         }
@@ -1076,38 +1048,16 @@ tasksRoutes.patch('/:taskId/subtasks/:subtaskId', async (c) => {
         if (parentTask) {
             const wsId = await getWorkspaceIdFromProject(parentTask.projectId)
             if (wsId) {
-                let extra: any = {}
-                if (body.priority !== undefined) {
-                    const workspace = await db.query.workspaces.findFirst({
-                        where: (w, { eq }) => eq(w.id, wsId),
-                        columns: { priorities: true }
-                    })
-                    const priorityObj = workspace?.priorities?.find((p: any) => p.id === updated.priority)
-                    const oldPriorityObj = workspace?.priorities?.find((p: any) => p.id === oldSubtask.priority)
-
-                    extra.priorityName = priorityObj?.name || updated.priority
-                    extra.oldPriorityName = oldPriorityObj?.name || oldSubtask.priority
-                    extra.priorityColor = priorityObj?.color
-                    extra.oldPriorityColor = oldPriorityObj?.color
-                }
-
-                if ((body.status === 'done' || body.status === 'completed' || body.isCompleted) && !oldSubtask.isCompleted) {
+                if (body.isCompleted && !oldSubtask.isCompleted) {
                     triggerWebhook('subtask.completed', {
                         ...updated,
                         taskTitle: parentTask.title
                     }, wsId)
                 } else {
-                    const webhookChanges = { ...metadata }
-                    if (body.priority !== undefined && extra.priorityName) {
-                        webhookChanges.from = extra.oldPriorityName
-                        webhookChanges.to = extra.priorityName
-                    }
-
                     triggerWebhook('subtask.updated', {
                         ...updated,
                         taskTitle: parentTask.title,
-                        changes: webhookChanges,
-                        ...extra
+                        changes: metadata
                     }, wsId)
                 }
             }

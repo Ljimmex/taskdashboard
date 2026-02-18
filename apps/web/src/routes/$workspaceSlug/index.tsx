@@ -11,6 +11,7 @@ import { TaskCard, AddTaskCard } from '@/components/features/tasks/components/Ta
 import { ChatSection } from '@/components/dashboard/ChatSection'
 import { apiFetchJson, apiFetch } from '@/lib/api'
 import { CalendarEventPanel } from '@/components/features/calendar/CalendarEventPanel'
+import { EditEventPanel } from '@/components/features/calendar/EditEventPanel'
 import { useTeamMembers } from '@/hooks/useTeamMembers'
 import { useFiles } from '@/hooks/useFiles'
 import { FileInfoPanel } from '@/components/features/files/FileInfoPanel'
@@ -32,6 +33,8 @@ function DashboardHome() {
   const [projectPage, setProjectPage] = useState(0)
   const [isEventPanelOpen, setIsEventPanelOpen] = useState(false)
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<any | null>(null)
+  const [isEditEventPanelOpen, setIsEditEventPanelOpen] = useState(false)
 
   // File Modal State
   const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
@@ -153,6 +156,20 @@ function DashboardHome() {
     setIsCreateProjectOpen(false)
   }
 
+  const handleEditEvent = (eventId: string) => {
+    const event = events.find((e: any) => e.id === eventId)
+    if (event) {
+      setEditingEvent(event)
+      setIsEditEventPanelOpen(true)
+    }
+  }
+
+  const handleEventUpdated = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['calendar_events', workspaceSlug] })
+    setIsEditEventPanelOpen(false)
+    setEditingEvent(null)
+  }
+
   // File Actions
   const handleFileClick = (fileId: string) => {
     const file = files?.find(f => f.id === fileId)
@@ -241,6 +258,7 @@ function DashboardHome() {
                       apiFetch(`/api/calendar/${event.id}`, { method: 'DELETE' }).then(() => window.location.reload())
                     }
                   }}
+                  onFullEdit={() => handleEditEvent(event.id)}
                   onDelete={async () => {
                     if (confirm('Delete this event?')) {
                       await apiFetch(`/api/calendar/${event.id}`, { method: 'DELETE' })
@@ -404,6 +422,16 @@ function DashboardHome() {
           userRole={workspaceData?.userRole}
         />
       )}
+
+      {/* Edit Event Panel */}
+      <EditEventPanel
+        event={editingEvent}
+        isOpen={isEditEventPanelOpen}
+        onClose={() => { setIsEditEventPanelOpen(false); setEditingEvent(null) }}
+        workspaceSlug={workspaceSlug}
+        onUpdated={handleEventUpdated}
+        canCreateTeamEvents={canCreateCalendarEvents}
+      />
 
       {/* Create Project Panel */}
       <CreateProjectPanel

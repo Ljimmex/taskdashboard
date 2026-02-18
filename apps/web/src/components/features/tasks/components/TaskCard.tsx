@@ -60,7 +60,7 @@ export interface TaskCardProps {
     subtaskCompleted?: number
     commentCount?: number
     attachmentCount?: number
-    subtasks?: { id: string; title: string; description?: string | null; status: string; priority: string; isCompleted: boolean }[]
+    subtasks?: { id: string; title: string; description?: string | null; isCompleted: boolean }[]
     onClick?: () => void
     onEdit?: () => void  // Quick edit (pencil icon)
     onFullEdit?: () => void  // Full edit panel (3-dot menu Edit)
@@ -258,7 +258,7 @@ export function TaskCard({
                             {t('tasks.card.menu.edit')}
                         </button>
 
-                        {!isAssignedToMe && (canManageTasks || userRole === 'member') && (
+                        {type !== 'meeting' && !isAssignedToMe && (canManageTasks || userRole === 'member') && (
                             <button onClick={handleAssignToMe} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="group-hover/item:hidden">
                                     <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#545454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -313,11 +313,13 @@ export function TaskCard({
                 )}
             </div>
 
-            {/* Header: Title + Priority Badge */}
-            <div className="flex items-center gap-2 mb-3 pr-8 group/title">
-                <h3 className="font-semibold text-white truncate flex-1">{title}</h3>
+            {/* Header: Title */}
+            <div className="mb-2 pr-8">
+                <h3 className="font-semibold text-white line-clamp-2">{title}</h3>
+            </div>
 
-                {/* Priority / Date Badge */}
+            {/* Priority / Date Badge */}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
                 {type === 'meeting' ? (
                     dueDate ? (
                         <span className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5 bg-[#2a2b36] text-gray-300 border border-gray-700/50">
@@ -344,6 +346,13 @@ export function TaskCard({
                         {currentPriority.name}
                     </span>
                 )}
+                {/* Inline Labels */}
+                {safeLabels.slice(0, 3).map((label, i) => (
+                    <LabelBadge key={label.id || i} label={label} size="sm" />
+                ))}
+                {safeLabels.length > 3 && (
+                    <span className="text-[10px] text-gray-500">+{safeLabels.length - 3}</span>
+                )}
             </div>
 
             {/* Description */}
@@ -354,17 +363,6 @@ export function TaskCard({
             )}
 
 
-            {/* Labels Row */}
-            {safeLabels.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                    {safeLabels.slice(0, 3).map((label, i) => (
-                        <LabelBadge key={label.id || i} label={label} size="sm" />
-                    ))}
-                    {safeLabels.length > 3 && (
-                        <span className="text-[10px] text-gray-500">+{safeLabels.length - 3}</span>
-                    )}
-                </div>
-            )}
 
             {/* Due Date / Progress (like Project Card) - Only for tasks */}
             {type !== 'meeting' && (dueDate || subtaskCount > 0) && (

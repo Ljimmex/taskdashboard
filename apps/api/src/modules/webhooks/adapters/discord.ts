@@ -116,7 +116,7 @@ export async function prepareDiscordRequest(job: any, config: any) {
     } else if (event === 'task.assigned') {
         embed.title = `${emoji} Assignee Changed`
         embed.description = `Assignee for **${payload.title}** was updated.`
-        embed.fields = [{ name: 'Change', value: `${payload.oldAssignee} ➡️ ${payload.newAssignee}`, inline: true }]
+        embed.fields = [{ name: 'Change', value: `${payload.oldAssignees || 'Unassigned'} ➡️ ${payload.newAssignees || 'Unassigned'}`, inline: true }]
     } else if (event === 'task.due_date_changed') {
         embed.title = `${emoji} Due Date Changed`
         embed.description = `Due date for **${payload.title}** was updated.`
@@ -126,15 +126,6 @@ export async function prepareDiscordRequest(job: any, config: any) {
     } else if (event === 'subtask.created') {
         embed.title = `${emoji} Subtask Created`
         embed.description = `**${payload.title}** added to **${payload.taskTitle}**`
-
-        const priorityColor = parseColor(payload.priorityColor)
-        if (priorityColor) embed.color = priorityColor
-        else embed.color = BRAND_COLOR
-
-        embed.fields = [
-            { name: 'Status', value: payload.status || 'todo', inline: true },
-            { name: 'Priority', value: payload.priorityName || payload.priority || 'None', inline: true }
-        ]
     } else if (event === 'subtask.updated') {
         embed.title = `${emoji} Subtask Updated`
         embed.description = `Subtask **${payload.title}** in **${payload.taskTitle}** was updated.`

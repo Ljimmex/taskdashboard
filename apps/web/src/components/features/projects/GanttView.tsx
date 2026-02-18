@@ -148,11 +148,11 @@ export function GanttView({
                 {/* 1. SEPARATE HEADER ROW */}
                 <div
                     ref={headerRef}
-                    className="flex overflow-hidden border-b border-gray-800 bg-[#1e1e29] relative z-50 flex-shrink-0 shadow-sm"
+                    className="flex overflow-hidden border-b border-gray-800 bg-[#1e1e29] relative z-20 flex-shrink-0 shadow-sm"
                 >
                     <div className="min-w-max flex">
                         {/* Left Side Header (Sticky Left) */}
-                        <div className="w-[720px] flex-shrink-0 sticky left-0 z-50 bg-[#1e1e29] flex items-center h-12 text-xs font-semibold text-gray-300 border-r border-gray-800 shadow-[4px_0_24px_rgba(0,0,0,0.3)]">
+                        <div className="w-[720px] flex-shrink-0 sticky left-0 z-30 bg-[#1e1e29] flex items-center h-12 text-xs font-semibold text-gray-300 border-r border-gray-800 shadow-[4px_0_24px_rgba(0,0,0,0.3)]">
                             <div className="w-[240px] px-4 border-r border-gray-800/50 h-full flex items-center overflow-hidden"><Marquee>{t('projects.gantt.task_name')}</Marquee></div>
                             <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.start_date')}</Marquee></div>
                             <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.end_date')}</Marquee></div>

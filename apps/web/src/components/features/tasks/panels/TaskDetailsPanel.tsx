@@ -478,7 +478,7 @@ export function TaskDetailsPanel({
                         <div className="p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-semibold text-white">{t('projects.details.subtasks.title')}</h3>
-                                <span className="text-xs text-gray-500">{subtasks.filter(s => s.status === 'done' || s.isCompleted).length}/{subtasks.length}</span>
+                                <span className="text-xs text-gray-500">{subtasks.filter(s => s.isCompleted).length}/{subtasks.length}</span>
                             </div>
                             <SubtaskList
                                 subtasks={subtasks}

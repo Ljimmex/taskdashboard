@@ -26,6 +26,7 @@ interface KanbanBoardHeaderProps {
     userId?: string
     members?: { id: string; name: string; avatar?: string }[]
     availableLabels?: { id: string; name: string; color: string }[]
+    availablePriorities?: { id: string; name: string; color: string; position: number }[]
     availableStatuses?: { value: string; label: string }[]
 }
 
@@ -148,12 +149,14 @@ function FiltersDropdown({
     onFilterChange,
     members = [],
     availableLabels = [],
+    availablePriorities,
     availableStatuses = []
 }: {
     onClose: () => void
     onFilterChange?: (filters: FilterState) => void
     members?: { id: string; name: string; avatar?: string }[]
     availableLabels?: { id: string; name: string; color: string }[]
+    availablePriorities?: { id: string; name: string; color: string; position: number }[]
     availableStatuses?: { value: string; label: string }[]
 }) {
     const { t } = useTranslation()
@@ -215,12 +218,13 @@ function FiltersDropdown({
         </div>
     )
 
-    const priorities = [
-        { value: 'urgent', label: 'Urgent', color: 'bg-red-500' },
-        { value: 'high', label: 'High', color: 'bg-orange-500' },
-        { value: 'medium', label: 'Medium', color: 'bg-blue-500' },
-        { value: 'low', label: 'Low', color: 'bg-gray-400' },
+    const defaultPriorities = [
+        { id: 'urgent', name: 'Urgent', color: '#ef4444', position: 3 },
+        { id: 'high', name: 'High', color: '#f59e0b', position: 2 },
+        { id: 'medium', name: 'Medium', color: '#3b82f6', position: 1 },
+        { id: 'low', name: 'Low', color: '#6b7280', position: 0 },
     ]
+    const priorities = (availablePriorities || defaultPriorities).sort((a, b) => a.position - b.position)
 
 
 
@@ -302,13 +306,13 @@ function FiltersDropdown({
                 <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">{t('board.filters.priorities')}</div>
                 {priorities.map(p => (
                     <button
-                        key={p.value}
-                        onClick={() => toggleFilter('priorities', p.value)}
+                        key={p.id}
+                        onClick={() => toggleFilter('priorities', p.id)}
                         className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
                     >
-                        <Checkbox checked={filters.priorities.includes(p.value)} />
-                        <span className={`w-2 h-2 rounded-full ${p.color}`} />
-                        {t(`tasks.priority.${p.value}`)}
+                        <Checkbox checked={filters.priorities.includes(p.id)} />
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                        {p.name}
                     </button>
                 ))}
             </div>
@@ -389,6 +393,7 @@ export function KanbanBoardHeader({
     userId,
     members,
     availableLabels,
+    availablePriorities,
     availableStatuses
 }: KanbanBoardHeaderProps) {
     const { t } = useTranslation()
@@ -446,6 +451,7 @@ export function KanbanBoardHeader({
                             onFilterChange={onFilterChange}
                             members={members}
                             availableLabels={availableLabels}
+                            availablePriorities={availablePriorities}
                             availableStatuses={availableStatuses}
                         />
                     )}

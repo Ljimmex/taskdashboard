@@ -161,7 +161,7 @@ export async function prepareSlackRequest(job: any, config: any) {
             },
             {
                 type: 'section',
-                text: { type: 'mrkdwn', text: `*Change:* ${payload.oldAssignee || 'Unassigned'} ➡️ ${payload.newAssignee || 'Unassigned'}` }
+                text: { type: 'mrkdwn', text: `*Change:* ${payload.oldAssignees || 'Unassigned'} ➡️ ${payload.newAssignees || 'Unassigned'}` }
             }
         ]
     } else if (event === 'task.due_date_changed') {
@@ -184,7 +184,6 @@ export async function prepareSlackRequest(job: any, config: any) {
         ]
     } else if (event === 'subtask.created') {
         text = `${emoji} Subtask Created: ${payload.title || 'Unknown Subtask'}`
-        attachmentColor = parseColor(payload.priorityColor) || '#10B981'
         blocks = [
             {
                 type: 'header',
@@ -193,13 +192,6 @@ export async function prepareSlackRequest(job: any, config: any) {
             {
                 type: 'section',
                 text: { type: 'mrkdwn', text: `*${payload.title || 'Unknown Subtask'}* in *${payload.taskTitle || 'Unknown Task'}*` }
-            },
-            {
-                type: 'section',
-                fields: [
-                    { type: 'mrkdwn', text: `*Status:*\n${payload.status || 'todo'}` },
-                    { type: 'mrkdwn', text: `*Priority:*\n${payload.priorityName || payload.priority || 'None'}` }
-                ]
             }
         ]
     } else if (event === 'subtask.updated') {

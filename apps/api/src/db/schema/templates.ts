@@ -18,7 +18,6 @@ export interface TaskTemplateData {
     subtasks?: {
         title: string
         description?: string
-        priority?: string
     }[]
 }
 

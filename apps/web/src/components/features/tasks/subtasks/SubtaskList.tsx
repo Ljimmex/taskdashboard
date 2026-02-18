@@ -143,18 +143,10 @@ export function SubtaskList({
 
     // Read-only mode - simple list without drag & drop or editing, no interaction
     if (readOnly) {
-        const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
-            urgent: { label: 'Pilne', color: 'text-red-400', bg: 'bg-red-500/20' },
-            high: { label: 'Wysoki', color: 'text-orange-400', bg: 'bg-orange-500/20' },
-            medium: { label: 'Średni', color: 'text-amber-400', bg: 'bg-amber-500/20' },
-            low: { label: 'Niski', color: 'text-blue-400', bg: 'bg-blue-500/20' },
-        }
-
         return (
             <div className="space-y-2">
                 {subtasks.map((subtask) => {
-                    const isCompleted = subtask.status === 'done' || subtask.isCompleted
-                    const priority = priorityConfig[subtask.priority || 'medium'] || priorityConfig.medium
+                    const isCompleted = subtask.isCompleted
 
                     return (
                         <div
@@ -165,8 +157,8 @@ export function SubtaskList({
                                 {/* Checkbox icon (non-interactive) */}
                                 <div
                                     className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${isCompleted
-                                            ? 'bg-[#F2CE88] border-[#F2CE88]'
-                                            : 'border-gray-600'
+                                        ? 'bg-[#F2CE88] border-[#F2CE88]'
+                                        : 'border-gray-600'
                                         }`}
                                 >
                                     {isCompleted && (
@@ -178,21 +170,9 @@ export function SubtaskList({
 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <span className={`text-sm font-medium ${isCompleted ? 'text-gray-500 line-through' : 'text-white'}`}>
-                                            {subtask.title}
-                                        </span>
-                                        {/* Priority badge */}
-                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${priority.bg} ${priority.color}`}>
-                                            {priority.label}
-                                        </span>
-                                        {/* Status */}
-                                        {subtask.status && subtask.status !== 'todo' && subtask.status !== 'done' && (
-                                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-800 text-gray-400">
-                                                {subtask.status}
-                                            </span>
-                                        )}
-                                    </div>
+                                    <span className={`text-sm font-medium ${isCompleted ? 'text-gray-500 line-through' : 'text-white'}`}>
+                                        {subtask.title}
+                                    </span>
                                     {/* Description */}
                                     {subtask.description && (
                                         <p className="text-xs text-gray-500 mt-1 line-clamp-2">{subtask.description}</p>
