@@ -636,6 +636,25 @@ export function CalendarView() {
                 comments={selectedTask?.comments}
                 activities={selectedTask?.activities}
                 stages={selectedTask?.stages}
+                onSubtaskToggle={async (subtaskId) => {
+                    if (!selectedTask) return
+                    const subtask = selectedTask.subtasks?.find((s: any) => s.id === subtaskId)
+                    if (!subtask) return
+                    try {
+                        await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
+                            method: 'PATCH',
+                            headers: { 'x-user-id': session?.user?.id || '' },
+                            body: JSON.stringify({ isCompleted: !subtask.isCompleted })
+                        })
+                        // Refresh task details
+                        const data = await apiFetchJson<any>(`/api/tasks/${selectedTask.id}`)
+                        if (data.success) {
+                            setSelectedTask(data.data)
+                        }
+                    } catch (err) {
+                        console.error('Failed to toggle subtask:', err)
+                    }
+                }}
             />
         </div>
     )

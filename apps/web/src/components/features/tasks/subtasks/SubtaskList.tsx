@@ -157,11 +157,17 @@ export function SubtaskList({
                             className="p-3 rounded-xl bg-gray-900/30"
                         >
                             <div className="flex items-start gap-3">
-                                {/* Checkbox icon (non-interactive) */}
-                                <div
-                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${isCompleted
+                                {/* Checkbox icon */}
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        onToggle?.(subtask.id)
+                                    }}
+                                    disabled={!onToggle}
+                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${!onToggle ? 'cursor-default' : 'cursor-pointer'} ${isCompleted
                                         ? 'bg-[#F2CE88] border-[#F2CE88]'
-                                        : 'border-gray-600'
+                                        : `border-gray-600 ${onToggle ? 'hover:border-[#F2CE88]/50' : ''}`
                                         }`}
                                 >
                                     {isCompleted && (
@@ -169,7 +175,7 @@ export function SubtaskList({
                                             <path d="M5 12l5 5L20 7" />
                                         </svg>
                                     )}
-                                </div>
+                                </button>
 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">

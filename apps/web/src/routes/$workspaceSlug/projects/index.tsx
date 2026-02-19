@@ -220,7 +220,6 @@ function ProjectsPage() {
             const data = await res.json()
             if (data.success) {
                 refetchTasks()
-                setShowCreateTaskPanel(false)
                 return { id: data.data.id }
             }
             return null

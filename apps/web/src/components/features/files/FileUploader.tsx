@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useUploadFile, useCreateFolder } from '@/hooks/useFiles'
 import { useTranslation } from 'react-i18next'
@@ -299,42 +298,42 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
     }
 
     return (
-        <div className="rounded-xl border-2 border-dashed border-border bg-card overflow-hidden transition-colors">
+        <div className="rounded-xl border-2 border-dashed border-gray-800 bg-[#13131a] overflow-hidden transition-colors">
             {/* Drop Zone */}
             <div
                 className={cn(
                     "flex flex-col items-center justify-center p-8 transition-colors cursor-pointer",
-                    isDragOver && "bg-primary/5 border-primary"
+                    isDragOver && "bg-amber-500/10 border-amber-500"
                 )}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => document.getElementById('file-input')?.click()}
             >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <Upload className="w-8 h-8 text-primary" />
+                <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
+                    <Upload className="w-8 h-8 text-amber-500" />
                 </div>
-                <p className="text-lg font-medium text-foreground mb-1">
+                <p className="text-lg font-medium text-white mb-1">
                     {t('files.messages.drag_drop_files_folders')}
                 </p>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-gray-400 mb-4">
                     {t('files.messages.click_to_browse')}
                 </p>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-2" type="button" onClick={(e) => {
+                    <button type="button" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1a1a24] border border-gray-700 rounded-lg hover:bg-gray-800 hover:text-white transition-colors" onClick={(e) => {
                         e.stopPropagation()
                         document.getElementById('file-input')?.click()
                     }}>
                         <File className="w-4 h-4" />
                         {t('files.actions.select_files')}
-                    </Button>
-                    <Button variant="outline" size="sm" className="gap-2" type="button" onClick={(e) => {
+                    </button>
+                    <button type="button" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1a1a24] border border-gray-700 rounded-lg hover:bg-gray-800 hover:text-white transition-colors" onClick={(e) => {
                         e.stopPropagation()
                         document.getElementById('folder-input')?.click()
                     }}>
                         <File className="w-4 h-4" />
                         {t('files.actions.select_folder')}
-                    </Button>
+                    </button>
                 </div>
 
                 <input
@@ -358,31 +357,29 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
 
             {/* Upload Queue */}
             {uploadQueue.length > 0 && (
-                <div className="border-t bg-muted/30 p-4 space-y-3 max-h-60 overflow-y-auto">
-                    <div className="flex items-center justify-between sticky top-0 bg-muted/30 backdrop-blur-sm z-10 pb-2">
-                        <h4 className="text-sm font-medium">{t('files.messages.uploading_count', { count: uploadQueue.length })}</h4>
-                        <Button
-                            variant="ghost"
-                            size="sm"
+                <div className="border-t border-gray-800 bg-[#16161f] p-4 space-y-3 max-h-60 overflow-y-auto">
+                    <div className="flex items-center justify-between sticky top-0 bg-[#16161f] pb-2 z-10">
+                        <h4 className="text-sm font-medium text-white">{t('files.messages.uploading_count', { count: uploadQueue.length })}</h4>
+                        <button
                             onClick={(e) => { e.stopPropagation(); setUploadQueue([]) }}
-                            className="text-xs"
+                            className="px-2 py-1 text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
                         >
                             {t('files.actions.clear_all')}
-                        </Button>
+                        </button>
                     </div>
 
                     {uploadQueue.map((item, index) => (
-                        <div key={index} className="flex items-center gap-3 bg-background rounded-lg p-3">
-                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                                <File className="w-5 h-5 text-muted-foreground" />
+                        <div key={index} className="flex items-center gap-3 bg-[#1a1a24] rounded-lg p-3 border border-gray-800">
+                            <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                <File className="w-5 h-5 text-gray-500" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate" title={item.relativePath}>{item.relativePath}</p>
-                                <p className="text-xs text-muted-foreground">{formatFileSize(item.file.size)}</p>
+                                <p className="text-sm font-medium truncate text-white" title={item.relativePath}>{item.relativePath}</p>
+                                <p className="text-xs text-gray-400">{formatFileSize(item.file.size)}</p>
                                 {item.status === 'uploading' && (
-                                    <div className="mt-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div className="mt-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                                         <div
-                                            className="h-full bg-primary transition-all duration-300"
+                                            className="h-full bg-amber-500 transition-all duration-300"
                                             style={{ width: `${item.progress}%` }}
                                         />
                                     </div>
@@ -399,14 +396,12 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
                                     <AlertCircle className="w-5 h-5 text-red-500" />
                                 )}
                                 {item.status === 'pending' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); removeFromQueue(item.file) }}
+                                        className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
                                     >
                                         <X className="w-4 h-4" />
-                                    </Button>
+                                    </button>
                                 )}
                             </div>
                         </div>

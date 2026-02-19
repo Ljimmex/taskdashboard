@@ -258,7 +258,6 @@ function ProjectDetailPage() {
       const data = await res.json()
       if (data.success) {
         refetchTasks()
-        setShowCreateTaskPanel(false)
         // Return the created task so CreateTaskPanel can upload files
         return data.data
       }

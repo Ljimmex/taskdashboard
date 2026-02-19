@@ -442,12 +442,17 @@ export function TaskDetailsPanel({
                         {dependentTasks.length > 0 && (
                             <div className="flex items-start gap-4">
                                 <span className="text-sm text-gray-500 w-24 pt-0.5 flex-shrink-0">{t('tasks.create.dependencies')}</span>
-                                <div className="w-64">
-                                    <div className="flex flex-col gap-1">
+                                <div className="w-64 overflow-hidden">
+                                    <div className="flex items-center gap-1 flex-wrap">
                                         {dependentTasks.map(t => (
-                                            <div key={t.id} className="flex items-center gap-2 px-2 py-1 rounded bg-gray-800/50 border border-gray-700">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                                                <span className="text-xs text-gray-300 truncate">{t.title}</span>
+                                            <div key={t.id} className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded-full">
+                                                <div className="w-4 h-4 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
+                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                                    </svg>
+                                                </div>
+                                                <span className="text-xs text-gray-300 font-medium truncate">{t.title}</span>
                                             </div>
                                         ))}
                                     </div>

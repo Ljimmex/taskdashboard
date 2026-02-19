@@ -612,34 +612,19 @@ export function EditTaskPanel({
                                         onClick={() => setShowFilePicker(false)}
                                     />
 
-                                    {/* Modal Content */}
-                                    <div className="relative w-full max-w-4xl bg-[#12121a] rounded-2xl border border-gray-800 shadow-2xl overflow-hidden">
-                                        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                                            <h3 className="text-lg font-semibold text-white">{t('files.picker.title')}</h3>
-                                            <button
-                                                onClick={() => setShowFilePicker(false)}
-                                                className="p-1 hover:bg-gray-800 rounded-lg transition-colors"
-                                            >
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M18 6L6 18M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <div className="p-4">
-                                            <FilePicker
-                                                onCancel={() => setShowFilePicker(false)}
-                                                onSelect={(files: FileRecord[]) => {
-                                                    if (task?.id && files.length > 0) {
-                                                        files.forEach(file => {
-                                                            attachFile.mutate({ taskId: task.id!, fileId: file.id })
-                                                        })
-                                                    }
-                                                    setShowFilePicker(false)
-                                                }}
-                                            // workspaceSlug is handled internally by FilePicker using useParams
-                                            />
-                                        </div>
-                                    </div>
+                                    {/* Modal Content - FilePicker provides its own container */}
+                                    <FilePicker
+                                        onCancel={() => setShowFilePicker(false)}
+                                        onSelect={(files: FileRecord[]) => {
+                                            if (task?.id && files.length > 0) {
+                                                files.forEach(file => {
+                                                    attachFile.mutate({ taskId: task.id!, fileId: file.id })
+                                                })
+                                            }
+                                            setShowFilePicker(false)
+                                        }}
+                                    // workspaceSlug is handled internally by FilePicker using useParams
+                                    />
                                 </div>,
                                 document.body
                             )}
