@@ -7,7 +7,7 @@ import type { Label } from '../../labels/LabelBadge'
 import { LabelPicker } from '../../labels/LabelPicker'
 import { FilePicker } from '../../files/FilePicker'
 import { useTaskFiles, useAttachFile, useRemoveFileFromTask } from '../../../../hooks/useTaskFiles'
-import { useTasks } from '../../../../hooks/useTasks'
+import { useTasks, isTaskBlocked } from '../../../../hooks/useTasks'
 import {
     DocumentIcon,
     DocumentIconGold,
@@ -38,6 +38,7 @@ interface EditTaskPanelProps {
         labelIds?: string[]
         links?: TaskLink[]
         dependsOn?: string[]
+        isCompleted?: boolean
     }) => void
     subtasks?: Subtask[]
     onSubtaskToggle?: (subtaskId: string) => void
@@ -90,18 +91,25 @@ import { Check, ChevronDown } from 'lucide-react'
 const StatusSelector = ({
     status,
     stages,
-    onChange
+    onChange,
+    disabled = false,
+    title
 }: {
     status: string
     stages: { id: string; name: string; color: string }[]
     onChange: (s: string) => void
+    disabled?: boolean
+    title?: string
 }) => {
     const { t } = useTranslation()
     const currentStage = stages.find(s => s.id === status)
 
     return (
-        <Select.Root value={status} onValueChange={onChange}>
-            <Select.Trigger className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-800 hover:bg-gray-700 transition-colors cursor-pointer outline-none border-none focus:ring-1 focus:ring-amber-500/50">
+        <Select.Root value={status} onValueChange={onChange} disabled={disabled}>
+            <Select.Trigger
+                className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-800 transition-colors outline-none border-none focus:ring-1 focus:ring-amber-500/50 ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-700 cursor-pointer'}`}
+                title={title}
+            >
                 <Select.Value>
                     <div className="flex items-center gap-2">
                         {currentStage && (
@@ -250,6 +258,7 @@ export function EditTaskPanel({
     const [selectedAssignees, setSelectedAssignees] = useState<Assignee[]>([])
     const [selectedLabels, setSelectedLabels] = useState<Label[]>([])
     const [selectedDependsOn, setSelectedDependsOn] = useState<string[]>([])
+    const [isCompleted, setIsCompleted] = useState(false)
     const [isEditingTitle, setIsEditingTitle] = useState(false)
     const [isEditingDescription, setIsEditingDescription] = useState(false)
     const [showFilePicker, setShowFilePicker] = useState(false)
@@ -262,6 +271,9 @@ export function EditTaskPanel({
     // Fetch available tasks for dependencies
     const { data: allTasks = [] } = useTasks(workspaceSlug)
     const availableTasks = allTasks.filter(t => t.id !== task?.id)
+
+    const isBlocked = isTaskBlocked({ dependsOn: selectedDependsOn } as any, allTasks)
+    const blockedTitle = isBlocked ? t('tasks.blocked_by_dependencies') : undefined
 
     // Labels - use useMemo to prevent recreation on every render
     const defaultLabels: Label[] = [
@@ -289,6 +301,7 @@ export function EditTaskPanel({
             setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : undefined)
             setLinks((task as any).links || [])
             setSelectedDependsOn((task as any).dependsOn || [])
+            setIsCompleted(task.isCompleted || false)
             setActiveTab('subtasks')
             // Deduplicate assignees by ID and include image support
             const sourceAssignees = task.assigneeDetails || task.assignees || []
@@ -347,6 +360,7 @@ export function EditTaskPanel({
             labelIds: selectedLabels.map(l => l.id),
             links: links,
             dependsOn: selectedDependsOn,
+            isCompleted: isCompleted,
         })
         onClose()
     }
@@ -384,26 +398,44 @@ export function EditTaskPanel({
                         <span className="text-xs text-amber-400 font-medium px-2 py-1 bg-amber-500/10 rounded-lg">{t('tasks.edit.edit_mode')}</span>
                     </div>
 
-                    {/* Task Title - Editable */}
-                    {isEditingTitle ? (
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            onBlur={() => setIsEditingTitle(false)}
-                            onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
-                            autoFocus
-                            className="text-xl font-bold text-white mb-4 w-full bg-gray-800 border border-amber-500 rounded-lg px-3 py-2 outline-none"
-                        />
-                    ) : (
-                        <h2
-                            onClick={() => setIsEditingTitle(true)}
-                            className="text-xl font-bold text-white mb-4 cursor-pointer hover:text-amber-400 transition-colors"
-                            title={t('tasks.edit.click_to_edit')}
+                    {/* Task Title - Editable with Checkbox */}
+                    <div className="flex items-center gap-3 mb-4">
+                        <button
+                            onClick={() => setIsCompleted(!isCompleted)}
+                            className={`flex flex-shrink-0 items-center justify-center w-6 h-6 rounded-md border text-white transition-all transform hover:scale-105 active:scale-95
+                                ${isCompleted ? 'bg-green-500 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-[#1a1a24] border-gray-600 hover:border-gray-500 hover:bg-gray-800'}
+                            `}
+                            title={isCompleted ? t('tasks.edit.mark_incomplete') : t('tasks.edit.mark_complete')}
                         >
-                            {title}
-                        </h2>
-                    )}
+                            {isCompleted && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            )}
+                        </button>
+
+                        <div className="flex-1">
+                            {isEditingTitle ? (
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    onBlur={() => setIsEditingTitle(false)}
+                                    onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
+                                    autoFocus
+                                    className="text-xl font-bold text-white w-full bg-gray-800 border border-amber-500 rounded-lg px-3 py-2 outline-none"
+                                />
+                            ) : (
+                                <h2
+                                    onClick={() => setIsEditingTitle(true)}
+                                    className={`text-xl font-bold cursor-pointer hover:text-amber-400 transition-colors ${isCompleted ? 'line-through text-gray-500' : 'text-white'}`}
+                                    title={t('tasks.edit.click_to_edit')}
+                                >
+                                    {title}
+                                </h2>
+                            )}
+                        </div>
+                    </div>
 
                     {/* Task Meta */}
                     <div className="space-y-3">
@@ -424,6 +456,8 @@ export function EditTaskPanel({
                                     availableAssignees={teamMembers}
                                     onSelect={setSelectedAssignees}
                                     maxVisible={2}
+                                    disabled={isBlocked}
+                                    title={blockedTitle}
                                 />
                             </div>
                         </div>
@@ -431,7 +465,13 @@ export function EditTaskPanel({
                         {/* Status */}
                         <div className="flex items-center gap-4">
                             <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.status')}</span>
-                            <StatusSelector status={status} stages={stages} onChange={setStatus} />
+                            <StatusSelector
+                                status={status}
+                                stages={stages}
+                                onChange={setStatus}
+                                disabled={isBlocked}
+                                title={blockedTitle}
+                            />
                         </div>
 
                         {/* Due Date - Editable */}
@@ -535,19 +575,19 @@ export function EditTaskPanel({
                             <SubtaskList
                                 subtasks={subtasks}
                                 availableAssignees={teamMembers}
-                                onToggle={(subtaskId) => {
+                                onToggle={isBlocked ? undefined : (subtaskId) => {
                                     onSubtaskToggle?.(subtaskId)
                                 }}
-                                onReorder={(newOrder) => {
+                                onReorder={isBlocked ? undefined : (newOrder) => {
                                     onSubtasksChange?.(newOrder)
                                 }}
-                                onEdit={(id, updates) => {
+                                onEdit={isBlocked ? undefined : (id, updates) => {
                                     onEditSubtask?.(id, updates)
                                 }}
-                                onDelete={(id) => {
+                                onDelete={isBlocked ? undefined : (id) => {
                                     onDeleteSubtask?.(id)
                                 }}
-                                onAdd={(titleStr, _afterId) => {
+                                onAdd={isBlocked ? undefined : (titleStr, _afterId) => {
                                     if (titleStr.trim()) {
                                         const newSubtask: Subtask = {
                                             id: `subtask_${Date.now()}`,

@@ -7,7 +7,7 @@ import {
 } from '../../db/schema/tasks'
 import { auth, type Auth } from '../../lib/auth'
 import { projects, projectMembers } from '../../db/schema/projects'
-import { eq, desc, arrayContains } from 'drizzle-orm'
+import { eq, desc, arrayContains, inArray } from 'drizzle-orm'
 import {
     canCreateTasks,
     canUpdateTasks,
@@ -55,7 +55,8 @@ const createTaskSchema = z.object({
     labels: z.array(z.string().or(z.object({ id: z.string() }))).optional().nullable(),
     reporterId: z.string().optional(), // Should be set from session, but schema might allow it if not strictly filtered
     assignees: z.array(z.string()).optional(),
-    dependsOn: z.array(z.string()).optional()
+    dependsOn: z.array(z.string()).optional(),
+    isCompleted: z.boolean().optional()
 })
 
 const updateTaskSchema = createTaskSchema.partial().extend({
@@ -618,6 +619,30 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
             return c.json({ success: false, error: 'Unauthorized to update task' }, 403)
         }
 
+        // =====================================================================
+        // TASK DEPENDENCIES BLOCKING LOGIC
+        // =====================================================================
+        const isTryingToChangeBlockedFields =
+            body.assignees !== undefined ||
+            (body.status !== undefined && body.status !== task.status);
+
+        if (isTryingToChangeBlockedFields && task.dependsOn && task.dependsOn.length > 0) {
+            const dependentTasks = await db
+                .select({ id: tasks.id, isCompleted: tasks.isCompleted })
+                .from(tasks)
+                .where(inArray(tasks.id, task.dependsOn));
+
+            const hasUnmetDependencies = dependentTasks.some(dep => !dep.isCompleted);
+
+            if (hasUnmetDependencies) {
+                return c.json({
+                    success: false,
+                    error: 'Cannot update blocked task. Unmet dependencies must be completed first.'
+                }, 403)
+            }
+        }
+        // =====================================================================
+
         // Check if trying to assign - requires assign permission
         if (body.assignees !== undefined) {
             // ALlow self-assignment if the user is assigning to themselves or adding themselves
@@ -668,7 +693,14 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
         const updateData: any = { updatedAt: new Date() }
         if (body.title !== undefined) updateData.title = body.title
         if (body.description !== undefined) updateData.description = body.description
-        if (body.status !== undefined) updateData.status = body.status
+        if (body.status !== undefined) {
+            updateData.status = body.status
+            // Automatic completion toggle
+            if (body.isCompleted === undefined) {
+                updateData.isCompleted = body.status === 'done'
+            }
+        }
+        if (body.isCompleted !== undefined) updateData.isCompleted = body.isCompleted
         if (body.priority !== undefined) updateData.priority = body.priority
         if (body.assignees !== undefined) updateData.assignees = body.assignees
         if (body.dueDate !== undefined) updateData.dueDate = body.dueDate ? new Date(body.dueDate) : null

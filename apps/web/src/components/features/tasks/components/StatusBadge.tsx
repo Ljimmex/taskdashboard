@@ -106,10 +106,11 @@ interface StatusSelectorProps {
     onChange: (status: string) => void
     stages?: ProjectStage[]
     disabled?: boolean
+    title?: string
     className?: string
 }
 
-export function StatusSelector({ value, onChange, stages, disabled, className }: StatusSelectorProps) {
+export function StatusSelector({ value, onChange, stages, disabled, title, className }: StatusSelectorProps) {
     const [isOpen, setIsOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
 
@@ -134,6 +135,7 @@ export function StatusSelector({ value, onChange, stages, disabled, className }:
                 type="button"
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 disabled={disabled}
+                title={title}
                 className={cn(
                     'flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1a1a24] border border-gray-800 hover:border-gray-700 transition-all text-sm font-medium',
                     disabled && 'opacity-50 cursor-not-allowed'

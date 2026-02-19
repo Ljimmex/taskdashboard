@@ -23,6 +23,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { TaskCard, TaskCardProps } from '../components/TaskCard'
 import { TaskColumn, AddColumn, QuickEditTask } from './TaskColumn'
+import { isTaskBlocked } from '@/hooks/useTasks'
 
 // Sortable Task wrapper
 function SortableTask({
@@ -39,6 +40,7 @@ function SortableTask({
     onCancelEdit,
     userRole,
     userId,
+    isBlocked,
 }: {
     task: TaskCardProps
     members?: { id: string; name: string; avatar?: string }[]
@@ -53,6 +55,7 @@ function SortableTask({
     onCancelEdit?: () => void
     userRole?: string
     userId?: string
+    isBlocked?: boolean
 }) {
     const {
         attributes,
@@ -67,6 +70,7 @@ function SortableTask({
             type: 'Task',
             task,
         },
+        disabled: isBlocked,
     })
 
     const style = {
@@ -102,6 +106,7 @@ function SortableTask({
                     userRole={userRole}
                     userId={userId}
                     onQuickUpdate={onQuickUpdate}
+                // Optional: Maybe show a blocked lock icon inside the task card? We will add it inside TaskCard based on dependsOn later, or pass `isBlocked` as a prop if we want.
                 />
             )}
         </div>
@@ -249,6 +254,7 @@ export function KanbanBoard({
 
     // Memoize column IDs for SortableContext
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns])
+    const allTasks = useMemo(() => columns.flatMap((col) => col.tasks), [columns])
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -390,12 +396,11 @@ export function KanbanBoard({
                                 onTaskClick={onTaskClick}
                                 onTaskEdit={onTaskEdit}
                                 onTaskDelete={onTaskDelete}
-                                onTaskArchive={undefined}
+                                onTaskDuplicate={onTaskDuplicate}
                                 onRenameColumn={(newName) => onRenameColumn?.(column.id, newName)}
                                 onChangeColumnColor={(color) => onChangeColumnColor?.(column.id, color)}
                                 onDeleteColumn={() => onDeleteColumn?.(column.id)}
                                 onMoveAllCards={() => onMoveAllCards?.(column.id)}
-                                isOver={false}
                             >
                                 <SortableContext
                                     items={column.tasks.map(t => t.id)}
@@ -416,8 +421,10 @@ export function KanbanBoard({
                                                 onQuickUpdate?.(data)
                                                 setEditingTaskId(null)
                                             }}
+                                            onCancelEdit={() => setEditingTaskId(null)}
                                             userRole={userRole}
                                             userId={userId}
+                                            isBlocked={isTaskBlocked(task as any, allTasks as any)}
                                         />
                                     ))}
                                 </SortableContext>
@@ -451,6 +458,6 @@ export function KanbanBoard({
                     )}
                 </DragOverlay>
             </DndContext>
-        </div>
+        </div >
     )
 }

@@ -5,6 +5,7 @@ import rehypeSanitize from 'rehype-sanitize'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
+import { useTasks, isTaskBlocked } from '@/hooks/useTasks'
 import { LabelBadge } from '../../labels/LabelBadge'
 import { SubtaskProgress } from '@/components/common/ProgressBar'
 import {
@@ -61,6 +62,8 @@ export interface TaskCardProps {
     commentCount?: number
     attachmentCount?: number
     subtasks?: { id: string; title: string; description?: string | null; isCompleted: boolean }[]
+    dependsOn?: string[]
+    isCompleted?: boolean
     onClick?: () => void
     onEdit?: () => void  // Quick edit (pencil icon)
     onFullEdit?: () => void  // Full edit panel (3-dot menu Edit)
@@ -96,6 +99,8 @@ export function TaskCard({
     subtaskCompleted = 0,
     commentCount = 0,
     attachmentCount = 0,
+    dependsOn = [],
+    isCompleted = false,
     onClick,
     onFullEdit,
     onDelete,
@@ -126,6 +131,10 @@ export function TaskCard({
         },
         enabled: !!workspaceSlug
     })
+
+    // Compute blocked status
+    const { data: allTasks = [] } = useTasks(workspaceSlug)
+    const isBlocked = isTaskBlocked({ dependsOn } as any, allTasks)
 
     const priorities: Priority[] = workspace?.priorities || [
         { id: 'low', name: 'Low', color: '#6b7280', position: 0 },
@@ -314,39 +323,55 @@ export function TaskCard({
             </div>
 
             {/* Header: Title */}
-            <div className="mb-2 pr-8">
-                <h3 className="font-semibold text-white line-clamp-2">{title}</h3>
+            <div className="flex items-start gap-2 mb-2 pr-8">
+                {isBlocked && (
+                    <div className="mt-0.5 flex-shrink-0" title={t('tasks.blocked_by_dependencies')}>
+                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 12V8C9 4.13401 12.134 1 16 1C19.866 1 23 4.13401 23 8V12" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
+                            <rect x="5" y="12" width="22" height="18" rx="3" fill="#9E9E9E" />
+                            <circle cx="16" cy="21" r="3" fill="#545454" />
+                        </svg>
+                    </div>
+                )}
+                <h3 className={`font-semibold line-clamp-2 ${isBlocked ? 'text-gray-500' : (isCompleted ? 'line-through text-gray-500' : 'text-white')}`}>{title}</h3>
             </div>
 
             {/* Priority / Date Badge */}
-            <div className="flex items-center gap-2 flex-wrap mb-3">
-                {type === 'meeting' ? (
-                    dueDate ? (
-                        <span className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5 bg-[#2a2b36] text-gray-300 border border-gray-700/50">
-                            {/* Calendar Icon */}
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            {formatDate(dueDate)}
+            <div className="flex items-center justify-between mb-3">
+                {/* Left side: Date Badge */}
+                <div className="flex items-center gap-2 flex-wrap">
+                    {type === 'meeting' ? (
+                        dueDate ? (
+                            <span className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5 bg-[#2a2b36] text-gray-300 border border-gray-700/50">
+                                {/* Calendar Icon */}
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                {formatDate(dueDate)}
+                            </span>
+                        ) : null
+                    ) : (
+                        <span
+                            className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5"
+                            style={{
+                                backgroundColor: `${currentPriority.color}33`,
+                                color: currentPriority.color,
+                                borderColor: `${currentPriority.color}4D`
+                            }}
+                        >
+                            <PriorityIcon size={12} />
+                            {currentPriority.name}
                         </span>
-                    ) : null
-                ) : (
-                    <span
-                        className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5"
-                        style={{
-                            backgroundColor: `${currentPriority.color}33`,
-                            color: currentPriority.color,
-                            borderColor: `${currentPriority.color}4D`
-                        }}
-                    >
-                        <PriorityIcon size={12} />
-                        {currentPriority.name}
-                    </span>
-                )}
-                {/* Inline Labels */}
+                    )}
+                </div>
+
+            </div>
+
+            {/* Inline Labels */}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
                 {safeLabels.slice(0, 3).map((label, i) => (
                     <LabelBadge key={label.id || i} label={label} size="sm" />
                 ))}

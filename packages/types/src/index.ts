@@ -74,6 +74,9 @@ export interface Task {
     assigneeId: string | null
     reporterId: string
     dueDate: Date | null
+    isCompleted: boolean
+    isArchived: boolean
+    dependsOn: string[]
     createdAt: Date
     updatedAt: Date
 }

@@ -36,6 +36,7 @@ export const tasks = pgTable('tasks', {
     progress: integer('progress').default(0).notNull(),
     position: integer('position').default(0).notNull(),
     isArchived: boolean('is_archived').default(false).notNull(),
+    isCompleted: boolean('is_completed').default(false).notNull(),
     // Labels stored as JSONB array of label IDs (references workspace.labels)
     labels: text('labels').array().default([]),
     // Assignees stored as array of user IDs (simple list, no FK constraint)

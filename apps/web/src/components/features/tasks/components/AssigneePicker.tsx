@@ -17,6 +17,8 @@ interface AssigneePickerProps {
     onSelect: (assignees: Assignee[]) => void
     maxVisible?: number
     placeholder?: string
+    disabled?: boolean
+    title?: string
 }
 
 // Avatar component
@@ -60,6 +62,8 @@ export function AssigneePicker({
     onSelect,
     maxVisible = 3,
     placeholder = 'Przypisz osobę...',
+    disabled = false,
+    title,
 }: AssigneePickerProps) {
     const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
@@ -109,15 +113,15 @@ export function AssigneePicker({
         <div className="relative" ref={containerRef}>
             {/* Selected Assignees Display */}
             <div
-                role="button"
-                tabIndex={0}
-                onClick={() => {
+                role={disabled ? 'presentation' : 'button'}
+                tabIndex={disabled ? -1 : 0}
+                onClick={disabled ? undefined : () => {
                     setIsOpen(!isOpen)
                     if (!isOpen) {
                         setTimeout(() => inputRef.current?.focus(), 100)
                     }
                 }}
-                onKeyDown={(e) => {
+                onKeyDown={disabled ? undefined : (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
                         setIsOpen(!isOpen)
@@ -126,7 +130,11 @@ export function AssigneePicker({
                         }
                     }
                 }}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-transparent hover:bg-gray-800/50 transition-colors w-full min-h-[32px] cursor-pointer outline-none focus:ring-2 focus:ring-amber-500/50"
+                className={cn(
+                    "flex items-center gap-2 px-2 py-1.5 rounded-lg bg-transparent hover:bg-gray-800/50 transition-colors w-full min-h-[32px] outline-none focus:ring-2 focus:ring-amber-500/50",
+                    disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                )}
+                title={title}
             >
                 {selectedAssignees.length === 0 ? (
                     <span className="text-sm text-gray-500">{placeholder === 'Przypisz osobę...' ? t('tasks.assignee.placeholder') : placeholder}</span>

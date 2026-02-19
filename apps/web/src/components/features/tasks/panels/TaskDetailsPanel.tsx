@@ -155,6 +155,7 @@ export function TaskDetailsPanel({
     const { data: allTasks = [] } = useTasks(workspaceSlug)
     const dependsOnIds = (task as any)?.dependsOn || []
     const dependentTasks = allTasks.filter(t => dependsOnIds.includes(t.id))
+    const isBlocked = dependentTasks.some(dep => !dep.isCompleted)
 
     // Fetch task files
     const { data: taskFiles = [] } = useTaskFiles(task?.id)
@@ -343,7 +344,20 @@ export function TaskDetailsPanel({
                     </div>
 
                     {/* Task Title */}
-                    <h2 className="text-xl font-bold text-white mb-4">{task.title}</h2>
+                    <div className="flex items-start gap-3 mb-4">
+                        {isBlocked && (
+                            <div className="mt-1 flex-shrink-0" title={t('tasks.blocked_by_dependencies')}>
+                                <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 12V8C9 4.13401 12.134 1 16 1C19.866 1 23 4.13401 23 8V12" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
+                                    <rect x="5" y="12" width="22" height="18" rx="3" fill="#9E9E9E" />
+                                    <circle cx="16" cy="21" r="3" fill="#545454" />
+                                </svg>
+                            </div>
+                        )}
+                        <h2 className={`text-xl font-bold ${isBlocked ? 'text-gray-500' : (task.isCompleted ? 'line-through text-gray-500' : 'text-white')}`}>
+                            {task.title}
+                        </h2>
+                    </div>
 
                     {/* Task Meta */}
                     <div className="space-y-3">
@@ -445,14 +459,22 @@ export function TaskDetailsPanel({
                                 <div className="w-64 overflow-hidden">
                                     <div className="flex items-center gap-1 flex-wrap">
                                         {dependentTasks.map(t => (
-                                            <div key={t.id} className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded-full">
+                                            <div key={t.id} className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded-full max-w-[220px] overflow-hidden">
                                                 <div className="w-4 h-4 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
                                                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                                                         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                                                     </svg>
                                                 </div>
-                                                <span className="text-xs text-gray-300 font-medium truncate">{t.title}</span>
+                                                <div className="flex-1 min-w-0" style={{ maxWidth: '100%' }}>
+                                                    {t.title.length > 20 ? (
+                                                        <Marquee className="text-xs text-gray-300 font-medium" speed={20}>
+                                                            <span className="mr-8">{t.title}</span>
+                                                        </Marquee>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-300 font-medium truncate block">{t.title}</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -521,9 +543,7 @@ export function TaskDetailsPanel({
                                 subtasks={subtasks}
                                 readOnly={true}
                                 availableAssignees={teamMembers}
-                                onToggle={(subtaskId) => {
-                                    handleSubtaskToggle(subtaskId)
-                                }}
+                                onToggle={isBlocked ? undefined : handleSubtaskToggle}
                             />
                         </div>
                     )}

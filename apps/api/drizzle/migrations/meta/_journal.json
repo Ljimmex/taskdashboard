@@ -85,6 +85,13 @@
       "when": 1771452496923,
       "tag": "0011_narrow_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1771535002966,
+      "tag": "0012_curvy_beyonder",
+      "breakpoints": true
     }
   ]
 }

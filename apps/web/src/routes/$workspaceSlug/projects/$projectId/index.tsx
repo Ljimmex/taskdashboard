@@ -40,6 +40,8 @@ interface Task {
   attachmentCount?: number
   status: string
   labels?: any[]
+  dependsOn?: string[]
+  isCompleted?: boolean
 }
 
 interface Project {
@@ -715,6 +717,8 @@ function ProjectDetailPage() {
           const found = workspaceLabels.find((wl: any) => wl.id === lid)
           return found || { id: lid, name: lid, color: '#6b7280' }
         }),
+        dependsOn: t.dependsOn || [],
+        isCompleted: t.isCompleted || false,
       }))
     }))
   }, [project?.stages, filteredTasks, workspaceLabels])
@@ -742,6 +746,8 @@ function ProjectDetailPage() {
         return found || { id: lid, name: lid, color: '#6b7280' }
       }),
       type: 'task' as const,
+      dependsOn: t.dependsOn || [],
+      isCompleted: t.isCompleted || false,
     }))
   }, [filteredTasks, project?.stages, workspaceLabels])
 
