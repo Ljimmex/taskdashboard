@@ -1,7 +1,7 @@
 import { createFileRoute, useParams, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, LayoutGrid, List, Calendar, GitBranch } from 'lucide-react'
 import { useSession } from '@/lib/auth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
@@ -57,6 +57,7 @@ function ProjectDetailPage() {
   const { workspaceSlug, projectId } = useParams({ strict: false }) as { workspaceSlug: string; projectId: string }
   const navigate = useNavigate()
   const { data: session } = useSession()
+  const queryClient = useQueryClient()
 
   const [viewMode, setViewMode] = useState<ViewMode>('kanban')
   const [project, setProject] = useState<Project | null>(null)
@@ -277,6 +278,7 @@ function ProjectDetailPage() {
         headers: { 'x-user-id': session?.user?.id || '' },
         body: JSON.stringify({ status: toColumn })
       })
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
       refetchTasks()
     } catch (error) {
       console.error('Error moving task:', error)
@@ -310,6 +312,7 @@ function ProjectDetailPage() {
         body: JSON.stringify(data)
       })
       if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] }) // Added this line
         refetchTasks()
         if (selectedTask?.id === data.id) refetchTaskDetails(data.id)
       }
@@ -398,6 +401,7 @@ function ProjectDetailPage() {
         body: JSON.stringify(apiPayload)
       })
       if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] })
         refetchTasks()
         if (selectedTask?.id === data.id) refetchTaskDetails(data.id)
         // Close panel after successful save
@@ -567,6 +571,7 @@ function ProjectDetailPage() {
         })
       })
       if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] })
         refetchTasks()
       }
     } catch (error) {
@@ -583,6 +588,7 @@ function ProjectDetailPage() {
         body: JSON.stringify({ isArchived: true })
       })
       if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] })
         refetchTasks()
       }
     } catch (error) {
