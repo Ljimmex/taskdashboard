@@ -401,11 +401,13 @@ export function EditTaskPanel({
                     {/* Task Title - Editable with Checkbox */}
                     <div className="flex items-center gap-3 mb-4">
                         <button
-                            onClick={() => setIsCompleted(!isCompleted)}
-                            className={`flex flex-shrink-0 items-center justify-center w-6 h-6 rounded-md border text-white transition-all transform hover:scale-105 active:scale-95
-                                ${isCompleted ? 'bg-green-500 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-[#1a1a24] border-gray-600 hover:border-gray-500 hover:bg-gray-800'}
+                            onClick={() => !isBlocked && setIsCompleted(!isCompleted)}
+                            disabled={isBlocked}
+                            className={`flex flex-shrink-0 items-center justify-center w-6 h-6 rounded-md border text-white transition-all transform
+                                ${isCompleted ? 'bg-green-500 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-[#1a1a24] border-gray-600'}
+                                ${isBlocked ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95 hover:border-gray-500 hover:bg-gray-800'}
                             `}
-                            title={isCompleted ? t('tasks.edit.mark_incomplete') : t('tasks.edit.mark_complete')}
+                            title={isBlocked ? t('tasks.blocked_by_dependencies') : (isCompleted ? t('tasks.edit.mark_incomplete') : t('tasks.edit.mark_complete'))}
                         >
                             {isCompleted && (
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

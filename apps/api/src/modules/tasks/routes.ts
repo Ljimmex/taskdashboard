@@ -622,9 +622,26 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
         // =====================================================================
         // TASK DEPENDENCIES BLOCKING LOGIC
         // =====================================================================
-        const isTryingToChangeBlockedFields =
-            body.assignees !== undefined ||
-            (body.status !== undefined && body.status !== task.status);
+
+        let assigneesChanged = false;
+        if (body.assignees !== undefined) {
+            const currentAssignees = task.assignees || [];
+            if (body.assignees.length !== currentAssignees.length) {
+                assigneesChanged = true;
+            } else {
+                for (const a of body.assignees) {
+                    if (!currentAssignees.includes(a)) {
+                        assigneesChanged = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        const statusChanged = body.status !== undefined && body.status !== task.status;
+        const completingTask = body.isCompleted !== undefined && body.isCompleted !== task.isCompleted && body.isCompleted === true;
+
+        const isTryingToChangeBlockedFields = assigneesChanged || statusChanged || completingTask;
 
         if (isTryingToChangeBlockedFields && task.dependsOn && task.dependsOn.length > 0) {
             const dependentTasks = await db
