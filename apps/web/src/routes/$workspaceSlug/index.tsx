@@ -386,7 +386,7 @@ function DashboardHome() {
       </div>
 
       {/* Right Column Section (Widgets) - Spans 4 columns */}
-      <div className="lg:col-span-4 space-y-6 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+      <div className="lg:col-span-4 space-y-6 animate-fade-in custom-scrollbar" style={{ animationDelay: '0.4s' }}>
         <OverallProgress
           projects={projects}
           currentUserId={session?.user?.id}

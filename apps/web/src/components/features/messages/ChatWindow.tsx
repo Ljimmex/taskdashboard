@@ -290,7 +290,7 @@ export function ChatWindow({
                 try {
                     // Fetch all recipient public keys
                     const recipientKeys: Record<string, CryptoKey> = {}
-                    
+
                     // Add our own key
                     recipientKeys[currentUserId] = publicKey
 
@@ -300,14 +300,14 @@ export function ChatWindow({
                         method: 'POST',
                         body: JSON.stringify({ userIds: [recipientId] })
                     })
-                    
+
                     if (keysRes[recipientId]) {
-                         const recipientPubKey = await importPublicKey(keysRes[recipientId])
-                         recipientKeys[recipientId] = recipientPubKey
-                         
-                         // V2 Encryption
-                         const envelope = await encryptMessage(content, recipientKeys)
-                         finalContent = envelope // Pass object directly
+                        const recipientPubKey = await importPublicKey(keysRes[recipientId])
+                        recipientKeys[recipientId] = recipientPubKey
+
+                        // V2 Encryption
+                        const envelope = await encryptMessage(content, recipientKeys)
+                        finalContent = envelope // Pass object directly
                     } else {
                         console.warn('Recipient public key not found, sending unencrypted (or fail?)')
                     }
@@ -387,22 +387,22 @@ export function ChatWindow({
 
         try {
             let finalContent: string | MessageEnvelope = newContent
-            
+
             if (publicKey && recipientUserId) {
-                 const recipientKeys: Record<string, CryptoKey> = {}
-                 recipientKeys[currentUserId] = publicKey
-                 
-                 const keysRes = await apiFetchJson<Record<string, string>>('/api/users/public-keys', {
-                     method: 'POST',
-                     body: JSON.stringify({ userIds: [recipientUserId] })
-                 })
-                 
-                 if (keysRes[recipientUserId]) {
-                      const recipientPubKey = await importPublicKey(keysRes[recipientUserId])
-                      recipientKeys[recipientUserId] = recipientPubKey
-                      const envelope = await encryptMessage(newContent, recipientKeys)
-                      finalContent = envelope
-                 }
+                const recipientKeys: Record<string, CryptoKey> = {}
+                recipientKeys[currentUserId] = publicKey
+
+                const keysRes = await apiFetchJson<Record<string, string>>('/api/users/public-keys', {
+                    method: 'POST',
+                    body: JSON.stringify({ userIds: [recipientUserId] })
+                })
+
+                if (keysRes[recipientUserId]) {
+                    const recipientPubKey = await importPublicKey(keysRes[recipientUserId])
+                    recipientKeys[recipientUserId] = recipientPubKey
+                    const envelope = await encryptMessage(newContent, recipientKeys)
+                    finalContent = envelope
+                }
             }
 
             await apiFetchJson(`/api/conversations/${conversation.id}/messages/${messageId}`, {
@@ -566,7 +566,7 @@ export function ChatWindow({
 
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-2 relative">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-2 relative">
                 {showSearch ? (
                     // Search Results List View
                     <div className="flex flex-col space-y-2">

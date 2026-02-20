@@ -53,6 +53,7 @@ interface TaskDetailsPanelProps {
     onCreateLabel?: (name: string, color: string) => Promise<Label | undefined>
     stages?: { id: string; name: string; color: string; position: number }[]
     teamMembers?: Assignee[]
+    onTaskClick?: (taskId: string) => void
 }
 
 // File type icons
@@ -143,6 +144,7 @@ export function TaskDetailsPanel({
     availableLabels: propAvailableLabels,
     stages = [],
     teamMembers = [],
+    onTaskClick,
 }: TaskDetailsPanelProps) {
     const { t, i18n } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
@@ -459,7 +461,11 @@ export function TaskDetailsPanel({
                                 <div className="w-64 overflow-hidden">
                                     <div className="flex items-center gap-1 flex-wrap">
                                         {dependentTasks.map(t => (
-                                            <div key={t.id} className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded-full max-w-[220px] overflow-hidden">
+                                            <div
+                                                key={t.id}
+                                                onClick={() => onTaskClick?.(t.id)}
+                                                className={`flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded-full max-w-[220px] overflow-hidden transition-colors ${onTaskClick ? 'cursor-pointer hover:bg-gray-700' : ''}`}
+                                            >
                                                 <div className="w-4 h-4 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
                                                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>

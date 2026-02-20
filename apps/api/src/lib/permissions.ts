@@ -191,6 +191,11 @@ export function canAssignTasks(workspaceRole: WorkspaceRole | null, teamLevel: T
     return hasPermission(workspaceRole, teamLevel, 'tasks', 'assign')
 }
 
+/** Check if user can complete tasks */
+export function canCompleteTasks(workspaceRole: WorkspaceRole | null, teamLevel: TeamLevel | null): boolean {
+    return hasPermission(workspaceRole, teamLevel, 'tasks', 'complete')
+}
+
 // =============================================================================
 // PERMISSION GUARDS - COMMENTS
 // =============================================================================
@@ -371,6 +376,7 @@ export const permissions = {
     canUpdateTasks,
     canDeleteTasks,
     canAssignTasks,
+    canCompleteTasks,
     // Comments
     canCreateComments,
     canModerateComments,

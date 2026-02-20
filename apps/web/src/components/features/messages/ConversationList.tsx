@@ -164,7 +164,7 @@ export function ConversationList({
             </div>
 
             {/* Team Members List */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {isLoading ? (
                     <div className="p-4 text-center text-gray-500">
                         {t('messages.loadingMembers')}

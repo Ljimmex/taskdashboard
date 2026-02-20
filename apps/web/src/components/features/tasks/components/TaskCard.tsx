@@ -73,7 +73,7 @@ export interface TaskCardProps {
     isDragging?: boolean
     userRole?: string
     userId?: string
-    onQuickUpdate?: (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string; assignees?: string[] }) => void
+    onQuickUpdate?: (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string; assignees?: string[]; isCompleted?: boolean }) => void
 }
 
 // Icon mapping based on priority ID
@@ -219,6 +219,20 @@ export function TaskCard({
         setShowMenu(false)
     }
 
+    const handleToggleCompletion = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (isBlocked) return // Prevent if blocked
+        if (onQuickUpdate) {
+            onQuickUpdate({
+                id: _id,
+                title,
+                priority,
+                isCompleted: !isCompleted
+            })
+        }
+        setShowMenu(false)
+    }
+
     const isAssignedToMe = userId && assignees.some(a => a.id === userId)
 
     // Check if overdue
@@ -278,6 +292,25 @@ export function TaskCard({
                                     <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="#F2CE88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                                 {t('tasks.card.menu.assign_to_me')}
+                            </button>
+                        )}
+
+                        {/* Mark as Done / Undone */}
+                        {(canManageTasks || userRole === 'member') && (
+                            <button
+                                onClick={handleToggleCompletion}
+                                disabled={isBlocked}
+                                className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors group/item
+                                    ${isBlocked ? 'text-gray-600 cursor-not-allowed' : 'text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88]'}`
+                                }
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="group-hover/item:hidden">
+                                    <path d="M20 6L9 17L4 12" stroke={isCompleted ? "#545454" : (isBlocked ? "#333333" : "#545454")} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="hidden group-hover/item:block">
+                                    <path d="M20 6L9 17L4 12" stroke={isBlocked ? "#333333" : "#F2CE88"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                {isCompleted ? t('tasks.edit.mark_incomplete') : t('tasks.edit.mark_complete')}
                             </button>
                         )}
 

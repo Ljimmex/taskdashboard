@@ -69,7 +69,7 @@ export function ChatSection({ contacts, onSeeAll, onContactClick }: ChatSectionP
                 <div
                     ref={scrollRef}
                     onScroll={checkScroll}
-                    className="flex gap-4 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
+                    className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar scroll-smooth"
                 >
                     {contacts.map((contact) => (
                         <button

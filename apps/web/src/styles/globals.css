@@ -82,22 +82,40 @@ body {
    ============================================================================= */
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: #2a2a35;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: #3f3f4e;
+}
+
+/* Custom Scrollbar Utility Class */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #2a2a35;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f4e;
 }
 
 /* =============================================================================
@@ -132,7 +150,8 @@ input:-webkit-autofill:active {
    ============================================================================= */
 
 .custom-gantt-scroll::-webkit-scrollbar {
-  height: 10px; /* Slightly taller for easier horizontal clicking */
+  height: 10px;
+  /* Slightly taller for easier horizontal clicking */
   width: 6px;
 }
 
@@ -144,7 +163,8 @@ input:-webkit-autofill:active {
 .custom-gantt-scroll::-webkit-scrollbar-thumb {
   background: #2a2a35;
   border-radius: 4px;
-  border: 2px solid #0e0e12; /* Creates padding effect */
+  border: 2px solid #0e0e12;
+  /* Creates padding effect */
   background-clip: content-box;
 }
 

@@ -1322,6 +1322,7 @@
         "retry": "Retry"
     },
     "tasks": {
+        "blocked_by_dependencies": "Blocked by dependencies",
         "header": {
             "search": "Search tasks...",
             "search_members": "Search people...",
@@ -1389,6 +1390,8 @@
         },
         "edit": {
             "title": "Edit Task",
+            "mark_complete": "Mark as Done",
+            "mark_incomplete": "Mark as Undone",
             "edit_mode": "Edit mode",
             "click_to_edit": "Click to edit",
             "title_label": "Task Title",

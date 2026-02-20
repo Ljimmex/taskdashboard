@@ -304,7 +304,7 @@ function ProjectDetailPage() {
     }
   }
 
-  const handleQuickUpdateTask = async (data: { id: string; title: string; priority: string; assignees?: string[]; dueDate?: string }) => {
+  const handleQuickUpdateTask = async (data: { id: string; title?: string; priority?: string; assignees?: string[]; dueDate?: string; isCompleted?: boolean; assigneeId?: string }) => {
     try {
       const res = await apiFetch(`/api/tasks/${data.id}`, {
         method: 'PATCH',
@@ -381,18 +381,59 @@ function ProjectDetailPage() {
   }) => {
     try {
       // Transform data to match API expectations
-      const apiPayload = {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-        status: data.status,
-        dueDate: data.dueDate,
-        assignees: data.assigneeIds || [],
-        labels: data.labelIds || [],
-        links: data.links || [],
-        dependsOn: data.dependsOn || [],
-        isCompleted: data.isCompleted,
+      const apiPayload: any = { id: data.id }
+
+      if (editingTask) {
+        if (data.title !== editingTask.title) apiPayload.title = data.title;
+        if ((data.description || "") !== (editingTask.description || "")) apiPayload.description = data.description;
+        if (data.priority !== editingTask.priority) apiPayload.priority = data.priority;
+        if (data.status !== editingTask.status) apiPayload.status = data.status;
+
+        const isDateEqual = (d1: any, d2: any) => {
+          if (!d1 && !d2) return true;
+          if (!d1 || !d2) return false;
+          return new Date(d1).getTime() === new Date(d2).getTime();
+        };
+        if (!isDateEqual(data.dueDate, editingTask.dueDate)) apiPayload.dueDate = data.dueDate;
+
+        if (data.isCompleted !== editingTask.isCompleted) apiPayload.isCompleted = data.isCompleted;
+
+        const newAssignees = data.assigneeIds || [];
+        const oldAssignees = editingTask.assignees?.map((a: any) => typeof a === 'string' ? a : a.id) || [];
+        if (JSON.stringify([...newAssignees].sort()) !== JSON.stringify([...oldAssignees].sort())) {
+          apiPayload.assignees = newAssignees;
+        }
+
+        const newLabels = data.labelIds || [];
+        const oldLabels = editingTask.labels?.map((l: any) => typeof l === 'string' ? l : l.id) || [];
+        if (JSON.stringify([...newLabels].sort()) !== JSON.stringify([...oldLabels].sort())) {
+          apiPayload.labels = newLabels;
+        }
+
+        const newLinks = data.links || [];
+        const oldLinks = editingTask.links || [];
+        if (JSON.stringify(newLinks) !== JSON.stringify(oldLinks)) {
+          apiPayload.links = newLinks;
+        }
+
+        const newDependsOn = data.dependsOn || [];
+        const oldDependsOn = editingTask.dependsOn || [];
+        if (JSON.stringify([...newDependsOn].sort()) !== JSON.stringify([...oldDependsOn].sort())) {
+          apiPayload.dependsOn = newDependsOn;
+        }
+      } else {
+        Object.assign(apiPayload, {
+          title: data.title,
+          description: data.description,
+          priority: data.priority,
+          status: data.status,
+          dueDate: data.dueDate,
+          assignees: data.assigneeIds || [],
+          labels: data.labelIds || [],
+          links: data.links || [],
+          dependsOn: data.dependsOn || [],
+          isCompleted: data.isCompleted,
+        });
       }
 
       const res = await apiFetch(`/api/tasks/${data.id}`, {
@@ -1059,6 +1100,7 @@ function ProjectDetailPage() {
         stages={(project?.stages || []).map((s: any, i: number) => ({ id: s.id, name: s.name, color: s.color || '#6366f1', position: s.position ?? i }))}
         teamMembers={teamMembers}
         activities={selectedTask?.activities}
+        onTaskClick={(id) => handleTaskClick(id)}
       />
 
       {/* Bulk Actions Toolbar - fixed at bottom */}

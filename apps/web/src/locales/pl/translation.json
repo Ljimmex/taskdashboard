@@ -1325,6 +1325,7 @@
         "retry": "Spróbuj ponownie"
     },
     "tasks": {
+        "blocked_by_dependencies": "Zablokowane przez zależności",
         "header": {
             "search": "Szukaj zadań...",
             "search_members": "Szukaj osób...",
@@ -1392,6 +1393,8 @@
         },
         "edit": {
             "title": "Edytuj zadanie",
+            "mark_complete": "Oznacz jako Zrobione",
+            "mark_incomplete": "Oznacz jako Do zrobienia",
             "edit_mode": "Tryb edycji",
             "click_to_edit": "Kliknij aby edytować",
             "title_label": "Tytuł zadania",

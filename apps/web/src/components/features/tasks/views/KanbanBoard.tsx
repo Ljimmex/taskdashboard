@@ -51,7 +51,7 @@ function SortableTask({
     onTaskDuplicate?: (id: string) => void
     onTaskArchive?: (id: string) => void
     isEditing?: boolean
-    onQuickUpdate?: (data: { id: string; title: string; priority: string; assignees?: string[]; dueDate?: string }) => void
+    onQuickUpdate?: (data: { id: string; title?: string; priority?: string; assignees?: string[]; dueDate?: string; isCompleted?: boolean }) => void
     onCancelEdit?: () => void
     userRole?: string
     userId?: string
@@ -222,7 +222,7 @@ interface KanbanBoardProps {
     onChangeColumnColor?: (columnId: string, color: string) => void
     onDeleteColumn?: (columnId: string) => void
     onMoveAllCards?: (columnId: string) => void
-    onQuickUpdate?: (data: { id: string; title: string; priority: string; assignees?: string[]; dueDate?: string }) => void
+    onQuickUpdate?: (data: { id: string; title?: string; priority?: string; assignees?: string[]; dueDate?: string; isCompleted?: boolean }) => void
     userRole?: string
     userId?: string
 }

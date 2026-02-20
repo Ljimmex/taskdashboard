@@ -13,6 +13,7 @@ import {
     canUpdateTasks,
     canDeleteTasks,
     canAssignTasks,
+    canCompleteTasks,
     type TeamLevel,
     type WorkspaceRole
 } from '../../lib/permissions'
@@ -615,7 +616,23 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
 
         // Allow if: has update permission OR is assignee
         const isAssignee = task.assignees?.includes(userId)
-        if (!canUpdateTasks(workspaceRole, teamLevel) && !isAssignee) {
+        const hasUpdatePermission = canUpdateTasks(workspaceRole, teamLevel)
+
+        let canProceed = hasUpdatePermission || isAssignee;
+
+        if (!canProceed) {
+            // Check if they are ONLY trying to complete/uncomplete the task
+            // and they have 'complete' permission
+            const changedKeys = Object.keys(body).filter(k => k !== 'id');
+            const isOnlyUpdatingCompletionState = changedKeys.length === 1 && changedKeys[0] === 'isCompleted';
+            const hasCompletePermission = canCompleteTasks(workspaceRole, teamLevel);
+
+            if (isOnlyUpdatingCompletionState && hasCompletePermission) {
+                canProceed = true;
+            }
+        }
+
+        if (!canProceed) {
             return c.json({ success: false, error: 'Unauthorized to update task' }, 403)
         }
 
