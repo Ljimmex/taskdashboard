@@ -548,7 +548,7 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
             // C. Remove from Conversations (update JSONB)
             // JSONB operations still best done with raw SQL
             const scopeCondition = teamIds.length > 0
-                ? sql`(workspace_id = ${workspaceId} OR team_id IN (${sql.join(teamIds.map(id => sql`${id}`))}))`
+                ? sql`(workspace_id = ${workspaceId} OR team_id IN (${sql.join(teamIds.map(id => sql`${id}`), sql`, `)}))`
                 : sql`workspace_id = ${workspaceId}`
 
             // Postgres array removal: participants - 'userId'
