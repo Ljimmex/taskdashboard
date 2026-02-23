@@ -666,9 +666,7 @@ function ProjectDetailPage() {
 
       // 5. Labels
       if (filters.labels.length > 0) {
-        // Task has array of {id, name, color} or just IDs?
-        // API returns labels as array of objects usually, let's check TaskCard props
-        const taskLabelIds = t.labels?.map((l: any) => l.id) || []
+        const taskLabelIds = t.labels?.map((l: any) => typeof l === 'string' ? l : l.id) || []
         const hasMatchingLabel = filters.labels.some(id => taskLabelIds.includes(id))
         if (!hasMatchingLabel) return false
       }
