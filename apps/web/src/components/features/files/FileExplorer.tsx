@@ -3,6 +3,7 @@ import { FileGridItem, FolderGridItem } from './FileGrid'
 import { FileList } from './FileList'
 import { FileInfoPanel } from './FileInfoPanel'
 import { RenameModal } from './RenameModal'
+import { FileViewerPage } from './FileViewerPage'
 import { CreateFolderModal } from './CreateFolderModal'
 import { MoveToFolderModal } from './MoveToFolderModal'
 import { useFiles, useFolders, useDeleteFile, useDeleteFolder, useMoveFile } from '@/hooks/useFiles'
@@ -63,6 +64,7 @@ export function FileExplorer({
     const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
     const [isMoveModalOpen, setIsMoveModalOpen] = useState(false)
     const [moveFileItem, setMoveFileItem] = useState<{ id: string; name: string } | null>(null)
+    const [openFileId, setOpenFileId] = useState<string | null>(null)
 
     const { data: files, isLoading: isLoadingFiles, refetch: refetchFiles } = useFiles(workspaceSlug, currentFolderId)
     const { data: folders, isLoading: isLoadingFolders, refetch: refetchFolders } = useFolders(workspaceSlug, currentFolderId)
@@ -263,6 +265,10 @@ export function FileExplorer({
         setBreadcrumbs(breadcrumbs.slice(0, index + 1))
     }
 
+    const handleOpen = (id: string) => {
+        setOpenFileId(id)
+    }
+
     // Translate root breadcrumb if applicable
     const displayedBreadcrumbs = breadcrumbs.map((crumb, index) =>
         index === 0 && crumb.id === null ? { ...crumb, name: t('files.header.title') } : crumb
@@ -310,6 +316,7 @@ export function FileExplorer({
                         onInfo={handleInfo}
                         onArchive={handleArchive}
                         onDuplicate={handleDuplicate}
+                        onOpen={handleOpen}
                         sortBy={sortBy}
                         sortOrder={sortOrder}
                         onSort={onSort}
@@ -354,6 +361,7 @@ export function FileExplorer({
                                             onInfo={handleInfo}
                                             onArchive={handleArchive}
                                             onDuplicate={handleDuplicate}
+                                            onOpen={handleOpen}
                                             userRole={userRole}
                                         />
                                     ))}
@@ -425,6 +433,14 @@ export function FileExplorer({
                 currentFolderId={currentFolderId}
                 onSuccess={() => refetchFiles()}
             />
+
+            {/* Full-screen File Viewer */}
+            {openFileId && (
+                <FileViewerPage
+                    fileId={openFileId}
+                    onClose={() => setOpenFileId(null)}
+                />
+            )}
         </>
     )
 }

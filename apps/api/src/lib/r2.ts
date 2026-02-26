@@ -83,3 +83,35 @@ export const copyFile = async (sourceKey: string, destinationKey: string) => {
     })
     return await r2Client.send(command)
 }
+
+// Generate a presigned URL for inline viewing (no download prompt)
+export const getPreviewUrl = async (key: string) => {
+    const command = new GetObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: key,
+        ResponseContentDisposition: 'inline',
+    })
+    return await getSignedUrl(r2Client, command, { expiresIn: 3600 })
+}
+
+// Fetch raw file content as text (for .txt editing)
+export const getFileContent = async (key: string): Promise<string> => {
+    const command = new GetObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: key,
+    })
+    const response = await r2Client.send(command)
+    if (!response.Body) throw new Error('Empty file body')
+    return await response.Body.transformToString('utf-8')
+}
+
+// Overwrite file content directly in R2
+export const putFileContent = async (key: string, content: string, mimeType: string) => {
+    const command = new PutObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: key,
+        Body: content,
+        ContentType: mimeType,
+    })
+    return await r2Client.send(command)
+}

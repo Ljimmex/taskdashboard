@@ -2,7 +2,7 @@ import * as React from 'react'
 import { format } from 'date-fns'
 import { pl, enUS } from 'date-fns/locale'
 import { FileRecord, Folder } from '@taskdashboard/types'
-import { MoreVertical, Folder as FolderIcon, FileText, Image, File as GenericFile, FileSpreadsheet, Video, Music, Pencil, Copy, Archive, Info, Trash2, FolderOpen } from 'lucide-react'
+import { MoreVertical, Folder as FolderIcon, FileText, Image, File as GenericFile, FileSpreadsheet, Video, Music, Pencil, Copy, Archive, Info, Trash2, FolderOpen, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -23,6 +23,7 @@ interface FileItemProps {
     onInfo?: (id: string) => void
     onArchive?: (id: string) => void
     onDuplicate?: (id: string) => void
+    onOpen?: (id: string) => void
     userRole?: string | null
 }
 
@@ -59,7 +60,7 @@ function formatSize(bytes: number | null) {
     return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
 }
 
-export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDownload, onInfo, onArchive, onDuplicate, userRole }: FileItemProps) {
+export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDownload, onInfo, onArchive, onDuplicate, onOpen, userRole }: FileItemProps) {
     const { t, i18n } = useTranslation()
     const currentLocale = i18n.language === 'pl' ? pl : enUS
     const isImage = file.mimeType?.startsWith('image/')
@@ -74,11 +75,16 @@ export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDown
             onDelete={onDelete}
             onMove={onMove}
             onDownload={onDownload}
+            onInfo={onInfo}
+            onArchive={onArchive}
+            onDuplicate={onDuplicate}
+            onOpen={onOpen}
             userRole={userRole}
         >
             <div
                 className="group relative flex flex-col rounded-xl bg-[#1a1a24] overflow-hidden transition-all hover:bg-[#1e1e29] cursor-pointer"
                 onClick={() => onClick?.(file.id)}
+                onDoubleClick={(e) => { e.stopPropagation(); onOpen?.(file.id) }}
                 draggable={userRole !== 'member'}
                 onDragStart={(e) => {
                     if (userRole === 'member') return
@@ -103,6 +109,13 @@ export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDown
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
+                                {/* Open / View */}
+                                {onOpen && (
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onOpen(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                        <Eye className="h-4 w-4 text-blue-400" />
+                                        <span>{t('files.actions.open', 'Open')}</span>
+                                    </DropdownMenuItem>
+                                )}
                                 {userRole !== 'member' && (
                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                         <Pencil className="h-4 w-4 text-amber-500" />

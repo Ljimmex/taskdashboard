@@ -45,6 +45,16 @@ CREATE TABLE "sessions" (
 );
 --> statement-breakpoint
 ALTER TABLE "sessions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "two_factor_trust" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"device_id" text NOT NULL,
+	"metadata" text,
+	"expires_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "two_factor_trust" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "two_factors" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
@@ -74,6 +84,10 @@ CREATE TABLE "users" (
 	"phone_number" varchar(20),
 	"phone_number_verified" boolean DEFAULT false NOT NULL,
 	"two_factor_enabled" boolean DEFAULT false NOT NULL,
+	"public_key" text,
+	"encrypted_private_key" text,
+	"key_salt" text,
+	"key_iv" text,
 	"first_name" varchar(100),
 	"last_name" varchar(100),
 	"description" text,
@@ -211,6 +225,15 @@ CREATE TABLE "project_members" (
 	"joined_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "project_members" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "project_teams" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"project_id" uuid NOT NULL,
+	"team_id" uuid NOT NULL,
+	"joined_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "project_teams" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "projects" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"team_id" uuid NOT NULL,
@@ -230,9 +253,9 @@ CREATE TABLE "subtasks" (
 	"task_id" uuid NOT NULL,
 	"title" varchar(255) NOT NULL,
 	"description" text,
-	"status" text DEFAULT 'todo' NOT NULL,
-	"priority" "task_priority" DEFAULT 'medium' NOT NULL,
 	"is_completed" boolean DEFAULT false NOT NULL,
+	"assignee_id" text,
+	"depends_on" text[] DEFAULT '{}',
 	"position" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"completed_at" timestamp
@@ -269,7 +292,6 @@ CREATE TABLE "tasks" (
 	"description" text,
 	"status" text DEFAULT 'todo' NOT NULL,
 	"priority" text DEFAULT 'medium' NOT NULL,
-	"assignee_id" text,
 	"reporter_id" text NOT NULL,
 	"start_date" timestamp,
 	"due_date" timestamp,
@@ -278,7 +300,10 @@ CREATE TABLE "tasks" (
 	"progress" integer DEFAULT 0 NOT NULL,
 	"position" integer DEFAULT 0 NOT NULL,
 	"is_archived" boolean DEFAULT false NOT NULL,
+	"is_completed" boolean DEFAULT false NOT NULL,
 	"labels" text[] DEFAULT '{}',
+	"assignees" text[] DEFAULT '{}',
+	"depends_on" text[] DEFAULT '{}',
 	"links" jsonb DEFAULT '[]'::jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -296,6 +321,22 @@ CREATE TABLE "time_entries" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "file_annotations" (
+	"id" text PRIMARY KEY NOT NULL,
+	"file_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"page_number" integer,
+	"position_x" integer,
+	"position_y" integer,
+	"content" text NOT NULL,
+	"type" varchar(20) DEFAULT 'comment' NOT NULL,
+	"parent_id" text,
+	"resolved" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "file_annotations" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "files" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" varchar(255) NOT NULL,
@@ -339,6 +380,7 @@ CREATE TABLE "encryption_keys" (
 	"workspace_id" text NOT NULL,
 	"public_key" text NOT NULL,
 	"encrypted_private_key" text NOT NULL,
+	"history" jsonb DEFAULT '[]'::jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"rotated_at" timestamp,
 	"expires_at" timestamp,
@@ -355,9 +397,11 @@ CREATE TABLE "calendar_events" (
 	"all_day" boolean DEFAULT false NOT NULL,
 	"recurrence" jsonb,
 	"task_id" uuid,
-	"team_ids" uuid[] NOT NULL,
+	"team_ids" uuid[] DEFAULT '{}',
+	"attendee_ids" text[] DEFAULT '{}',
 	"type" "calendar_event_type" DEFAULT 'event' NOT NULL,
 	"meeting_link" varchar(512),
+	"workspace_id" text,
 	"created_by" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
@@ -445,6 +489,20 @@ CREATE TABLE "webhooks" (
 );
 --> statement-breakpoint
 ALTER TABLE "webhooks" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "audit_logs" (
+	"id" text PRIMARY KEY NOT NULL,
+	"workspace_id" text NOT NULL,
+	"actor_id" text,
+	"action" text NOT NULL,
+	"entity_type" text NOT NULL,
+	"entity_id" text NOT NULL,
+	"details" jsonb,
+	"ip_address" text,
+	"user_agent" text,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "audit_logs" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "workspace_invites" ADD CONSTRAINT "workspace_invites_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workspace_invites" ADD CONSTRAINT "workspace_invites_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -458,18 +516,22 @@ ALTER TABLE "teams" ADD CONSTRAINT "teams_owner_id_users_id_fk" FOREIGN KEY ("ow
 ALTER TABLE "industry_template_stages" ADD CONSTRAINT "industry_template_stages_template_id_industry_templates_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."industry_templates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_members" ADD CONSTRAINT "project_members_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_members" ADD CONSTRAINT "project_members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_teams" ADD CONSTRAINT "project_teams_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_teams" ADD CONSTRAINT "project_teams_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_team_id_teams_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."teams"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_industry_template_id_industry_templates_id_fk" FOREIGN KEY ("industry_template_id") REFERENCES "public"."industry_templates"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "subtasks" ADD CONSTRAINT "subtasks_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subtasks" ADD CONSTRAINT "subtasks_assignee_id_users_id_fk" FOREIGN KEY ("assignee_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "task_activity_log" ADD CONSTRAINT "task_activity_log_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "task_activity_log" ADD CONSTRAINT "task_activity_log_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "task_comments" ADD CONSTRAINT "task_comments_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "task_comments" ADD CONSTRAINT "task_comments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tasks" ADD CONSTRAINT "tasks_assignee_id_users_id_fk" FOREIGN KEY ("assignee_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_reporter_id_users_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "file_annotations" ADD CONSTRAINT "file_annotations_file_id_files_id_fk" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "file_annotations" ADD CONSTRAINT "file_annotations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "files" ADD CONSTRAINT "files_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "files" ADD CONSTRAINT "files_folder_id_folders_id_fk" FOREIGN KEY ("folder_id") REFERENCES "public"."folders"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "files" ADD CONSTRAINT "files_uploaded_by_users_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -479,6 +541,7 @@ ALTER TABLE "conversations" ADD CONSTRAINT "conversations_team_id_teams_id_fk" F
 ALTER TABLE "conversations" ADD CONSTRAINT "conversations_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "encryption_keys" ADD CONSTRAINT "encryption_keys_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "calendar_events" ADD CONSTRAINT "calendar_events_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "saved_filters" ADD CONSTRAINT "saved_filters_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "saved_filters" ADD CONSTRAINT "saved_filters_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -490,13 +553,18 @@ ALTER TABLE "webhook_deliveries" ADD CONSTRAINT "webhook_deliveries_webhook_id_w
 ALTER TABLE "webhook_queue" ADD CONSTRAINT "webhook_queue_webhook_id_webhooks_id_fk" FOREIGN KEY ("webhook_id") REFERENCES "public"."webhooks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "webhooks" ADD CONSTRAINT "webhooks_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "webhooks" ADD CONSTRAINT "webhooks_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "audit_logs_workspace_idx" ON "audit_logs" USING btree ("workspace_id");--> statement-breakpoint
+CREATE INDEX "audit_logs_entity_idx" ON "audit_logs" USING btree ("entity_type","entity_id");--> statement-breakpoint
+CREATE INDEX "audit_logs_actor_idx" ON "audit_logs" USING btree ("actor_id");--> statement-breakpoint
+CREATE INDEX "audit_logs_created_idx" ON "audit_logs" USING btree ("created_at");--> statement-breakpoint
 CREATE POLICY "Users can view own accounts" ON "accounts" AS PERMISSIVE FOR SELECT TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Users can delete own accounts" ON "accounts" AS PERMISSIVE FOR DELETE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Users can view own sessions" ON "sessions" AS PERMISSIVE FOR SELECT TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Users can delete own sessions" ON "sessions" AS PERMISSIVE FOR DELETE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
-CREATE POLICY "Users can view own two factor" ON "two_factors" AS PERMISSIVE FOR SELECT TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
-CREATE POLICY "Users can update own two factor" ON "two_factors" AS PERMISSIVE FOR UPDATE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
-CREATE POLICY "Users can insert own two factor" ON "two_factors" AS PERMISSIVE FOR INSERT TO public WITH CHECK (user_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Backend can manage trusted devices" ON "two_factor_trust" AS PERMISSIVE FOR ALL TO public USING (true);--> statement-breakpoint
+CREATE POLICY "Backend can manage two factor" ON "two_factors" AS PERMISSIVE FOR ALL TO public USING (true);--> statement-breakpoint
 CREATE POLICY "Backend can manage verifications" ON "verifications" AS PERMISSIVE FOR ALL TO public USING (true);--> statement-breakpoint
 CREATE POLICY "Users can view own profile" ON "users" AS PERMISSIVE FOR SELECT TO public USING (auth.uid()::text = id);--> statement-breakpoint
 CREATE POLICY "Users can update own profile" ON "users" AS PERMISSIVE FOR UPDATE TO public USING (auth.uid()::text = id);--> statement-breakpoint
@@ -557,9 +625,13 @@ CREATE POLICY "Team members can update project stages" ON "project_stages" AS PE
                 SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
             )
         ));--> statement-breakpoint
-CREATE POLICY "Team members can view projects" ON "projects" AS PERMISSIVE FOR SELECT TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Project members can view members" ON "project_members" AS PERMISSIVE FOR SELECT TO public USING (project_id IN (SELECT id FROM projects WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)) OR project_id IN (SELECT project_id FROM project_teams WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
+CREATE POLICY "Project members can manage memberships" ON "project_members" AS PERMISSIVE FOR ALL TO public USING (project_id IN (SELECT id FROM projects WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)) OR project_id IN (SELECT project_id FROM project_teams WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
+CREATE POLICY "Team members can view project teams" ON "project_teams" AS PERMISSIVE FOR SELECT TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Team members can manage project teams" ON "project_teams" AS PERMISSIVE FOR ALL TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Team members can view projects" ON "projects" AS PERMISSIVE FOR SELECT TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text) OR id IN (SELECT project_id FROM project_teams WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
 CREATE POLICY "Team members can create projects" ON "projects" AS PERMISSIVE FOR INSERT TO public WITH CHECK (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
-CREATE POLICY "Team members can update projects" ON "projects" AS PERMISSIVE FOR UPDATE TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Team members can update projects" ON "projects" AS PERMISSIVE FOR UPDATE TO public USING (team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text) OR id IN (SELECT project_id FROM project_teams WHERE team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
 CREATE POLICY "Team members can view comments" ON "task_comments" AS PERMISSIVE FOR SELECT TO public USING (task_id IN (SELECT id FROM tasks WHERE project_id IN (
             SELECT id FROM projects WHERE team_id IN (
                 SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
@@ -583,6 +655,10 @@ CREATE POLICY "Team members can update tasks" ON "tasks" AS PERMISSIVE FOR UPDAT
             )
         ));--> statement-breakpoint
 CREATE POLICY "Assignee or reporter can delete tasks" ON "tasks" AS PERMISSIVE FOR DELETE TO public USING (assignee_id = auth.uid()::text OR reporter_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Workspace members can view annotations" ON "file_annotations" AS PERMISSIVE FOR SELECT TO public USING (file_id IN (SELECT id FROM files WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
+CREATE POLICY "Workspace members can create annotations" ON "file_annotations" AS PERMISSIVE FOR INSERT TO public WITH CHECK (file_id IN (SELECT id FROM files WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
+CREATE POLICY "Authors can update their annotations" ON "file_annotations" AS PERMISSIVE FOR UPDATE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
+CREATE POLICY "Authors can delete their annotations" ON "file_annotations" AS PERMISSIVE FOR DELETE TO public USING (user_id = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Workspace members can view files" ON "files" AS PERMISSIVE FOR SELECT TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
 CREATE POLICY "Workspace members can create files" ON "files" AS PERMISSIVE FOR INSERT TO public WITH CHECK (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
 CREATE POLICY "Workspace members can update files" ON "files" AS PERMISSIVE FOR UPDATE TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
@@ -597,7 +673,7 @@ CREATE POLICY "Workspace owners can manage encryption keys" ON "encryption_keys"
             SELECT workspace_id FROM workspace_members 
             WHERE user_id = auth.uid()::text AND role = 'owner'
         ));--> statement-breakpoint
-CREATE POLICY "Team members can view events" ON "calendar_events" AS PERMISSIVE FOR SELECT TO public USING (team_ids && ARRAY(SELECT team_id FROM team_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
+CREATE POLICY "Team members can view events" ON "calendar_events" AS PERMISSIVE FOR SELECT TO public USING (team_ids && ARRAY(SELECT team_id FROM team_members WHERE user_id = auth.uid()::text) OR auth.uid()::text = ANY(attendee_ids) OR created_by = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Team members can create events" ON "calendar_events" AS PERMISSIVE FOR INSERT TO public WITH CHECK (created_by = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Creator can update events" ON "calendar_events" AS PERMISSIVE FOR UPDATE TO public USING (created_by = auth.uid()::text);--> statement-breakpoint
 CREATE POLICY "Creator can delete events" ON "calendar_events" AS PERMISSIVE FOR DELETE TO public USING (created_by = auth.uid()::text);--> statement-breakpoint
@@ -620,4 +696,11 @@ CREATE POLICY "Workspace members can delete folders" ON "folders" AS PERMISSIVE 
 CREATE POLICY "Workspace members can view delivery logs" ON "webhook_deliveries" AS PERMISSIVE FOR SELECT TO public USING (webhook_id IN (SELECT id FROM webhooks WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
 CREATE POLICY "Workspace members can view their webhook jobs" ON "webhook_queue" AS PERMISSIVE FOR SELECT TO public USING (webhook_id IN (SELECT id FROM webhooks WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text)));--> statement-breakpoint
 CREATE POLICY "Workspace members can view webhooks" ON "webhooks" AS PERMISSIVE FOR SELECT TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text));--> statement-breakpoint
-CREATE POLICY "Workspace admins can manage webhooks" ON "webhooks" AS PERMISSIVE FOR ALL TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text AND role IN ('owner', 'admin')));
+CREATE POLICY "Workspace admins can manage webhooks" ON "webhooks" AS PERMISSIVE FOR ALL TO public USING (workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text AND role IN ('owner', 'admin')));--> statement-breakpoint
+CREATE POLICY "audit_insert" ON "audit_logs" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (true);--> statement-breakpoint
+CREATE POLICY "audit_read" ON "audit_logs" AS PERMISSIVE FOR SELECT TO "authenticated" USING (exists (
+            select 1 from workspace_members 
+            where workspace_id = "audit_logs"."workspace_id" 
+            and user_id = auth.uid()::text
+            and (role = 'owner' or role = 'admin')
+        ));

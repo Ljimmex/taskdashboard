@@ -6,7 +6,7 @@ import { db } from '../../db'
 import { files, NewFileRecord } from '../../db/schema/files'
 // workspaceMembers accessed via db.query, no direct import needed
 
-import { getUploadUrl, getDownloadUrl, deleteFile, checkFileExists } from '../../lib/r2'
+import { getUploadUrl, getDownloadUrl, deleteFile, checkFileExists, getPreviewUrl, getFileContent, putFileContent } from '../../lib/r2'
 import { authMiddleware } from '@/middleware/auth'
 
 import { type Auth } from '../../lib/auth'
@@ -192,6 +192,99 @@ app.get('/:id/download', async (c) => {
     const downloadUrl = await getDownloadUrl(file.r2Key, file.name)
 
     return c.json({ downloadUrl })
+})
+
+// -----------------------------------------------------------------------------
+// GET /files/:id/preview - Get inline preview URL (no download prompt)
+// -----------------------------------------------------------------------------
+app.get('/:id/preview', async (c) => {
+    const id = c.req.param('id')
+
+    const file = await db.query.files.findFirst({
+        where: eq(files.id, id)
+    })
+
+    if (!file || !file.r2Key) {
+        return c.json({ error: 'File not found' }, 404)
+    }
+
+    const exists = await checkFileExists(file.r2Key)
+    if (!exists) {
+        return c.json({ error: 'File content missing in storage' }, 404)
+    }
+
+    const previewUrl = await getPreviewUrl(file.r2Key)
+    return c.json({ previewUrl, file })
+})
+
+// -----------------------------------------------------------------------------
+// GET /files/:id/content - Get raw text content for editing
+// -----------------------------------------------------------------------------
+app.get('/:id/content', async (c) => {
+    const id = c.req.param('id')
+
+    const file = await db.query.files.findFirst({
+        where: eq(files.id, id)
+    })
+
+    if (!file || !file.r2Key) {
+        return c.json({ error: 'File not found' }, 404)
+    }
+
+    // Only allow text-based files
+    const textTypes = ['text/plain', 'text/markdown', 'text/csv', 'application/json', 'text/html', 'text/css', 'text/javascript', 'application/xml']
+    const isText = textTypes.some(t => file.mimeType?.startsWith(t)) ||
+        ['txt', 'md', 'csv', 'json', 'html', 'css', 'js', 'ts', 'jsx', 'tsx', 'xml', 'yaml', 'yml', 'env', 'log'].includes(file.fileType || '')
+
+    if (!isText) {
+        return c.json({ error: 'File is not a text-based format' }, 400)
+    }
+
+    const exists = await checkFileExists(file.r2Key)
+    if (!exists) {
+        return c.json({ error: 'File content missing in storage' }, 404)
+    }
+
+    const content = await getFileContent(file.r2Key)
+    return c.json({ content, file })
+})
+
+// -----------------------------------------------------------------------------
+// PUT /files/:id/content - Overwrite text file content
+// -----------------------------------------------------------------------------
+const contentUpdateSchema = z.object({
+    content: z.string(),
+})
+
+app.put('/:id/content', zValidator('json', contentUpdateSchema), async (c) => {
+    const id = c.req.param('id')
+    const user = c.get('user')
+    const { content } = c.req.valid('json')
+
+    const file = await db.query.files.findFirst({
+        where: eq(files.id, id)
+    })
+
+    if (!file || !file.r2Key) {
+        return c.json({ error: 'File not found' }, 404)
+    }
+
+    // Check workspace membership status
+    const workspaceRole = await getUserWorkspaceRole(user.id, file.workspaceId || '')
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
+
+    await putFileContent(file.r2Key, content, file.mimeType || 'text/plain')
+
+    // Update file size in DB
+    const newSize = new TextEncoder().encode(content).length
+    const [updated] = await db.update(files)
+        .set({ size: newSize, updatedAt: new Date() })
+        .where(eq(files.id, id))
+        .returning()
+
+    return c.json({ success: true, file: updated })
 })
 
 // -----------------------------------------------------------------------------

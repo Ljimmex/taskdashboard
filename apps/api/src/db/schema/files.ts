@@ -55,12 +55,13 @@ export const files = pgTable('files', {
 // RELATIONS
 // =============================================================================
 
-export const filesRelations = relations(files, ({ one }) => ({
+export const filesRelations = relations(files, ({ one, many }) => ({
     uploader: one(users, { fields: [files.uploadedBy], references: [users.id] }),
     workspace: one(workspaces, { fields: [files.workspaceId], references: [workspaces.id] }),
     team: one(teams, { fields: [files.teamId], references: [teams.id] }),
     task: one(tasks, { fields: [files.taskId], references: [tasks.id] }),
     folder: one(folders, { fields: [files.folderId], references: [folders.id] }),
+    annotations: many(fileAnnotations),
 }))
 
 // =============================================================================
@@ -69,3 +70,71 @@ export const filesRelations = relations(files, ({ one }) => ({
 
 export type FileRecord = typeof files.$inferSelect
 export type NewFileRecord = typeof files.$inferInsert
+
+// =============================================================================
+// FILE ANNOTATIONS TABLE
+// =============================================================================
+
+export const fileAnnotations = pgTable('file_annotations', {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    fileId: text('file_id').references(() => files.id, { onDelete: 'cascade' }).notNull(),
+    userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+
+    // Position on document
+    pageNumber: integer('page_number'), // null for text files
+    positionX: integer('position_x'),   // percentage-based X coordinate (0-100)
+    positionY: integer('position_y'),   // percentage-based Y coordinate (0-100)
+
+    // Content
+    content: text('content').notNull(),
+    type: varchar('type', { length: 20 }).default('comment').notNull(), // 'comment' | 'highlight'
+
+    // Threading
+    parentId: text('parent_id'), // self-reference for replies
+
+    // Status
+    resolved: boolean('resolved').default(false).notNull(),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (_table) => [
+    pgPolicy("Workspace members can view annotations", {
+        for: "select",
+        using: sql`file_id IN (SELECT id FROM files WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text))`,
+    }),
+    pgPolicy("Workspace members can create annotations", {
+        for: "insert",
+        withCheck: sql`file_id IN (SELECT id FROM files WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text))`,
+    }),
+    pgPolicy("Authors can update their annotations", {
+        for: "update",
+        using: sql`user_id = auth.uid()::text`,
+    }),
+    pgPolicy("Authors can delete their annotations", {
+        for: "delete",
+        using: sql`user_id = auth.uid()::text`,
+    }),
+])
+
+// =============================================================================
+// FILE ANNOTATIONS RELATIONS
+// =============================================================================
+
+export const fileAnnotationsRelations = relations(fileAnnotations, ({ one, many }) => ({
+    file: one(files, { fields: [fileAnnotations.fileId], references: [files.id] }),
+    user: one(users, { fields: [fileAnnotations.userId], references: [users.id] }),
+    parent: one(fileAnnotations, {
+        fields: [fileAnnotations.parentId],
+        references: [fileAnnotations.id],
+        relationName: 'annotationReplies',
+    }),
+    replies: many(fileAnnotations, { relationName: 'annotationReplies' }),
+}))
+
+// =============================================================================
+// FILE ANNOTATIONS TYPES
+// =============================================================================
+
+export type FileAnnotation = typeof fileAnnotations.$inferSelect
+export type NewFileAnnotation = typeof fileAnnotations.$inferInsert
+

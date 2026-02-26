@@ -2,7 +2,7 @@ import * as React from 'react'
 import { format } from 'date-fns'
 import { pl, enUS } from 'date-fns/locale'
 import { FileRecord, Folder } from '@taskdashboard/types'
-import { Folder as FolderIcon, MoreHorizontal, FileText, Image, FileSpreadsheet, Video, Music, File as GenericFile, Pencil, Trash2, Copy, Archive, Info, FolderOpen, Download, ArrowUp, ArrowDown } from 'lucide-react'
+import { Folder as FolderIcon, MoreHorizontal, FileText, Image, FileSpreadsheet, Video, Music, File as GenericFile, Pencil, Trash2, Copy, Archive, Info, FolderOpen, Download, ArrowUp, ArrowDown, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -24,6 +24,7 @@ interface FileListProps {
     onInfo?: (id: string) => void
     onArchive?: (id: string) => void
     onDuplicate?: (id: string) => void
+    onOpen?: (id: string) => void
     sortBy: 'name' | 'size' | 'date' | 'type'
     sortOrder: 'asc' | 'desc'
     onSort: (field: 'name' | 'size' | 'date' | 'type') => void
@@ -66,6 +67,7 @@ export function FileList({
     onInfo,
     onArchive,
     onDuplicate,
+    onOpen,
     sortBy,
     sortOrder,
     onSort,
@@ -221,7 +223,7 @@ export function FileList({
                         const iconColor = getFileColor(file.mimeType)
 
                         return (
-                            <tr key={file.id} className="cursor-pointer hover:bg-[#1e1e29] transition-colors" onClick={() => onInfo?.(file.id)}>
+                            <tr key={file.id} className="cursor-pointer hover:bg-[#1e1e29] transition-colors" onClick={() => onInfo?.(file.id)} onDoubleClick={(e) => { e.stopPropagation(); onOpen?.(file.id) }}>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 rounded-lg bg-[#12121a] flex items-center justify-center">
@@ -246,6 +248,13 @@ export function FileList({
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
+                                            {/* Open / View */}
+                                            {onOpen && (
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onOpen(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                                    <Eye className="h-4 w-4 text-blue-400" />
+                                                    <span>{t('files.actions.open', 'Open')}</span>
+                                                </DropdownMenuItem>
+                                            )}
                                             {canManageFile && (
                                                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                                     <Pencil className="h-4 w-4 text-amber-500" />
