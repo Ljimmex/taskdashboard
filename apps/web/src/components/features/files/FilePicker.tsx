@@ -25,9 +25,9 @@ export function FilePicker({ onSelect, onCancel, maxFiles = 1, allowedTypes, ini
     const [searchQuery, setSearchQuery] = useState('')
     const [activeTab, setActiveTab] = useState(initialTab)
 
-    // Fetch files
+    // Fetch files recursively to see contents of folders
     // TODO: Add search and filter params via hook if supported needed
-    const { data: files = [] } = useFiles(workspaceSlug)
+    const { data: files = [] } = useFiles(workspaceSlug, null, true)
 
     // Filter files based on search and allowed types
     const filteredFiles = files.filter(file => {
@@ -121,8 +121,9 @@ export function FilePicker({ onSelect, onCancel, maxFiles = 1, allowedTypes, ini
         </div>
     )
 
+    // Using relative z-10 so the modal is clickable and not obscured by the backdrop overlay.
     return (
-        <div className="flex flex-col h-[600px] w-full max-w-3xl bg-[#12121a] rounded-2xl border border-gray-800 shadow-2xl overflow-hidden">
+        <div className="relative z-10 flex flex-col h-[600px] w-full max-w-3xl bg-[#12121a] rounded-2xl border border-gray-800 shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-gray-800">
                 <h2 className="text-lg font-semibold text-white">{t('files.picker.title')}</h2>
                 <button

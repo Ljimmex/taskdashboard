@@ -442,7 +442,7 @@ export function TaskListView({
                                 <td className="px-4 py-3"><div className="flex justify-center"><PriorityBadge priority={task.priority} priorities={priorities} /></div></td>
                                 <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate((task as any).startDate)}</span></td>
                                 <td className="px-4 py-3"><span className="text-sm text-gray-400">{formatDate((task as any).endDate || task.dueDate)}</span></td>
-                                <td className="px-4 py-3"><AssigneeAvatars assignees={task.assignees || []} /></td>
+                                <td className="px-4 py-3"><AssigneeAvatars assignees={(task as any).assigneeDetails || task.assignees || []} /></td>
                                 <td className="w-12 p-4">
                                     <RowMenu
                                         onEdit={() => onTaskEdit?.(task.id)}

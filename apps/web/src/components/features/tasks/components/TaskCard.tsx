@@ -74,6 +74,7 @@ export interface TaskCardProps {
     userRole?: string
     userId?: string
     onQuickUpdate?: (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string; assignees?: string[]; isCompleted?: boolean }) => void
+    isCollapsedOverride?: boolean // Added for column-wide collapse override
 }
 
 // Icon mapping based on priority ID
@@ -110,13 +111,24 @@ export function TaskCard({
     userRole,
     userId,
     onQuickUpdate,
+    isCollapsedOverride,
 }: TaskCardProps) {
     const { t, i18n } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const [showMenu, setShowMenu] = useState(false)
     const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('down')
+    const [isCollapsedState, setIsCollapsedState] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
+
+    // Sync override
+    useEffect(() => {
+        if (isCollapsedOverride !== undefined) {
+            setIsCollapsedState(isCollapsedOverride)
+        }
+    }, [isCollapsedOverride])
+
+    const isCollapsed = type !== 'meeting' && isCollapsedState
 
     // Check permissions
     const canManageTasks = userRole !== 'member' && userRole !== 'guest'
@@ -255,12 +267,29 @@ export function TaskCard({
             `}
             onContextMenu={handleContextMenu}
         >
-            {/* Menu Button - always visible in top right */}
-            <div ref={menuRef}>
+            {/* Right side controls: Menu + Chevron (if task) */}
+            <div ref={menuRef} className="absolute top-4 right-4 flex items-center gap-1">
+                {type !== 'meeting' && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setIsCollapsedState(!isCollapsedState) }}
+                        className="w-6 h-6 rounded flex items-center justify-center text-gray-600 hover:text-white transition-all bg-[#1a1a24]/50 border border-transparent hover:border-gray-700"
+                        title={isCollapsedState ? "Expand" : "Collapse"}
+                    >
+                        {isCollapsedState ? (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M6 9l6 6 6-6" />
+                            </svg>
+                        ) : (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 15l-6-6-6 6" />
+                            </svg>
+                        )}
+                    </button>
+                )}
                 <button
                     ref={buttonRef}
                     onClick={(e) => { e.stopPropagation(); handleMenuToggle() }}
-                    className="absolute top-4 right-4 w-6 h-6 rounded flex items-center justify-center text-gray-600 hover:text-white transition-all"
+                    className="w-6 h-6 rounded flex items-center justify-center text-gray-600 hover:text-white transition-all"
                 >
                     ⋮
                 </button>
@@ -356,7 +385,7 @@ export function TaskCard({
             </div>
 
             {/* Header: Title */}
-            <div className="flex items-start gap-2 mb-2 pr-8">
+            <div className={`flex items-start gap-2 mb-2 ${type !== 'meeting' ? 'pr-16' : 'pr-8'}`}>
                 {isBlocked && (
                     <div className="mt-0.5 flex-shrink-0" title={t('tasks.blocked_by_dependencies')}>
                         <svg width="16" height="16" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -366,164 +395,220 @@ export function TaskCard({
                         </svg>
                     </div>
                 )}
-                <h3 className={`font-semibold line-clamp-2 ${isBlocked ? 'text-gray-500' : (isCompleted ? 'line-through text-gray-500' : 'text-white')}`}>{title}</h3>
+                <h3 className={`font-semibold line-clamp-2 ${isBlocked ? 'text-gray-500' : (isCompleted ? 'line-through text-gray-500' : 'text-white')} ${isCollapsed ? 'mb-0' : ''}`}>{title}</h3>
             </div>
 
-            {/* Priority / Date Badge */}
-            <div className="flex items-center justify-between mb-3">
-                {/* Left side: Date Badge */}
-                <div className="flex items-center gap-2 flex-wrap">
-                    {type === 'meeting' ? (
-                        dueDate ? (
-                            <span className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5 bg-[#2a2b36] text-gray-300 border border-gray-700/50">
-                                {/* Calendar Icon */}
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                {formatDate(dueDate)}
-                            </span>
-                        ) : null
-                    ) : (
+            {/* If collapsed, we show assignees + due date right under the title or to the side, then return early to hide the rest. */}
+            {isCollapsed ? (
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-800/50">
+                    <div className="flex items-center gap-2 min-w-0 pr-2">
                         <span
-                            className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5"
+                            className="px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 flex-shrink-0"
                             style={{
                                 backgroundColor: `${currentPriority.color}33`,
                                 color: currentPriority.color,
-                                borderColor: `${currentPriority.color}4D`
                             }}
                         >
-                            <PriorityIcon size={12} />
+                            <PriorityIcon size={10} />
                             {currentPriority.name}
                         </span>
-                    )}
-                </div>
 
-            </div>
-
-            {/* Inline Labels */}
-            <div className="flex items-center gap-2 flex-wrap mb-3">
-                {safeLabels.slice(0, 3).map((label, i) => (
-                    <LabelBadge key={label.id || i} label={label} size="sm" />
-                ))}
-                {safeLabels.length > 3 && (
-                    <span className="text-[10px] text-gray-500">+{safeLabels.length - 3}</span>
-                )}
-            </div>
-
-            {/* Description */}
-            {description && (
-                <div className="text-gray-500 text-xs mb-auto line-clamp-2 [&>p]:mb-0 [&>ul]:mb-0 [&>ol]:mb-0 [&>*]:inline">
-                    <Markdown rehypePlugins={[rehypeSanitize]}>{description}</Markdown>
-                </div>
-            )}
-
-
-
-            {/* Due Date / Progress (like Project Card) - Only for tasks */}
-            {type !== 'meeting' && (dueDate || subtaskCount > 0) && (
-                <div className="mt-3">
-                    <div className="flex items-center justify-between mb-2">
-                        {dueDate && (
-                            <div className={`flex items-center gap-1.5 ${isOverdue ? 'text-red-400' : 'text-gray-500'}`}>
-                                {/* Flag Icon - Grey */}
-                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
-                                    <path d="M8 28V6" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
-                                    <path d="M10 7C10 7 14 5 18 7C22 9 26 7 26 7V17C26 17 22 19 18 17C14 15 10 17 10 17V7Z" fill="#9E9E9E" />
-                                </svg>
-                                <span className="text-xs">{formatDate(dueDate)}</span>
+                        {/* Inline Labels */}
+                        {safeLabels.length > 0 && (
+                            <div className="flex items-center gap-1 flex-wrap overflow-hidden">
+                                {safeLabels.slice(0, 2).map((label, i) => (
+                                    <div
+                                        key={label.id || i}
+                                        className="h-4 px-1.5 rounded transition-colors whitespace-nowrap overflow-hidden max-w-[60px] text-[9px] font-medium flex items-center"
+                                        style={{ backgroundColor: `${label.color || '#6B7280'}20`, color: label.color || '#6B7280' }}
+                                        title={label.name}
+                                    >
+                                        <span className="truncate">{label.name}</span>
+                                    </div>
+                                ))}
+                                {safeLabels.length > 2 && (
+                                    <span className="text-[10px] text-gray-500 ml-0.5">+{safeLabels.length - 2}</span>
+                                )}
                             </div>
                         )}
                     </div>
-                    {subtaskCount > 0 && (
-                        <SubtaskProgress completed={subtaskCompleted} total={subtaskCount} />
-                    )}
-                </div>
-            )}
-
-            {/* Footer: Avatars + Action Icons */}
-            <div className="flex items-center justify-between mt-4">
-                {/* Assignees */}
-                <div className="flex -space-x-2">
-                    {safeAssignees.slice(0, 4).map((assignee, i) => {
-                        const userImage = assignee.avatar || assignee.image
-                        const initials = assignee.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'
-
-                        return (
-                            <div
-                                key={assignee.id || i}
-                                className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-black border border-[#1a1a24] overflow-hidden ${userImage ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}
-                                style={{ zIndex: safeAssignees.length - i }}
-                                title={assignee.name}
-                            >
-                                {userImage ? (
-                                    <img src={userImage} alt={assignee.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    initials
-                                )}
+                    {/* Small Avatars for Collapsed View */}
+                    <div className="flex -space-x-1.5">
+                        {safeAssignees.slice(0, 3).map((assignee, i) => {
+                            const userImage = assignee.avatar || assignee.image
+                            const initials = assignee.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'
+                            return (
+                                <div key={assignee.id || i} className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-black border border-[#1a1a24] overflow-hidden ${userImage ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`} style={{ zIndex: safeAssignees.length - i }} title={assignee.name}>
+                                    {userImage ? <img src={userImage} alt={assignee.name} className="w-full h-full object-cover" /> : initials}
+                                </div>
+                            )
+                        })}
+                        {safeAssignees.length > 3 && (
+                            <div className="w-4 h-4 rounded-full border border-[#1a1a24] bg-gray-700 flex items-center justify-center text-white text-[8px] font-bold" style={{ zIndex: 0 }}>
+                                +{safeAssignees.length - 3}
                             </div>
-                        )
-                    })}
-                    {safeAssignees.length > 4 && (
-                        <div className="w-5 h-5 rounded-full border border-[#1a1a24] bg-gray-700 flex items-center justify-center text-white text-[9px] font-bold" style={{ zIndex: 0 }}>
-                            +{safeAssignees.length - 4}
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <>
+                    {/* Priority / Date Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                        {/* Left side: Date Badge */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {type === 'meeting' ? (
+                                dueDate ? (
+                                    <span className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5 bg-[#2a2b36] text-gray-300 border border-gray-700/50">
+                                        {/* Calendar Icon */}
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>
+                                        {formatDate(dueDate)}
+                                    </span>
+                                ) : null
+                            ) : (
+                                <span
+                                    className="px-2.5 py-0.5 rounded-md text-xs font-medium flex-shrink-0 flex items-center gap-1.5"
+                                    style={{
+                                        backgroundColor: `${currentPriority.color}33`,
+                                        color: currentPriority.color,
+                                        borderColor: `${currentPriority.color}4D`
+                                    }}
+                                >
+                                    <PriorityIcon size={12} />
+                                    {currentPriority.name}
+                                </span>
+                            )}
+                        </div>
+
+                    </div>
+
+                    {/* Inline Labels */}
+                    <div className="flex items-center gap-2 flex-wrap mb-3">
+                        {safeLabels.slice(0, 3).map((label, i) => (
+                            <LabelBadge key={label.id || i} label={label} size="sm" />
+                        ))}
+                        {safeLabels.length > 3 && (
+                            <span className="text-[10px] text-gray-500">+{safeLabels.length - 3}</span>
+                        )}
+                    </div>
+
+                    {/* Description */}
+                    {description && (
+                        <div className="text-gray-500 text-xs mb-auto line-clamp-2 [&>p]:mb-0 [&>ul]:mb-0 [&>ol]:mb-0 [&>*]:inline">
+                            <Markdown rehypePlugins={[rehypeSanitize]}>{description}</Markdown>
                         </div>
                     )}
-                </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                    {type === 'meeting' ? (
-                        meetingLink ? (
-                            <button
-                                className="w-8 h-8 rounded-full bg-[#2a2b36] flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    window.open(meetingLink, '_blank')
-                                }}
-                                title="Join Meeting"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                                </svg>
-                            </button>
-                        ) : null
-                    ) : (
-                        <>
+
+
+                    {/* Due Date / Progress (like Project Card) - Only for tasks */}
+                    {type !== 'meeting' && (dueDate || subtaskCount > 0) && (
+                        <div className="mt-3">
+                            <div className="flex items-center justify-between mb-2">
+                                {dueDate && (
+                                    <div className={`flex items-center gap-1.5 ${isOverdue ? 'text-red-400' : 'text-gray-500'}`}>
+                                        {/* Flag Icon - Grey */}
+                                        <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+                                            <path d="M8 28V6" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
+                                            <path d="M10 7C10 7 14 5 18 7C22 9 26 7 26 7V17C26 17 22 19 18 17C14 15 10 17 10 17V7Z" fill="#9E9E9E" />
+                                        </svg>
+                                        <span className="text-xs">{formatDate(dueDate)}</span>
+                                    </div>
+                                )}
+                            </div>
                             {subtaskCount > 0 && (
-                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${subtaskCompleted}/${subtaskCount} subtasks`}>
-                                    {/* Document Icon for Subtasks - Grey */}
-                                    <div className="group-hover/btn:hidden"><DocumentIcon /></div>
-                                    {/* Document Icon for Subtasks - Gold */}
-                                    <div className="hidden group-hover/btn:block"><DocumentIconGold /></div>
-                                    <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{subtaskCompleted}/{subtaskCount}</span>
-                                </div>
+                                <SubtaskProgress completed={subtaskCompleted} total={subtaskCount} />
                             )}
-                            {commentCount > 0 && (
-                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${commentCount} comments`}>
-                                    {/* Comment Icon - Grey */}
-                                    <div className="group-hover/btn:hidden"><CommentIcon /></div>
-                                    {/* Comment Icon - Gold */}
-                                    <div className="hidden group-hover/btn:block"><CommentIconGold /></div>
-                                    <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{commentCount}</span>
-                                </div>
-                            )}
-                            {attachmentCount > 0 && (
-                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${attachmentCount} attachments`}>
-                                    {/* Paperclip Icon - Grey */}
-                                    <div className="group-hover/btn:hidden"><PaperclipIcon /></div>
-                                    {/* Paperclip Icon - Gold */}
-                                    <div className="hidden group-hover/btn:block"><PaperclipIconGold /></div>
-                                    <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{attachmentCount}</span>
-                                </div>
-                            )}
-                        </>
+                        </div>
                     )}
-                </div>
-            </div>
+
+                    {/* Footer: Avatars + Action Icons */}
+                    <div className="flex items-center justify-between mt-4">
+                        {/* Assignees */}
+                        <div className="flex -space-x-2">
+                            {safeAssignees.slice(0, 4).map((assignee, i) => {
+                                const userImage = assignee.avatar || assignee.image
+                                const initials = assignee.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?'
+
+                                return (
+                                    <div
+                                        key={assignee.id || i}
+                                        className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-black border border-[#1a1a24] overflow-hidden ${userImage ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}
+                                        style={{ zIndex: safeAssignees.length - i }}
+                                        title={assignee.name}
+                                    >
+                                        {userImage ? (
+                                            <img src={userImage} alt={assignee.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            initials
+                                        )}
+                                    </div>
+                                )
+                            })}
+                            {safeAssignees.length > 4 && (
+                                <div className="w-5 h-5 rounded-full border border-[#1a1a24] bg-gray-700 flex items-center justify-center text-white text-[9px] font-bold" style={{ zIndex: 0 }}>
+                                    +{safeAssignees.length - 4}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2">
+                            {type === 'meeting' ? (
+                                meetingLink ? (
+                                    <button
+                                        className="w-8 h-8 rounded-full bg-[#2a2b36] flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            window.open(meetingLink, '_blank')
+                                        }}
+                                        title="Join Meeting"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                                            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                                        </svg>
+                                    </button>
+                                ) : null
+                            ) : (
+                                <>
+                                    {subtaskCount > 0 && (
+                                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${subtaskCompleted}/${subtaskCount} subtasks`}>
+                                            {/* Document Icon for Subtasks - Grey */}
+                                            <div className="group-hover/btn:hidden"><DocumentIcon /></div>
+                                            {/* Document Icon for Subtasks - Gold */}
+                                            <div className="hidden group-hover/btn:block"><DocumentIconGold /></div>
+                                            <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{subtaskCompleted}/{subtaskCount}</span>
+                                        </div>
+                                    )}
+                                    {commentCount > 0 && (
+                                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${commentCount} comments`}>
+                                            {/* Comment Icon - Grey */}
+                                            <div className="group-hover/btn:hidden"><CommentIcon /></div>
+                                            {/* Comment Icon - Gold */}
+                                            <div className="hidden group-hover/btn:block"><CommentIconGold /></div>
+                                            <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{commentCount}</span>
+                                        </div>
+                                    )}
+                                    {attachmentCount > 0 && (
+                                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors group/btn" title={`${attachmentCount} attachments`}>
+                                            {/* Paperclip Icon - Grey */}
+                                            <div className="group-hover/btn:hidden"><PaperclipIcon /></div>
+                                            {/* Paperclip Icon - Gold */}
+                                            <div className="hidden group-hover/btn:block"><PaperclipIconGold /></div>
+                                            <span className="text-xs text-gray-400 group-hover/btn:text-[#F2CE88]">{attachmentCount}</span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
 
         </div>
     )

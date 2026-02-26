@@ -129,20 +129,19 @@ app.get('/', zValidator('query', filesQuerySchema), async (c) => {
     ]
 
     // Folder filtering logic:
-    // - If folderId is provided and is 'root': show files WHERE folderId IS NULL OR taskId IS NOT NULL
-    // - If folderId is a specific UUID: show files in that folder (folderId = UUID) OR task files (taskId NOT NULL)
+    // - If folderId is provided and is 'root': show files WHERE folderId IS NULL (which includes task files implicitly if they have no folder)
+    // - If folderId is a specific UUID: show files strictly WHERE folderId = UUID
     // - If no folderId: show all files (including task attachments)
-    // This ensures task attachments appear in Files page
     if (folderId) {
         if (folderId === 'root') {
-            // Root: files with no folder assignment OR files attached to tasks
+            // Root: files with no explicit folder assignment
             conditions.push(
-                sql`(${files.folderId} IS NULL OR ${files.taskId} IS NOT NULL)`
+                sql`${files.folderId} IS NULL`
             )
         } else {
-            // Specific folder: files in this folder OR task files
+            // Specific folder: ONLY files exactly explicitly in this folder
             conditions.push(
-                sql`(${files.folderId} = ${folderId} OR ${files.taskId} IS NOT NULL)`
+                eq(files.folderId, folderId)
             )
         }
     }

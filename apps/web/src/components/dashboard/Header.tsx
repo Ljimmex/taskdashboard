@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { useSession, signOut } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { DropdownArrowUp, DropdownArrowDown } from './icons'
@@ -8,6 +9,7 @@ import { UserSettingsPanel } from '@/components/features/settings/panels/UserSet
 import { LanguageSwitcher } from '@/components/language-switcher'
 
 export function Header() {
+    const { t } = useTranslation()
     const { data: session } = useSession()
     const [showUserMenu, setShowUserMenu] = useState(false)
     const [showNotifications, setShowNotifications] = useState(false)
@@ -148,7 +150,7 @@ export function Header() {
                                             <path d="M8.5 24C8.5 20 11.5 18 16 18C20.5 18 23.5 20 23.5 24" stroke="#F2CE88" strokeWidth="3" strokeLinecap="round" />
                                         </svg>
                                     </div>
-                                    <span>My Profile</span>
+                                    <span>{t('dashboard.myProfile')}</span>
                                 </a>
                                 <a href={baseUrl} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
                                     {/* My Chat icon - Messages from Sidebar */}
@@ -164,9 +166,9 @@ export function Header() {
                                             <rect x="10" y="17" width="8" height="3" rx="1.5" fill="#7A664E" />
                                         </svg>
                                     </div>
-                                    <span>My Chat</span>
+                                    <span>{t('dashboard.myChat')}</span>
                                 </a>
-                                <a href={baseUrl} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
+                                <a href={`${baseUrl}/my-tasks`} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group">
                                     {/* Tasks icon */}
                                     <div className="w-5 h-5 flex items-center justify-center">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
@@ -186,7 +188,7 @@ export function Header() {
                                             <rect x="4" y="24" width="4" height="4" rx="1" fill="#F2CE88" />
                                         </svg>
                                     </div>
-                                    <span>Tasks</span>
+                                    <span>{t('dashboard.myTasks')}</span>
                                 </a>
                                 <button
                                     onClick={() => {
@@ -206,7 +208,7 @@ export function Header() {
                                             <circle cx="15.5" cy="16" r="5.5" fill="#F2CE88" />
                                         </svg>
                                     </div>
-                                    <span>Settings</span>
+                                    <span>{t('dashboard.userSettings')}</span>
                                 </button>
 
                                 <button
@@ -229,7 +231,7 @@ export function Header() {
                                             <path d="M22 10L28 16L22 22" stroke="#F2CE88" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
                                     </div>
-                                    <span>Log Out</span>
+                                    <span>{t('dashboard.logout')}</span>
                                 </button>
                             </div>
                         </div>

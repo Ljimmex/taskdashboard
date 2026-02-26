@@ -253,6 +253,18 @@ export function TaskDetailsPanel({
         setReplyingTo(null)
     }
 
+    const handleDownload = async (fileId: string) => {
+        try {
+            const { apiFetchJson } = await import('@/lib/api')
+            const json = await apiFetchJson<any>(`/api/files/${fileId}/download`)
+            const { downloadUrl } = json
+            window.open(downloadUrl, '_blank')
+        } catch (error) {
+            console.error('Download failed:', error)
+            alert(t('files.messages.download_failed') + ' ' + (error as Error).message)
+        }
+    }
+
     // Unused: handleLabelChange removed - TaskDetailsPanel is now read-only
     void onLabelsChange // Suppress lint warning - prop kept for interface compatibility
 
@@ -609,32 +621,36 @@ export function TaskDetailsPanel({
                                     <table className="w-full">
                                         <thead>
                                             <tr className="text-left text-xs text-gray-500 border-b border-gray-800">
-                                                <th className="pb-3 font-medium">{t('projects.details.shared.name')}</th>
-                                                <th className="pb-3 font-medium">{t('projects.details.shared.shared_by')}</th>
-                                                <th className="pb-3 font-medium">{t('projects.details.shared.date')}</th>
+                                                <th className="pb-3 font-medium min-w-[150px] whitespace-nowrap">{t('projects.details.shared.name')}</th>
+                                                <th className="pb-3 font-medium min-w-[120px] whitespace-nowrap">{t('projects.details.shared.shared_by')}</th>
+                                                <th className="pb-3 font-medium min-w-[100px] whitespace-nowrap">{t('projects.details.shared.date')}</th>
                                                 <th className="pb-3 font-medium w-12"></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {mappedFiles.map((file) => (
                                                 <tr key={file.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                                                    <td className="py-3">
-                                                        <div className="flex items-center gap-3">
+                                                    <td className="py-3 max-w-[200px]">
+                                                        <div className="flex items-center gap-3 pr-4">
                                                             <FileTypeIcon type={file.type} />
-                                                            <span className="text-sm text-white font-medium">{file.name}</span>
+                                                            <span className="text-sm text-white font-medium truncate" title={file.name}>{file.name}</span>
                                                         </div>
                                                     </td>
                                                     <td className="py-3">
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-2 pr-4">
                                                             <Avatar name={file.sharedBy.name} size="sm" />
-                                                            <span className="text-sm text-gray-400">{file.sharedBy.name}</span>
+                                                            <span className="text-sm text-gray-400 truncate max-w-[120px]" title={file.sharedBy.name}>{file.sharedBy.name}</span>
                                                         </div>
                                                     </td>
                                                     <td className="py-3">
-                                                        <span className="text-sm text-gray-500">{file.dateShared}</span>
+                                                        <span className="text-sm text-gray-500 whitespace-nowrap">{file.dateShared}</span>
                                                     </td>
-                                                    <td className="py-3">
-                                                        <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
+                                                    <td className="py-3 text-right">
+                                                        <button
+                                                            onClick={() => handleDownload(file.id)}
+                                                            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                                                            title={t('files.actions.download')}
+                                                        >
                                                             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15" />
                                                                 <path d="M7 10L12 15L17 10" />

@@ -26,6 +26,7 @@ interface FileExplorerProps {
     onSort: (field: 'name' | 'size' | 'date' | 'type') => void
     userRole?: string | null
     highlightFileId?: string
+    onFolderChange?: (folderId: string | null) => void
 }
 
 export function FileExplorer({
@@ -39,20 +40,20 @@ export function FileExplorer({
     sortOrder,
     onSort,
     userRole,
-    highlightFileId
+    highlightFileId,
+    onFolderChange
 }: FileExplorerProps) {
     const { t } = useTranslation()
     const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId || null)
     const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([{ id: null, name: 'Files' }])
 
-    // Update root breadcrumb name on language change logic could go here, 
-    // but typically breadcrumbs are dynamic. For root 'Files', we might want to just render it translated.
-    // However, since we store it in state, we might need to update it. 
-    // Easier approach: Check if id is null in Breadcrumb component and translate there? 
-    // But Breadcrumb component is generic.
-    // Let's rely on the fact that 'Files' is the initial state. 
-    // Better: In render, map breadcrumbs and if id is null, replace name with t('files.header.title').
+    // Fetch and sync folder changes
+    React.useEffect(() => {
+        if (onFolderChange) {
+            onFolderChange(currentFolderId)
+        }
+    }, [currentFolderId, onFolderChange])
 
     // Modal states
     const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)

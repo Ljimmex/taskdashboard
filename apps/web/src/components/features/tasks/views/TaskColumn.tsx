@@ -63,6 +63,9 @@ interface TaskColumnProps {
     onWatch?: () => void
     onMoveAllCards?: () => void
     onArchiveAll?: () => void
+    onExpandAll?: () => void
+    onCollapseAll?: () => void
+    isCollapsed?: boolean
     onAddRule?: () => void
     onDeleteColumn?: () => void
     dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
@@ -485,6 +488,9 @@ function ColumnMenu({
     onWatch,
     onMoveAllCards,
     onArchiveAll,
+    onExpandAll,
+    onCollapseAll,
+    isCollapsed,
     onAddRule,
     onDeleteColumn,
     userRole
@@ -496,6 +502,9 @@ function ColumnMenu({
     onWatch?: () => void
     onMoveAllCards?: () => void
     onArchiveAll?: () => void
+    onExpandAll?: () => void
+    onCollapseAll?: () => void
+    isCollapsed?: boolean
     onAddRule?: () => void
     onDeleteColumn?: () => void
     userRole?: string
@@ -612,21 +621,43 @@ function ColumnMenu({
             <div className="border-t border-gray-800" />
 
             {/* Group 3: Bulk Actions */}
-            {/* Group 3: Bulk Actions */}
-            {canEditColumn && (
-                <MenuSection title={t('board.column.menu.bulk_title')}>
+            <MenuSection title={t('board.column.menu.bulk_title')}>
+                {canEditColumn && (
+                    <>
+                        <MenuItem
+                            icon={<ArrowRightSmallIcon />}
+                            label={t('board.column.menu.move_all')}
+                            onClick={onMoveAllCards}
+                        />
+                        <MenuItem
+                            icon={<ArchiveIconDefault />}
+                            label={t('board.column.menu.archive_all')}
+                            onClick={onArchiveAll}
+                        />
+                    </>
+                )}
+                {isCollapsed ? (
                     <MenuItem
-                        icon={<ArrowRightSmallIcon />}
-                        label={t('board.column.menu.move_all')}
-                        onClick={onMoveAllCards}
+                        icon={
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M6 9l6 6 6-6" />
+                            </svg>
+                        }
+                        label={t('board.column.menu.expand_all')}
+                        onClick={() => { onExpandAll?.(); onClose() }}
                     />
+                ) : (
                     <MenuItem
-                        icon={<ArchiveIconDefault />}
-                        label={t('board.column.menu.archive_all')}
-                        onClick={onArchiveAll}
+                        icon={
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 15l-6-6-6 6" />
+                            </svg>
+                        }
+                        label={t('board.column.menu.collapse_all')}
+                        onClick={() => { onCollapseAll?.(); onClose() }}
                     />
-                </MenuSection>
-            )}
+                )}
+            </MenuSection>
 
             <div className="border-t border-gray-800" />
 
@@ -675,6 +706,9 @@ export function TaskColumn({
     onWatch,
     onMoveAllCards,
     onArchiveAll,
+    onExpandAll,
+    onCollapseAll,
+    isCollapsed,
     onAddRule,
     onDeleteColumn,
     color,
@@ -682,7 +716,7 @@ export function TaskColumn({
     dragHandleProps,
     members,
     userRole
-}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[]; userRole?: string }) {
+}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[]; userRole?: string; isCollapsed?: boolean }) {
     const [showQuickAdd, setShowQuickAdd] = useState(false)
     const [showColumnMenu, setShowColumnMenu] = useState(false)
     const [isRenaming, setIsRenaming] = useState(false)
@@ -797,6 +831,9 @@ export function TaskColumn({
                         onWatch={onWatch}
                         onMoveAllCards={onMoveAllCards}
                         onArchiveAll={onArchiveAll}
+                        onExpandAll={onExpandAll}
+                        onCollapseAll={onCollapseAll}
+                        isCollapsed={isCollapsed}
                         onAddRule={onAddRule}
                         onDeleteColumn={onDeleteColumn}
                         userRole={userRole}
@@ -814,7 +851,6 @@ export function TaskColumn({
                 />
             )}
 
-            {/* Tasks container - scrollable */}
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-3 pr-1 pb-4">
                 {children ? children : tasks.map(task => (
                     <TaskCard

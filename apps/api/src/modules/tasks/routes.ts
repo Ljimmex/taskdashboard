@@ -323,7 +323,7 @@ tasksRoutes.get('/:id', async (c) => {
                     columns: { id: true, name: true, image: true }
                 }
             },
-            orderBy: (s, { asc }) => [asc(s.position)]
+            orderBy: (s, { asc }) => [asc(s.position), asc(s.createdAt)]
         })
 
         // Labels are now stored directly on task.labels as text[]
@@ -729,10 +729,6 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
         if (body.description !== undefined) updateData.description = body.description
         if (body.status !== undefined) {
             updateData.status = body.status
-            // Automatic completion toggle
-            if (body.isCompleted === undefined) {
-                updateData.isCompleted = body.status === 'done'
-            }
         }
         if (body.isCompleted !== undefined) updateData.isCompleted = body.isCompleted
         if (body.priority !== undefined) updateData.priority = body.priority

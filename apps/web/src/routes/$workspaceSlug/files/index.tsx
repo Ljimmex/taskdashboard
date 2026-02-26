@@ -26,6 +26,9 @@ function FilesPage() {
     const search = Route.useSearch()
     const { data: session } = useSession()
 
+    // Folder state
+    const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
+
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
     // Fetch Workspace Details for role
@@ -181,6 +184,7 @@ function FilesPage() {
                     onSort={handleSortChange}
                     userRole={userRole}
                     highlightFileId={search.fileId}
+                    onFolderChange={setCurrentFolderId}
                 />
             </div>
 
@@ -188,6 +192,7 @@ function FilesPage() {
             <FileUploadPanel
                 isOpen={isUploadPanelOpen}
                 onClose={handleCloseUploadPanel}
+                folderId={currentFolderId}
                 initialFiles={droppedFiles}
                 onUploadComplete={() => {
                     console.log('Upload complete')
@@ -196,3 +201,4 @@ function FilesPage() {
         </div>
     )
 }
+

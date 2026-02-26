@@ -41,6 +41,7 @@ function SortableTask({
     userRole,
     userId,
     isBlocked,
+    isCollapsedOverride,
 }: {
     task: TaskCardProps
     members?: { id: string; name: string; avatar?: string }[]
@@ -56,6 +57,7 @@ function SortableTask({
     userRole?: string
     userId?: string
     isBlocked?: boolean
+    isCollapsedOverride?: boolean
 }) {
     const {
         attributes,
@@ -106,7 +108,7 @@ function SortableTask({
                     userRole={userRole}
                     userId={userId}
                     onQuickUpdate={onQuickUpdate}
-                // Optional: Maybe show a blocked lock icon inside the task card? We will add it inside TaskCard based on dependsOn later, or pass `isBlocked` as a prop if we want.
+                    isCollapsedOverride={isCollapsedOverride}
                 />
             )}
         </div>
@@ -128,6 +130,9 @@ function SortableColumn({
     onChangeColumnColor,
     onDeleteColumn,
     onMoveAllCards,
+    onExpandAll,
+    onCollapseAll,
+    isCollapsed,
     isOver,
     children
 }: {
@@ -144,6 +149,9 @@ function SortableColumn({
     onChangeColumnColor?: (color: string) => void
     onDeleteColumn?: () => void
     onMoveAllCards?: () => void
+    onExpandAll?: () => void
+    onCollapseAll?: () => void
+    isCollapsed?: boolean
     isOver?: boolean
     children?: React.ReactNode
 }) {
@@ -191,6 +199,9 @@ function SortableColumn({
                 onChangeColor={onChangeColumnColor}
                 onDeleteColumn={onDeleteColumn}
                 onMoveAllCards={onMoveAllCards}
+                onExpandAll={onExpandAll}
+                onCollapseAll={onCollapseAll}
+                isCollapsed={isCollapsed}
                 dragHandleProps={{ ...attributes, ...listeners }}
             >
                 {children}
@@ -251,6 +262,7 @@ export function KanbanBoard({
     const [activeColumn, setActiveColumn] = useState<any | null>(null)
     const [activeTask, setActiveTask] = useState<TaskCardProps | null>(null)
     const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
+    const [columnCollapsedStates, setColumnCollapsedStates] = useState<Record<string, boolean>>({})
 
     // Memoize column IDs for SortableContext
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns])
@@ -401,6 +413,9 @@ export function KanbanBoard({
                                 onChangeColumnColor={(color) => onChangeColumnColor?.(column.id, color)}
                                 onDeleteColumn={() => onDeleteColumn?.(column.id)}
                                 onMoveAllCards={() => onMoveAllCards?.(column.id)}
+                                onExpandAll={() => setColumnCollapsedStates(prev => ({ ...prev, [column.id]: false }))}
+                                onCollapseAll={() => setColumnCollapsedStates(prev => ({ ...prev, [column.id]: true }))}
+                                isCollapsed={columnCollapsedStates[column.id]}
                             >
                                 <SortableContext
                                     items={column.tasks.map(t => t.id)}
@@ -425,6 +440,7 @@ export function KanbanBoard({
                                             userRole={userRole}
                                             userId={userId}
                                             isBlocked={isTaskBlocked(task as any, allTasks as any)}
+                                            isCollapsedOverride={columnCollapsedStates[column.id]}
                                         />
                                     ))}
                                 </SortableContext>
