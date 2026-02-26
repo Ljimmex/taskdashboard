@@ -1,2 +1,2 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss: https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://taskdashboard-api.onrender.com; img-src 'self' data: https:; font-src 'self' data: https:;
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https: wss: https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://taskdashboard-api.onrender.com; img-src 'self' data: https:; font-src 'self' data: https:; worker-src 'self' blob:;
