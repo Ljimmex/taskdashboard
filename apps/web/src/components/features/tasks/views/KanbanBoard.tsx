@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
     DndContext,
     DragOverlay,
@@ -24,6 +24,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { TaskCard, TaskCardProps } from '../components/TaskCard'
 import { TaskColumn, AddColumn, QuickEditTask } from './TaskColumn'
 import { isTaskBlocked } from '@/hooks/useTasks'
+import { useParams } from '@tanstack/react-router'
 
 // Sortable Task wrapper
 function SortableTask({
@@ -262,7 +263,25 @@ export function KanbanBoard({
     const [activeColumn, setActiveColumn] = useState<any | null>(null)
     const [activeTask, setActiveTask] = useState<TaskCardProps | null>(null)
     const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
-    const [columnCollapsedStates, setColumnCollapsedStates] = useState<Record<string, boolean>>({})
+
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
+    const storageKey = `kanban-columns-collapsed-${workspaceSlug || 'default'}`
+    const [columnCollapsedStates, setColumnCollapsedStates] = useState<Record<string, boolean>>(() => {
+        try {
+            const saved = localStorage.getItem(storageKey)
+            return saved ? JSON.parse(saved) : {}
+        } catch {
+            return {}
+        }
+    })
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(columnCollapsedStates))
+        } catch (e) {
+            console.error('Failed to save column collapsed states:', e)
+        }
+    }, [columnCollapsedStates, storageKey])
 
     // Memoize column IDs for SortableContext
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns])

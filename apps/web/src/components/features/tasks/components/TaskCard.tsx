@@ -117,9 +117,24 @@ export function TaskCard({
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const [showMenu, setShowMenu] = useState(false)
     const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('down')
-    const [isCollapsedState, setIsCollapsedState] = useState(false)
+    const [isCollapsedState, setIsCollapsedState] = useState(() => {
+        try {
+            const saved = localStorage.getItem(`task-collapsed-${_id}`)
+            return saved !== null ? JSON.parse(saved) : false
+        } catch {
+            return false
+        }
+    })
     const menuRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(`task-collapsed-${_id}`, JSON.stringify(isCollapsedState))
+        } catch (e) {
+            console.error('Failed to save task collapsed state:', e)
+        }
+    }, [isCollapsedState, _id])
 
     // Sync override
     useEffect(() => {
