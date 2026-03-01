@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ProjectsHeader, type ProjectFilterState } from '@/components/features/projects/ProjectsHeader'
 import { ProjectSection } from '@/components/features/projects/ProjectSection'
 import { CreateProjectPanel } from '@/components/features/projects/CreateProjectPanel'
+import { EditProjectPanel } from '@/components/features/projects/EditProjectPanel'
 import { CreateTaskPanel } from '@/components/features/tasks/panels/CreateTaskPanel'
 import { TaskDetailsPanel } from '@/components/features/tasks/panels/TaskDetailsPanel'
 import { DayTaskListPanel } from '@/components/features/projects/DayTaskListPanel'
@@ -61,6 +62,7 @@ function ProjectsPage() {
     const [selectedTask, setSelectedTask] = useState<any | null>(null)
     const [showTaskDetails, setShowTaskDetails] = useState(false)
     const [defaultDueDate, setDefaultDueDate] = useState<string | undefined>(undefined)
+    const [editingProjectSession, setEditingProjectSession] = useState<Project | null>(null)
 
     // Day List Panel State
     const [selectedDayTasks, setSelectedDayTasks] = useState<Task[]>([])
@@ -190,6 +192,20 @@ function ProjectsPage() {
         const data = await apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`)
         if (data.success) setProjects(data.data || [])
     }, [workspaceSlug])
+
+    const handleDeleteProject = async (project: Project) => {
+        if (!confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) return
+        try {
+            await apiFetch(`/api/projects/${project.id}`, {
+                method: 'DELETE',
+                headers: { 'x-user-id': session?.user?.id || '' }
+            })
+            refetchProjects()
+            refetchTasks()
+        } catch (error) {
+            console.error('Error deleting project:', error)
+        }
+    }
 
     const refetchTasks = useCallback(async () => {
         const data = await apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}`)
@@ -544,6 +560,8 @@ function ProjectsPage() {
                         onProjectClick={(projectId) => {
                             navigate({ to: `/${workspaceSlug}/projects/${projectId}` })
                         }}
+                        onEditProject={(project) => setEditingProjectSession(project)}
+                        onDeleteProject={handleDeleteProject}
                         userRole={currentWorkspace?.userRole}
                     />
                 ))}
@@ -553,6 +571,15 @@ function ProjectsPage() {
                 isOpen={showCreatePanel}
                 onClose={() => setShowCreatePanel(false)}
                 onSuccess={refetchProjects}
+                workspaceId={currentWorkspace?.id}
+            />
+
+            {/* Edit Project Panel */}
+            <EditProjectPanel
+                isOpen={!!editingProjectSession}
+                onClose={() => setEditingProjectSession(null)}
+                onSuccess={refetchProjects}
+                project={editingProjectSession}
                 workspaceId={currentWorkspace?.id}
             />
 

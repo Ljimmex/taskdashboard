@@ -58,3 +58,6 @@ supabase/.temp
 # Cloudflare
 .wrangler/
 .dev.vars
+
+# Agent Skills
+.agent/skills/

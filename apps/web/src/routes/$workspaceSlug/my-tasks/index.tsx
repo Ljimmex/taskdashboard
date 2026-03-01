@@ -8,8 +8,17 @@ import { apiFetch, apiFetchJson } from '@/lib/api'
 import { TaskListView } from '@/components/features/tasks/views/TaskListView'
 import { ConfirmDeleteModal } from '@/components/common/ConfirmDeleteModal'
 
+export interface MyTasksSearch {
+    userId?: string
+}
+
 export const Route = createFileRoute('/$workspaceSlug/my-tasks/')({
     component: MyTasksPage,
+    validateSearch: (search: Record<string, unknown>): MyTasksSearch => {
+        return {
+            userId: search.userId as string | undefined,
+        }
+    },
 })
 
 function MyTasksPage() {
@@ -18,6 +27,7 @@ function MyTasksPage() {
     const navigate = useNavigate()
     const { data: session } = useSession()
     const queryClient = useQueryClient()
+    const searchParams = Route.useSearch()
 
     const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null)
     const [selectedTasks, setSelectedTasks] = useState<string[]>([])
@@ -39,15 +49,17 @@ function MyTasksPage() {
     const allTasks = tasksData?.data || []
     const allProjects = projectsData?.data || []
 
+    const targetUserId = searchParams.userId || session?.user?.id
+
     const assignedTasks = useMemo(() => {
-        if (!session?.user?.id) return []
+        if (!targetUserId) return []
         return allTasks.filter((task: any) => {
             const isAssigned =
-                task.assignees?.some((a: any) => a === session.user.id || a.id === session.user.id) ||
-                task.assigneeDetails?.some((a: any) => a.id === session.user.id)
+                task.assignees?.some((a: any) => a === targetUserId || a.id === targetUserId) ||
+                task.assigneeDetails?.some((a: any) => a.id === targetUserId)
             return isAssigned
         })
-    }, [allTasks, session?.user?.id])
+    }, [allTasks, targetUserId])
 
     const allStages = useMemo(() => {
         const stages: any[] = []
@@ -125,7 +137,7 @@ function MyTasksPage() {
             <header className="flex flex-col gap-4 mb-6 shrink-0">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold">{t('dashboard.myTasks')}</h1>
+                        <h1 className="text-2xl font-semibold">{searchParams.userId ? t('dashboard.membersTasks', { defaultValue: "Member's Tasks" }) : t('dashboard.myTasks')}</h1>
                     </div>
                 </div>
             </header>

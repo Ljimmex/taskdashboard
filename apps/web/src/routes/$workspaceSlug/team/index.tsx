@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { TeamHeader, SortOption, SortDirection, FilterOption } from '@/components/features/teams/TeamHeader'
 import { TeamTable } from '@/components/features/teams/TeamTable'
 import { CreateTeamPanel } from '@/components/features/teams/CreateTeamPanel'
+import { EditTeamPanel } from '@/components/features/teams/EditTeamPanel'
 import { InviteMemberPanel } from '@/components/features/teams/InviteMemberPanel'
 import { EditMemberPanel } from '@/components/features/teams/EditMemberPanel'
 import { ViewMemberPanel } from '@/components/features/teams/ViewMemberPanel'
@@ -30,6 +31,7 @@ export default function TeamPage() {
     })
     const [viewingSession, setViewingSession] = useState<{ member: TeamMember; teamName: string } | null>(null)
     const [editingSession, setEditingSession] = useState<{ member: TeamMember; teamName: string } | null>(null)
+    const [editingTeamSession, setEditingTeamSession] = useState<Team | null>(null)
 
     // Filter/Sort State
     const [searchQuery, setSearchQuery] = useState('')
@@ -315,6 +317,21 @@ export default function TeamPage() {
         }
     })
 
+    const editTeamMutation = useMutation({
+        mutationFn: async ({ id, updates }: { id: string, updates: any }) => {
+            return apiFetchJson<any>(`/api/teams/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'x-user-id': session?.user?.id || ''
+                },
+                body: JSON.stringify(updates)
+            })
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['teams'] })
+        }
+    })
+
     // Handlers
     const handleCreateTeam = (teamData: { name: string; description?: string; color: string; members: any[] }) => {
         createTeamMutation.mutate(teamData)
@@ -385,8 +402,7 @@ export default function TeamPage() {
     }
 
     const handleEditTeam = (team: Team) => {
-        // TODO: Open edit team panel
-        console.log('Edit team:', team)
+        setEditingTeamSession(team)
     }
 
     const handleSortChange = (sort: SortOption, direction: SortDirection) => {
@@ -466,6 +482,13 @@ export default function TeamPage() {
                 isOpen={isCreatePanelOpen}
                 onClose={() => setIsCreatePanelOpen(false)}
                 onCreate={handleCreateTeam}
+            />
+
+            <EditTeamPanel
+                isOpen={!!editingTeamSession}
+                onClose={() => setEditingTeamSession(null)}
+                team={editingTeamSession}
+                onSave={(id, updates) => editTeamMutation.mutate({ id, updates })}
             />
 
             <InviteMemberPanel

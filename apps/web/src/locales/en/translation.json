@@ -1226,9 +1226,9 @@
             "last_active": "Last Active",
             "empty_state": "No members in this team yet.",
             "menu": {
-                "edit_team": "Edit Team",
+                "edit_team": "Edit team details",
                 "export_members": "Export Members",
-                "delete_team": "Delete Team"
+                "delete_team": "Delete team"
             },
             "actions": {
                 "view_profile": "View Profile",
@@ -1269,7 +1269,7 @@
             "done": "Done"
         },
         "edit_panel": {
-            "title": "Edit Member",
+            "title": "Edit Team",
             "photo": "Photo",
             "change_photo": "Change photo",
             "remove_photo": "Remove photo",
@@ -1296,7 +1296,14 @@
             "saving": "Saving...",
             "delete_member": "Delete Member",
             "delete_confirmation": "Are you sure you want to delete {{name}}? This action cannot be undone.",
-            "deleting": "Deleting..."
+            "deleting": "Deleting...",
+            "team_name": "Team Name",
+            "team_name_placeholder": "e.g. Marketing",
+            "description": "Description",
+            "description_placeholder": "Add a brief description that explains the team's purpose.",
+            "team_color": "Team Color",
+            "cancel": "Cancel",
+            "save_button": "Save Changes"
         },
         "view_panel": {
             "member_since": "Member Since",
@@ -1584,6 +1591,23 @@
             "week": "Week",
             "add_task": "Add task",
             "more_tasks": "+{{count}} more"
+        },
+        "menu": {
+            "edit_project": "Edit project",
+            "delete_project": "Delete project"
+        },
+        "edit_panel": {
+            "title": "Edit Project",
+            "subtitle": "Update project information.",
+            "name": "Project Name",
+            "name_placeholder": "e.g. Website Redesign",
+            "description": "Description",
+            "description_placeholder": "Briefly describe your project...",
+            "color": "Project Color",
+            "deadline": "Deadline",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "submit": "Save Changes"
         }
     },
     "board": {
@@ -2000,6 +2024,45 @@
             "shared_with": "Shared with",
             "owner": "Owner",
             "section_title": "Properties"
+        }
+    },
+    "project_edit": {
+        "menu": {
+            "edit_project": "Edit project",
+            "delete_project": "Delete project"
+        },
+        "panel": {
+            "title": "Edit Project",
+            "subtitle": "Update project information.",
+            "name": "Project Name",
+            "name_placeholder": "e.g. Website Redesign",
+            "description": "Description",
+            "description_placeholder": "Briefly describe your project...",
+            "color": "Project Color",
+            "deadline": "Deadline",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "submit": "Save Changes",
+            "team": "Select Team",
+            "no_teams": "No teams available",
+            "multi_team_help": "You can select multiple teams"
+        }
+    },
+    "team_edit": {
+        "menu": {
+            "edit_team": "Edit team details",
+            "delete_team": "Delete team",
+            "export_members": "Export Members"
+        },
+        "panel": {
+            "title": "Edit Team",
+            "team_name": "Team Name",
+            "team_name_placeholder": "e.g. Marketing",
+            "description": "Description",
+            "description_placeholder": "Add a brief description that explains the team's purpose.",
+            "team_color": "Team Color",
+            "cancel": "Cancel",
+            "save_button": "Save Changes"
         }
     }
 }

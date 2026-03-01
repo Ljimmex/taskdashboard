@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Team, TeamMember } from './types'
 import { PencilIcon, PencilIconGold, TrashIcon, TrashRedIcon } from '../tasks/components/TaskIcons'
 import { useTranslation } from 'react-i18next'
@@ -29,11 +30,27 @@ const EyeIconGold = () => (
 function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?: (team: Team) => void; onDeleteTeam?: (team: Team) => void }) {
     const [isOpen, setIsOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
     const { t } = useTranslation()
+
+    const handleOpen = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect()
+            setDropdownPosition({
+                top: rect.bottom + 4,
+                left: rect.right,
+                width: 176 // w-44 = 176px
+            })
+        }
+        setIsOpen(!isOpen)
+    }
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
+                buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
                 setIsOpen(false)
             }
         }
@@ -42,21 +59,25 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
     }, [])
 
     return (
-        <div className="relative" ref={menuRef}>
+        <>
             <button
-                onClick={(e) => {
-                    e.stopPropagation()
-                    setIsOpen(!isOpen)
-                }}
-                className="hover:text-white transition-colors p-1 rounded hover:bg-gray-700"
+                ref={buttonRef}
+                onClick={handleOpen}
+                className="hover:text-white transition-colors p-1 rounded hover:bg-gray-700 relative z-10"
             >
                 •••
             </button>
 
-            {isOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-[#1a1a24] rounded-xl shadow-2xl z-[100] py-1"
+            {isOpen && createPortal(
+                <div
+                    ref={menuRef}
+                    className="fixed bg-[#1a1a24] rounded-xl shadow-2xl z-[100] py-1 animate-in fade-in zoom-in-95 duration-200"
                     onClick={(e) => e.stopPropagation()}
-                    style={{ position: 'fixed', transform: 'translateY(4px)' }}
+                    style={{
+                        top: dropdownPosition.top,
+                        left: dropdownPosition.left - dropdownPosition.width,
+                        width: dropdownPosition.width
+                    }}
                 >
                     <button
                         onClick={() => {
@@ -66,7 +87,7 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
                         className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800/80 hover:text-white transition-colors flex items-center gap-3"
                     >
                         <PencilIcon />
-                        {t('teams.table.menu.edit_team')}
+                        {t('team_edit.menu.edit_team')}
                     </button>
                     <button
                         onClick={() => {
@@ -87,7 +108,7 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
-                        {t('teams.table.menu.export_members')}
+                        {t('team_edit.menu.export_members')}
                     </button>
                     <div className="my-1 mx-2 h-px bg-gray-800" />
                     <button
@@ -98,13 +119,12 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
                         className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3"
                     >
                         <TrashIcon />
-                        <TrashIcon />
-                        {t('teams.table.menu.delete_team')}
+                        {t('team_edit.menu.delete_team')}
                     </button>
-                </div>
-            )
-            }
-        </div >
+                </div>,
+                document.body
+            )}
+        </>
     )
 }
 
@@ -265,13 +285,11 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                     </button>
                                 )}
                                 {/* Team Menu (3-dot) */}
-                                {canManage && (
-                                    <TeamMenu
-                                        team={team}
-                                        onEditTeam={onEditTeam}
-                                        onDeleteTeam={onDeleteTeam}
-                                    />
-                                )}
+                                <TeamMenu
+                                    team={team}
+                                    onEditTeam={onEditTeam}
+                                    onDeleteTeam={onDeleteTeam}
+                                />
                                 {/* Expand/Fullscreen */}
                                 <button
                                     onClick={(e) => {

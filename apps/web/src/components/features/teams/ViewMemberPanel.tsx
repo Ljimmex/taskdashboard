@@ -1,6 +1,9 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiFetch, apiFetchJson } from '@/lib/api'
 import { useTranslation } from 'react-i18next'
+import { useRouter, useParams } from '@tanstack/react-router'
 import { usePanelStore } from '../../../lib/panelStore'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -23,33 +26,132 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
     const panelRef = useRef<HTMLDivElement>(null)
     const { t } = useTranslation()
+    const router = useRouter()
+    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
+    const queryClient = useQueryClient()
+
+    const [isAssignTaskOpen, setIsAssignTaskOpen] = useState(false)
+    const [submittingTaskId, setSubmittingTaskId] = useState<string | null>(null)
 
     // Sync global panel state
     useEffect(() => {
         setIsPanelOpen(isOpen)
+        if (!isOpen) {
+            setIsAssignTaskOpen(false)
+        }
     }, [isOpen, setIsPanelOpen])
 
     // Close on Escape
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose()
+            if (e.key === 'Escape') {
+                if (isAssignTaskOpen) {
+                    setIsAssignTaskOpen(false)
+                } else {
+                    onClose()
+                }
+            }
         }
         if (isOpen) {
             document.addEventListener('keydown', handleEscape)
             return () => document.removeEventListener('keydown', handleEscape)
         }
-    }, [isOpen, onClose])
-
-    if (!isOpen || !member) return null
+    }, [isOpen, onClose, isAssignTaskOpen])
 
     // Determine displayed teams: prioritize member.teams, fall back to teamName if present
-    const displayTeams = (member.teams && member.teams.length > 0)
+    const displayTeams = (member?.teams && member.teams.length > 0)
         ? member.teams
         : (teamName ? [teamName] : [])
 
-    // Mock Workload Data
-    const completedTasks = 5
-    const totalTasks = 8
+    // Real Workload Data Calculation
+    const { data: tasksData, isLoading: isLoadingTasks } = useQuery({
+        queryKey: ['workspace-tasks', workspaceSlug],
+        queryFn: () => apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}`),
+        enabled: !!workspaceSlug && !!member && isOpen
+    })
+
+    const { data: projectsData, isLoading: isLoadingProjects } = useQuery({
+        queryKey: ['workspace-projects', workspaceSlug],
+        queryFn: () => apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`),
+        enabled: !!workspaceSlug && !!member && isOpen
+    })
+
+    const completedTasks = useMemo(() => {
+        if (!tasksData?.data || !projectsData?.data || !member) return 0
+        let count = 0
+        const allTasks = tasksData.data.filter((task: any) => {
+            return task.assignees?.some((a: any) => a === member?.id || a.id === member?.id) ||
+                task.assigneeDetails?.some((a: any) => a.id === member?.id)
+        })
+
+        allTasks.forEach((task: any) => {
+            if (task.isCompleted) {
+                count++
+                return
+            }
+            const proj = projectsData.data.find((p: any) => p.id === task.projectId)
+            if (proj?.stages && proj.stages.length > 0) {
+                const finalStage = proj.stages[proj.stages.length - 1]
+                if (task.status === finalStage.name || task.status === finalStage.id) {
+                    count++
+                }
+            }
+        })
+        return count
+    }, [tasksData, projectsData, member])
+
+    const totalTasks = useMemo(() => {
+        if (!tasksData?.data || !member) return 0
+        return tasksData.data.filter((task: any) => {
+            return task.assignees?.some((a: any) => a === member?.id || a.id === member?.id) ||
+                task.assigneeDetails?.some((a: any) => a.id === member?.id)
+        }).length
+    }, [tasksData, member])
+
+    const workloadPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+    const isLoadingWorkload = isLoadingTasks || isLoadingProjects
+
+    // Filter tasks not assigned to this member but belonging to the projects they're part of (or all workspace projects if we want to be less restrictive)
+    const assignableTasks = useMemo(() => {
+        if (!tasksData?.data || !member) return []
+        return tasksData.data.filter((task: any) => {
+            const isAssigned = task.assignees?.some((a: any) => a === member?.id || a.id === member?.id) ||
+                task.assigneeDetails?.some((a: any) => a.id === member?.id)
+            if (isAssigned) return false
+
+            // Optional: filter by projects the member is part of. But here we can show all unassigned workspace tasks for flexibility.
+            return !task.isCompleted
+        })
+    }, [tasksData, member])
+
+    const assignTaskMutation = useMutation({
+        mutationFn: async (taskId: string) => {
+            const currentTask = tasksData?.data?.find((t: any) => t.id === taskId)
+            if (!currentTask) throw new Error("Task not found")
+
+            // Preserve existing assignees and add the new member
+            const existingAssigneeIds = currentTask.assigneeDetails?.map((a: any) => a.id) ||
+                currentTask.assignees?.map((a: any) => typeof a === 'string' ? a : a.id) || []
+
+            const updatedAssignees = Array.from(new Set([...existingAssigneeIds, member?.id]))
+
+            return apiFetch(`/api/tasks/${taskId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    assignees: updatedAssignees,
+                })
+            })
+        },
+        onMutate: (taskId) => {
+            setSubmittingTaskId(taskId)
+        },
+        onSettled: () => {
+            setSubmittingTaskId(null)
+            queryClient.invalidateQueries({ queryKey: ['workspace-tasks', workspaceSlug] })
+        }
+    })
+
+    if (!isOpen || !member) return null
 
     return createPortal(
         <>
@@ -112,27 +214,28 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                     {/* Workload Indicator (Moved to top as it's key info) */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider">{t('teams.view_panel.current_workload')}</Label>
+                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider">
+                                {t('teams.view_panel.current_workload')}
+                                {isLoadingWorkload && <span className="ml-2 lowercase text-[10px] opacity-70">({t('common.loading', 'Loading...')})</span>}
+                            </Label>
                             <span className="text-xs text-gray-400">{t('teams.view_panel.tasks_count', { completed: completedTasks, total: totalTasks })}</span>
                         </div>
                         <ProgressBar
                             value={completedTasks}
-                            max={totalTasks}
+                            max={totalTasks > 0 ? totalTasks : 1}
                             size="md"
                             showLabel={false}
                         />
-                        <p className="text-[10px] text-gray-500 mt-1 text-right">{t('teams.view_panel.capacity_used', { percentage: 62 })}</p>
+                        <p className="text-[10px] text-gray-500 mt-1 text-right">{t('teams.view_panel.capacity_used', { percentage: workloadPercentage })}</p>
                     </div>
 
                     {/* Quick Actions - Improved Styling + Project Icons */}
                     <div className="grid grid-cols-3 gap-3">
                         <Button
                             variant="default" // Changed from outline for better visibility
-                            className="h-auto py-3 flex flex-col gap-2 bg-[#1f1f2e] border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white transition-all shadow-sm"
+                            onClick={() => setIsAssignTaskOpen(true)}
+                            className="h-auto py-3 flex flex-col gap-2 bg-[#1f1f2e] border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white transition-all shadow-sm group"
                         >
-                            <div className="opacity-80 group-hover:opacity-100 transition-opacity">
-                                <SubtaskCheckboxIcon />
-                            </div>
                             <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                                 <SubtaskCheckboxIcon />
                             </div>
@@ -141,7 +244,11 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
 
                         <Button
                             variant="default"
-                            className="h-auto py-3 flex flex-col gap-2 bg-[#1f1f2e] border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white transition-all shadow-sm"
+                            onClick={() => {
+                                onClose()
+                                router.navigate({ to: `/${workspaceSlug}/messages`, search: { userId: member.id } })
+                            }}
+                            className="h-auto py-3 flex flex-col gap-2 bg-[#1f1f2e] border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white transition-all shadow-sm group"
                         >
                             <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                                 <SendIcon />
@@ -151,7 +258,11 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
 
                         <Button
                             variant="default"
-                            className="h-auto py-3 flex flex-col gap-2 bg-[#1f1f2e] border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white transition-all shadow-sm"
+                            onClick={() => {
+                                onClose()
+                                router.navigate({ to: `/${workspaceSlug}/my-tasks`, search: { userId: member.id } })
+                            }}
+                            className="h-auto py-3 flex flex-col gap-2 bg-[#1f1f2e] border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white transition-all shadow-sm group"
                         >
                             <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                                 <KanbanIconGrey />
@@ -246,6 +357,58 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                             </div>
                         )}
                     </div>
+                </div>
+            </div>
+
+            {/* Sub-panel: Assign Task */}
+            <div
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-[60] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-gray-800 ${isAssignTaskOpen && isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+            >
+                {/* Header */}
+                <div className="flex-none p-6 border-b border-gray-800 flex items-center gap-3">
+                    <button
+                        onClick={() => setIsAssignTaskOpen(false)}
+                        className="text-gray-500 hover:text-white transition-colors p-1 -ml-1"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <div>
+                        <h3 className="text-lg font-bold text-white leading-tight">Assign Task</h3>
+                        <p className="text-xs text-gray-400">Select a task to assign to {member.name}</p>
+                    </div>
+                </div>
+
+                {/* Task List */}
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+                    {isLoadingTasks ? (
+                        <div className="text-center py-8 text-sm text-gray-500">{t('common.loading')}</div>
+                    ) : assignableTasks.length === 0 ? (
+                        <div className="text-center py-8 text-sm text-gray-500">No available tasks to assign.</div>
+                    ) : (
+                        assignableTasks.map((task: any) => {
+                            const proj = projectsData?.data?.find((p: any) => p.id === task.projectId)
+                            return (
+                                <div key={task.id} className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between gap-3 group cursor-pointer" onClick={() => !submittingTaskId && !assignTaskMutation.isPending && assignTaskMutation.mutate(task.id)}>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-medium text-white truncate">{task.title}</p>
+                                        <p className="text-xs text-gray-400/80 truncate mt-1">{proj?.name || 'Unknown Project'}</p>
+                                    </div>
+                                    <button
+                                        disabled={submittingTaskId === task.id || assignTaskMutation.isPending}
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            assignTaskMutation.mutate(task.id)
+                                        }}
+                                        className="h-8 px-4 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-black transition-all opacity-0 group-hover:opacity-100 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-lg shadow-amber-500/20"
+                                    >
+                                        {submittingTaskId === task.id ? 'Assigning...' : 'Assign'}
+                                    </button>
+                                </div>
+                            )
+                        })
+                    )}
                 </div>
             </div>
         </>,

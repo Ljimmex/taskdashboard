@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { type Auth } from '../../lib/auth'
-import { eq, asc } from 'drizzle-orm'
+import { eq, asc, and } from 'drizzle-orm'
 import { projects, projectMembers, projectTeams, industryTemplateStages, projectStages, type NewProject } from '../../db/schema'
 import {
     canCreateProjects,
@@ -43,6 +43,7 @@ const updateProjectSchema = z.object({
     description: zSanitizedStringOptional(),
     status: z.enum(['pending', 'active', 'on_hold', 'completed', 'archived']).optional(),
     deadline: z.string().optional().nullable(),
+    teamIds: z.array(z.string()).optional(),
 })
 
 export const projectsRoutes = new Hono<Env>()
@@ -148,6 +149,11 @@ projectsRoutes.get('/', async (c) => {
                             }
                         }
                     }
+                },
+                projectTeams: {
+                    with: {
+                        team: true
+                    }
                 }
             },
             orderBy: (p, { desc }) => [desc(p.createdAt)]
@@ -171,6 +177,11 @@ projectsRoutes.get('/:id', async (c) => {
             with: {
                 stages: {
                     orderBy: (s, { asc }) => [asc(s.position)]
+                },
+                projectTeams: {
+                    with: {
+                        team: true
+                    }
                 }
             }
         })
@@ -324,8 +335,6 @@ projectsRoutes.patch('/:id', zValidator('json', updateProjectSchema), async (c) 
 
         // Get permissions
         const teamLevel = await getUserTeamLevel(userId, project.teamId)
-        // Note: We would need workspaceId from team to check workspace role
-        // For now, check team level only
 
         if (!canUpdateProjects(null, teamLevel)) {
             return c.json({ success: false, error: 'Unauthorized to update project' }, 403)
@@ -336,6 +345,62 @@ projectsRoutes.patch('/:id', zValidator('json', updateProjectSchema), async (c) 
         if (body.description !== undefined) updateData.description = body.description
         if (body.status !== undefined) updateData.status = body.status
         if (body.deadline !== undefined) updateData.deadline = body.deadline ? new Date(body.deadline) : null
+
+        // Handle team changes if teamIds are provided
+        if (body.teamIds !== undefined && Array.isArray(body.teamIds) && body.teamIds.length > 0) {
+            updateData.teamId = body.teamIds[0] // Set primary for backward compat
+
+            await db.transaction(async (tx) => {
+                // Determine missing teamIds so we can remove their users if needed later
+                // Just dropping old relations and adding new one is safest
+                await tx.delete(projectTeams).where(eq(projectTeams.projectId, id))
+                await tx.insert(projectTeams).values(
+                    body.teamIds!.map(tid => ({
+                        projectId: id,
+                        teamId: tid
+                    }))
+                )
+
+                // Sync project members based on the new scope of teams
+                // A better approach in a real app is to do an intersection
+                const teamMems = await tx.query.teamMembers.findMany({
+                    where: (tm, { inArray }) => inArray(tm.teamId, body.teamIds!)
+                })
+
+                if (teamMems.length > 0) {
+                    const validUserIds = Array.from(new Set(teamMems.map(tm => tm.userId)))
+
+                    // Remove users who are no longer in any of the project's teams
+                    // This could be restricted to just 'member' roles but for safety remove any
+                    const currentProjectMems = await tx.query.projectMembers.findMany({
+                        where: (pm, { eq }) => eq(pm.projectId, id)
+                    })
+
+                    const toDelete = currentProjectMems.filter(pm => !validUserIds.includes(pm.userId))
+                    const toAdd = validUserIds.filter(uid => !currentProjectMems.find(pm => pm.userId === uid))
+
+                    // delete old members
+                    if (toDelete.length > 0) {
+                        for (const pm of toDelete) {
+                            await tx.delete(projectMembers).where(
+                                and(eq(projectMembers.projectId, id), eq(projectMembers.userId, pm.userId))
+                            )
+                        }
+                    }
+
+                    // Add new ones
+                    if (toAdd.length > 0) {
+                        await tx.insert(projectMembers).values(
+                            toAdd.map(uid => ({
+                                projectId: id,
+                                userId: uid,
+                                role: 'member'
+                            }))
+                        )
+                    }
+                }
+            })
+        }
 
         const [updated] = await db.update(projects).set(updateData).where(eq(projects.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Project not found' }, 404)

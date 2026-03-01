@@ -11,7 +11,8 @@ import {
     Columns2, Rows2, GalleryVerticalEnd, MessageCircle,
     ChevronLeft, ChevronRight, Maximize2, Minimize2, Star,
     MousePointer, Hand, StickyNote, Highlighter, Type, Pencil,
-    Undo2, Redo2, Eraser, FileEdit, Link, Bold, Italic, TypeOutline
+    Undo2, Redo2, Eraser, FileEdit, Link, Bold, Italic, TypeOutline,
+    AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -79,6 +80,10 @@ interface TextOverlay {
     isBold?: boolean
     isItalic?: boolean
     color?: string
+    textAlign?: 'left' | 'center' | 'right'
+    verticalAlign?: 'top' | 'middle' | 'bottom'
+    width?: number
+    height?: number
 }
 
 // =============================================================================
@@ -223,13 +228,23 @@ function CanvasOverlay({ pageNumber, activeTool, scale, strokes, onStrokeComplet
         currentPoints.current = []
     }
 
-    const isEraser = activeTool === 'eraser'
-    const actualEraserSize = Math.max(10, eraserWidth * scale)
-    const eraserCursorSize = Math.min(125, actualEraserSize)
-    const radius = Math.max(1, eraserCursorSize / 2 - 1)
-    const eraserCursorSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${eraserCursorSize}" height="${eraserCursorSize}" viewBox="0 0 ${eraserCursorSize} ${eraserCursorSize}"><circle cx="${eraserCursorSize / 2}" cy="${eraserCursorSize / 2}" r="${radius}" fill="none" stroke="black" stroke-width="2"/><circle cx="${eraserCursorSize / 2}" cy="${eraserCursorSize / 2}" r="${radius}" fill="white" fill-opacity="0.5" stroke="white" stroke-width="1"/></svg>`
-    const eraserCursorUrl = `url("data:image/svg+xml;utf8,${encodeURIComponent(eraserCursorSvg)}") ${eraserCursorSize / 2} ${eraserCursorSize / 2}, crosshair`
-    const cursorStyle = isEraser ? eraserCursorUrl : 'crosshair'
+    let cursorStyle = 'crosshair'
+
+    if (isDrawTool) {
+        const style = activeTool === 'eraser' ? { width: eraserWidth, color: '#000000' } : activeTool === 'highlight' ? highlightStyle : drawStyle
+        const actualSize = Math.max(activeTool === 'eraser' ? 10 : 2, style.width * scale)
+        const cursorSize = Math.min(125, actualSize)
+        const radius = Math.max(1, cursorSize / 2 - 1)
+
+        let svg = ''
+        if (activeTool === 'eraser') {
+            svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${cursorSize}" height="${cursorSize}" viewBox="0 0 ${cursorSize} ${cursorSize}"><circle cx="${cursorSize / 2}" cy="${cursorSize / 2}" r="${radius}" fill="none" stroke="black" stroke-width="2"/><circle cx="${cursorSize / 2}" cy="${cursorSize / 2}" r="${radius}" fill="white" fill-opacity="0.5" stroke="white" stroke-width="1"/></svg>`
+        } else {
+            const fillOpacity = activeTool === 'highlight' ? 0.3 : 1
+            svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${cursorSize}" height="${cursorSize}" viewBox="0 0 ${cursorSize} ${cursorSize}"><circle cx="${cursorSize / 2}" cy="${cursorSize / 2}" r="${radius}" fill="${style.color}" fill-opacity="${fillOpacity}" stroke="white" stroke-width="1" stroke-opacity="0.7"/></svg>`
+        }
+        cursorStyle = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}") ${cursorSize / 2} ${cursorSize / 2}, crosshair`
+    }
 
     return (
         <canvas
@@ -506,12 +521,22 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
     const [pageStrokes, setPageStrokes] = useState<Record<number, DrawStroke[]>>({})
     const [textOverlays, setTextOverlays] = useState<TextOverlay[]>([])
     const [editingTextId, setEditingTextId] = useState<string | null>(null)
-    const [textStyle, setTextStyle] = useState({
+    const [textStyle, setTextStyle] = useState<{
+        fontFamily: string,
+        fontSize: number,
+        isBold: boolean,
+        isItalic: boolean,
+        color: string,
+        textAlign?: 'left' | 'center' | 'right',
+        verticalAlign?: 'top' | 'middle' | 'bottom'
+    }>({
         fontFamily: 'Helvetica',
         fontSize: 12,
         isBold: false,
         isItalic: false,
-        color: '#000000'
+        color: '#000000',
+        textAlign: 'left',
+        verticalAlign: 'top'
     })
 
     // Extensibility tool states
@@ -601,13 +626,23 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
             const y = Math.round(((e.clientY - rect.top) / rect.height) * 100)
             setNewCommentPos({ page: pageNum, x, y })
             if (!showComments) setShowComments(true)
-        } else if (activeTool === 'text') {
+        } else if (activeTool === 'text' || activeTool === 'edit-text') {
             saveHistoryState()
             const rect = e.currentTarget.getBoundingClientRect()
-            const x = Math.round(((e.clientX - rect.left) / rect.width) * 100)
-            const y = Math.round(((e.clientY - rect.top) / rect.height) * 100)
+            const x = ((e.clientX - rect.left) / rect.width) * 100
+            const y = ((e.clientY - rect.top) / rect.height) * 100
             const id = `text-${Date.now()}`
-            setTextOverlays(prev => [...prev, { id, x, y, text: '', pageNumber: pageNum, ...textStyle }])
+
+            setTextOverlays(prev => {
+                const shifted = prev.map(t => {
+                    // Shift down any existing text overlay that is below or exactly at the click Y
+                    if (t.pageNumber === pageNum && t.y >= y - 1) {
+                        return { ...t, y: t.y + 5 } // Push down by 5%
+                    }
+                    return t
+                })
+                return [...shifted, { id, x, y, text: '', pageNumber: pageNum, ...textStyle, width: 250, height: 40 }]
+            })
             setEditingTextId(id)
         }
     }
@@ -978,6 +1013,30 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
                         </button>
                     </div>
 
+                    <div className="flex items-center gap-1 border-r border-white/10 pr-2">
+                        <button onClick={() => updateTextStyle({ textAlign: 'left' })} className={`p-1 rounded ${textStyle.textAlign === 'left' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                            <AlignLeft className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => updateTextStyle({ textAlign: 'center' })} className={`p-1 rounded ${textStyle.textAlign === 'center' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                            <AlignCenter className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => updateTextStyle({ textAlign: 'right' })} className={`p-1 rounded ${textStyle.textAlign === 'right' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                            <AlignRight className="h-4 w-4" />
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-1 border-r border-white/10 pr-2">
+                        <button onClick={() => updateTextStyle({ verticalAlign: 'top' })} className={`p-1 rounded ${textStyle.verticalAlign === 'top' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                            <AlignVerticalJustifyStart className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => updateTextStyle({ verticalAlign: 'middle' })} className={`p-1 rounded ${textStyle.verticalAlign === 'middle' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                            <AlignVerticalJustifyCenter className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => updateTextStyle({ verticalAlign: 'bottom' })} className={`p-1 rounded ${textStyle.verticalAlign === 'bottom' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                            <AlignVerticalJustifyEnd className="h-4 w-4" />
+                        </button>
+                    </div>
+
                     {editingTextId ? (
                         <div className="flex items-center gap-2 pl-1">
                             <button onClick={() => {
@@ -987,12 +1046,20 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
                             }} className="p-1 text-gray-400 hover:text-red-400 rounded hover:bg-white/5" title="Delete">
                                 <Trash2 className="h-4 w-4" />
                             </button>
-                            <button onClick={() => setEditingTextId(null)} className="px-3 py-1 text-xs text-gray-300 hover:text-white hover:bg-white/5 rounded transition-colors">
-                                Cancel
-                            </button>
-                            <button onClick={() => setEditingTextId(null)} className="px-3 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded transition-colors font-medium shadow-sm">
-                                Save & Close
-                            </button>
+                            {activeTool === 'edit-text' && (
+                                <>
+                                    <button onClick={() => setEditingTextId(null)} className="px-3 py-1 text-xs text-gray-300 hover:text-white hover:bg-white/5 rounded transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button onClick={() => setEditingTextId(null)} className="px-3 py-1 text-xs bg-amber-500 hover:bg-amber-600 text-black rounded transition-colors font-medium shadow-sm">
+                                        Save
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    ) : (activeTool === 'edit-text' || activeTool === 'text') ? (
+                        <div className="flex items-center gap-1 pl-1 text-xs text-amber-500/80">
+                            (Click anywhere on page to add text)
                         </div>
                     ) : (
                         <div className="flex items-center gap-1 pl-1 text-xs text-gray-400">
@@ -1005,11 +1072,11 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
             {/* PDF scroll area */}
             <div
                 ref={scrollContainerRef}
-                className={`flex-1 overflow-auto ${cursorClass} ${activeTool === 'edit-text' ? 'pdf-edit-text-mode' : ''} ${activeTool === 'hand' ? 'select-none' : ''}`}
+                className={`flex-1 overflow-auto ${cursorClass} ${activeTool === 'edit-text' || activeTool === 'text' ? 'pdf-edit-text-mode' : ''} ${activeTool === 'hand' ? 'select-none' : ''}`}
                 style={{ padding: '24px' }}
                 onMouseDown={handlePanStart}
                 onMouseMove={handlePanMove}
-                onMouseUp={handlePanEnd}
+                onMouseUp={handlePanMove}
                 onMouseLeave={handlePanEnd}
             >
                 <Document
@@ -1082,7 +1149,7 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
                                                     key={idx}
                                                     href={link.type === 'website' ? (link.url?.startsWith('http') ? link.url : `https://${link.url}`) : '#'}
                                                     onClick={e => {
-                                                        if (activeTool === 'edit-text' || activeTool === 'pencil' || activeTool === 'eraser' || activeTool === 'highlight') {
+                                                        if (activeTool === 'edit-text' || activeTool === 'text' || activeTool === 'pencil' || activeTool === 'eraser' || activeTool === 'highlight') {
                                                             e.preventDefault()
                                                             return;
                                                         }
@@ -1120,50 +1187,99 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
 
                                     {/* Text overlays */}
                                     {pageTextOverlays.map(to => {
+                                        const scaledFontSize = (to.fontSize || 12) * scale
+                                        const scaledWidth = to.width ? to.width * scale : undefined
+                                        const scaledHeight = to.height ? to.height * scale : undefined
+
                                         const tStyle: React.CSSProperties = {
                                             fontFamily: to.fontFamily || 'Helvetica',
-                                            fontSize: `${to.fontSize || 12}px`,
+                                            fontSize: `${scaledFontSize}px`,
                                             fontWeight: to.isBold ? 'bold' : 'normal',
                                             fontStyle: to.isItalic ? 'italic' : 'normal',
                                             color: to.color || '#000000',
+                                            textAlign: to.textAlign || 'left',
+                                            lineHeight: 1.2
                                         }
+                                        const alignH = to.textAlign === 'center' ? '-50%' : to.textAlign === 'right' ? '-100%' : '0'
+                                        const alignV = to.verticalAlign === 'middle' ? '-50%' : to.verticalAlign === 'bottom' ? '-100%' : '0'
                                         return (
                                             <div
                                                 key={to.id}
-                                                className="absolute z-15"
-                                                style={{ left: `${to.x}%`, top: `${to.y}%` }}
-                                                onClick={(e) => e.stopPropagation()}
+                                                className={`absolute z-15 ${editingTextId === to.id ? 'ring-2 ring-blue-500 bg-blue-500/5' : 'hover:ring-1 hover:ring-blue-400/50'}`}
+                                                style={{
+                                                    left: `${to.x}%`,
+                                                    top: `${to.y}%`,
+                                                    transform: `translate(${alignH}, ${alignV})`,
+                                                    width: scaledWidth ? `${scaledWidth}px` : 'auto',
+                                                    height: scaledHeight ? `${scaledHeight}px` : 'auto'
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if ((activeTool === 'edit-text' || activeTool === 'text') && editingTextId !== to.id) {
+                                                        setEditingTextId(to.id);
+                                                        setTextStyle({
+                                                            fontFamily: to.fontFamily || 'Helvetica',
+                                                            fontSize: to.fontSize || 12,
+                                                            isBold: to.isBold || false,
+                                                            isItalic: to.isItalic || false,
+                                                            color: to.color || '#000000',
+                                                            textAlign: to.textAlign || 'left',
+                                                            verticalAlign: to.verticalAlign || 'top'
+                                                        });
+                                                    }
+                                                }}
                                             >
                                                 {editingTextId === to.id ? (
-                                                    <input
-                                                        value={to.text}
-                                                        onChange={e => handleTextChange(to.id, e.target.value)}
-                                                        onBlur={() => setEditingTextId(null)}
-                                                        onKeyDown={e => {
-                                                            e.stopPropagation();
-                                                            if (e.key === 'Enter') setEditingTextId(null);
-                                                        }}
-                                                        className="bg-transparent outline-none min-w-[120px] border border-blue-400 border-dashed p-1"
-                                                        style={tStyle}
-                                                        autoFocus
-                                                    />
+                                                    <div className="relative group w-full h-full">
+                                                        <textarea
+                                                            value={to.text}
+                                                            onChange={e => handleTextChange(to.id, e.target.value)}
+                                                            onBlur={(e) => {
+                                                                if (!e.relatedTarget || !(e.relatedTarget as HTMLElement).closest('.z-40')) {
+                                                                    handleTextChange(to.id, e.target.value)
+                                                                    // Do not clear editingTextId so they can click Save/Delete/Cancel
+                                                                }
+                                                            }}
+                                                            onKeyDown={e => {
+                                                                e.stopPropagation()
+                                                            }}
+                                                            className="bg-transparent outline-none w-full h-full p-2 resize-none"
+                                                            style={tStyle}
+                                                            autoFocus
+                                                            placeholder="(Empty)"
+                                                        />
+                                                        {(activeTool === 'edit-text' || activeTool === 'text') && (
+                                                            <div
+                                                                className="absolute -right-1.5 -bottom-1.5 w-3 h-3 bg-red-500 rounded-full border-[1.5px] border-white cursor-nwse-resize shadow-md flex items-center justify-center pointer-events-auto z-10"
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation()
+                                                                    const startX = e.clientX
+                                                                    const startY = e.clientY
+                                                                    const startW = to.width || 250
+                                                                    const startH = to.height || 40
+
+                                                                    const onMove = (ev: MouseEvent) => {
+                                                                        const dx = (ev.clientX - startX) / scale
+                                                                        const dy = (ev.clientY - startY) / scale
+                                                                        setTextOverlays(prev => prev.map(t => t.id === to.id ? { ...t, width: Math.max(50, startW + dx), height: Math.max(20, startH + dy) } : t))
+                                                                    }
+                                                                    const onUp = () => {
+                                                                        window.removeEventListener('mousemove', onMove)
+                                                                        window.removeEventListener('mouseup', onUp)
+                                                                    }
+                                                                    window.addEventListener('mousemove', onMove)
+                                                                    window.addEventListener('mouseup', onUp)
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 ) : (
-                                                    <span
-                                                        className="px-1 cursor-text select-none"
-                                                        style={tStyle}
-                                                        onClick={() => {
-                                                            setEditingTextId(to.id)
-                                                            setTextStyle({
-                                                                fontFamily: to.fontFamily || 'Helvetica',
-                                                                fontSize: to.fontSize || 12,
-                                                                isBold: to.isBold || false,
-                                                                isItalic: to.isItalic || false,
-                                                                color: to.color || '#000000'
-                                                            })
-                                                        }}
+                                                    <div
+                                                        className="p-2 cursor-text block overflow-hidden w-full h-full"
+                                                        style={{ ...tStyle, whiteSpace: 'pre-wrap' }}
                                                     >
-                                                        {to.text || '...'}
-                                                    </span>
+                                                        {to.text || ((activeTool === 'edit-text' || activeTool === 'text') ? '(Empty)' : '')}
+                                                    </div>
                                                 )}
                                             </div>
                                         )

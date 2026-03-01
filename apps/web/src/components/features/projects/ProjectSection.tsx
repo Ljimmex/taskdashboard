@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronRight, Plus, MoreHorizontal, Maximize2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { ChevronDown, ChevronRight, Plus, MoreHorizontal, Maximize2, Edit2, Trash2 } from 'lucide-react'
 import { GanttView } from './GanttView'
 import { TimelineView } from './TimelineView'
 import { Task } from './types' // Import shared Task type
@@ -19,7 +20,67 @@ interface ProjectSectionProps {
     onAddTask?: (date?: Date) => void
     onDayClick?: (date: Date, tasks: Task[]) => void
     onProjectClick?: (projectId: string) => void
+    onEditProject?: (project: any) => void
+    onDeleteProject?: (project: any) => void
     userRole?: string
+}
+
+function ProjectMenu({ project, onEditProject, onDeleteProject }: { project: any; onEditProject?: (p: any) => void; onDeleteProject?: (p: any) => void }) {
+    const [isOpen, setIsOpen] = useState(false)
+    const menuRef = useRef<HTMLDivElement>(null)
+    const { t } = useTranslation()
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setIsOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    return (
+        <div className="relative" ref={menuRef}>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation()
+                    setIsOpen(!isOpen)
+                }}
+                className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+            >
+                <MoreHorizontal size={16} />
+            </button>
+
+            {isOpen && (
+                <div className="absolute right-0 top-full mt-1 w-44 bg-[#1a1a24] rounded-xl shadow-2xl z-[100] py-1"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <button
+                        onClick={() => {
+                            onEditProject?.(project)
+                            setIsOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800/80 hover:text-white transition-colors flex items-center gap-3"
+                    >
+                        <Edit2 size={14} />
+                        {t('project_edit.menu.edit_project')}
+                    </button>
+                    <div className="my-1 mx-2 h-px bg-gray-800" />
+                    <button
+                        onClick={() => {
+                            onDeleteProject?.(project)
+                            setIsOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3"
+                    >
+                        <Trash2 size={14} />
+                        {t('project_edit.menu.delete_project')}
+                    </button>
+                </div>
+            )}
+        </div>
+    )
 }
 
 export function ProjectSection({
@@ -32,6 +93,8 @@ export function ProjectSection({
     onAddTask,
     onDayClick,
     onProjectClick,
+    onEditProject,
+    onDeleteProject,
     userRole,
 }: ProjectSectionProps) {
     const [isExpanded, setIsExpanded] = useState(true)
@@ -68,9 +131,11 @@ export function ProjectSection({
                         <Plus size={16} />
                     </button>
                     {canEditProject && (
-                        <button className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
-                            <MoreHorizontal size={16} />
-                        </button>
+                        <ProjectMenu
+                            project={project}
+                            onEditProject={onEditProject}
+                            onDeleteProject={onDeleteProject}
+                        />
                     )}
                     <button
                         onClick={() => onProjectClick?.(project.id)}

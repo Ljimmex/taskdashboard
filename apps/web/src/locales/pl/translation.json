@@ -1229,9 +1229,9 @@
             "last_active": "Ostatnio aktywny",
             "empty_state": "Brak członków w tym zespole.",
             "menu": {
-                "edit_team": "Edytuj Zespół",
+                "edit_team": "Edytuj szczegóły zespołu",
                 "export_members": "Eksportuj Członków",
-                "delete_team": "Usuń Zespół"
+                "delete_team": "Usuń zespół"
             },
             "actions": {
                 "view_profile": "Zobacz Profil",
@@ -1272,7 +1272,7 @@
             "done": "Gotowe"
         },
         "edit_panel": {
-            "title": "Edytuj Członka",
+            "title": "Edytuj zespół",
             "photo": "Zdjęcie",
             "change_photo": "Zmień zdjęcie",
             "remove_photo": "Usuń zdjęcie",
@@ -1299,7 +1299,14 @@
             "saving": "Zapisywanie...",
             "delete_member": "Usuń Członka",
             "delete_confirmation": "Czy na pewno chcesz usunąć {{name}}? Ta akcja jest nieodwracalna.",
-            "deleting": "Usuwanie..."
+            "deleting": "Usuwanie...",
+            "team_name": "Nazwa Zespołu",
+            "team_name_placeholder": "np. Marketing",
+            "description": "Opis",
+            "description_placeholder": "Dodaj krótki opis informujący o funkcji zespołu.",
+            "team_color": "Kolor Zespołu",
+            "cancel": "Anuluj",
+            "save_button": "Zapisz zmiany"
         },
         "view_panel": {
             "member_since": "Członek od",
@@ -1590,6 +1597,23 @@
             "week": "Tydzień",
             "add_task": "Dodaj zadanie",
             "more_tasks": "+{{count}} więcej"
+        },
+        "menu": {
+            "edit_project": "Edytuj projekt",
+            "delete_project": "Usuń projekt"
+        },
+        "edit_panel": {
+            "title": "Edytuj projekt",
+            "subtitle": "Zaktualizuj informacje o projekcie.",
+            "name": "Nazwa Projektu",
+            "name_placeholder": "np. Nowa strona internetowa",
+            "description": "Opis",
+            "description_placeholder": "Napisz krótko, o czym mówi Twój projekt...",
+            "color": "Kolor Projektu",
+            "deadline": "Termin Zakończenia (Wybierz datę na kalendarzu)",
+            "cancel": "Anuluj",
+            "saving": "Zapisywanie...",
+            "submit": "Zapisz zmiany"
         }
     },
     "board": {
@@ -2016,6 +2040,45 @@
             "shared_with": "Udostępniono dla",
             "owner": "Właściciel",
             "section_title": "Właściwości"
+        }
+    },
+    "project_edit": {
+        "menu": {
+            "edit_project": "Edytuj projekt",
+            "delete_project": "Usuń projekt"
+        },
+        "panel": {
+            "title": "Edytuj projekt",
+            "subtitle": "Zaktualizuj informacje o projekcie.",
+            "name": "Nazwa Projektu",
+            "name_placeholder": "np. Nowa strona internetowa",
+            "description": "Opis",
+            "description_placeholder": "Napisz krótko, o czym mówi Twój projekt...",
+            "color": "Kolor Projektu",
+            "deadline": "Termin Zakończenia",
+            "cancel": "Anuluj",
+            "saving": "Zapisywanie...",
+            "submit": "Zapisz zmiany",
+            "team": "Wybierz Zespół",
+            "no_teams": "Brak dostępnych zespołów",
+            "multi_team_help": "Możesz zaznaczyć kilka zespołów"
+        }
+    },
+    "team_edit": {
+        "menu": {
+            "edit_team": "Edytuj szczegóły zespołu",
+            "delete_team": "Usuń zespół",
+            "export_members": "Eksportuj Członków"
+        },
+        "panel": {
+            "title": "Edytuj zespół",
+            "team_name": "Nazwa Zespołu",
+            "team_name_placeholder": "np. Marketing",
+            "description": "Opis",
+            "description_placeholder": "Dodaj krótki opis informujący o funkcji zespołu.",
+            "team_color": "Kolor Zespołu",
+            "cancel": "Anuluj",
+            "save_button": "Zapisz zmiany"
         }
     }
 }
