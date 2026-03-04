@@ -2045,7 +2045,8 @@
     "project_edit": {
         "menu": {
             "edit_project": "Edytuj projekt",
-            "delete_project": "Usuń projekt"
+            "delete_project": "Usuń projekt",
+            "export_tasks": "Eksportuj zadania"
         },
         "panel": {
             "title": "Edytuj projekt",
