@@ -34,7 +34,7 @@ export const CustomCheckbox = ({ checked, onClick, colorClass = "bg-amber-500 bo
         onClick={(e) => { e.stopPropagation(); onClick?.() }}
         className={cn(
             "w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer",
-            checked ? colorClass : "border-gray-600 bg-transparent hover:border-gray-500"
+            checked ? colorClass : "border-[var(--app-border)] bg-transparent hover:border-[var(--app-text-muted)]"
         )}
     >
         {checked && (
@@ -215,7 +215,7 @@ export function CalendarHeader({
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
             {/* Lewa strona: Ikonka + Miesiąc/Rok */}
             <div className="flex items-center gap-3 mb-4 md:mb-0">
-                <h2 className="text-lg font-semibold text-white tracking-wide">
+                <h2 className="text-lg font-semibold text-[var(--app-text-primary)] tracking-wide">
                     {format(currentDate, 'LLLL yyyy', { locale }).replace(/^\w/, c => c.toUpperCase())}
                 </h2>
             </div>
@@ -223,12 +223,12 @@ export function CalendarHeader({
             {/* Prawa strona: Przyciski Funkcyjne i Nawigacja */}
             <div className="flex items-center gap-3">
                 {/* View Mode Selector */}
-                <div className="flex items-center bg-[#1a1a24] p-1 rounded-full mr-2 ">
+                <div className="flex items-center bg-[var(--app-bg-input)] p-1 rounded-full mr-2 border border-[var(--app-border)]">
                     <button
                         onClick={() => setView('month')}
                         className={cn(
                             "flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-full transition-all",
-                            view === 'month' ? "bg-[#F2CE88] text-black shadow-sm" : "text-gray-400 hover:text-white"
+                            view === 'month' ? "bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-sm" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
                         )}
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /><path d="M8 2v4" /><path d="M16 2v4" /></svg>
@@ -238,7 +238,7 @@ export function CalendarHeader({
                         onClick={() => setView('week')}
                         className={cn(
                             "flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-full transition-all",
-                            view === 'week' ? "bg-[#F2CE88] text-black shadow-sm" : "text-gray-400 hover:text-white"
+                            view === 'week' ? "bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-sm" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
                         )}
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /></svg>
@@ -248,7 +248,7 @@ export function CalendarHeader({
                         onClick={() => setView('day')}
                         className={cn(
                             "flex items-center gap-2 px-4 py-1.5 text-xs font-medium rounded-full transition-all",
-                            view === 'day' ? "bg-[#F2CE88] text-black shadow-sm" : "text-gray-400 hover:text-white"
+                            view === 'day' ? "bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-sm" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
                         )}
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 12h18" /></svg>
@@ -260,95 +260,95 @@ export function CalendarHeader({
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all outline-none focus:ring-1 focus:ring-white/10",
-                            hasActiveFilters ? "bg-[#1E2029] text-white ring-1 ring-amber-500/50" : "bg-[#1a1a24] text-gray-400 hover:text-white"
+                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all outline-none focus:ring-1 focus:ring-[var(--app-text-primary)]/10",
+                            hasActiveFilters ? "bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] ring-1 ring-[var(--app-accent)]/50" : "bg-[var(--app-bg-input)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
                         )}>
                             <Filter className="w-3.5 h-3.5" />
                             <span>{t('calendar.actions.filter')}</span>
-                            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-amber-500 ml-1" />}
+                            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[var(--app-accent)] ml-1" />}
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none max-h-[80vh] overflow-y-auto">
-                        <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <DropdownMenuContent align="end" className="w-64 bg-[var(--app-bg-card)] p-2 text-[var(--app-text-secondary)] shadow-2xl rounded-xl border border-[var(--app-border)] max-h-[80vh] overflow-y-auto">
+                        <div className="px-2 py-1.5 text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">
                             {t('calendar.types.event')}
                         </div>
 
                         <DropdownMenuItem
                             onClick={(e) => { e.preventDefault(); toggleType(CalendarEventType.EVENT); }}
-                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none"
                         >
-                            <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.EVENT)} />
-                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.EVENT) ? "text-white" : "text-gray-400")}>{t('calendar.types.event')}</span>
+                            <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.EVENT)} colorClass="bg-[var(--app-accent)] border-[var(--app-accent)]" />
+                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.EVENT) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-muted)]")}>{t('calendar.types.event')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
                             onClick={(e) => { e.preventDefault(); toggleType(CalendarEventType.TASK); }}
-                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none"
                         >
-                            <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.TASK)} />
-                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.TASK) ? "text-white" : "text-gray-400")}>{t('calendar.types.task')}</span>
+                            <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.TASK)} colorClass="bg-[var(--app-accent)] border-[var(--app-accent)]" />
+                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.TASK) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-muted)]")}>{t('calendar.types.task')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
                             onClick={(e) => { e.preventDefault(); toggleType(CalendarEventType.REMINDER); }}
-                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none"
                         >
-                            <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.REMINDER)} />
-                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.REMINDER) ? "text-white" : "text-gray-400")}>{t('calendar.types.reminder')}</span>
+                            <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.REMINDER)} colorClass="bg-[var(--app-accent)] border-[var(--app-accent)]" />
+                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.REMINDER) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-muted)]")}>{t('calendar.types.reminder')}</span>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
                             onClick={(e) => { e.preventDefault(); toggleType(CalendarEventType.MEETING); }}
-                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none"
                         >
-                            <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.MEETING)} />
-                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.MEETING) ? "text-white" : "text-gray-400")}>{t('calendar.types.meeting')}</span>
+                            <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.MEETING)} colorClass="bg-[var(--app-accent)] border-[var(--app-accent)]" />
+                            <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.MEETING) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-muted)]")}>{t('calendar.types.meeting')}</span>
                         </DropdownMenuItem>
 
-                        <DropdownMenuSeparator className="bg-gray-800 my-2" />
+                        <DropdownMenuSeparator className="bg-[var(--app-border)] my-2" />
 
                         {projects.length > 0 && (
                             <>
-                                <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <div className="px-2 py-1.5 text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">
                                     {t('dashboard.projects')}
                                 </div>
                                 {projects.map(p => (
                                     <DropdownMenuItem
                                         key={p.id}
                                         onClick={(e) => { e.preventDefault(); toggleProject(p.id); }}
-                                        className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                                        className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none"
                                     >
-                                        <CustomCheckbox checked={filterProjectIds.includes(p.id)} />
-                                        <span className={cn("transition-colors truncate", filterProjectIds.includes(p.id) ? "text-white" : "text-gray-400")}>
+                                        <CustomCheckbox checked={filterProjectIds.includes(p.id)} colorClass="bg-[var(--app-accent)] border-[var(--app-accent)]" />
+                                        <span className={cn("transition-colors truncate", filterProjectIds.includes(p.id) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-muted)]")}>
                                             {p.name}
                                         </span>
                                     </DropdownMenuItem>
                                 ))}
-                                <DropdownMenuSeparator className="bg-gray-800 my-2" />
+                                <DropdownMenuSeparator className="bg-[var(--app-border)] my-2" />
                             </>
                         )}
 
                         {members.length > 0 && (
                             <>
-                                <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <div className="px-2 py-1.5 text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">
                                     {t('calendar.fields.members')}
                                 </div>
                                 {members.map(m => (
                                     <DropdownMenuItem
                                         key={m.id}
                                         onClick={(e) => { e.preventDefault(); toggleMember(m.id); }}
-                                        className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                                        className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none"
                                     >
-                                        <CustomCheckbox checked={filterMemberIds.includes(m.id)} />
+                                        <CustomCheckbox checked={filterMemberIds.includes(m.id)} colorClass="bg-[var(--app-accent)] border-[var(--app-accent)]" />
                                         <div className="flex items-center gap-2 truncate">
                                             {m.image ? (
                                                 <img src={m.image} alt="" className="w-5 h-5 rounded-full" />
                                             ) : (
-                                                <div className="w-5 h-5 rounded-full bg-gray-700 flex items-center justify-center text-[9px] font-bold text-gray-300">
+                                                <div className="w-5 h-5 rounded-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] flex items-center justify-center text-[9px] font-bold text-[var(--app-text-muted)]">
                                                     {m.name.substring(0, 2).toUpperCase()}
                                                 </div>
                                             )}
-                                            <span className={cn("transition-colors", filterMemberIds.includes(m.id) ? "text-white" : "text-gray-400")}>
+                                            <span className={cn("transition-colors", filterMemberIds.includes(m.id) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-muted)]")}>
                                                 {m.name}
                                             </span>
                                         </div>
@@ -365,7 +365,7 @@ export function CalendarHeader({
                                     setFilterProjectIds?.([])
                                     setFilterMemberIds?.([])
                                 }}
-                                className="w-full py-1.5 bg-[#1a1a24] hover:bg-[#20202b] text-gray-400 hover:text-white text-xs font-medium rounded-lg transition-colors border border-white/5"
+                                className="w-full py-1.5 bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] text-xs font-medium rounded-lg transition-colors border border-[var(--app-border)]"
                             >
                                 {t('calendar.actions.clear_filters')}
                             </button>
@@ -377,18 +377,18 @@ export function CalendarHeader({
                 <DropdownMenu onOpenChange={setIsExporting}>
                     <DropdownMenuTrigger asChild>
                         <button className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all outline-none focus:ring-1 focus:ring-white/10",
-                            isExporting ? "bg-[#1E2029] text-white" : "bg-[#1a1a24] text-gray-400 hover:text-white"
+                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all outline-none focus:ring-1 focus:ring-[var(--app-text-primary)]/10",
+                            isExporting ? "bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)]" : "bg-[var(--app-bg-input)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
                         )}>
                             <Share2 className="w-3.5 h-3.5" />
                             <span>{t('calendar.actions.export')}</span>
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-80 bg-[#16161f] p-4 text-gray-300 shadow-2xl rounded-xl border-none">
+                    <DropdownMenuContent align="end" className="w-80 bg-[var(--app-bg-card)] p-4 text-[var(--app-text-secondary)] shadow-2xl rounded-xl border border-[var(--app-border)]">
                         <div className="flex flex-col gap-4">
                             <div>
-                                <h3 className="text-sm font-semibold text-white mb-1">{t('calendar.export.title')}</h3>
-                                <p className="text-[11px] text-gray-500 leading-relaxed">
+                                <h3 className="text-sm font-semibold text-[var(--app-text-primary)] mb-1">{t('calendar.export.title')}</h3>
+                                <p className="text-[11px] text-[var(--app-text-muted)] leading-relaxed">
                                     {t('calendar.export.desc')}
                                     Export your workspace calendar to PDF or iCal format.
                                 </p>
@@ -398,7 +398,7 @@ export function CalendarHeader({
                             <div className="flex gap-2">
                                 <button
                                     onClick={(e) => { e.preventDefault(); handleExportPDF(); }}
-                                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-[#2a2b36] hover:bg-[#32333e] text-white text-xs font-bold rounded-lg transition-all border border-white/5"
+                                    className="flex-1 flex items-center justify-center gap-2 py-2 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-deepest)] text-[var(--app-text-primary)] text-xs font-bold rounded-lg transition-all border border-[var(--app-border)]"
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><path d="M10 13l2 2 2-2" /><path d="M12 11v4" /></svg>
                                     PDF
@@ -412,13 +412,13 @@ export function CalendarHeader({
                                 </button>
                             </div>
 
-                            <DropdownMenuSeparator className="bg-gray-800" />
+                            <DropdownMenuSeparator className="bg-[var(--app-border)]" />
 
                             <div>
-                                <h3 className="text-sm font-semibold text-white mb-2">{t('calendar.export.sync_title')}</h3>
+                                <h3 className="text-sm font-semibold text-[var(--app-text-primary)] mb-2">{t('calendar.export.sync_title')}</h3>
                                 <button
                                     onClick={(e) => { e.preventDefault(); handleCopy(); }}
-                                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-black/40 hover:bg-white/5 rounded-xl border border-white/5 transition-all text-xs font-medium text-gray-300 hover:text-white mb-2"
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] rounded-xl border border-[var(--app-border)] transition-all text-xs font-medium text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] mb-2"
                                 >
                                     {copied ? (
                                         <>
@@ -434,7 +434,7 @@ export function CalendarHeader({
                                 </button>
 
                                 <div className="space-y-3 mt-4">
-                                    <p className="text-[11px] text-gray-400 leading-relaxed italic border-l-2 border-amber-500/30 pl-3">
+                                    <p className="text-[11px] text-[var(--app-text-muted)] leading-relaxed italic border-l-2 border-amber-500/30 pl-3">
                                         {t('calendar.export.sync_desc')}
                                         Synchronize your schedule with an external calendar – e.g. Google Calendar or Apple Calendar.
                                         After adding the link to your chosen calendar, events will update automatically.
@@ -443,7 +443,7 @@ export function CalendarHeader({
                                     </p>
 
                                     <div className="flex flex-col gap-1.5 pt-1">
-                                        <p className="text-[10px] text-gray-500 mb-1 font-semibold uppercase tracking-wider">{t('calendar.export.sync_instructions')}</p>
+                                        <p className="text-[10px] text-[var(--app-text-muted)] mb-1 font-semibold uppercase tracking-wider">{t('calendar.export.sync_instructions')}</p>
                                         <a href="https://support.google.com/calendar/answer/37100?hl=pl-PL&co=GENIE.Platform%3DDesktop&oco=1" target="_blank" rel="noopener noreferrer" className="text-[11px] text-amber-500/80 hover:text-amber-500 transition-colors flex items-center gap-2">
                                             <div className="w-1 h-3 bg-amber-500/30 rounded-full" /> {t('calendar.export.google_help')}
                                         </a>
@@ -463,41 +463,41 @@ export function CalendarHeader({
                 {/* Przycisk Schedule setting */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <button className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a24] hover:bg-[#20202b] rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all mr-2 outline-none focus:ring-1 focus:ring-white/10">
+                        <button className="flex items-center gap-2 px-3 py-1.5 bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] rounded-lg text-xs font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all mr-2 outline-none focus:ring-1 focus:ring-[var(--app-text-primary)]/10">
                             <SlidersHorizontal className="w-3.5 h-3.5" />
                             <span>{t('calendar.actions.schedule_setting')}</span>
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none">
-                        <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <DropdownMenuContent align="end" className="w-64 bg-[var(--app-bg-card)] p-2 text-[var(--app-text-secondary)] shadow-2xl rounded-xl border border-[var(--app-border)]">
+                        <div className="px-2 py-1.5 text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">
                             {t('calendar.actions.view_options')}
                         </div>
 
                         <DropdownMenuItem
                             onClick={(e) => { e.preventDefault(); setShowWeekends(!showWeekends); }}
-                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
+                            className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none"
                         >
-                            <CustomCheckbox checked={showWeekends} />
-                            <span className="text-gray-300">{t('calendar.actions.show_weekends')}</span>
+                            <CustomCheckbox checked={showWeekends} colorClass="bg-[var(--app-accent)] border-[var(--app-accent)]" />
+                            <span className="text-[var(--app-text-secondary)]">{t('calendar.actions.show_weekends')}</span>
                         </DropdownMenuItem>
 
-                        <DropdownMenuSeparator className="bg-gray-800 my-2" />
+                        <DropdownMenuSeparator className="bg-[var(--app-border)] my-2" />
 
-                        <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <div className="px-2 py-1.5 text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">
                             {t('calendar.actions.start_of_week')}
                         </div>
                         <DropdownMenuRadioGroup value={weekStartDay} onValueChange={(v) => setWeekStartDay(v as 'monday' | 'sunday')}>
-                            <DropdownMenuRadioItem value="monday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
+                            <DropdownMenuRadioItem value="monday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] group transition-colors">
                                 <div className="flex items-center gap-3 w-full">
-                                    <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'monday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
+                                    <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'monday' ? "border-amber-500" : "border-[var(--app-border)] group-hover:border-[var(--app-text-muted)]")}>
                                         {weekStartDay === 'monday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
                                     </div>
                                     <span>{t('calendar.actions.monday')}</span>
                                 </div>
                             </DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="sunday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
+                            <DropdownMenuRadioItem value="sunday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] group transition-colors">
                                 <div className="flex items-center gap-3 w-full">
-                                    <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'sunday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
+                                    <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'sunday' ? "border-amber-500" : "border-[var(--app-border)] group-hover:border-[var(--app-text-muted)]")}>
                                         {weekStartDay === 'sunday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
                                     </div>
                                     <span>{t('calendar.actions.sunday')}</span>
@@ -508,25 +508,25 @@ export function CalendarHeader({
                 </DropdownMenu>
 
                 {/* Separator */}
-                <div className="h-6 w-px bg-gray-800 hidden md:block mx-1"></div>
+                <div className="h-6 w-px bg-[var(--app-border)] hidden md:block mx-1"></div>
 
                 {/* Nawigacja */}
                 <div className="flex items-center gap-1">
                     <button
                         onClick={onPrevMonth}
-                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                        className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                     >
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                         onClick={onToday}
-                        className="px-3 py-1 text-xs font-medium text-gray-400 hover:text-amber-500 transition-colors"
+                        className="px-3 py-1 text-xs font-medium text-[var(--app-text-muted)] hover:text-amber-500 transition-colors"
                     >
                         {t('calendar.actions.today')}
                     </button>
                     <button
                         onClick={onNextMonth}
-                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                        className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                     >
                         <ChevronRight className="w-5 h-5" />
                     </button>

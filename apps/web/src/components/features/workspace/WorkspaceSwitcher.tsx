@@ -52,7 +52,7 @@ export function WorkspaceSwitcher() {
             <div className="relative">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-3 w-full p-2 rounded-xl bg-[#1a1a24] hover:bg-[#252530] transition-colors border border-gray-800/50"
+                    className="flex items-center gap-3 w-full p-2 rounded-xl bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] transition-colors border border-[var(--app-border)]"
                 >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-black font-bold text-sm overflow-hidden ${currentWorkspace.logo ? '' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}>
                         {currentWorkspace.logo ? (
@@ -63,8 +63,8 @@ export function WorkspaceSwitcher() {
                     </div>
 
                     <div className="flex-1 text-left overflow-hidden">
-                        <h4 className="text-sm font-medium text-white truncate">{currentWorkspace.name}</h4>
-                        <span className="text-[10px] text-gray-500 block">Free Plan</span>
+                        <h4 className="text-sm font-medium text-[var(--app-text-primary)] truncate">{currentWorkspace.name}</h4>
+                        <span className="text-[10px] text-[var(--app-text-muted)] block">Free Plan</span>
                     </div>
 
                     <svg
@@ -74,7 +74,7 @@ export function WorkspaceSwitcher() {
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
-                        className={`text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                        className={`text-[var(--app-text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`}
                     >
                         <path d="M6 9l6 6 6-6" />
                     </svg>
@@ -82,7 +82,7 @@ export function WorkspaceSwitcher() {
 
                 {/* Dropdown */}
                 {isOpen && (
-                    <div className="absolute bottom-full left-0 w-full mb-2 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-xl overflow-hidden z-50">
+                    <div className="absolute bottom-full left-0 w-full mb-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-xl shadow-xl overflow-hidden z-50">
                         <div className="p-2 space-y-1">
                             {workspaces.map(ws => (
                                 <button
@@ -91,35 +91,35 @@ export function WorkspaceSwitcher() {
                                         navigate({ to: `/${ws.slug}/` })
                                         setIsOpen(false)
                                     }}
-                                    className={`flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${ws.slug === workspaceSlug ? 'bg-amber-500/10' : 'hover:bg-gray-800'
+                                    className={`flex items-center gap-3 w-full p-2 rounded-lg transition-colors ${ws.slug === workspaceSlug ? 'bg-[var(--app-accent)]/10' : 'hover:bg-[var(--app-bg-elevated)]'
                                         }`}
                                 >
-                                    <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold overflow-hidden ${ws.logo ? '' : 'bg-gray-700'} ${ws.slug === workspaceSlug && !ws.logo ? 'text-amber-400' : 'text-gray-400'}`}>
+                                    <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold overflow-hidden ${ws.logo ? '' : 'bg-[var(--app-bg-sidebar)]'} ${ws.slug === workspaceSlug && !ws.logo ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'}`}>
                                         {ws.logo ? (
                                             <img src={ws.logo} alt={ws.name} className="w-full h-full object-cover" />
                                         ) : (
                                             ws.name.substring(0, 1).toUpperCase()
                                         )}
                                     </div>
-                                    <span className={`text-sm truncate ${ws.slug === workspaceSlug ? 'text-amber-400' : 'text-gray-300'}`}>
+                                    <span className={`text-sm truncate ${ws.slug === workspaceSlug ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-secondary)]'}`}>
                                         {ws.name}
                                     </span>
                                     {ws.slug === workspaceSlug && (
-                                        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[var(--app-accent)]" />
                                     )}
                                 </button>
                             ))}
 
-                            <div className="h-px bg-gray-800 my-1" />
+                            <div className="h-px bg-[var(--app-border)] my-1" />
 
                             <button
                                 onClick={() => {
                                     setIsOpen(false)
                                     setIsCreatePanelOpen(true)
                                 }}
-                                className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                                className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
                             >
-                                <span className="w-6 h-6 rounded border border-dashed border-gray-600 flex items-center justify-center text-xs">+</span>
+                                <span className="w-6 h-6 rounded border border-dashed border-[var(--app-border)] flex items-center justify-center text-xs">+</span>
                                 <span className="text-sm">Create Workspace</span>
                             </button>
                         </div>

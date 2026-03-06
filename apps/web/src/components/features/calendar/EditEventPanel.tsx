@@ -118,21 +118,21 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
             />
 
             {/* Panel */}
-            <div className="fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[#12121a] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right border border-gray-800/50">
+            <div className="fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[var(--app-bg-card)] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right border border-[var(--app-border)]">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-[#14141b] rounded-t-2xl">
+                <div className="flex items-center justify-between p-6 border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)] rounded-t-2xl">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
                             ✏️
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">{t('calendar.panels.edit_event.title')}</h2>
-                            <p className="text-sm text-gray-500">{t('calendar.panels.edit_event.subtitle')}</p>
+                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('calendar.panels.edit_event.title')}</h2>
+                            <p className="text-sm text-[var(--app-text-muted)]">{t('calendar.panels.edit_event.subtitle')}</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                        className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>
@@ -147,8 +147,9 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder={t('calendar.panels.title_placeholder_event')}
-                            className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
+                            placeholder={t('calendar.panels.common.title_placeholder_event')}
+                            className="w-full text-xl font-semibold text-[var(--app-text-primary)] bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
+                            autoFocus
                         />
                     </div>
 
@@ -157,29 +158,29 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder={t('calendar.panels.description_placeholder')}
+                            placeholder={t('calendar.panels.common.desc_placeholder')}
                             rows={3}
-                            className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors resize-none"
+                            className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors resize-none"
                         />
                     </div>
 
                     {/* Date & Time */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <label className="block text-sm font-medium text-gray-300">
-                                {t('calendar.panels.date_time')}
+                            <label className="block text-sm font-medium text-[var(--app-text-secondary)]">
+                                {t('calendar.fields.date_time')}
                             </label>
                             {eventType === CalendarEventType.EVENT && (
                                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsAllDay(!isAllDay)}>
                                     <CustomCheckbox checked={isAllDay} />
-                                    <span className="text-sm text-gray-400">{t('calendar.panels.all_day')}</span>
+                                    <span className="text-sm text-[var(--app-text-muted)]">{t('calendar.panels.all_day')}</span>
                                 </div>
                             )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.starts')}</span>
+                                <span className="text-xs text-[var(--app-text-muted)] font-bold uppercase ml-1">{t('calendar.panels.starts')}</span>
                                 <DueDatePicker
                                     value={startDate}
                                     onChange={(date) => {
@@ -192,20 +193,20 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                     placeholder={t('calendar.panels.starts')}
                                     showTime={!isAllDay && eventType === CalendarEventType.EVENT}
                                     className="w-full"
-                                    triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
+                                    triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
                                 />
                             </div>
 
                             {eventType !== CalendarEventType.REMINDER && (
                                 <div className="space-y-1">
-                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.ends')}</span>
+                                    <span className="text-xs text-[var(--app-text-muted)] font-bold uppercase ml-1">{t('calendar.panels.ends')}</span>
                                     <DueDatePicker
                                         value={endDate}
                                         onChange={(date) => setEndDate(date || '')}
                                         placeholder={t('calendar.panels.ends')}
                                         showTime={!isAllDay}
                                         className="w-full"
-                                        triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
+                                        triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
                                     />
                                 </div>
                             )}
@@ -215,13 +216,13 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                     {/* Team Selection - Only if allowed */}
                     {canCreateTeamEvents && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                                 {t('calendar.panels.teams_label')} <span className="text-red-400">*</span>
                             </label>
                             <div className="relative group">
                                 <div className={cn(
-                                    "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
-                                    teamIds.length === 0 && "text-gray-500"
+                                    "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                    teamIds.length === 0 && "text-[var(--app-text-muted)]"
                                 )}>
                                     <Select value="" onValueChange={(val) => {
                                         if (!teamIds.includes(val)) {
@@ -239,25 +240,25 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                                                 e.preventDefault()
                                                                 e.stopPropagation()
                                                                 setTeamIds(teamIds.filter(t => t !== id))
-                                                            }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
+                                                            }} className="flex items-center gap-1 bg-[var(--app-bg-elevated)] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-[var(--app-text-secondary)] border border-[var(--app-border)] group/tag transition-colors z-50 relative cursor-pointer">
                                                                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.color || '#666' }} />
                                                                 {team.name}
-                                                                <X size={12} className="ml-1 text-gray-500 group-hover/tag:text-red-400 transition-colors" />
+                                                                <X size={12} className="ml-1 text-[var(--app-text-muted)] group-hover/tag:text-red-400 transition-colors" />
                                                             </div>
                                                         )
                                                     })
                                                 ) : (
-                                                    <span className="text-gray-500 py-1">{t('settings.organization.edit_panel.select_teams')}</span>
+                                                    <span className="text-[var(--app-text-muted)] py-1">{t('settings.organization.edit_panel.select_teams')}</span>
                                                 )}
                                             </div>
                                         </SelectTrigger>
-                                        <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
+                                        <SelectContent className="bg-[var(--app-bg-card)] border-[var(--app-border)] text-[var(--app-text-primary)]">
                                             {teams.map((team) => (
                                                 <SelectItem
                                                     key={team.id}
                                                     value={team.id}
                                                     className={cn(
-                                                        "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
+                                                        "focus:bg-[var(--app-bg-elevated)] focus:text-[var(--app-text-primary)] cursor-pointer py-3 text-[var(--app-text-secondary)] data-[state=checked]:text-[var(--app-text-primary)]",
                                                         teamIds.includes(team.id) && "opacity-50 pointer-events-none"
                                                     )}
                                                 >
@@ -271,7 +272,7 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                                                 </SelectItem>
                                             ))}
                                             {teams.length === 0 && (
-                                                <div className="p-3 text-xs text-gray-500 text-center">{t('settings.organization.edit_panel.no_teams_found')}</div>
+                                                <div className="p-3 text-xs text-[var(--app-text-muted)] text-center">{t('settings.organization.edit_panel.no_teams_found')}</div>
                                             )}
                                         </SelectContent>
                                     </Select>
@@ -280,73 +281,70 @@ export function EditEventPanel({ event, isOpen, onClose, workspaceSlug, onUpdate
                         </div>
                     )}
 
-                    {/* Meeting Type & Location */}
-                    {(eventType === CalendarEventType.EVENT || eventType === CalendarEventType.MEETING) && (
-                        <div className="space-y-4">
-                            <div className="flex bg-[#1a1a24] p-1 rounded-full w-full">
-                                <button
-                                    onClick={() => {
-                                        setMeetingType('physical')
-                                        setMeetingLink('')
-                                    }}
-                                    className={cn(
-                                        "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
-                                        meetingType === 'physical'
-                                            ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                            : 'text-gray-500 hover:text-white'
-                                    )}
-                                >
-                                    <Building className="w-3.5 h-3.5" />
-                                    {t('calendar.panels.in_person')}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setMeetingType('virtual')
-                                        setLocation('')
-                                    }}
-                                    className={cn(
-                                        "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
-                                        meetingType === 'virtual'
-                                            ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                            : 'text-gray-500 hover:text-white'
-                                    )}
-                                >
-                                    <Monitor className="w-3.5 h-3.5" />
-                                    {t('calendar.panels.virtual')}
-                                </button>
-                            </div>
+                    {/* Meeting Link/Location Selection */}
+                    <div className="space-y-4">
+                        <div className="flex bg-[var(--app-bg-input)] p-1 rounded-full w-full">
+                            <button
+                                onClick={() => {
+                                    setMeetingType('physical')
+                                    setMeetingLink('')
+                                }}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
+                                    meetingType === 'physical'
+                                        ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                                        : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
+                                )}
+                            >
+                                <Building className="w-3.5 h-3.5" />
+                                {t('calendar.panels.in_person')}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setMeetingType('virtual')
+                                    setLocation('')
+                                }}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
+                                    meetingType === 'virtual'
+                                        ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                                        : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
+                                )}
+                            >
+                                <Monitor className="w-3.5 h-3.5" />
+                                {t('calendar.panels.virtual')}
+                            </button>
+                        </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                    {meetingType === 'physical' ? t('calendar.panels.location') : t('calendar.panels.meeting_link')}
-                                </label>
-                                <div className="relative group focus-within:ring-2 ring-amber-500/30 rounded-xl transition-all">
-                                    {meetingType === 'physical' ? (
-                                        <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-gray-500 group-focus-within:text-amber-500 transition-colors" />
-                                    ) : (
-                                        <LinkIcon className="absolute left-4 top-3.5 w-5 h-5 text-gray-500 group-focus-within:text-amber-500 transition-colors" />
-                                    )}
-                                    <input
-                                        type="text"
-                                        value={meetingType === 'physical' ? location : meetingLink}
-                                        onChange={(e) => meetingType === 'physical' ? setLocation(e.target.value) : setMeetingLink(e.target.value)}
-                                        placeholder={meetingType === 'physical' ? t('calendar.panels.location_placeholder') : t('calendar.panels.meeting_link_placeholder')}
-                                        className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:bg-[#1f1f2e] transition-all"
-                                    />
-                                </div>
+                        <div>
+                            <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
+                                {meetingType === 'physical' ? t('calendar.panels.location') : t('calendar.panels.meeting_link')}
+                            </label>
+                            <div className="relative group focus-within:ring-2 ring-amber-500/30 rounded-xl transition-all">
+                                {meetingType === 'physical' ? (
+                                    <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-[var(--app-text-muted)] group-focus-within:text-amber-500 transition-colors" />
+                                ) : (
+                                    <LinkIcon className="absolute left-4 top-3.5 w-5 h-5 text-[var(--app-text-muted)] group-focus-within:text-amber-500 transition-colors" />
+                                )}
+                                <input
+                                    type="text"
+                                    value={meetingType === 'physical' ? location : meetingLink}
+                                    onChange={(e) => meetingType === 'physical' ? setLocation(e.target.value) : setMeetingLink(e.target.value)}
+                                    placeholder={meetingType === 'physical' ? t('calendar.panels.location_placeholder') : t('calendar.panels.meeting_link_placeholder')}
+                                    className="w-full pl-11 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:bg-[var(--app-bg-elevated)] transition-all"
+                                />
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
 
-
                 {/* Footer */}
-                <div className="p-6 border-t border-gray-800 flex gap-3 bg-[#12121a] rounded-b-2xl">
+                <div className="p-6 border-t border-[var(--app-border)] flex gap-3 bg-[var(--app-bg-card)] rounded-b-2xl">
                     <button
                         onClick={onClose}
-                        className="flex-1 px-4 py-3 rounded-xl border border-gray-800 text-gray-300 font-medium hover:bg-gray-800 hover:text-white transition-colors"
+                        className="flex-1 px-4 py-3 rounded-xl border border-[var(--app-border)] text-[var(--app-text-secondary)] font-medium hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)] transition-colors"
                     >
-                        {t('calendar.panels.cancel')}
+                        {t('calendar.actions.cancel')}
                     </button>
                     <button
                         onClick={handleSave}

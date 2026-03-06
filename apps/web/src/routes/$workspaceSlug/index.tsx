@@ -277,7 +277,7 @@ function DashboardHome() {
             </>
           ) : (
             <>
-              <div className="h-[140px] rounded-2xl bg-[#12121a] flex items-center justify-center border-2 border-dashed border-gray-800">
+              <div className="h-[140px] rounded-2xl bg-[var(--app-bg-card)] flex items-center justify-center border-2 border-dashed border-[var(--app-border)]">
                 <p className="text-gray-500 text-sm">{t('dashboard.noMeetings')}</p>
               </div>
               {canCreateCalendarEvents && (
@@ -291,10 +291,10 @@ function DashboardHome() {
         </div>
 
         {/* Middle Row: Projects Section */}
-        <div className="rounded-2xl bg-[#12121a] p-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="rounded-2xl bg-[var(--app-bg-card)] p-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <h3 className="font-semibold text-white">{t('dashboard.projects')}</h3>
+              <h3 className="font-semibold text-[var(--app-text-primary)]">{t('dashboard.projects')}</h3>
               {/* Carousel arrows */}
               {filteredProjects.length > projectsPerPage && (
                 <div className="flex items-center gap-1">
@@ -317,19 +317,19 @@ function DashboardHome() {
                   <button
                     onClick={() => setProjectPage(p => Math.min(totalProjectPages - 1, p + 1))}
                     disabled={currentProjectPage >= totalProjectPages - 1}
-                    className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="p-1 rounded-lg text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <ChevronRight size={16} />
                   </button>
                 </div>
               )}
             </div>
-            <div className="flex bg-[#1a1a24] p-1 rounded-full">
+            <div className="flex bg-[var(--app-bg-elevated)] p-1 rounded-full">
               <button
                 onClick={() => { setProjectFilter('active'); setProjectPage(0) }}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${projectFilter === 'active'
-                  ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                  : 'text-gray-500 hover:text-white'
+                  ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-lg shadow-amber-500/10'
+                  : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                   }`}
               >
                 {t('dashboard.ongoing')}
@@ -337,8 +337,8 @@ function DashboardHome() {
               <button
                 onClick={() => { setProjectFilter('pending'); setProjectPage(0) }}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${projectFilter === 'pending'
-                  ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                  : 'text-gray-500 hover:text-white'
+                  ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-lg shadow-amber-500/10'
+                  : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                   }`}
               >
                 {t('dashboard.pending')}
@@ -369,7 +369,7 @@ function DashboardHome() {
                 />
               ))
             ) : (
-              <div className="col-span-2 py-12 flex flex-col items-center justify-center border-2 border-dashed border-gray-800 rounded-2xl">
+              <div className="col-span-2 py-12 flex flex-col items-center justify-center border-2 border-dashed border-[var(--app-border)] rounded-2xl">
                 <p className="text-gray-500 mb-4">{projectFilter === 'active' ? t('dashboard.noProjectsActive') : t('dashboard.noProjectsPending')}</p>
                 {projectFilter === 'active' && workspaceData?.userRole && !['member', 'guest'].includes(workspaceData.userRole) && (
                   <button onClick={() => setIsCreateProjectOpen(true)} className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">{t('dashboard.createProject')}</button>

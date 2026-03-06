@@ -279,37 +279,37 @@ export function PrivacySettingsTab() {
     return (
         <div className="space-y-8 max-w-4xl mx-auto">
             <div>
-                <h3 className="text-xl font-semibold text-white">{t('settings.privacy.title')}</h3>
-                <p className="text-sm text-gray-400 mt-1">{t('settings.privacy.subtitle')}</p>
+                <h3 className="text-xl font-semibold text-[var(--app-text-primary)]">{t('settings.privacy.title')}</h3>
+                <p className="text-sm text-[var(--app-text-secondary)] mt-1">{t('settings.privacy.subtitle')}</p>
             </div>
 
             {/* Log In Preferences (Account Security) */}
             <section className="space-y-4">
-                <h4 className="text-md font-medium text-white flex items-center gap-2">
+                <h4 className="text-md font-medium text-[var(--app-text-primary)] flex items-center gap-2">
                     {t('settings.privacy.loginPreferences')}
                 </h4>
-                <div className="bg-[#1a1a24] rounded-xl border border-gray-800/50 divide-y divide-gray-800">
+                <div className="bg-[var(--app-bg-elevated)] rounded-xl border border-[var(--app-border)] divide-y divide-[var(--app-border)]">
 
                     {/* Password Row */}
                     <div className="p-6">
                         <div className="flex items-center justify-between">
-                            <h5 className="text-sm font-medium text-white">{t('settings.privacy.password')}</h5>
+                            <h5 className="text-sm font-medium text-[var(--app-text-primary)]">{t('settings.privacy.password')}</h5>
                             <button
                                 onClick={() => setShowPasswordForm(!showPasswordForm)}
-                                className="text-sm font-medium text-[#F2CE88] hover:text-[#d9b877] transition-colors"
+                                className="text-sm font-medium text-[var(--app-accent)] hover:opacity-80 transition-colors"
                             >
                                 {showPasswordForm ? t('settings.privacy.cancel') : t('settings.privacy.changePassword')}
                             </button>
                         </div>
 
                         {showPasswordForm && (
-                            <form onSubmit={handleChangePassword} className="mt-6 space-y-4 bg-[#12121a] p-4 rounded-lg border border-gray-800">
+                            <form onSubmit={handleChangePassword} className="mt-6 space-y-4 bg-[var(--app-bg-sidebar)] p-4 rounded-lg border border-[var(--app-border)]">
                                 <input
                                     type="password"
                                     placeholder={t('settings.privacy.currentPassword')}
                                     value={passwordForm.current}
                                     onChange={e => setPasswordForm({ ...passwordForm, current: e.target.value })}
-                                    className="w-full bg-[#0a0a0f] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] text-sm transition-colors"
+                                    className="w-full bg-[var(--app-bg-input)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] text-sm transition-colors"
                                 />
                                 <div className="grid grid-cols-2 gap-3">
                                     <input
@@ -317,21 +317,21 @@ export function PrivacySettingsTab() {
                                         placeholder={t('settings.privacy.newPassword')}
                                         value={passwordForm.new}
                                         onChange={e => setPasswordForm({ ...passwordForm, new: e.target.value })}
-                                        className="w-full bg-[#0a0a0f] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] text-sm transition-colors"
+                                        className="w-full bg-[var(--app-bg-input)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] text-sm transition-colors"
                                     />
                                     <input
                                         type="password"
                                         placeholder={t('settings.privacy.confirmNewPassword')}
                                         value={passwordForm.confirm}
                                         onChange={e => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-                                        className="w-full bg-[#0a0a0f] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] text-sm transition-colors"
+                                        className="w-full bg-[var(--app-bg-input)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] text-sm transition-colors"
                                     />
                                 </div>
                                 <div className="flex justify-end">
                                     <button
                                         type="submit"
                                         disabled={isChangingPassword || !passwordForm.current || !passwordForm.new}
-                                        className="px-6 py-2 bg-[#F2CE88] hover:bg-[#d9b877] text-black text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                                        className="px-6 py-2 bg-[var(--app-accent)] hover:opacity-90 text-black text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                                     >
                                         {isChangingPassword ? t('settings.privacy.updating') : t('settings.privacy.updatePassword')}
                                     </button>
@@ -342,7 +342,7 @@ export function PrivacySettingsTab() {
 
                     {/* Email Row */}
                     <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                        <h5 className="text-sm font-medium text-white">{t('settings.privacy.email')}</h5>
+                        <h5 className="text-sm font-medium text-[var(--app-text-primary)]">{t('settings.privacy.email')}</h5>
                         <div className="md:col-span-2">
                             <form onSubmit={handleChangeEmail} className="flex gap-3">
                                 <input
@@ -350,13 +350,13 @@ export function PrivacySettingsTab() {
                                     value={newEmail || session?.user?.email || ''}
                                     onChange={e => setNewEmail(e.target.value)}
                                     placeholder={session?.user?.email || t('settings.privacy.emailPlaceholder')}
-                                    className="flex-1 bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] text-sm transition-colors"
+                                    className="flex-1 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] text-sm transition-colors"
                                 />
                                 {newEmail && (
                                     <button
                                         type="submit"
                                         disabled={isChangingEmail}
-                                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors"
+                                        className="px-4 py-2 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-elevated)]/80 text-[var(--app-text-primary)] text-sm font-medium rounded-lg transition-colors border border-[var(--app-border)]"
                                     >
                                         {t('settings.privacy.save')}
                                     </button>
@@ -367,12 +367,12 @@ export function PrivacySettingsTab() {
 
                     {/* Phone Row */}
                     <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                        <h5 className="text-sm font-medium text-white">{t('settings.privacy.phoneNumber')}</h5>
+                        <h5 className="text-sm font-medium text-[var(--app-text-primary)]">{t('settings.privacy.phoneNumber')}</h5>
                         <div className="md:col-span-2 flex gap-3 min-w-0">
                             <select
                                 value={countryCode}
                                 onChange={(e) => setCountryCode(e.target.value)}
-                                className="bg-[#12121a] border border-gray-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#F2CE88] w-24 shrink-0 transition-colors"
+                                className="bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-3 py-2 text-[var(--app-text-primary)] text-sm focus:outline-none focus:border-[var(--app-accent)] w-24 shrink-0 transition-colors"
                             >
                                 {countryCodes.map((c) => (
                                     <option key={`${c.code}-${c.iso}`} value={c.code}>
@@ -385,12 +385,12 @@ export function PrivacySettingsTab() {
                                 value={phoneNumber}
                                 onChange={(e) => setPhoneNumber(e.target.value)}
                                 placeholder={t('settings.privacy.phonePlaceholder')}
-                                className="flex-1 w-full min-w-0 bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#F2CE88] transition-colors"
+                                className="flex-1 w-full min-w-0 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] text-sm placeholder-[var(--app-text-muted)] focus:outline-none focus:border-[var(--app-accent)] transition-colors"
                             />
                             <button
                                 onClick={handleSavePhone}
                                 disabled={isSavingPhone}
-                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 shrink-0"
+                                className="px-4 py-2 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-elevated)]/80 text-[var(--app-text-primary)] text-sm font-medium rounded-lg transition-colors disabled:opacity-50 shrink-0 border border-[var(--app-border)]"
                             >
                                 {isSavingPhone ? '...' : t('settings.privacy.save')}
                             </button>
@@ -401,24 +401,24 @@ export function PrivacySettingsTab() {
 
             {/* Two-Factor Authentication (kept mostly as is but cleaned up container if needed) */}
             <section className="space-y-4">
-                <h4 className="text-md font-medium text-white flex items-center gap-2">
+                <h4 className="text-md font-medium text-[var(--app-text-primary)] flex items-center gap-2">
                     {t('settings.privacy.twoFactor.title')}
                 </h4>
-                <div className="bg-[#1a1a24] rounded-xl p-6 border border-gray-800/50">
+                <div className="bg-[var(--app-bg-elevated)] rounded-xl p-6 border border-[var(--app-border)]">
                     <div className="space-y-3">
-                        <h5 className="text-sm font-medium text-white">{t('settings.privacy.twoFactor.securityTitle')}</h5>
-                        <p className="text-xs text-gray-400">{t('settings.privacy.twoFactor.securityDescription')}</p>
+                        <h5 className="text-sm font-medium text-[var(--app-text-primary)]">{t('settings.privacy.twoFactor.securityTitle')}</h5>
+                        <p className="text-xs text-[var(--app-text-muted)]">{t('settings.privacy.twoFactor.securityDescription')}</p>
 
                         <div className="pt-3">
                             {(session?.user?.twoFactorEnabled || twoFactorSeamless) ? (
                                 isDisabling2FA ? (
-                                    <div className="bg-[#12121a] p-6 rounded-lg border border-red-500/20 space-y-4">
+                                    <div className="bg-[var(--app-bg-sidebar)] p-6 rounded-lg border border-red-500/20 space-y-4">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h6 className="text-white text-sm font-medium">{t('settings.privacy.twoFactor.disableTitle')}</h6>
-                                                <p className="text-xs text-gray-500">{t('settings.privacy.twoFactor.disableDescription')}</p>
+                                                <h6 className="text-[var(--app-text-primary)] text-sm font-medium">{t('settings.privacy.twoFactor.disableTitle')}</h6>
+                                                <p className="text-xs text-[var(--app-text-muted)]">{t('settings.privacy.twoFactor.disableDescription')}</p>
                                             </div>
-                                            <button onClick={() => { setIsDisabling2FA(false); setTwoFactorPassword(''); }} className="text-gray-500 hover:text-white"><XCircle className="w-5 h-5" /></button>
+                                            <button onClick={() => { setIsDisabling2FA(false); setTwoFactorPassword(''); }} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"><XCircle className="w-5 h-5" /></button>
                                         </div>
                                         <div className="flex gap-3">
                                             <input
@@ -426,7 +426,7 @@ export function PrivacySettingsTab() {
                                                 placeholder={t('settings.privacy.twoFactor.passwordPlaceholder')}
                                                 value={twoFactorPassword}
                                                 onChange={e => setTwoFactorPassword(e.target.value)}
-                                                className="flex-1 bg-[#0a0a0f] border border-gray-800 rounded-lg px-3 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                                className="flex-1 bg-[var(--app-bg-input)] border border-[var(--app-border)] rounded-lg px-3 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                                                 onKeyDown={e => e.key === 'Enter' && confirmDisable2FA()}
                                             />
                                             <button
@@ -440,29 +440,29 @@ export function PrivacySettingsTab() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex items-center justify-between bg-[#12121a] p-4 rounded-lg border border-gray-800">
+                                    <div className="flex items-center justify-between bg-[var(--app-bg-sidebar)] p-4 rounded-lg border border-[var(--app-border)]">
                                         <div className="flex items-center gap-4">
                                             <div className="flex flex-col">
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></span>
-                                                    <p className="text-sm font-medium text-white">{t('settings.privacy.twoFactor.enabledTitle')}</p>
+                                                    <p className="text-sm font-medium text-[var(--app-text-primary)]">{t('settings.privacy.twoFactor.enabledTitle')}</p>
                                                 </div>
-                                                <p className="text-xs text-gray-500 mt-1">{t('settings.privacy.twoFactor.enabledDescription')}</p>
+                                                <p className="text-xs text-[var(--app-text-muted)] mt-1">{t('settings.privacy.twoFactor.enabledDescription')}</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => { setIsDisabling2FA(true); setTwoFactorPassword(''); }}
-                                            className="px-4 py-2 bg-[#1a1a24] hover:bg-red-500/10 text-gray-300 hover:text-red-500 text-sm font-medium rounded-lg transition-colors border border-gray-800 hover:border-red-500/50"
+                                            className="px-4 py-2 bg-[var(--app-bg-sidebar)] hover:bg-red-500/10 text-[var(--app-text-secondary)] hover:text-red-500 text-sm font-medium rounded-lg transition-colors border border-[var(--app-border)] hover:border-red-500/50"
                                         >
                                             {t('settings.privacy.twoFactor.turnOff')}
                                         </button>
                                     </div>
                                 )
                             ) : isEnable2FA ? (
-                                <div className="bg-[#12121a] p-6 rounded-lg border border-gray-800 space-y-6">
+                                <div className="bg-[var(--app-bg-sidebar)] p-6 rounded-lg border border-[var(--app-border)] space-y-6">
                                     <div className="flex justify-between items-start">
-                                        <h6 className="text-white text-sm font-medium">{t('settings.privacy.twoFactor.title')}</h6>
-                                        <button onClick={() => { setIsEnable2FA(false); setQrCode(null); setTwoFactorPassword(''); setShow2FAPasswordPrompt(false); }} className="text-gray-500 hover:text-white"><XCircle className="w-5 h-5" /></button>
+                                        <h6 className="text-[var(--app-text-primary)] text-sm font-medium">{t('settings.privacy.twoFactor.title')}</h6>
+                                        <button onClick={() => { setIsEnable2FA(false); setQrCode(null); setTwoFactorPassword(''); setShow2FAPasswordPrompt(false); }} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"><XCircle className="w-5 h-5" /></button>
                                     </div>
 
                                     <div className="flex flex-col md:flex-row gap-8 items-center">
@@ -470,20 +470,20 @@ export function PrivacySettingsTab() {
                                             {qrCode ? <img src={qrCode} alt="2FA QR Code" className="w-32 h-32" /> : <div className="w-32 h-32 bg-gray-200 animate-pulse" />}
                                         </div>
                                         <div className="flex-1 space-y-4">
-                                            <p className="text-sm text-gray-400">{t('settings.privacy.twoFactor.scanCode')}</p>
-                                            <p className="text-sm text-gray-400">{t('settings.privacy.twoFactor.enterCode')}</p>
+                                            <p className="text-sm text-[var(--app-text-secondary)]">{t('settings.privacy.twoFactor.scanCode')}</p>
+                                            <p className="text-sm text-[var(--app-text-secondary)]">{t('settings.privacy.twoFactor.enterCode')}</p>
                                             <div className="flex gap-3">
                                                 <input
                                                     type="text"
                                                     placeholder={t('settings.privacy.twoFactor.codePlaceholder')}
                                                     value={twoFactorCode}
                                                     onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                                    className="w-32 bg-[#0a0a0f] border border-gray-800 rounded-lg px-3 py-2 text-center text-white tracking-widest outline-none focus:border-[#F2CE88]"
+                                                    className="w-32 bg-[var(--app-bg-input)] border border-[var(--app-border)] rounded-lg px-3 py-2 text-center text-[var(--app-text-primary)] tracking-widest outline-none focus:border-[var(--app-accent)]"
                                                 />
                                                 <button
                                                     onClick={handleVerify2FA}
                                                     disabled={twoFactorCode.length !== 6 || isVerifying2FA}
-                                                    className="px-4 py-2 bg-[#F2CE88] hover:bg-[#d9b877] text-black text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                                                    className="px-4 py-2 bg-[var(--app-accent)] hover:opacity-90 text-black text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
                                                 >
                                                     {isVerifying2FA && <Loader2 className="w-4 h-4 animate-spin" />}
                                                     {isVerifying2FA ? t('settings.privacy.twoFactor.verifying') : t('settings.privacy.twoFactor.verify')}
@@ -493,13 +493,13 @@ export function PrivacySettingsTab() {
                                     </div>
                                 </div>
                             ) : show2FAPasswordPrompt ? (
-                                <div className="bg-[#12121a] p-6 rounded-lg border border-gray-800 space-y-4">
+                                <div className="bg-[var(--app-bg-sidebar)] p-6 rounded-lg border border-[var(--app-border)] space-y-4">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <h6 className="text-white text-sm font-medium">{t('settings.privacy.twoFactor.confirmPasswordTitle')}</h6>
-                                            <p className="text-xs text-gray-500">{t('settings.privacy.twoFactor.confirmPasswordDescription')}</p>
+                                            <h6 className="text-[var(--app-text-primary)] text-sm font-medium">{t('settings.privacy.twoFactor.confirmPasswordTitle')}</h6>
+                                            <p className="text-xs text-[var(--app-text-muted)]">{t('settings.privacy.twoFactor.confirmPasswordDescription')}</p>
                                         </div>
-                                        <button onClick={() => setShow2FAPasswordPrompt(false)} className="text-gray-500 hover:text-white"><XCircle className="w-5 h-5" /></button>
+                                        <button onClick={() => setShow2FAPasswordPrompt(false)} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"><XCircle className="w-5 h-5" /></button>
                                     </div>
                                     <div className="flex gap-3">
                                         <input
@@ -507,13 +507,13 @@ export function PrivacySettingsTab() {
                                             placeholder={t('settings.privacy.twoFactor.passwordPlaceholder')}
                                             value={twoFactorPassword}
                                             onChange={e => setTwoFactorPassword(e.target.value)}
-                                            className="flex-1 bg-[#0a0a0f] border border-gray-800 rounded-lg px-3 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                            className="flex-1 bg-[var(--app-bg-input)] border border-[var(--app-border)] rounded-lg px-3 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                                             onKeyDown={e => e.key === 'Enter' && confirmEnable2FA()}
                                         />
                                         <button
                                             onClick={confirmEnable2FA}
                                             disabled={!twoFactorPassword || isLoading2FA}
-                                            className="px-4 py-2 bg-[#F2CE88] hover:bg-[#d9b877] text-black text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                                            className="px-4 py-2 bg-[var(--app-accent)] hover:opacity-90 text-black text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
                                         >
                                             {isLoading2FA && <Loader2 className="w-4 h-4 animate-spin" />}
                                             {t('settings.privacy.twoFactor.continue')}
@@ -521,19 +521,19 @@ export function PrivacySettingsTab() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex items-center justify-between bg-[#12121a] p-5 rounded-lg border border-gray-800">
+                                <div className="flex items-center justify-between bg-[var(--app-bg-sidebar)] p-5 rounded-lg border border-[var(--app-border)]">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-gray-800/50 flex items-center justify-center text-gray-400">
+                                        <div className="w-10 h-10 rounded-full bg-[var(--app-bg-elevated)] flex items-center justify-center text-[var(--app-text-muted)]">
                                             <Shield className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-white">{t('settings.privacy.twoFactor.authenticatorAppTitle')}</p>
-                                            <p className="text-xs text-gray-500">{t('settings.privacy.twoFactor.authenticatorAppDescription')}</p>
+                                            <p className="text-sm font-medium text-[var(--app-text-primary)]">{t('settings.privacy.twoFactor.authenticatorAppTitle')}</p>
+                                            <p className="text-xs text-[var(--app-text-muted)]">{t('settings.privacy.twoFactor.authenticatorAppDescription')}</p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={handleStart2FA}
-                                        className="px-4 py-2 bg-[#F2CE88] hover:bg-[#d9b877] text-black text-sm font-medium rounded-lg transition-colors"
+                                        className="px-4 py-2 bg-[var(--app-accent)] hover:opacity-90 text-black text-sm font-medium rounded-lg transition-colors"
                                     >
                                         {t('settings.privacy.twoFactor.enable')}
                                     </button>
@@ -546,10 +546,10 @@ export function PrivacySettingsTab() {
 
             {/* Active Sessions */}
             <section className="space-y-4">
-                <h4 className="text-md font-medium text-white flex items-center gap-2">
+                <h4 className="text-md font-medium text-[var(--app-text-primary)] flex items-center gap-2">
                     {t('settings.privacy.sessions.title')} ({sessions.length})
                 </h4>
-                <div className="bg-[#1a1a24] rounded-xl border border-gray-800/50">
+                <div className="bg-[var(--app-bg-elevated)] rounded-xl border border-[var(--app-border)]">
                     <div className="p-6">
                         <div className="space-y-6">
                             {isLoadingSessions ? (
@@ -566,24 +566,24 @@ export function PrivacySettingsTab() {
                                     const IsMobile = ua.type === 'mobile'
 
                                     return (
-                                        <div key={session.id} className="flex items-center justify-between pb-6 border-b border-gray-800 last:border-0 last:pb-0">
+                                        <div key={session.id} className="flex items-center justify-between pb-6 border-b border-[var(--app-border)] last:border-0 last:pb-0">
                                             <div className="flex items-center gap-4">
                                                 {IsMobile ? (
-                                                    <Phone className="w-6 h-6 text-gray-400" />
+                                                    <Phone className="w-6 h-6 text-[var(--app-text-muted)]" />
                                                 ) : (
-                                                    <Laptop className="w-6 h-6 text-gray-400" />
+                                                    <Laptop className="w-6 h-6 text-[var(--app-text-muted)]" />
                                                 )}
 
                                                 <div>
-                                                    <p className="text-sm font-medium text-white flex items-center gap-2">
+                                                    <p className="text-sm font-medium text-[var(--app-text-primary)] flex items-center gap-2">
                                                         {ua.desc}
                                                         {session.isCurrent ? (
                                                             <span className="text-xs text-blue-500 font-normal"> • {t('settings.privacy.sessions.current')}</span>
                                                         ) : (
-                                                            <span className="text-xs text-gray-500 font-normal"> • {session.ipAddress}</span>
+                                                            <span className="text-xs text-[var(--app-text-muted)] font-normal"> • {session.ipAddress}</span>
                                                         )}
                                                     </p>
-                                                    <p className="text-xs text-gray-500 mt-0.5">
+                                                    <p className="text-xs text-[var(--app-text-muted)] mt-0.5">
                                                         {ua.name} • {new Date(session.createdAt).toLocaleDateString()} • {new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </p>
                                                 </div>
@@ -591,7 +591,7 @@ export function PrivacySettingsTab() {
 
                                             <button
                                                 onClick={() => session.isCurrent ? (async () => { await authClient.signOut(); window.location.href = '/'; })() : handleRevokeSession(session.id)}
-                                                className="text-[#F2CE88] hover:text-[#d9b877] font-medium text-sm transition-colors"
+                                                className="text-[var(--app-accent)] hover:opacity-80 font-medium text-sm transition-colors"
                                             >
                                                 {t('settings.privacy.sessions.revoke')}
                                             </button>
@@ -602,7 +602,7 @@ export function PrivacySettingsTab() {
                         </div>
                     </div>
 
-                    <div className="px-6 py-4 border-t border-gray-800">
+                    <div className="px-6 py-4 border-t border-[var(--app-border)]">
                         <button
                             onClick={handleRevokeAllSessions}
                             className="text-sm font-medium text-red-500 hover:text-red-400 transition-colors"

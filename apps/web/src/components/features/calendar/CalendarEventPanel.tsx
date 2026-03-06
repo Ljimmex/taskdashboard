@@ -223,32 +223,32 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
             />
 
             {/* Panel */}
-            <div className="fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[#12121a] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right border border-gray-800/50">
+            <div className="fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[var(--app-bg-card)] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right border border-[var(--app-border)]">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-[#14141b] rounded-t-2xl">
+                <div className="flex items-center justify-between p-6 border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)] rounded-t-2xl">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
                             {getTypeIcon(selectedType)}
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">
+                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">
                                 {selectedType === CalendarEventType.EVENT ? t('calendar.panels.add_event.title_event') : t('calendar.panels.add_event.title_reminder')}
                             </h2>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-[var(--app-text-muted)]">
                                 {selectedType === CalendarEventType.EVENT ? t('calendar.panels.add_event.subtitle_event') : t('calendar.panels.add_event.subtitle_reminder')}
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                        className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Tabs for Type Selection */}
-                <div className="px-6 bg-[#14141b]">
+                <div className="px-6 bg-[var(--app-bg-sidebar)]">
                     <div className="flex gap-4">
                         {typeOptions.map((type) => (
                             <button
@@ -257,8 +257,8 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                 className={cn(
                                     "py-3 text-sm font-medium border-b-2 transition-colors relative",
                                     selectedType === type
-                                        ? "border-amber-500 text-white"
-                                        : "border-transparent text-gray-400 hover:text-white hover:border-gray-700"
+                                        ? "border-amber-500 text-[var(--app-text-primary)]"
+                                        : "border-transparent text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:border-[var(--app-border)]"
                                 )}
                             >
                                 {type === CalendarEventType.EVENT ? t('calendar.panels.types.event') :
@@ -278,7 +278,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder={selectedType === CalendarEventType.REMINDER ? t('calendar.panels.common.title_placeholder_reminder') : t('calendar.panels.common.title_placeholder_event')}
-                            className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
+                            className="w-full text-xl font-semibold text-[var(--app-text-primary)] bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
                             autoFocus
                         />
                     </div>
@@ -290,16 +290,16 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={t('calendar.panels.common.desc_placeholder')}
                             rows={3}
-                            className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors resize-none"
+                            className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors resize-none"
                         />
                     </div>
 
                     {/* Scope Switch (Team vs Personal) */}
                     <div className="space-y-4">
-                        <label className="block text-sm font-medium text-gray-300">
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)]">
                             {t('calendar.scope.label')}
                         </label>
-                        <div className="flex bg-[#1a1a24] p-1 rounded-full w-full">
+                        <div className="flex bg-[var(--app-bg-input)] p-1 rounded-full w-full">
                             <button
                                 onClick={() => setScope('team')}
                                 disabled={!canCreateCalendarEvents}
@@ -307,7 +307,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                     "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
                                     scope === 'team'
                                         ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                        : 'text-gray-500 hover:text-white',
+                                        : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]',
                                     !canCreateCalendarEvents && "opacity-50 cursor-not-allowed"
                                 )}
                             >
@@ -321,7 +321,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                     "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
                                     scope === 'personal'
                                         ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                        : 'text-gray-500 hover:text-white',
+                                        : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]',
                                     (userRole === 'member' || userRole === 'guest') && "opacity-50 cursor-not-allowed"
                                 )}
                             >
@@ -334,20 +334,20 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                     {/* Date & Time */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <label className="block text-sm font-medium text-gray-300">
+                            <label className="block text-sm font-medium text-[var(--app-text-secondary)]">
                                 {t('calendar.fields.date_time')}
                             </label>
                             {selectedType === CalendarEventType.EVENT && (
                                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsAllDay(!isAllDay)}>
                                     <CustomCheckbox checked={isAllDay} />
-                                    <span className="text-sm text-gray-400">{t('calendar.panels.all_day')}</span>
+                                    <span className="text-sm text-[var(--app-text-muted)]">{t('calendar.panels.all_day')}</span>
                                 </div>
                             )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
-                                <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.starts')}</span>
+                                <span className="text-xs text-[var(--app-text-muted)] font-bold uppercase ml-1">{t('calendar.panels.starts')}</span>
                                 <DueDatePicker
                                     value={startDate}
                                     onChange={(date) => {
@@ -361,20 +361,20 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                     placeholder={t('calendar.panels.starts')}
                                     showTime={!isAllDay && selectedType === CalendarEventType.EVENT}
                                     className="w-full"
-                                    triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
+                                    triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
                                 />
                             </div>
 
                             {selectedType === CalendarEventType.EVENT && (
                                 <div className="space-y-1">
-                                    <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.ends')}</span>
+                                    <span className="text-xs text-[var(--app-text-muted)] font-bold uppercase ml-1">{t('calendar.panels.ends')}</span>
                                     <DueDatePicker
                                         value={endDate}
                                         onChange={(date) => setEndDate(date || '')}
                                         placeholder={t('calendar.panels.ends')}
                                         showTime={!isAllDay}
                                         className="w-full"
-                                        triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
+                                        triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
                                     />
                                 </div>
                             )}
@@ -384,7 +384,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                     {/* Meeting Type & Location (Event/Meeting Only) */}
                     {(selectedType === CalendarEventType.EVENT || selectedType === CalendarEventType.MEETING) && (
                         <div className="space-y-4">
-                            <div className="flex bg-[#1a1a24] p-1 rounded-full w-full">
+                            <div className="flex bg-[var(--app-bg-input)] p-1 rounded-full w-full">
                                 <button
                                     onClick={() => {
                                         setMeetingType('physical')
@@ -394,7 +394,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                         "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
                                         meetingType === 'physical'
                                             ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                            : 'text-gray-500 hover:text-white'
+                                            : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                                     )}
                                 >
                                     <Building className="w-3.5 h-3.5" />
@@ -409,7 +409,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                         "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all",
                                         meetingType === 'virtual'
                                             ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                                            : 'text-gray-500 hover:text-white'
+                                            : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                                     )}
                                 >
                                     <Monitor className="w-3.5 h-3.5" />
@@ -418,21 +418,21 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                                     {meetingType === 'physical' ? t('calendar.panels.location') : t('calendar.panels.meeting_link')}
                                 </label>
                                 <div className="relative group focus-within:ring-2 ring-amber-500/30 rounded-xl transition-all">
                                     {meetingType === 'physical' ? (
-                                        <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-gray-500 group-focus-within:text-amber-500 transition-colors" />
+                                        <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-[var(--app-text-muted)] group-focus-within:text-amber-500 transition-colors" />
                                     ) : (
-                                        <LinkIcon className="absolute left-4 top-3.5 w-5 h-5 text-gray-500 group-focus-within:text-amber-500 transition-colors" />
+                                        <LinkIcon className="absolute left-4 top-3.5 w-5 h-5 text-[var(--app-text-muted)] group-focus-within:text-amber-500 transition-colors" />
                                     )}
                                     <input
                                         type="text"
                                         value={meetingType === 'physical' ? location : meetingLink}
                                         onChange={(e) => meetingType === 'physical' ? setLocation(e.target.value) : setMeetingLink(e.target.value)}
                                         placeholder={meetingType === 'physical' ? t('calendar.panels.location_placeholder') : t('calendar.panels.meeting_link_placeholder')}
-                                        className="w-full pl-11 pr-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:bg-[#1f1f2e] transition-all"
+                                        className="w-full pl-11 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:bg-[var(--app-bg-elevated)] transition-all"
                                     />
                                 </div>
                             </div>
@@ -441,13 +441,13 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
 
                     {/* Recurrence Selector */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                             {t('calendar.panels.repeat')}
                         </label>
                         <Select value={recurrence} onValueChange={(val) => { setRecurrence(val) }}>
-                            <SelectTrigger className="w-full h-11 px-4 rounded-xl bg-[#1a1a24] border-none text-gray-300 hover:text-white hover:bg-[#20202b] transition-colors focus:ring-0">
+                            <SelectTrigger className="w-full h-11 px-4 rounded-xl bg-[var(--app-bg-input)] border-none text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors focus:ring-0">
                                 <div className="flex items-center gap-3">
-                                    <RotateCw size={18} className="text-gray-500" />
+                                    <RotateCw size={18} className="text-[var(--app-text-muted)]" />
                                     <span>
                                         {recurrence === 'none' ? t('calendar.panels.recurrence.none') :
                                             recurrence === 'daily' ? t('calendar.panels.recurrence.daily') :
@@ -459,15 +459,15 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                     </span>
                                 </div>
                             </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a24] border-gray-800 text-white">
-                                <SelectItem value="none" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.none')}</SelectItem>
-                                <SelectItem value="daily" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.daily')}</SelectItem>
-                                <SelectItem value="weekly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.weekly')}</SelectItem>
-                                <SelectItem value="biweekly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.biweekly')}</SelectItem>
-                                <SelectItem value="monthly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.monthly')}</SelectItem>
-                                <SelectItem value="quarterly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.quarterly')}</SelectItem>
-                                <SelectItem value="yearly" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.yearly')}</SelectItem>
-                                <SelectItem value="custom" className="text-sm cursor-pointer focus:bg-gray-800 text-gray-300 focus:text-white py-2">{t('calendar.panels.recurrence.custom')}</SelectItem>
+                            <SelectContent className="bg-[var(--app-bg-card)] border-[var(--app-border)] text-[var(--app-text-primary)]">
+                                <SelectItem value="none" className="text-sm cursor-pointer focus:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] focus:text-[var(--app-text-primary)] py-2">{t('calendar.panels.recurrence.none')}</SelectItem>
+                                <SelectItem value="daily" className="text-sm cursor-pointer focus:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] focus:text-[var(--app-text-primary)] py-2">{t('calendar.panels.recurrence.daily')}</SelectItem>
+                                <SelectItem value="weekly" className="text-sm cursor-pointer focus:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] focus:text-[var(--app-text-primary)] py-2">{t('calendar.panels.recurrence.weekly')}</SelectItem>
+                                <SelectItem value="biweekly" className="text-sm cursor-pointer focus:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] focus:text-[var(--app-text-primary)] py-2">{t('calendar.panels.recurrence.biweekly')}</SelectItem>
+                                <SelectItem value="monthly" className="text-sm cursor-pointer focus:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] focus:text-[var(--app-text-primary)] py-2">{t('calendar.panels.recurrence.monthly')}</SelectItem>
+                                <SelectItem value="quarterly" className="text-sm cursor-pointer focus:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] focus:text-[var(--app-text-primary)] py-2">{t('calendar.panels.recurrence.quarterly')}</SelectItem>
+                                <SelectItem value="yearly" className="text-sm cursor-pointer focus:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] focus:text-[var(--app-text-primary)] py-2">{t('calendar.panels.recurrence.yearly')}</SelectItem>
+                                <SelectItem value="custom" className="text-sm cursor-pointer focus:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] focus:text-[var(--app-text-primary)] py-2">{t('calendar.panels.recurrence.custom')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -475,27 +475,27 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                     {/* Recurrence End Date (Until) */}
                     {recurrence !== 'none' && (
                         <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                            <span className="text-xs text-gray-500 font-bold uppercase ml-1">{t('calendar.panels.until')}</span>
+                            <span className="text-xs text-[var(--app-text-muted)] font-bold uppercase ml-1">{t('calendar.panels.until')}</span>
                             <DueDatePicker
                                 value={recurrenceEnd}
                                 onChange={(date) => setRecurrenceEnd(date || '')}
                                 placeholder={t('calendar.panels.until')}
                                 className="w-full"
-                                triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[#1a1a24] text-gray-300 hover:text-white hover:bg-[#1a1a24] placeholder-gray-500 border-none justify-start text-left font-normal shadow-none"
+                                triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
                             />
                         </div>
                     )}
 
                     {/* Team/Member Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                             {scope === 'team' ? t('calendar.panels.teams_label') : t('calendar.fields.members')} <span className="text-red-400">*</span>
                         </label>
                         <div className="relative group">
                             <div className={cn(
-                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
-                                scope === 'team' && teamIds.length === 0 && "text-gray-500",
-                                scope === 'personal' && selectedMembers.length === 0 && "text-gray-500",
+                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                scope === 'team' && teamIds.length === 0 && "text-[var(--app-text-muted)]",
+                                scope === 'personal' && selectedMembers.length === 0 && "text-[var(--app-text-muted)]",
                                 isRestrictedMember && "cursor-default opacity-80"
                             )}>
                                 <Select
@@ -524,15 +524,15 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                                     e.stopPropagation()
                                                                     setTeamIds(teamIds.filter(t => t !== id))
                                                                 }}
-                                                                className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer"
+                                                                className="flex items-center gap-1 bg-[var(--app-bg-elevated)] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-[var(--app-text-secondary)] border border-[var(--app-border)] group/tag transition-colors z-50 relative cursor-pointer"
                                                             >
                                                                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.color || '#666' }} />
                                                                 {team.name}
-                                                                <X size={12} className="ml-1 text-gray-500 group-hover/tag:text-red-400 transition-colors" />
+                                                                <X size={12} className="ml-1 text-[var(--app-text-muted)] group-hover/tag:text-red-400 transition-colors" />
                                                             </div>
                                                         )
                                                     })
-                                                ) : <span className="text-gray-500">{t('settings.organization.edit_panel.select_teams')}</span>
+                                                ) : <span className="text-[var(--app-text-muted)]">{t('settings.organization.edit_panel.select_teams')}</span>
                                             ) : (
                                                 selectedMembers.length > 0 ? (
                                                     selectedMembers.map(id => {
@@ -548,21 +548,21 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                                     setSelectedMembers(selectedMembers.filter(m => m !== id))
                                                                 }}
                                                                 className={cn(
-                                                                    "flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative",
+                                                                    "flex items-center gap-1 bg-[var(--app-bg-elevated)] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-[var(--app-text-secondary)] border border-[var(--app-border)] group/tag transition-colors z-50 relative",
                                                                     !isRestrictedMember && "cursor-pointer"
                                                                 )}
                                                             >
                                                                 {member.avatar && <img src={member.avatar} className="w-4 h-4 rounded-full" />}
                                                                 {member.name}
-                                                                {!isRestrictedMember && <X size={12} className="ml-1 text-gray-500 group-hover/tag:text-red-400 transition-colors" />}
+                                                                {!isRestrictedMember && <X size={12} className="ml-1 text-[var(--app-text-muted)] group-hover/tag:text-red-400 transition-colors" />}
                                                             </div>
                                                         )
                                                     })
-                                                ) : <span className="text-gray-500">{t('calendar.placeholders.select_members')}</span>
+                                                ) : <span className="text-[var(--app-text-muted)]">{t('calendar.placeholders.select_members')}</span>
                                             )}
                                         </div>
                                     </SelectTrigger>
-                                    <SelectContent className="bg-[#1a1a24] border-gray-800 text-white max-h-[200px]">
+                                    <SelectContent className="bg-[var(--app-bg-card)] border-[var(--app-border)] text-[var(--app-text-primary)] max-h-[200px]">
                                         {scope === 'team' ? (
                                             teams.length > 0 ? (
                                                 teams.map((team) => (
@@ -571,7 +571,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                         value={team.id}
                                                         disabled={teamIds.includes(team.id)}
                                                         className={cn(
-                                                            "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
+                                                            "focus:bg-[var(--app-bg-elevated)] focus:text-[var(--app-text-primary)] cursor-pointer py-3 text-[var(--app-text-secondary)] data-[state=checked]:text-[var(--app-text-primary)]",
                                                             teamIds.includes(team.id) && "opacity-50"
                                                         )}
                                                     >
@@ -585,7 +585,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                     </SelectItem>
                                                 ))
                                             ) : (
-                                                <div className="p-3 text-xs text-gray-500 text-center">{t('settings.organization.edit_panel.no_teams_found')}</div>
+                                                <div className="p-3 text-xs text-[var(--app-text-muted)] text-center">{t('settings.organization.edit_panel.no_teams_found')}</div>
                                             )
                                         ) : (
                                             teamMembers.length > 0 ? (
@@ -597,7 +597,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                             value={member.id}
                                                             disabled={selectedMembers.includes(member.id)}
                                                             className={cn(
-                                                                "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
+                                                                "focus:bg-[var(--app-bg-elevated)] focus:text-[var(--app-text-primary)] cursor-pointer py-3 text-[var(--app-text-secondary)] data-[state=checked]:text-[var(--app-text-primary)]",
                                                                 selectedMembers.includes(member.id) && "opacity-50"
                                                             )}
                                                         >
@@ -609,23 +609,23 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                                         </SelectItem>
                                                     ))
                                             ) : (
-                                                <div className="p-3 text-xs text-gray-500 text-center">{t('calendar.placeholders.no_members_found')}</div>
+                                                <div className="p-3 text-xs text-[var(--app-text-muted)] text-center">{t('calendar.placeholders.no_members_found')}</div>
                                             )
                                         )}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <p className="text-[10px] text-gray-500 mt-1.5 ml-1">
+                            <p className="text-[10px] text-[var(--app-text-muted)] mt-1.5 ml-1">
                                 {t('calendar.panels.teams_help')}
                             </p>
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="p-6 border-t border-gray-800 flex gap-3 bg-[#12121a] rounded-b-2xl">
+                    <div className="p-6 border-t border-[var(--app-border)] flex gap-3 bg-[var(--app-bg-card)] rounded-b-2xl">
                         <button
                             onClick={onClose}
-                            className="flex-1 px-4 py-3 rounded-xl border border-gray-800 text-gray-300 font-medium hover:bg-gray-800 hover:text-white transition-colors"
+                            className="flex-1 px-4 py-3 rounded-xl border border-[var(--app-border)] text-[var(--app-text-secondary)] font-medium hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)] transition-colors"
                         >
                             {t('calendar.actions.cancel')}
                         </button>

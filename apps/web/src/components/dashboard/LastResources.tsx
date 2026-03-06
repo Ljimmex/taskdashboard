@@ -28,10 +28,10 @@ export function LastResources({ files, onSeeAll, onFileClick }: LastResourcesPro
     }
 
     return (
-        <div className="rounded-2xl bg-[#12121a] p-5">
+        <div className="rounded-2xl bg-[var(--app-bg-card)] p-5 transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-white">{t('dashboard.lastResources')}</h3>
+                <h3 className="font-semibold text-[var(--app-text-primary)]">{t('dashboard.lastResources')}</h3>
                 <button
                     onClick={onSeeAll}
                     className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
@@ -50,20 +50,20 @@ export function LastResources({ files, onSeeAll, onFileClick }: LastResourcesPro
                     files.slice(0, 5).map((file) => (
                         <div
                             key={file.id}
-                            className="flex items-center gap-3 group cursor-pointer hover:bg-[#1a1a24] p-2 rounded-xl transition-colors -mx-2"
+                            className="flex items-center gap-3 group cursor-pointer hover:bg-[var(--app-bg-elevated)] p-2 rounded-xl transition-colors -mx-2"
                             onClick={() => onFileClick?.(file.id)}
                         >
                             {/* Icon Container */}
-                            <div className="w-10 h-10 rounded-xl bg-[#1a1a24] group-hover:bg-[#20202b] flex items-center justify-center flex-shrink-0 transition-colors">
+                            <div className="w-10 h-10 rounded-xl bg-[var(--app-bg-elevated)] group-hover:bg-[var(--app-bg-card)] flex items-center justify-center flex-shrink-0 transition-colors border border-[var(--app-border)]">
                                 {getFileIcon(file.mimeType)}
                             </div>
 
                             {/* Info */}
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-medium text-gray-200 truncate group-hover:text-amber-400 transition-colors">
+                                <h4 className="text-sm font-medium text-[var(--app-text-primary)] truncate group-hover:text-amber-500 transition-colors">
                                     {file.name}
                                 </h4>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <div className="flex items-center gap-2 text-xs text-[var(--app-text-secondary)]">
                                     <span>{formatSize(file.size || 0)}</span>
                                     <span>•</span>
                                     <span>{formatDistanceToNow(new Date(file.createdAt), { addSuffix: true })}</span>

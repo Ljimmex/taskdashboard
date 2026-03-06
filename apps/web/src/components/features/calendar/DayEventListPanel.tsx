@@ -100,27 +100,27 @@ export function DayEventListPanel({
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#16161f] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-gray-800 ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-sidebar)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
-                <div className="flex-none p-6 border-b border-gray-800 rounded-t-2xl bg-[#1e1e29]">
+                <div className="flex-none p-6 border-b border-[var(--app-border)] rounded-t-2xl bg-[var(--app-bg-sidebar)]">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                                <Calendar size={20} className="text-amber-500" />
+                            <div className="w-10 h-10 rounded-xl bg-[var(--app-bg-input)] flex items-center justify-center border border-[var(--app-border)]">
+                                <Calendar size={20} className="text-[var(--app-text-muted)]" />
                             </div>
-                            <h2 className="text-xl font-bold text-white">{t('calendar.panels.day_list.title')}</h2>
+                            <h2 className="text-xl font-bold text-[var(--app-text-primary)]">{t('calendar.panels.day_list.title')}</h2>
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                            className="p-2 rounded-lg text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors"
                         >
                             <X size={20} />
                         </button>
                     </div>
-                    <p className="text-sm text-gray-400">{formattedDate}</p>
+                    <p className="text-sm text-[var(--app-text-secondary)]">{formattedDate}</p>
                     <div className="mt-4 flex items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-lg bg-gray-800 text-xs font-medium text-gray-300">
+                        <span className="px-2.5 py-1 rounded-lg bg-[var(--app-bg-elevated)] text-xs font-medium text-[var(--app-text-secondary)]">
                             {t('calendar.panels.day_list.count', { count: events.length })}
                         </span>
                     </div>
@@ -129,36 +129,44 @@ export function DayEventListPanel({
                 {/* Event List */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {events.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm">
-                            <p>{t('calendar.panels.day_list.no_events')}</p>
+                        <div className="flex flex-col items-center justify-center h-full text-[var(--app-text-muted)] text-sm">
+                            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                                <div className="w-16 h-16 rounded-2xl bg-[var(--app-bg-input)] flex items-center justify-center mb-4 border border-[var(--app-border)]">
+                                    <Calendar className="w-8 h-8 text-[var(--app-text-muted)]" />
+                                </div>
+                                <h3 className="text-sm font-semibold text-[var(--app-text-primary)] mb-1">{t('calendar.no_events')}</h3>
+                                <p className="text-xs text-[var(--app-text-muted)] max-w-[200px] leading-relaxed">
+                                    {t('calendar.no_events_desc')}
+                                </p>
+                            </div>
                         </div>
                     ) : (
                         events.map((event) => (
                             <div
                                 key={event.id}
                                 onClick={() => onEventClick(event)}
-                                className="group p-4 rounded-xl bg-[#1a1a24] border border-gray-800/50 hover:border-gray-600 cursor-pointer transition-all hover:bg-[#1e1e2a]"
+                                className="group p-4 rounded-xl bg-[var(--app-bg-card)] border border-[var(--app-border)] hover:border-amber-500/50 cursor-pointer transition-all hover:bg-[var(--app-bg-elevated)]"
                             >
                                 <div className="flex items-start gap-3">
                                     {/* Type indicator */}
                                     <div className={`w-1 self-stretch rounded-full ${getTypeColor(event.type)} shrink-0 mt-0.5`} />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium uppercase tracking-wider ${event.type === CalendarEventType.MEETING ? 'bg-blue-500/10 text-blue-400' :
-                                                event.type === CalendarEventType.TASK ? 'bg-emerald-500/10 text-emerald-400' :
-                                                    event.type === CalendarEventType.REMINDER ? 'bg-purple-500/10 text-purple-400' :
-                                                        'bg-amber-500/10 text-amber-400'
+                                            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium uppercase tracking-wider ${event.type === CalendarEventType.MEETING ? 'bg-blue-500/10 text-blue-500' :
+                                                event.type === CalendarEventType.TASK ? 'bg-emerald-500/10 text-emerald-500' :
+                                                    event.type === CalendarEventType.REMINDER ? 'bg-purple-500/10 text-purple-500' :
+                                                        'bg-amber-500/10 text-amber-500'
                                                 }`}>
                                                 {getTypeLabel(event.type, t)}
                                             </span>
                                         </div>
-                                        <h3 className="text-sm font-medium text-white group-hover:text-amber-200 transition-colors truncate">
+                                        <h3 className="text-sm font-medium text-[var(--app-text-primary)] group-hover:text-amber-500 transition-colors truncate">
                                             {event.title}
                                         </h3>
                                         {event.description && (
-                                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{event.description}</p>
+                                            <p className="text-xs text-[var(--app-text-muted)] mt-1 line-clamp-2">{event.description}</p>
                                         )}
-                                        <div className="flex items-center gap-3 mt-2 text-gray-500">
+                                        <div className="flex items-center gap-3 mt-2 text-[var(--app-text-muted)]">
                                             {!event.isAllDay && (
                                                 <div className="flex items-center gap-1">
                                                     <Clock size={12} />

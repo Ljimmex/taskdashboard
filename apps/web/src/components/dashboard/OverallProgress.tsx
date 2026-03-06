@@ -172,10 +172,10 @@ export function OverallProgress({
     }
 
     return (
-        <div className="rounded-2xl bg-[#12121a] p-5 h-[340px] flex flex-col relative transition-all duration-300 hover:shadow-lg hover:shadow-black/20">
+        <div className="rounded-2xl bg-[var(--app-bg-card)] p-5 h-[340px] flex flex-col relative transition-all duration-300 hover:shadow-lg hover:shadow-[var(--app-shadow-card)]">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-white">Postęp Zadań</h3>
+                <h3 className="font-semibold text-[var(--app-text-primary)]">{t('dashboard.taskProgress', { defaultValue: 'Postęp Zadań' })}</h3>
                 {/* Scope Dropdown */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -183,15 +183,15 @@ export function OverallProgress({
                             {scope === 'my_projects' ? t('dashboard.myProjects') : t('dashboard.entireWorkspace')} <ChevronDown size={14} />
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#12121a] border-[#272732] text-white z-50">
+                    <DropdownMenuContent align="end" className="bg-[var(--app-bg-card)] border-[var(--app-border)] text-[var(--app-text-primary)] z-50">
                         <DropdownMenuItem
-                            className={`cursor-pointer ${scope === 'my_projects' ? 'bg-[#1a1a24] text-[#F2CE88]' : 'hover:bg-[#1a1a24]'}`}
+                            className={`cursor-pointer ${scope === 'my_projects' ? 'bg-[var(--app-bg-elevated)] text-[#F2CE88]' : 'hover:bg-[var(--app-bg-elevated)]'}`}
                             onSelect={() => setScope('my_projects')}
                         >
                             {t('dashboard.myProjects')}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                            className={`cursor-pointer ${scope === 'entire_workspace' ? 'bg-[#1a1a24] text-[#F2CE88]' : 'hover:bg-[#1a1a24]'}`}
+                            className={`cursor-pointer ${scope === 'entire_workspace' ? 'bg-[var(--app-bg-elevated)] text-[#F2CE88]' : 'hover:bg-[var(--app-bg-elevated)]'}`}
                             onSelect={() => setScope('entire_workspace')}
                         >
                             {t('dashboard.entireWorkspace')}
@@ -203,18 +203,18 @@ export function OverallProgress({
             {/* Date Range Dropdown */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1.5 text-[10px] text-gray-500 mb-2 w-fit px-2 py-1 rounded bg-gray-800/30 hover:bg-gray-800/50 transition-colors outline-none cursor-pointer">
+                    <button className="flex items-center gap-1.5 text-[10px] text-[var(--app-text-muted)] mb-2 w-fit px-2 py-1 rounded bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] transition-colors outline-none cursor-pointer">
                         <CalendarSmallIcon />
                         {getDateRangeLabel(dateRange)}
                         <span className="ml-1 text-[8px]">▼</span>
                     </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-[#12121a] border-[#272732] text-white z-50">
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('all_time')}>{t('dashboard.allTime')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('last_year')}>{t('dashboard.lastYear')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('last_month')}>{t('dashboard.lastMonth')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('last_week')}>{t('dashboard.lastWeek')}</DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-[#1a1a24] cursor-pointer" onSelect={() => setDateRange('last_24h')}>{t('dashboard.last24h')}</DropdownMenuItem>
+                <DropdownMenuContent align="start" className="bg-[var(--app-bg-card)] border-[var(--app-border)] text-[var(--app-text-primary)] z-50">
+                    <DropdownMenuItem className="hover:bg-[var(--app-bg-elevated)] cursor-pointer" onSelect={() => setDateRange('all_time')}>{t('dashboard.allTime')}</DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-[var(--app-bg-elevated)] cursor-pointer" onSelect={() => setDateRange('last_year')}>{t('dashboard.lastYear')}</DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-[var(--app-bg-elevated)] cursor-pointer" onSelect={() => setDateRange('last_month')}>{t('dashboard.lastMonth')}</DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-[var(--app-bg-elevated)] cursor-pointer" onSelect={() => setDateRange('last_week')}>{t('dashboard.lastWeek')}</DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-[var(--app-bg-elevated)] cursor-pointer" onSelect={() => setDateRange('last_24h')}>{t('dashboard.last24h')}</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -225,7 +225,7 @@ export function OverallProgress({
                     <path
                         d={bgArc}
                         fill="none"
-                        stroke="#1E1E29"
+                        stroke="var(--app-bg-elevated)"
                         strokeWidth={strokeWidth}
                         strokeLinecap="round"
                     />
@@ -257,8 +257,8 @@ export function OverallProgress({
 
                 {/* Center Text */}
                 <div className="absolute bottom-0 flex flex-col items-center justify-end h-full pb-4">
-                    <span className="text-5xl font-bold text-white mb-2 tracking-tight">{percentage}%</span>
-                    <span className="text-xs text-gray-400 bg-[#1a1a24] px-3 py-1.5 rounded-full">
+                    <span className="text-5xl font-bold text-[var(--app-text-primary)] mb-2 tracking-tight">{percentage}%</span>
+                    <span className="text-xs text-[var(--app-text-secondary)] bg-[var(--app-bg-elevated)] px-3 py-1.5 rounded-full">
                         {t('dashboard.completed')}: {stats.completed} / {stats.total}
                     </span>
                 </div>

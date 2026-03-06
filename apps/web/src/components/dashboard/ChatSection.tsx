@@ -43,13 +43,13 @@ export function ChatSection({ contacts, onSeeAll, onContactClick }: ChatSectionP
     }
 
     return (
-        <div className="rounded-2xl bg-[#12121a] p-5">
+        <div className="rounded-2xl bg-[var(--app-bg-card)] p-5 transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-white">{t('dashboard.chat')}</h3>
+                <h3 className="font-semibold text-[var(--app-text-primary)]">{t('dashboard.chat')}</h3>
                 <button
                     onClick={onSeeAll}
-                    className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                    className="text-xs text-amber-500 hover:text-amber-400 transition-colors"
                 >
                     {t('dashboard.seeAll')}
                 </button>
@@ -60,7 +60,7 @@ export function ChatSection({ contacts, onSeeAll, onContactClick }: ChatSectionP
                 {/* Left Arrow */}
                 <button
                     onClick={() => scroll('left')}
-                    className={`absolute left-0 top-1/2 -translate-y-1/2 -ml-3 z-10 w-8 h-8 rounded-full bg-[#1a1a24] border border-gray-700 items-center justify-center text-gray-400 shadow-xl hover:text-white hover:bg-gray-800 transition-all ${showLeftArrow ? 'flex opacity-0 group-hover/scroll:opacity-100 transition-opacity duration-300' : 'hidden'
+                    className={`absolute left-0 top-1/2 -translate-y-1/2 -ml-3 z-10 w-8 h-8 rounded-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] items-center justify-center text-[var(--app-text-secondary)] shadow-xl hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] transition-all ${showLeftArrow ? 'flex opacity-0 group-hover/scroll:opacity-100 transition-opacity duration-300' : 'hidden'
                         }`}
                 >
                     <ChevronLeft className="w-4 h-4" />
@@ -86,10 +86,10 @@ export function ChatSection({ contacts, onSeeAll, onContactClick }: ChatSectionP
                                     )}
                                 </div>
                                 {contact.isOnline && (
-                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#12121a]" />
+                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[var(--app-bg-card)]" />
                                 )}
                             </div>
-                            <span className="text-xs text-gray-400 group-hover:text-white transition-colors">
+                            <span className="text-xs text-[var(--app-text-secondary)] group-hover:text-[var(--app-text-primary)] transition-colors">
                                 {contact.name.split(' ')[0]}
                             </span>
                         </button>
@@ -99,7 +99,7 @@ export function ChatSection({ contacts, onSeeAll, onContactClick }: ChatSectionP
                 {/* Right Arrow */}
                 <button
                     onClick={() => scroll('right')}
-                    className={`absolute right-0 top-1/2 -translate-y-1/2 -mr-3 z-10 w-8 h-8 rounded-full bg-[#1a1a24] border border-gray-700 items-center justify-center text-gray-400 shadow-xl hover:text-white hover:bg-gray-800 transition-all ${showRightArrow ? 'flex opacity-0 group-hover/scroll:opacity-100 transition-opacity duration-300' : 'hidden'
+                    className={`absolute right-0 top-1/2 -translate-y-1/2 -mr-3 z-10 w-8 h-8 rounded-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] items-center justify-center text-[var(--app-text-secondary)] shadow-xl hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] transition-all ${showRightArrow ? 'flex opacity-0 group-hover/scroll:opacity-100 transition-opacity duration-300' : 'hidden'
                         }`}
                 >
                     <ChevronRight className="w-4 h-4" />

@@ -108,16 +108,16 @@ export function ViewEventPanel({
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[#12121a] rounded-2xl shadow-2xl z-50 flex flex-col border border-gray-800/50 transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[var(--app-bg-card)] rounded-2xl shadow-2xl z-50 flex flex-col border border-[var(--app-border)] transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-[#14141b] rounded-t-2xl">
+                <div className="flex items-center justify-between p-6 border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)] rounded-t-2xl">
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center`}>
                             {getTypeIcon(event.type)}
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">{t('calendar.panels.view_event.title')}</h2>
+                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('calendar.panels.view_event.title')}</h2>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium uppercase tracking-wider ${colors.bg} ${colors.text}`}>
                                     {getTypeLabel(event.type, t)}
@@ -137,7 +137,7 @@ export function ViewEventPanel({
                                 </button>
                                 <button
                                     onClick={handleDelete}
-                                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                    className="p-2 text-[var(--app-text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                                     title={t('calendar.panels.delete_event')}
                                 >
                                     <Trash2 size={18} />
@@ -146,7 +146,7 @@ export function ViewEventPanel({
                         )}
                         <button
                             onClick={onClose}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                            className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                         >
                             <X size={20} />
                         </button>
@@ -157,30 +157,30 @@ export function ViewEventPanel({
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
                     {/* Title */}
                     <div>
-                        <h1 className="text-2xl font-bold text-white leading-tight">{event.title}</h1>
+                        <h1 className="text-2xl font-bold text-[var(--app-text-primary)] leading-tight">{event.title}</h1>
                     </div>
 
                     {/* Description */}
                     {event.description && (
-                        <div className="bg-[#1a1a24] rounded-xl p-4">
-                            <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">{event.description}</p>
+                        <div className="bg-[var(--app-bg-input)] rounded-xl p-4">
+                            <p className="text-sm text-[var(--app-text-secondary)] leading-relaxed whitespace-pre-wrap">{event.description}</p>
                         </div>
                     )}
 
                     {/* Date & Time */}
                     <div className="space-y-3">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.panels.date_time')}</h3>
-                        <div className="bg-[#1a1a24] rounded-xl p-4 space-y-3">
+                        <h3 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">{t('calendar.panels.date_time')}</h3>
+                        <div className="bg-[var(--app-bg-input)] rounded-xl p-4 space-y-3">
                             <div className="flex items-center gap-3">
-                                <Calendar size={16} className="text-gray-400" />
-                                <span className="text-sm text-white">
+                                <Calendar size={16} className="text-[var(--app-text-muted)]" />
+                                <span className="text-sm text-[var(--app-text-primary)]">
                                     {format(parseISO(event.startAt), dateFormat, { locale: dateLocale })}
                                 </span>
                             </div>
                             {!event.isAllDay && (
                                 <div className="flex items-center gap-3">
-                                    <Clock size={16} className="text-gray-400" />
-                                    <span className="text-sm text-white">
+                                    <Clock size={16} className="text-[var(--app-text-muted)]" />
+                                    <span className="text-sm text-[var(--app-text-primary)]">
                                         {format(parseISO(event.startAt), 'HH:mm')} – {format(parseISO(event.endAt), 'HH:mm')}
                                     </span>
                                 </div>
@@ -197,11 +197,11 @@ export function ViewEventPanel({
                     {/* Location */}
                     {event.location && (
                         <div className="space-y-3">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.panels.location')}</h3>
-                            <div className="bg-[#1a1a24] rounded-xl p-4">
+                            <h3 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">{t('calendar.panels.location')}</h3>
+                            <div className="bg-[var(--app-bg-input)] rounded-xl p-4">
                                 <div className="flex items-center gap-3">
-                                    <MapPin size={16} className="text-gray-400" />
-                                    <span className="text-sm text-white">{event.location}</span>
+                                    <MapPin size={16} className="text-[var(--app-text-muted)]" />
+                                    <span className="text-sm text-[var(--app-text-primary)]">{event.location}</span>
                                 </div>
                             </div>
                         </div>
@@ -210,8 +210,8 @@ export function ViewEventPanel({
                     {/* Meeting Link */}
                     {event.meetingLink && (
                         <div className="space-y-3">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.panels.meeting_link')}</h3>
-                            <div className="bg-[#1a1a24] rounded-xl p-4">
+                            <h3 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">{t('calendar.panels.meeting_link')}</h3>
+                            <div className="bg-[var(--app-bg-input)] rounded-xl p-4">
                                 <a
                                     href={event.meetingLink}
                                     target="_blank"
@@ -229,8 +229,8 @@ export function ViewEventPanel({
                     {/* Creator */}
                     {event.creator && (
                         <div className="space-y-3">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('calendar.panels.created_by')}</h3>
-                            <div className="bg-[#1a1a24] rounded-xl p-4">
+                            <h3 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">{t('calendar.panels.created_by')}</h3>
+                            <div className="bg-[var(--app-bg-input)] rounded-xl p-4">
                                 <div className="flex items-center gap-3">
                                     {event.creator.image ? (
                                         <img src={event.creator.image} alt={event.creator.name} className="w-8 h-8 rounded-full object-cover" />
@@ -239,7 +239,7 @@ export function ViewEventPanel({
                                             {event.creator.name?.charAt(0) || '?'}
                                         </div>
                                     )}
-                                    <span className="text-sm text-white font-medium">{event.creator.name}</span>
+                                    <span className="text-sm text-[var(--app-text-primary)] font-medium">{event.creator.name}</span>
                                 </div>
                             </div>
                         </div>

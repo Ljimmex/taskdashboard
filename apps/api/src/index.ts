@@ -29,6 +29,8 @@ import foldersRoutes from './modules/folders/routes'
 import conversationsRoutes from './modules/conversations/routes'
 import { webhooksRoutes } from './modules/webhooks/routes'
 import { sessionsRoutes } from './modules/sessions/routes'
+import { docsRoutes } from './modules/docs/routes'
+import { whiteboardsRoutes } from './modules/whiteboards/routes'
 import annotationsRoutes from './modules/annotations/routes'
 
 // Create OpenAPI Hono app
@@ -253,6 +255,8 @@ app.route('/api/templates', templatesRoutes)
 app.route('/api/conversations', conversationsRoutes)
 app.route('/api/webhooks', webhooksRoutes)
 app.route('/api/sessions', sessionsRoutes)
+app.route('/api/docs', docsRoutes)
+app.route('/api/whiteboards', whiteboardsRoutes)
 app.route('/api/annotations', annotationsRoutes)
 
 

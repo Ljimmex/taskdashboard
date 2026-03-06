@@ -19,15 +19,15 @@ export function ProjectCard({
     onViewProject,
 }: ProjectCardProps) {
     return (
-        <div className="rounded-2xl bg-[#1a1a24] p-5 relative">
+        <div className="rounded-2xl bg-[var(--app-bg-elevated)] p-5 relative transition-all duration-300">
             {/* Header with icon and title */}
             <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-lg">
                     {icon}
                 </div>
                 <div className="flex-1">
-                    <h3 className="font-medium text-white text-sm mb-0.5">{title}</h3>
-                    <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                    <h3 className="font-medium text-[var(--app-text-primary)] text-sm mb-0.5">{title}</h3>
+                    <p className="text-xs text-[var(--app-text-secondary)] flex items-center gap-1.5">
                         <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
                             <circle cx="16" cy="16" r="12" fill="#9E9E9E" />
                             <path d="M16 16V10" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
@@ -42,10 +42,10 @@ export function ProjectCard({
             {/* Progress section */}
             <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-500">{daysLeft} days left</span>
-                    <span className="text-xs text-amber-400 font-medium">{progress}%</span>
+                    <span className="text-xs text-[var(--app-text-secondary)]">{daysLeft} days left</span>
+                    <span className="text-xs text-amber-500 font-medium">{progress}%</span>
                 </div>
-                <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-1 bg-[var(--app-bg-deepest)] rounded-full overflow-hidden">
                     <div
                         className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full"
                         style={{ width: `${progress}%` }}
@@ -60,7 +60,7 @@ export function ProjectCard({
                         {assignees.slice(0, 5).map((assignee, i) => (
                             <div
                                 key={assignee.id}
-                                className="w-6 h-6 rounded-full border-2 border-[#1a1a24] bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black text-[10px] font-bold"
+                                className="w-6 h-6 rounded-full border-2 border-[var(--app-bg-elevated)] bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black text-[10px] font-bold"
                                 style={{ zIndex: assignees.length - i }}
                                 title={assignee.name}
                             >
@@ -72,12 +72,12 @@ export function ProjectCard({
                             </div>
                         ))}
                         {assignees.length > 5 && (
-                            <div className="w-6 h-6 rounded-full border-2 border-[#1a1a24] bg-gray-800 flex items-center justify-center text-white text-[10px] z-0">
+                            <div className="w-6 h-6 rounded-full border-2 border-[var(--app-bg-elevated)] bg-[var(--app-bg-deepest)] flex items-center justify-center text-[var(--app-text-secondary)] text-[10px] z-0">
                                 +{assignees.length - 5}
                             </div>
                         )}
                     </div>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-[var(--app-text-secondary)]">
                         T: {assignees[0]?.name.split(' ')[0] || 'Unassigned'}
                         {assignees.length > 1 && ` +${assignees.length - 1}`}
                     </span>
@@ -85,7 +85,7 @@ export function ProjectCard({
 
                 <button
                     onClick={onViewProject}
-                    className="px-3 py-1.5 rounded-lg bg-[#252530] text-xs text-gray-300 hover:bg-[#2f2f3d] hover:text-white transition-all shadow-md group"
+                    className="px-3 py-1.5 rounded-lg bg-[var(--app-bg-deepest)] text-xs text-[var(--app-text-secondary)] hover:bg-amber-500/10 hover:text-amber-500 transition-all shadow-md group font-medium"
                 >
                     View project
                 </button>

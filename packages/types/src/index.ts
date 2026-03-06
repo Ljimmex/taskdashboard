@@ -114,6 +114,38 @@ export interface Folder {
 }
 
 // =============================================================================
+// DOCUMENT TYPES
+// =============================================================================
+
+export interface DocumentRecord {
+    id: string
+    workspaceId: string
+    title: string
+    content: any // Tiptap JSON structure
+    createdBy: string
+    isArchived: boolean
+    createdAt: Date | string
+    updatedAt: Date | string
+    creator?: User
+}
+
+// =============================================================================
+// WHITEBOARD TYPES
+// =============================================================================
+
+export interface WhiteboardRecord {
+    id: string
+    workspaceId: string
+    name: string
+    data: any // Tldraw data structure
+    createdBy: string
+    isArchived: boolean
+    createdAt: Date | string
+    updatedAt: Date | string
+    creator?: User
+}
+
+// =============================================================================
 // WORKSPACE TYPES
 // =============================================================================
 

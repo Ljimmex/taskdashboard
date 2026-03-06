@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useThemeStore } from '@/lib/themeStore'
 import { useLocation, useParams } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { signOut, useSession } from '@/lib/auth'
 import { apiFetchJson } from '@/lib/api'
 import { sidebarIcons as icons } from './icons'
 import { useTranslation } from 'react-i18next'
+import { cn } from '@/lib/utils'
 import { WorkspaceSwitcher } from '../features/workspace/WorkspaceSwitcher'
 import { OrganizationSettingsPanel } from '../features/settings/panels/OrganizationSettingsPanel'
 
@@ -17,7 +19,7 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
     const location = useLocation()
     const { t } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
-    const [isDarkMode, setIsDarkMode] = useState(true)
+    const { isDark: isDarkMode, toggle: toggleTheme, setTheme } = useThemeStore()
     const [hoveredItem, setHoveredItem] = useState<string | null>(null)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
@@ -75,15 +77,19 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
         { iconKey: 'messages', label: t('dashboard.messages'), path: `${baseUrl}/messages`, count: unreadCount || null },
         { iconKey: 'calendar', label: t('dashboard.calendar'), path: `${baseUrl}/calendar`, count: null },
         { iconKey: 'files', label: t('dashboard.files'), path: `${baseUrl}/files`, count: null },
-        { iconKey: 'board', label: t('dashboard.board'), path: `${baseUrl}/board`, count: null },
+        { iconKey: 'board', label: t('dashboard.resources'), path: `${baseUrl}/board`, count: null },
     ]
 
     return (
-        <aside className={`fixed left-0 top-0 h-screen w-56 bg-[#0d0d14] flex flex-col z-40 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} animate-slide-in`}>
+        <aside className={`fixed left-0 top-0 h-screen w-56 bg-[var(--app-bg-sidebar)] flex flex-col z-40 transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} animate-slide-in`}>
             {/* Logo */}
-            <div className="p-5">
+            <div className="p-5 flex items-center h-16">
                 <a href="/" className="flex items-center gap-2">
-                    <img src="/Zadano/Zadano_Logo_Full_Dark.svg" alt="Zadano.app" className="h-7" />
+                    <img
+                        src={isDarkMode ? "/Zadano/Zadano_Logo_Full_Dark.svg" : "/Zadano/Zadano_Logo_Full_Light.svg"}
+                        alt="Zadano.app"
+                        className="h-7 transition-opacity duration-300"
+                    />
                 </a>
             </div>
 
@@ -106,20 +112,20 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                             onMouseEnter={() => setHoveredItem(item.path)}
                             onMouseLeave={() => setHoveredItem(null)}
                             className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all ${isActive
-                                ? 'bg-[#1a1a24]'
-                                : 'hover:bg-gray-800/30'
+                                ? 'bg-[var(--app-bg-elevated)]'
+                                : 'hover:bg-[var(--app-bg-elevated)]/50'
                                 }`}
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-6 h-6 flex items-center justify-center">
                                     {showGold ? icon.gold : icon.gray}
                                 </div>
-                                <span className={`text-sm ${showGold ? 'text-[#F2CE88] font-medium' : 'text-gray-500'}`}>
+                                <span className={`text-sm ${showGold ? 'text-[var(--app-accent-text)] font-medium' : 'text-[var(--app-text-secondary)]'}`}>
                                     {item.label}
                                 </span>
                             </div>
                             {item.count && (
-                                <span className={`text-xs ${showGold ? 'text-[#F2CE88]/60' : 'text-gray-600'}`}>
+                                <span className={`text-xs ${showGold ? 'text-[var(--app-accent-text)]/60' : 'text-[var(--app-text-muted)]'}`}>
                                     {item.count}
                                 </span>
                             )}
@@ -129,7 +135,7 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
             </nav>
 
             {/* Separator line */}
-            <div className="border-t border-gray-800/50 mx-3 mt-2" />
+            <div className="border-t border-[var(--app-border)] mx-3 mt-2" />
 
             {/* Organisation Settings */}
             {canManageSettings && (
@@ -139,14 +145,14 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                         onMouseEnter={() => setHoveredItem('settings')}
                         onMouseLeave={() => setHoveredItem(null)}
                         className={`flex items-center gap-3 px-3 py-2 w-full rounded-lg transition-all ${hoveredItem === 'settings' || isSettingsOpen
-                            ? 'bg-[#1a1a24] text-[#F2CE88]'
-                            : 'text-gray-500 hover:bg-gray-800/30'
+                            ? 'bg-[var(--app-bg-elevated)] text-[var(--app-accent-text)]'
+                            : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)]/50'
                             }`}
                     >
                         <div className="w-6 h-6 flex items-center justify-center">
                             {hoveredItem === 'settings' || isSettingsOpen ? icons.settings.gold : icons.settings.gray}
                         </div>
-                        <span className={`text-sm whitespace-nowrap ${hoveredItem === 'settings' || isSettingsOpen ? 'text-[#F2CE88] font-medium' : 'text-gray-500'}`}>
+                        <span className={`text-sm whitespace-nowrap ${hoveredItem === 'settings' || isSettingsOpen ? 'text-[#F2CE88] font-medium' : 'text-[var(--app-text-secondary)]'}`}>
                             {t('dashboard.settings')}
                         </span>
                     </button>
@@ -162,7 +168,7 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                     }}
                     onMouseEnter={() => setHoveredItem('logout')}
                     onMouseLeave={() => setHoveredItem(null)}
-                    className="flex items-center gap-3 px-3 py-2 w-full text-gray-500 hover:text-[#F2CE88] rounded-lg hover:bg-gray-800/30 transition-all"
+                    className="flex items-center gap-3 px-3 py-2 w-full text-[var(--app-text-secondary)] hover:text-[#F2CE88] rounded-lg hover:bg-[var(--app-bg-elevated)]/50 transition-all"
                 >
                     <div className="w-6 h-6 flex items-center justify-center">
                         {hoveredItem === 'logout' ? icons.logout.gold : icons.logout.gray}
@@ -173,11 +179,11 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
 
             {/* Theme Toggle - vertical switch layout */}
             <div className="px-3 mt-4">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1a1a24]">
+                <div className="flex items-center gap-2 p-2 rounded-xl bg-[var(--app-bg-elevated)]">
                     {/* Vertical Toggle Switch */}
                     <button
-                        onClick={() => setIsDarkMode(!isDarkMode)}
-                        className="relative w-5 h-10 rounded-full bg-[#0d0d14] border border-gray-700 flex-shrink-0"
+                        onClick={toggleTheme}
+                        className="relative w-5 h-10 rounded-full bg-[var(--app-bg-deepest)] border border-[var(--app-border)] flex-shrink-0"
                     >
                         <div
                             className={`absolute left-0.5 w-4 h-4 rounded-full bg-[#F2CE88] transition-all duration-200 ${isDarkMode ? 'bottom-0.5' : 'top-0.5'
@@ -186,29 +192,39 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                     </button>
 
                     {/* Mode Labels */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-0.5">
                         {/* Day mode */}
                         <div
-                            className={`flex items-center gap-2 cursor-pointer ${!isDarkMode ? 'opacity-100' : 'opacity-40'}`}
-                            onClick={() => setIsDarkMode(false)}
+                            className={`flex items-center gap-1.5 cursor-pointer transition-all ${!isDarkMode ? 'opacity-100 scale-[1.02]' : 'opacity-40 hover:opacity-100 grayscale'}`}
+                            onClick={() => setTheme('light')}
                         >
-                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-                                <circle cx="16" cy="16" r="7" fill={!isDarkMode ? "#F2CE88" : "#9E9E9E"} />
-                                <path d="M16 4V6M16 26V28M28 16H26M6 16H4M24.4853 7.51472L23.0711 8.92893M8.92893 23.0711L7.51472 24.4853M24.4853 24.4853L23.0711 23.0711M8.92893 8.92893L7.51472 7.51472" stroke={!isDarkMode ? "#7A664E" : "#545454"} strokeWidth="3" strokeLinecap="round" />
-                            </svg>
-                            <span className={`text-sm ${!isDarkMode ? 'text-white' : 'text-gray-600'}`}>{t('dashboard.dayMode')}</span>
+                            <div className="flex items-center justify-center w-7 h-7">
+                                <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                                    <circle cx="16" cy="16" r="7" fill={!isDarkMode ? "var(--app-accent)" : "var(--app-text-muted)"} />
+                                    <path d="M16 4V6M16 26V28M28 16H26M6 16H4M24.4853 7.51472L23.0711 8.92893M8.92893 23.0711L7.51472 24.4853M24.4853 24.4853L23.0711 23.0711M8.92893 8.92893L7.51472 7.51472" stroke={!isDarkMode ? "var(--app-accent)" : "var(--app-text-muted)"} strokeWidth="3" strokeLinecap="round" />
+                                </svg>
+                            </div>
+                            <span className={cn(
+                                "text-[10px] font-semibold transition-colors",
+                                !isDarkMode ? 'text-[var(--app-text-primary)]' : 'text-[var(--app-text-muted)]'
+                            )}>{t('dashboard.dayMode')}</span>
                         </div>
 
                         {/* Night mode */}
                         <div
-                            className={`flex items-center gap-2 cursor-pointer ${isDarkMode ? 'opacity-100' : 'opacity-40'}`}
-                            onClick={() => setIsDarkMode(true)}
+                            className={`flex items-center gap-1.5 cursor-pointer transition-all ${isDarkMode ? 'opacity-100 scale-[1.02]' : 'opacity-40 hover:opacity-100 grayscale'}`}
+                            onClick={() => setTheme('dark')}
                         >
-                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-                                <path d="M26 16C26 21.5228 21.5228 26 16 26C11.7532 26 8.14025 23.3415 6.58575 19.5C9.10485 20.6156 11.9149 20.3343 14.1924 18.6716C16.4699 17.0088 17.75 14.3006 17.75 11.5C17.75 9.6723 17.1989 7.96597 16.2396 6.52991C21.8131 7.56242 26 12.3684 26 16Z" fill={isDarkMode ? "#F2CE88" : "#9E9E9E"} />
-                                <circle cx="23" cy="9" r="2" fill={isDarkMode ? "#7A664E" : "#545454"} />
-                            </svg>
-                            <span className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-600'}`}>{t('dashboard.nightMode')}</span>
+                            <div className="flex items-center justify-center w-7 h-7">
+                                <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                                    <path d="M26 16C26 21.5228 21.5228 26 16 26C11.7532 26 8.14025 23.3415 6.58575 19.5C9.10485 20.6156 11.9149 20.3343 14.1924 18.6716C16.4699 17.0088 17.75 14.3006 17.75 11.5C17.75 11.5 17.75 11.5 17.75 11.5C17.75 9.6723 17.1989 7.96597 16.2396 6.52991C21.8131 7.56242 26 12.3684 26 16Z" fill={isDarkMode ? "var(--app-accent)" : "var(--app-text-muted)"} />
+                                    <circle cx="23" cy="9" r="2" fill={isDarkMode ? "var(--app-accent)" : "var(--app-text-muted)"} />
+                                </svg>
+                            </div>
+                            <span className={cn(
+                                "text-[10px] font-semibold transition-colors",
+                                isDarkMode ? 'text-[var(--app-text-primary)]' : 'text-[var(--app-text-muted)]'
+                            )}>{t('dashboard.nightMode')}</span>
                         </div>
                     </div>
                 </div>

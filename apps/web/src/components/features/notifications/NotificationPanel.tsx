@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { clsx } from 'clsx'
+import { X, CheckCircle, Search, SlidersHorizontal, Download } from 'lucide-react'
 
 
 interface NotificationItem {
@@ -94,143 +96,156 @@ const SAMPLE_NOTIFICATIONS: NotificationGroup[] = [
     }
 ]
 
-export function NotificationPanel({ onClose }: { onClose: () => void }) {
+export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+    const [mounted, setMounted] = useState(false)
     const [activeTab, setActiveTab] = useState<'All' | 'Tasks' | 'Comments' | 'Links' | 'Assets' | 'System'>('All')
 
-    return (
-        <div className="absolute right-0 top-12 w-[480px] bg-[#12121a] rounded-2xl shadow-2xl border border-gray-800/50 flex flex-col max-h-[85vh] z-50 overflow-hidden font-sans">
-            {/* Header */}
-            <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-[#12121a] sticky top-0 z-10">
-                <h3 className="text-lg font-semibold text-white">Notifications</h3>
-                <div className="flex items-center gap-4">
-                    <button className="text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Mark all as read
-                    </button>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) return null
+
+    return createPortal(
+        <>
+            {/* Backdrop */}
+            <div
+                className={clsx(
+                    "fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300",
+                    isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                )}
+                onClick={onClose}
+            />
+
+            {/* Panel */}
+            <div className={clsx(
+                "fixed top-4 right-4 bottom-4 w-full max-w-lg bg-[var(--app-bg-card)] rounded-2xl z-[70] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] font-sans overflow-hidden",
+                isOpen ? "translate-x-0" : "translate-x-[calc(100%+2rem)]"
+            )}>
+                {/* Header */}
+                <div className="p-6 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-sidebar)] sticky top-0 z-10 transition-colors">
+                    <div>
+                        <h3 className="text-xl font-bold text-[var(--app-text-primary)]">Notifications</h3>
+                        <p className="text-sm text-[var(--app-text-secondary)] mt-1">Stay updated with your latest activities</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button className="text-xs font-medium text-amber-500 hover:text-amber-400 transition-colors flex items-center gap-1.5 px-3 py-1.5 bg-[var(--app-bg-elevated)] rounded-lg ring-1 ring-amber-500/20">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Mark all
+                        </button>
+                        <button onClick={onClose} className="p-2 hover:bg-[var(--app-bg-elevated)] rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Search & Filters */}
+                <div className="px-6 py-4 gap-3 flex items-center bg-[var(--app-bg-sidebar)] border-b border-[var(--app-border)] transition-colors">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--app-text-muted)] w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="Search in notifications..."
+                            className="w-full pl-10 pr-4 py-2 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-sm text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:border-amber-500/50 transition-colors"
+                        />
+                    </div>
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors">
+                        <SlidersHorizontal className="w-4 h-4" />
+                        Filters
                     </button>
                 </div>
-            </div>
 
-            {/* Search & Filters */}
-            <div className="px-4 py-3 gap-3 flex items-center bg-[#12121a]">
-                <div className="relative flex-1">
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    <input
-                        type="text"
-                        placeholder="Search"
-                        className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-[#0a0a0f] border border-gray-800 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-gray-600 transition-colors"
-                    />
+                {/* Tabs / Switcher */}
+                <div className="px-6 border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)] flex gap-6 overflow-x-auto no-scrollbar transition-colors">
+                    {['All', 'Tasks', 'Comments', 'Links', 'Assets', 'System'].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab as any)}
+                            className={clsx(
+                                "py-4 text-sm font-medium whitespace-nowrap transition-colors relative",
+                                activeTab === tab ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
+                            )}
+                        >
+                            {tab}
+                            {activeTab === tab && (
+                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--app-accent)] rounded-t-full" />
+                            )}
+                        </button>
+                    ))}
                 </div>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0a0a0f] border border-gray-800 text-sm text-gray-400 hover:text-white transition-colors">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="4" y1="21" x2="4" y2="14"></line>
-                        <line x1="4" y1="10" x2="4" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12" y2="3"></line>
-                        <line x1="20" y1="21" x2="20" y2="16"></line>
-                        <line x1="20" y1="12" x2="20" y2="3"></line>
-                        <line x1="1" y1="14" x2="7" y2="14"></line>
-                        <line x1="9" y1="8" x2="15" y2="8"></line>
-                        <line x1="17" y1="16" x2="23" y2="16"></line>
-                    </svg>
-                    Filters
-                </button>
-            </div>
 
-            {/* Tabs */}
-            <div className="px-4 border-b border-gray-800 flex gap-6 overflow-x-auto no-scrollbar bg-[#12121a]">
-                {['All', 'Tasks', 'Comments', 'Links', 'Assets', 'System'].map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab as any)}
-                        className={clsx(
-                            "pb-3 text-sm font-medium whitespace-nowrap transition-colors relative",
-                            activeTab === tab ? "text-white" : "text-gray-500 hover:text-gray-300"
-                        )}
-                    >
-                        {tab}
-                        {activeTab === tab && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-t-full" />
-                        )}
-                    </button>
-                ))}
-            </div>
-
-            {/* Content List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-[#12121a]">
-                {SAMPLE_NOTIFICATIONS.map((group) => (
-                    <div key={group.label}>
-                        <h4 className="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wider">{group.label}</h4>
-                        <div className="space-y-4">
-                            {group.items.map((item) => (
-                                <div key={item.id} className="flex gap-4 group">
-                                    {/* Icon */}
-                                    <div className="mt-1 flex-shrink-0">
-                                        <NotificationIcon type={item.type} />
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="flex-1 space-y-1">
-                                        <div className="text-sm text-gray-300 leading-relaxed">
-                                            {item.actor && <span className="font-semibold text-white">{item.actor.name} </span>}
-                                            {highlightKeywords(item.title)}
-                                        </div>
-
-                                        {/* Attachment */}
-                                        {item.attachment && (
-                                            <div className="flex items-center gap-3 p-2 rounded-lg bg-[#1a1a24] border border-gray-800 mt-2 max-w-sm hover:bg-[#20202c] transition-colors cursor-pointer">
-                                                <div className="w-8 h-8 rounded bg-blue-900/30 flex items-center justify-center text-blue-400">
-                                                    📄
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-white truncate">{item.attachment.name}</p>
-                                                    <p className="text-xs text-gray-500">{item.attachment.size}</p>
-                                                </div>
-                                                <button className="text-gray-500 hover:text-white">
-                                                    ⬇️
-                                                </button>
-                                            </div>
+                {/* Content List */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar bg-[var(--app-bg-card)] transition-colors">
+                    {SAMPLE_NOTIFICATIONS.map((group) => (
+                        <div key={group.label}>
+                            <h4 className="text-xs font-bold text-[var(--app-text-muted)] mb-4 uppercase tracking-[0.1em]">{group.label}</h4>
+                            <div className="space-y-6">
+                                {group.items.map((item) => (
+                                    <div key={item.id} className="flex gap-4 group relative">
+                                        {/* Unread Dot/Indicator */}
+                                        {item.isRead === false && (
+                                            <div className="absolute -left-2 top-2 w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
                                         )}
 
-                                        <p className="text-xs text-gray-500">{item.time}</p>
-                                    </div>
+                                        {/* Icon */}
+                                        <div className="flex-shrink-0">
+                                            <NotificationIcon type={item.type} />
+                                        </div>
 
-                                    {/* Unread Dot */}
-                                    {item.isRead === false && (
-                                        <div className="mt-2 w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                                    )}
-                                </div>
-                            ))}
+                                        {/* Content */}
+                                        <div className="flex-1 space-y-1.5">
+                                            <div className="text-sm text-[var(--app-text-primary)] leading-relaxed">
+                                                {item.actor && <span className="font-bold text-[var(--app-text-primary)]">{item.actor.name} </span>}
+                                                {highlightKeywords(item.title)}
+                                            </div>
+
+                                            {/* Attachment */}
+                                            {item.attachment && (
+                                                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] mt-3 hover:bg-[var(--app-bg-elevated)] transition-colors cursor-pointer group/file">
+                                                    <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                                        📄
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-semibold text-[var(--app-text-primary)] truncate">{item.attachment.name}</p>
+                                                        <p className="text-xs text-[var(--app-text-muted)] font-medium uppercase tracking-wider">{item.attachment.size}</p>
+                                                    </div>
+                                                    <button className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-sidebar)] rounded-lg transition-colors border border-[var(--app-border)]">
+                                                        <Download className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-xs text-[var(--app-text-muted)] font-medium">{item.time}</p>
+                                                {item.isRead === false && (
+                                                    <span className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest bg-amber-500/10 px-1.5 py-0.5 rounded">New</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
-        </div>
+        </>,
+        document.body
     )
 }
 
 function NotificationIcon({ type }: { type: NotificationItem['type'] }) {
     switch (type) {
         case 'system':
-            return <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 ring-1 ring-red-500/20">🔔</div> // Bell
+            return <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center text-xs ring-1 ring-red-500/20">🔔</div>
         case 'comment':
-            return <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 ring-1 ring-blue-500/20">💬</div> // Message
+            return <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-xs ring-1 ring-blue-500/20">💬</div>
         case 'link':
-            return <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 ring-1 ring-purple-500/20">🔗</div> // Link
+            return <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-xs ring-1 ring-purple-500/20">🔗</div>
         case 'asset':
-            return <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 ring-1 ring-yellow-500/20">📂</div> // Folder
+            return <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-xs ring-1 ring-yellow-500/20">📂</div>
         default:
-            return <div className="w-8 h-8 rounded-full bg-gray-500/10 flex items-center justify-center text-gray-500">📝</div>
+            return <div className="w-8 h-8 rounded-full bg-gray-500/10 flex items-center justify-center text-xs ring-1 ring-gray-500/20">📝</div>
     }
 }
 

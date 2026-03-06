@@ -144,6 +144,32 @@
         "save_changes": "Zapisz zmiany",
         "feature_coming_soon": "Ta funkcja będzie dostępna wkrótce."
     },
+    "resources": {
+        "title": "Zasoby",
+        "search_placeholder": "Szukaj zasobów...",
+        "new_content": "Nowy zasób",
+        "create_new_content": "Utwórz nowy zasób",
+        "loading": "Ładowanie zasobów...",
+        "auto_save": "Auto-zapis aktywny",
+        "delete_confirm": "Czy na pewno chcesz usunąć ten zasób?",
+        "page": {
+            "empty_title": "Zacznij tworzyć",
+            "empty_description": "Stwórz dokumenty lub tablice wizualne dla swojego zespołu."
+        }
+    },
+    "creation": {
+        "title": "Co chcesz stworzyć?",
+        "subtitle": "Wybierz rodzaj nowej zawartości",
+        "type_select": "Wybierz typ",
+        "document": "Nowy Dokument",
+        "document_desc": "Notatki, plany i dokumentacja tekstowa",
+        "board": "Nowa Tablica",
+        "board_desc": "Szkice, diagramy i wizualna praca z zespołem",
+        "name_label": "Nazwa",
+        "name_placeholder": "Wpisz nazwę...",
+        "submit": "Utwórz",
+        "footer_note": "Nowa zawartość zostanie przypisana do aktualnego obszaru roboczego"
+    },
     "dashboard": {
         "title": "Panel główny",
         "team": "Zespół",
@@ -151,7 +177,7 @@
         "messages": "Wiadomości",
         "calendar": "Kalendarz",
         "files": "Pliki",
-        "board": "Tablica",
+        "resources": "Zasoby",
         "settings": "Ustawienia Org.",
         "logout": "Wyloguj się",
         "dayMode": "Jasny motyw",
@@ -169,6 +195,7 @@
         "lastResources": "Ostatnie zasoby",
         "seeAll": "Zobacz wszystko",
         "noFiles": "Brak przesłanych plików",
+        "taskProgress": "Postęp zadań",
         "overallProgress": "Całkowity postęp",
         "last7Days": "Ostatnie 7 dni",
         "myProfile": "Mój profil",
@@ -327,8 +354,6 @@
                     "select_member": "Proszę wybrać przynajmniej jednego członka"
                 }
             },
-            "title_placeholder_event": "Tytuł wydarzenia",
-            "description_placeholder": "Dodaj opis",
             "all_day_event": "Wydarzenie całodniowe",
             "created_by": "Utworzone przez",
             "edit_event_title": "Edytuj wydarzenie",

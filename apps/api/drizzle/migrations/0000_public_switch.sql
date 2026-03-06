@@ -503,6 +503,34 @@ CREATE TABLE "audit_logs" (
 );
 --> statement-breakpoint
 ALTER TABLE "audit_logs" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "documents" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"workspace_id" text NOT NULL,
+	"title" varchar(255) NOT NULL,
+	"content" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"created_by" text NOT NULL,
+	"project_id" uuid,
+	"folder_id" text,
+	"is_archived" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "documents" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "whiteboards" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"workspace_id" text NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"data" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"created_by" text NOT NULL,
+	"project_id" uuid,
+	"folder_id" text,
+	"is_archived" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "whiteboards" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "workspace_invites" ADD CONSTRAINT "workspace_invites_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workspace_invites" ADD CONSTRAINT "workspace_invites_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -555,6 +583,14 @@ ALTER TABLE "webhooks" ADD CONSTRAINT "webhooks_workspace_id_workspaces_id_fk" F
 ALTER TABLE "webhooks" ADD CONSTRAINT "webhooks_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "documents" ADD CONSTRAINT "documents_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "documents" ADD CONSTRAINT "documents_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "documents" ADD CONSTRAINT "documents_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "documents" ADD CONSTRAINT "documents_folder_id_folders_id_fk" FOREIGN KEY ("folder_id") REFERENCES "public"."folders"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "whiteboards" ADD CONSTRAINT "whiteboards_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "whiteboards" ADD CONSTRAINT "whiteboards_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "whiteboards" ADD CONSTRAINT "whiteboards_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "whiteboards" ADD CONSTRAINT "whiteboards_folder_id_folders_id_fk" FOREIGN KEY ("folder_id") REFERENCES "public"."folders"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "audit_logs_workspace_idx" ON "audit_logs" USING btree ("workspace_id");--> statement-breakpoint
 CREATE INDEX "audit_logs_entity_idx" ON "audit_logs" USING btree ("entity_type","entity_id");--> statement-breakpoint
 CREATE INDEX "audit_logs_actor_idx" ON "audit_logs" USING btree ("actor_id");--> statement-breakpoint
@@ -703,4 +739,30 @@ CREATE POLICY "audit_read" ON "audit_logs" AS PERMISSIVE FOR SELECT TO "authenti
             where workspace_id = "audit_logs"."workspace_id" 
             and user_id = auth.uid()::text
             and (role = 'owner' or role = 'admin')
+        ));--> statement-breakpoint
+CREATE POLICY "Workspace members can view documents" ON "documents" AS PERMISSIVE FOR SELECT TO public USING (workspace_id IN (
+            SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text
+        ));--> statement-breakpoint
+CREATE POLICY "Workspace members can create documents" ON "documents" AS PERMISSIVE FOR INSERT TO public WITH CHECK (workspace_id IN (
+            SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text
+        ));--> statement-breakpoint
+CREATE POLICY "Workspace members can update documents" ON "documents" AS PERMISSIVE FOR UPDATE TO public USING (workspace_id IN (
+            SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text
+        ));--> statement-breakpoint
+CREATE POLICY "Creator or admin can delete documents" ON "documents" AS PERMISSIVE FOR DELETE TO public USING (created_by = auth.uid()::text OR workspace_id IN (
+            SELECT workspace_id FROM workspace_members 
+            WHERE user_id = auth.uid()::text AND role IN ('owner', 'admin')
+        ));--> statement-breakpoint
+CREATE POLICY "Workspace members can view whiteboards" ON "whiteboards" AS PERMISSIVE FOR SELECT TO public USING (workspace_id IN (
+            SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text
+        ));--> statement-breakpoint
+CREATE POLICY "Workspace members can create whiteboards" ON "whiteboards" AS PERMISSIVE FOR INSERT TO public WITH CHECK (workspace_id IN (
+            SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text
+        ));--> statement-breakpoint
+CREATE POLICY "Workspace members can update whiteboards" ON "whiteboards" AS PERMISSIVE FOR UPDATE TO public USING (workspace_id IN (
+            SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text
+        ));--> statement-breakpoint
+CREATE POLICY "Creator or admin can delete whiteboards" ON "whiteboards" AS PERMISSIVE FOR DELETE TO public USING (created_by = auth.uid()::text OR workspace_id IN (
+            SELECT workspace_id FROM workspace_members 
+            WHERE user_id = auth.uid()::text AND role IN ('owner', 'admin')
         ));

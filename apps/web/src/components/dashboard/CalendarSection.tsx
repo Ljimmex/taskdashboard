@@ -55,7 +55,7 @@ const CustomCheckbox = ({ checked, onClick, colorClass = "bg-amber-500 border-am
         onClick={(e) => { e.stopPropagation(); onClick?.() }}
         className={cn(
             "w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer",
-            checked ? colorClass : "border-gray-600 bg-transparent hover:border-gray-500"
+            checked ? colorClass : "border-[var(--app-border)] bg-transparent hover:border-[var(--app-text-muted)]"
         )}
     >
         {checked && (
@@ -221,13 +221,13 @@ export function CalendarSection() {
 
 
     return (
-        <div className="flex flex-col h-full w-full bg-[#12121a] rounded-2xl p-6 font-sans relative overflow-hidden">
+        <div className="flex flex-col h-full w-full bg-[var(--app-bg-card)] rounded-2xl p-6 font-sans relative overflow-hidden transition-all duration-300">
 
             {/* HEADER KALENDARZA */}
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                 {/* Lewa strona: Ikonka + Miesiąc/Rok */}
                 <div className="flex items-center gap-3 mb-4 md:mb-0">
-                    <h2 className="text-lg font-semibold text-white tracking-wide capitalize">
+                    <h2 className="text-lg font-semibold text-[var(--app-text-primary)] tracking-wide capitalize">
                         {format(currentDate, 'LLLL yyyy', { locale: dateLocale })}
                     </h2>
                 </div>
@@ -238,15 +238,15 @@ export function CalendarSection() {
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <button className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all outline-none focus:ring-1 focus:ring-white/10",
-                                selectedTypes.length < 4 ? "bg-[#1E2029] text-white" : "bg-[#1a1a24] text-gray-400 hover:text-white"
+                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all outline-none focus:ring-1 focus:ring-[var(--app-border)]",
+                                selectedTypes.length < 4 ? "bg-amber-500/10 text-amber-500" : "bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)]"
                             )}>
                                 <Filter className="w-3.5 h-3.5" />
                                 <span>{t('dashboard.filter')}</span>
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none">
-                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <DropdownMenuContent align="end" className="w-56 bg-[var(--app-bg-card)] p-2 text-[var(--app-text-secondary)] shadow-2xl rounded-xl border border-[var(--app-border)] z-50">
+                            <div className="px-2 py-1.5 text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">
                                 {t('dashboard.type')}
                             </div>
 
@@ -255,7 +255,7 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.EVENT)} />
-                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.EVENT) ? "text-white" : "text-gray-400")}>{t('dashboard.eventType.event')}</span>
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.EVENT) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-secondary)]")}>{t('dashboard.eventType.event')}</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
@@ -263,7 +263,7 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.TASK)} />
-                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.TASK) ? "text-white" : "text-gray-400")}>{t('dashboard.eventType.task')}</span>
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.TASK) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-secondary)]")}>{t('dashboard.eventType.task')}</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
@@ -271,7 +271,7 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.REMINDER)} />
-                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.REMINDER) ? "text-white" : "text-gray-400")}>{t('dashboard.eventType.reminder')}</span>
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.REMINDER) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-secondary)]")}>{t('dashboard.eventType.reminder')}</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
@@ -279,13 +279,13 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={selectedTypes.includes(CalendarEventType.MEETING)} />
-                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.MEETING) ? "text-white" : "text-gray-400")}>{t('dashboard.eventType.meeting')}</span>
+                                <span className={cn("transition-colors", selectedTypes.includes(CalendarEventType.MEETING) ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-secondary)]")}>{t('dashboard.eventType.meeting')}</span>
                             </DropdownMenuItem>
 
                             <div className="p-2 mt-2">
                                 <button
                                     onClick={clearFilters}
-                                    className="w-full py-1.5 bg-[#1a1a24] hover:bg-[#20202b] text-gray-400 hover:text-white text-xs font-medium rounded-lg transition-colors border border-white/5"
+                                    className="w-full py-1.5 bg-[var(--app-bg-elevated)] hover:bg-amber-500/10 text-[var(--app-text-secondary)] hover:text-amber-500 text-xs font-medium rounded-lg transition-colors border border-[var(--app-border)]"
                                 >
                                     {t('dashboard.clearFilters')}
                                 </button>
@@ -296,13 +296,13 @@ export function CalendarSection() {
                     {/* Przycisk Schedule setting */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <button className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a24] hover:bg-[#20202b] rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-all mr-2 outline-none focus:ring-1 focus:ring-white/10">
+                            <button className="flex items-center gap-2 px-3 py-1.5 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-card)] rounded-lg text-xs font-medium text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-all mr-2 border border-[var(--app-border)] shadow-sm outline-none focus:ring-1 focus:ring-[var(--app-border)]">
                                 <SlidersHorizontal className="w-3.5 h-3.5" />
                                 <span>{t('dashboard.scheduleSetting')}</span>
                             </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-64 bg-[#16161f] p-2 text-gray-300 shadow-2xl rounded-xl border-none">
-                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <DropdownMenuContent align="end" className="w-64 bg-[var(--app-bg-card)] p-2 text-[var(--app-text-secondary)] shadow-2xl rounded-xl border border-[var(--app-border)] z-50">
+                            <div className="px-2 py-1.5 text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">
                                 {t('dashboard.viewOptions')}
                             </div>
 
@@ -311,16 +311,16 @@ export function CalendarSection() {
                                 className="flex items-center gap-3 px-2 py-2 text-sm rounded-lg hover:bg-white/5 focus:bg-white/5 cursor-pointer outline-none"
                             >
                                 <CustomCheckbox checked={showWeekends} />
-                                <span className="text-gray-300">{t('dashboard.showWeekends')}</span>
+                                <span className="text-[var(--app-text-secondary)]">{t('dashboard.showWeekends')}</span>
                             </DropdownMenuItem>
 
-                            <DropdownMenuSeparator className="bg-gray-800 my-2" />
+                            <DropdownMenuSeparator className="bg-[var(--app-border)] my-2" />
 
-                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            <div className="px-2 py-1.5 text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">
                                 {t('dashboard.startOfWeek')}
                             </div>
                             <DropdownMenuRadioGroup value={weekStartDay} onValueChange={(v) => setWeekStartDay(v as 'monday' | 'sunday')}>
-                                <DropdownMenuRadioItem value="monday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
+                                <DropdownMenuRadioItem value="monday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] group transition-colors">
                                     <div className="flex items-center gap-3 w-full">
                                         <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'monday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
                                             {weekStartDay === 'monday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
@@ -328,9 +328,9 @@ export function CalendarSection() {
                                         <span>{t('dashboard.monday')}</span>
                                     </div>
                                 </DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="sunday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[#20202b] focus:bg-[#20202b] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-gray-400 hover:text-gray-200 group transition-colors">
+                                <DropdownMenuRadioItem value="sunday" className="flex items-center px-2 py-2 text-sm rounded-lg hover:bg-[var(--app-bg-elevated)] focus:bg-[var(--app-bg-elevated)] cursor-pointer outline-none data-[state=checked]:text-amber-500 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] group transition-colors">
                                     <div className="flex items-center gap-3 w-full">
-                                        <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'sunday' ? "border-amber-500" : "border-gray-600 group-hover:border-gray-500")}>
+                                        <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all", weekStartDay === 'sunday' ? "border-amber-500" : "border-[var(--app-border)] group-hover:border-[var(--app-text-muted)]")}>
                                             {weekStartDay === 'sunday' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
                                         </div>
                                         <span>{t('dashboard.sunday')}</span>
@@ -341,25 +341,25 @@ export function CalendarSection() {
                     </DropdownMenu>
 
                     {/* Separator */}
-                    <div className="h-6 w-px bg-gray-800 hidden md:block mx-1"></div>
+                    <div className="h-6 w-px bg-[var(--app-border)] hidden md:block mx-1"></div>
 
                     {/* Nawigacja */}
                     <div className="flex items-center gap-1">
                         <button
                             onClick={prevMonth}
-                            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                            className="p-1.5 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button
                             onClick={goToToday}
-                            className="px-3 py-1 text-xs font-medium text-gray-400 hover:text-amber-500 transition-colors"
+                            className="px-3 py-1 text-xs font-medium text-[var(--app-text-muted)] hover:text-amber-500 transition-colors"
                         >
                             {t('dashboard.today')}
                         </button>
                         <button
                             onClick={nextMonth}
-                            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                            className="p-1.5 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                         >
                             <ChevronRight className="w-5 h-5" />
                         </button>
@@ -368,12 +368,12 @@ export function CalendarSection() {
             </div>
 
             {/* GRID KALENDARZA */}
-            <div className="flex flex-col flex-1 rounded-2xl overflow-hidden bg-[#12121a]">
+            <div className="flex flex-col flex-1 rounded-2xl overflow-hidden bg-[var(--app-bg-card)] border border-[var(--app-border)] shadow-sm">
                 {/* Dni tygodnia */}
-                <div className={`grid grid-cols-${visibleWeekDays.length} border-b border-gray-800/50`}>
+                <div className={`grid grid-cols-${visibleWeekDays.length} border-b border-[var(--app-border)]`}>
                     {visibleWeekDays.map((day) => (
-                        <div key={day} className="py-3 text-center">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                        <div key={day} className="py-3 text-center transition-colors bg-[var(--app-bg-deepest)]/50">
+                            <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider">
                                 {day}
                             </span>
                         </div>
@@ -381,7 +381,7 @@ export function CalendarSection() {
                 </div>
 
                 {/* Siatka dni */}
-                <div className={`grid grid-cols-${visibleWeekDays.length} flex-1 bg-[#12121a]`}>
+                <div className={`grid grid-cols-${visibleWeekDays.length} flex-1 bg-[var(--app-bg-card)]`}>
                     {calendarDays.map((day, dayIdx) => {
                         const isCurrentMonth = isSameMonth(day, monthStart)
                         const isToday = isSameDay(day, new Date())
@@ -392,7 +392,7 @@ export function CalendarSection() {
                             <div
                                 key={day.toString()}
                                 className={cn(
-                                    "relative min-h-[100px] p-2 border-r border-gray-800/50 transition-all group hover:bg-[#16161f]",
+                                    "relative min-h-[100px] p-2 border-r border-[var(--app-border)] transition-all group hover:bg-[var(--app-bg-deepest)]/30",
                                     !isLastRow && "border-b",
                                     (dayIdx + 1) % visibleWeekDays.length === 0 && "border-r-0"
                                 )}
@@ -404,7 +404,7 @@ export function CalendarSection() {
                                             "text-xs font-medium h-7 w-7 flex items-center justify-center rounded-full transition-all",
                                             isToday
                                                 ? "bg-[#F59E0B] text-black font-bold shadow-[0_0_10px_rgba(245,158,11,0.4)]"
-                                                : "text-gray-500 group-hover:text-gray-300"
+                                                : "text-[var(--app-text-muted)] group-hover:text-[var(--app-text-secondary)]"
                                         )}>
                                             {format(day, 'd')}
                                         </span>
@@ -417,10 +417,10 @@ export function CalendarSection() {
                                                 <div
                                                     key={event.id}
                                                     onClick={(e) => { e.stopPropagation(); handleEventClick(event, dayEvents) }}
-                                                    className="bg-[#1a1a24] px-2 py-1.5 rounded-lg hover:bg-[#22222e] transition-colors cursor-pointer group/card shrink-0"
+                                                    className="bg-[var(--app-bg-elevated)] px-2 py-1.5 rounded-lg hover:bg-amber-500/10 border border-[var(--app-border)] transition-colors cursor-pointer group/card shrink-0"
                                                 >
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] text-gray-300 font-medium truncate">
+                                                        <span className="text-[10px] text-[var(--app-text-secondary)] font-medium truncate">
                                                             {event.title}
                                                         </span>
                                                     </div>
@@ -429,7 +429,7 @@ export function CalendarSection() {
                                             {dayEvents.length > 2 && (
                                                 <span
                                                     onClick={(e) => { e.stopPropagation(); setSelectedDay(day); setIsDayPanelOpen(true) }}
-                                                    className="text-[9px] text-gray-500 text-center shrink-0 cursor-pointer hover:text-amber-400 transition-colors"
+                                                    className="text-[9px] text-[var(--app-text-muted)] text-center shrink-0 cursor-pointer hover:text-amber-500 transition-colors"
                                                 >
                                                     {t('dashboard.moreEvents', { count: dayEvents.length - 2 })}
                                                 </span>
@@ -441,7 +441,7 @@ export function CalendarSection() {
                                             <div className="mt-1 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                                                 <button
                                                     onClick={() => setIsEventPanelOpen(true)}
-                                                    className="w-full py-1 text-[10px] text-gray-500 border border-white/10 border-dashed rounded bg-white/5 hover:bg-white/10 hover:text-gray-300 transition-all flex items-center justify-center gap-1"
+                                                    className="w-full py-1 text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] border-dashed rounded bg-[var(--app-bg-deepest)]/50 hover:bg-amber-500/10 hover:text-amber-500 hover:border-amber-500/50 transition-all flex items-center justify-center gap-1"
                                                 >
                                                     <span>+</span> {t('dashboard.addEvent')}
                                                 </button>

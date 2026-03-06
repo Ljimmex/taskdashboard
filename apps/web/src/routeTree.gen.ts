@@ -24,6 +24,7 @@ import { Route as WorkspaceSlugProjectsIndexRouteImport } from './routes/$worksp
 import { Route as WorkspaceSlugMyTasksIndexRouteImport } from './routes/$workspaceSlug/my-tasks/index'
 import { Route as WorkspaceSlugMessagesIndexRouteImport } from './routes/$workspaceSlug/messages/index'
 import { Route as WorkspaceSlugFilesIndexRouteImport } from './routes/$workspaceSlug/files/index'
+import { Route as WorkspaceSlugDocsIndexRouteImport } from './routes/$workspaceSlug/docs/index'
 import { Route as WorkspaceSlugBoardIndexRouteImport } from './routes/$workspaceSlug/board/index'
 import { Route as WorkspaceSlugProjectsProjectIdIndexRouteImport } from './routes/$workspaceSlug/projects/$projectId/index'
 
@@ -105,6 +106,11 @@ const WorkspaceSlugFilesIndexRoute = WorkspaceSlugFilesIndexRouteImport.update({
   path: '/files/',
   getParentRoute: () => WorkspaceSlugRoute,
 } as any)
+const WorkspaceSlugDocsIndexRoute = WorkspaceSlugDocsIndexRouteImport.update({
+  id: '/docs/',
+  path: '/docs/',
+  getParentRoute: () => WorkspaceSlugRoute,
+} as any)
 const WorkspaceSlugBoardIndexRoute = WorkspaceSlugBoardIndexRouteImport.update({
   id: '/board/',
   path: '/board/',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
   '/$workspaceSlug/board/': typeof WorkspaceSlugBoardIndexRoute
+  '/$workspaceSlug/docs/': typeof WorkspaceSlugDocsIndexRoute
   '/$workspaceSlug/files/': typeof WorkspaceSlugFilesIndexRoute
   '/$workspaceSlug/messages/': typeof WorkspaceSlugMessagesIndexRoute
   '/$workspaceSlug/my-tasks/': typeof WorkspaceSlugMyTasksIndexRoute
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug': typeof WorkspaceSlugIndexRoute
   '/$workspaceSlug/board': typeof WorkspaceSlugBoardIndexRoute
+  '/$workspaceSlug/docs': typeof WorkspaceSlugDocsIndexRoute
   '/$workspaceSlug/files': typeof WorkspaceSlugFilesIndexRoute
   '/$workspaceSlug/messages': typeof WorkspaceSlugMessagesIndexRoute
   '/$workspaceSlug/my-tasks': typeof WorkspaceSlugMyTasksIndexRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/invite/$inviteId': typeof InviteInviteIdRoute
   '/$workspaceSlug/': typeof WorkspaceSlugIndexRoute
   '/$workspaceSlug/board/': typeof WorkspaceSlugBoardIndexRoute
+  '/$workspaceSlug/docs/': typeof WorkspaceSlugDocsIndexRoute
   '/$workspaceSlug/files/': typeof WorkspaceSlugFilesIndexRoute
   '/$workspaceSlug/messages/': typeof WorkspaceSlugMessagesIndexRoute
   '/$workspaceSlug/my-tasks/': typeof WorkspaceSlugMyTasksIndexRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
     | '/$workspaceSlug/board/'
+    | '/$workspaceSlug/docs/'
     | '/$workspaceSlug/files/'
     | '/$workspaceSlug/messages/'
     | '/$workspaceSlug/my-tasks/'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/invite/$inviteId'
     | '/$workspaceSlug'
     | '/$workspaceSlug/board'
+    | '/$workspaceSlug/docs'
     | '/$workspaceSlug/files'
     | '/$workspaceSlug/messages'
     | '/$workspaceSlug/my-tasks'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/invite/$inviteId'
     | '/$workspaceSlug/'
     | '/$workspaceSlug/board/'
+    | '/$workspaceSlug/docs/'
     | '/$workspaceSlug/files/'
     | '/$workspaceSlug/messages/'
     | '/$workspaceSlug/my-tasks/'
@@ -351,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSlugFilesIndexRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
+    '/$workspaceSlug/docs/': {
+      id: '/$workspaceSlug/docs/'
+      path: '/docs'
+      fullPath: '/$workspaceSlug/docs/'
+      preLoaderRoute: typeof WorkspaceSlugDocsIndexRouteImport
+      parentRoute: typeof WorkspaceSlugRoute
+    }
     '/$workspaceSlug/board/': {
       id: '/$workspaceSlug/board/'
       path: '/board'
@@ -372,6 +391,7 @@ interface WorkspaceSlugRouteChildren {
   WorkspaceSlugCalendarRoute: typeof WorkspaceSlugCalendarRoute
   WorkspaceSlugIndexRoute: typeof WorkspaceSlugIndexRoute
   WorkspaceSlugBoardIndexRoute: typeof WorkspaceSlugBoardIndexRoute
+  WorkspaceSlugDocsIndexRoute: typeof WorkspaceSlugDocsIndexRoute
   WorkspaceSlugFilesIndexRoute: typeof WorkspaceSlugFilesIndexRoute
   WorkspaceSlugMessagesIndexRoute: typeof WorkspaceSlugMessagesIndexRoute
   WorkspaceSlugMyTasksIndexRoute: typeof WorkspaceSlugMyTasksIndexRoute
@@ -384,6 +404,7 @@ const WorkspaceSlugRouteChildren: WorkspaceSlugRouteChildren = {
   WorkspaceSlugCalendarRoute: WorkspaceSlugCalendarRoute,
   WorkspaceSlugIndexRoute: WorkspaceSlugIndexRoute,
   WorkspaceSlugBoardIndexRoute: WorkspaceSlugBoardIndexRoute,
+  WorkspaceSlugDocsIndexRoute: WorkspaceSlugDocsIndexRoute,
   WorkspaceSlugFilesIndexRoute: WorkspaceSlugFilesIndexRoute,
   WorkspaceSlugMessagesIndexRoute: WorkspaceSlugMessagesIndexRoute,
   WorkspaceSlugMyTasksIndexRoute: WorkspaceSlugMyTasksIndexRoute,

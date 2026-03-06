@@ -50,7 +50,7 @@ export function TeamActivity({ activities }: TeamActivityProps) {
                             {/* Action buttons with SVG icons */}
                             <div className="flex items-center gap-4 text-xs text-gray-500">
                                 <button
-                                    className="flex items-center gap-1 hover:text-[#F2CE88] transition-colors"
+                                    className="flex items-center gap-1 hover:text-[var(--app-accent-text)] transition-colors"
                                     onMouseEnter={() => setHoveredAction(`heart-${activity.id}`)}
                                     onMouseLeave={() => setHoveredAction(null)}
                                 >
@@ -58,7 +58,7 @@ export function TeamActivity({ activities }: TeamActivityProps) {
                                     <span>{activity.likes}</span>
                                 </button>
                                 <button
-                                    className="flex items-center gap-1 hover:text-[#F2CE88] transition-colors"
+                                    className="flex items-center gap-1 hover:text-[var(--app-accent-text)] transition-colors"
                                     onMouseEnter={() => setHoveredAction(`comment-${activity.id}`)}
                                     onMouseLeave={() => setHoveredAction(null)}
                                 >
@@ -66,7 +66,7 @@ export function TeamActivity({ activities }: TeamActivityProps) {
                                     <span>{activity.comments}</span>
                                 </button>
                                 <button
-                                    className="flex items-center gap-1 hover:text-[#F2CE88] transition-colors"
+                                    className="flex items-center gap-1 hover:text-[var(--app-accent-text)] transition-colors"
                                     onMouseEnter={() => setHoveredAction(`share-${activity.id}`)}
                                     onMouseLeave={() => setHoveredAction(null)}
                                 >

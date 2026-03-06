@@ -353,7 +353,7 @@ export function CalendarView() {
         : daysToRender.map(d => format(d, 'EEE', { locale: i18n.language === 'pl' ? pl : enUS }))
 
     return (
-        <div className="flex h-full w-full bg-[#12121a] rounded-2xl overflow-hidden font-sans">
+        <div className="flex h-full w-full bg-[var(--app-bg-card)] rounded-2xl overflow-hidden font-sans">
             <div className="flex-1 flex flex-col p-6 min-w-0">
                 <CalendarHeader
                     currentDate={currentDate}
@@ -380,14 +380,14 @@ export function CalendarView() {
                 />
 
                 {/* GRID KALENDARZA */}
-                <div className="flex flex-col flex-1 rounded-2xl overflow-hidden bg-[#12121a] border border-gray-800/50">
+                <div className="flex flex-col flex-1 rounded-2xl overflow-hidden bg-[var(--app-bg-card)] border border-[var(--app-border)] shadow-sm">
                     {/* Headers */}
-                    <div className={cn("grid border-b border-gray-800/50", `grid-cols-${gridCols}`)} style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
+                    <div className={cn("grid border-b border-[var(--app-border)]", `grid-cols-${gridCols}`)} style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
                         {visibleHeaders.map((day, i) => (
-                            <div key={i} className="py-3 text-center border-r border-gray-800/50 last:border-r-0">
+                            <div key={i} className="py-3 text-center border-r border-[var(--app-border)] last:border-r-0 bg-[var(--app-bg-deepest)]/30">
                                 <span className={cn(
                                     "text-[10px] font-bold uppercase tracking-wider",
-                                    view === 'day' && isSameDay(daysToRender[0], new Date()) ? "text-amber-500" : "text-gray-500"
+                                    view === 'day' && isSameDay(daysToRender[0], new Date()) ? "text-amber-500" : "text-[var(--app-text-muted)]"
                                 )}>
                                     {view === 'day' || view === 'week' ? (
                                         <>
@@ -405,7 +405,7 @@ export function CalendarView() {
                     </div>
 
                     {/* Grid Content */}
-                    <div className={cn("grid flex-1 bg-[#12121a] overflow-y-auto", `grid-cols-${gridCols}`)} style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
+                    <div className={cn("grid flex-1 bg-[var(--app-bg-card)] overflow-y-auto", `grid-cols-${gridCols}`)} style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
                         {daysToRender.map((day, dayIdx) => {
                             const isCurrentMonth = isSameMonth(day, currentDate)
                             const isToday = isSameDay(day, new Date())
@@ -420,16 +420,16 @@ export function CalendarView() {
                             // DAY VIEW RENDERING
                             if (view === 'day') {
                                 return (
-                                    <div key={day.toString()} className="relative bg-[#12121a] min-h-[1440px]">
+                                    <div key={day.toString()} className="relative bg-[var(--app-bg-card)] min-h-[1440px]">
                                         {/* Time Grid (Background) */}
                                         {Array.from({ length: 24 }).map((_, hour) => (
-                                            <div key={hour} className="absolute w-full border-t border-gray-800/30 flex" style={{ top: `${hour * 60}px`, height: '60px' }}>
+                                            <div key={hour} className="absolute w-full border-t border-[var(--app-border)]/50 flex" style={{ top: `${hour * 60}px`, height: '60px' }}>
                                                 {/* Time Label */}
-                                                <div className="w-14 -mt-2.5 text-xs text-gray-500 text-right pr-3 select-none">
+                                                <div className="w-14 -mt-2.5 text-xs text-[var(--app-text-muted)] text-right pr-3 select-none">
                                                     {hour.toString().padStart(2, '0')}:00
                                                 </div>
                                                 {/* Half-hour marker */}
-                                                <div className="absolute top-1/2 left-14 right-0 border-t border-gray-800/10" />
+                                                <div className="absolute top-1/2 left-14 right-0 border-t border-[var(--app-border)]/20" />
                                             </div>
                                         ))}
 
@@ -476,10 +476,10 @@ export function CalendarView() {
                                                         onClick={(e) => { e.stopPropagation(); handleEventClick(event, dayEvents) }}
                                                         className={cn(
                                                             "absolute left-1 right-2 rounded-lg p-2 text-xs cursor-pointer border-l-4 overflow-hidden transition-colors hover:z-20 pointer-events-auto",
-                                                            event.priority === 'urgent' || event.priority === 'high' ? "bg-red-500/10 border-red-500 text-red-100 hover:bg-red-500/20" :
-                                                                event.priority === 'medium' ? "bg-amber-500/10 border-amber-500 text-amber-100 hover:bg-amber-500/20" :
-                                                                    event.priority === 'low' ? "bg-green-500/10 border-green-500 text-green-100 hover:bg-green-500/20" :
-                                                                        "bg-[#2a2a35] border-gray-500 text-gray-200 hover:bg-[#323240]"
+                                                            event.priority === 'urgent' || event.priority === 'high' ? "bg-red-500/10 border-red-500 text-red-600 dark:text-red-100 hover:bg-red-500/20" :
+                                                                event.priority === 'medium' ? "bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-100 hover:bg-amber-500/20" :
+                                                                    event.priority === 'low' ? "bg-green-500/10 border-green-500 text-green-600 dark:text-green-100 hover:bg-green-500/20" :
+                                                                        "bg-[var(--app-bg-elevated)] border-[var(--app-border)] text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-deepest)]"
                                                         )}
                                                         style={{
                                                             top: `${startMinutes}px`,
@@ -502,7 +502,7 @@ export function CalendarView() {
                                 <div
                                     key={day.toString()}
                                     className={cn(
-                                        "relative p-2 border-gray-800/50 transition-all group hover:bg-[#16161f]",
+                                        "relative p-2 border-[var(--app-border)] transition-all group hover:bg-[var(--app-bg-deepest)]/30",
                                         isRightBorder && "border-r",
                                         !isLastRow && "border-b", // Only apply bottom border in month view rows (except last)
                                         view !== 'month' && "min-h-[500px]" // Vertical height for week view
@@ -516,7 +516,7 @@ export function CalendarView() {
                                                     "text-xs font-medium h-7 w-7 flex items-center justify-center rounded-full transition-all",
                                                     isToday
                                                         ? "bg-[#F59E0B] text-black font-bold shadow-[0_0_10px_rgba(245,158,11,0.4)]"
-                                                        : "text-gray-500 group-hover:text-gray-300"
+                                                        : "text-[var(--app-text-muted)] group-hover:text-[var(--app-text-secondary)]"
                                                 )}>
                                                     {format(day, 'd')}
                                                 </span>
@@ -531,9 +531,9 @@ export function CalendarView() {
                                                     onClick={(e) => { e.stopPropagation(); handleEventClick(event, dayEvents) }}
                                                     className={cn(
                                                         "px-2 py-1.5 rounded-lg transition-colors cursor-pointer group/card shrink-0",
-                                                        event.priority === 'urgent' || event.priority === 'high' ? "bg-red-500/10 border border-red-500/20 text-red-200" :
-                                                            event.priority === 'low' ? "bg-green-500/10 border border-green-500/20 text-green-200" :
-                                                                "bg-[#1a1a24] hover:bg-[#22222e] text-gray-300"
+                                                        event.priority === 'urgent' || event.priority === 'high' ? "bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-200" :
+                                                            event.priority === 'low' ? "bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-200" :
+                                                                "bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-deepest)] text-[var(--app-text-secondary)] border border-[var(--app-border)]"
                                                     )}
                                                 >
                                                     <div className="flex flex-col">
@@ -541,7 +541,7 @@ export function CalendarView() {
                                                             {event.title}
                                                         </span>
                                                         {(view === 'week') && event.startAt && (
-                                                            <span className="text-[9px] text-gray-500 mt-0.5">
+                                                            <span className="text-[9px] text-[var(--app-text-muted)] mt-0.5">
                                                                 {format(parseISO(event.startAt), 'HH:mm')}
                                                             </span>
                                                         )}
@@ -553,7 +553,7 @@ export function CalendarView() {
                                             {view === 'month' && dayEvents.length > 2 && (
                                                 <span
                                                     onClick={(e) => { e.stopPropagation(); handleDayClick(day, dayEvents) }}
-                                                    className="text-[9px] text-gray-500 text-center shrink-0 cursor-pointer hover:text-amber-400 transition-colors"
+                                                    className="text-[9px] text-[var(--app-text-muted)] text-center shrink-0 cursor-pointer hover:text-amber-500 transition-colors"
                                                 >
                                                     + {dayEvents.length - 2} more
                                                 </span>
@@ -569,7 +569,7 @@ export function CalendarView() {
                                                         setSelectedDay(day)
                                                         setIsEventPanelOpen(true)
                                                     }}
-                                                    className="w-full py-1 text-[10px] text-gray-500 border border-white/10 border-dashed rounded bg-white/5 hover:bg-white/10 hover:text-gray-300 transition-all flex items-center justify-center gap-1"
+                                                    className="w-full py-1 text-[10px] text-[var(--app-text-muted)] border border-[var(--app-border)] border-dashed rounded bg-[var(--app-bg-deepest)]/50 hover:bg-amber-500/10 hover:text-amber-500 transition-all flex items-center justify-center gap-1"
                                                 >
                                                     <span>+</span> {t('calendar.actions.add')}
                                                 </button>

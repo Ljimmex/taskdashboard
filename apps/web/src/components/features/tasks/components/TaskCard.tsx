@@ -276,9 +276,9 @@ export function TaskCard({
         <div
             onClick={onClick}
             className={`
-                rounded-2xl bg-[#12121a] p-4 relative flex flex-col cursor-pointer
-                transition-all duration-200
-                ${isDragging ? 'opacity-50 rotate-2 scale-105 shadow-2xl' : 'hover:bg-[#16161f]'}
+                rounded-2xl bg-[var(--app-bg-card)] p-4 relative flex flex-col cursor-pointer
+                transition-all duration-300 border border-transparent
+                ${isDragging ? 'opacity-50 rotate-2 scale-105 shadow-2xl' : 'hover:bg-[var(--app-bg-elevated)] hover:border-[var(--app-border)]'}
             `}
             onContextMenu={handleContextMenu}
         >
@@ -287,7 +287,7 @@ export function TaskCard({
                 {type !== 'meeting' && (
                     <button
                         onClick={(e) => { e.stopPropagation(); setIsCollapsedState(!isCollapsedState) }}
-                        className="w-6 h-6 rounded flex items-center justify-center text-gray-600 hover:text-white transition-all bg-[#1a1a24]/50 border border-transparent hover:border-gray-700"
+                        className="w-6 h-6 rounded flex items-center justify-center text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all bg-[var(--app-bg-deepest)]/50 border border-transparent hover:border-[var(--app-border)]"
                         title={isCollapsedState ? "Expand" : "Collapse"}
                     >
                         {isCollapsedState ? (
@@ -304,16 +304,16 @@ export function TaskCard({
                 <button
                     ref={buttonRef}
                     onClick={(e) => { e.stopPropagation(); handleMenuToggle() }}
-                    className="w-6 h-6 rounded flex items-center justify-center text-gray-600 hover:text-white transition-all"
+                    className="w-6 h-6 rounded flex items-center justify-center text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all"
                 >
                     ⋮
                 </button>
 
                 {/* Dropdown Menu - smart positioning based on available space */}
                 {showMenu && (
-                    <div className={`absolute right-4 w-36 bg-[#1a1a24] rounded-xl shadow-2xl overflow-hidden z-50 p-2 space-y-1 ${menuDirection === 'up' ? 'bottom-full mb-2' : 'top-10'
+                    <div className={`absolute right-4 w-36 bg-[var(--app-bg-card)] rounded-xl shadow-2xl overflow-hidden z-50 p-2 space-y-1 border border-[var(--app-border)] ${menuDirection === 'up' ? 'bottom-full mb-2' : 'top-10'
                         }`}>
-                        <button onClick={(e) => { e.stopPropagation(); onFullEdit?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                        <button onClick={(e) => { e.stopPropagation(); onFullEdit?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item">
                             <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
                                 <path d="M22.5 4.5L27.5 9.5L12 25L7 20L22.5 4.5Z" fill="#545454" />
                                 <path d="M12 25L7 20L4 28L12 25Z" fill="#9E9E9E" />
@@ -326,7 +326,7 @@ export function TaskCard({
                         </button>
 
                         {type !== 'meeting' && !isAssignedToMe && (canManageTasks || userRole === 'member') && (
-                            <button onClick={handleAssignToMe} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                            <button onClick={handleAssignToMe} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="group-hover/item:hidden">
                                     <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#545454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="#545454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -345,7 +345,7 @@ export function TaskCard({
                                 onClick={handleToggleCompletion}
                                 disabled={isBlocked}
                                 className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors group/item
-                                    ${isBlocked ? 'text-gray-600 cursor-not-allowed' : 'text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88]'}`
+                                    ${isBlocked ? 'text-[var(--app-text-muted)] cursor-not-allowed opacity-50' : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500'}`
                                 }
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="group-hover/item:hidden">
@@ -360,7 +360,7 @@ export function TaskCard({
 
                         {canManageTasks && (
                             <>
-                                <button onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                                <button onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item">
                                     <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
                                         <rect x="10" y="10" width="16" height="16" rx="3" fill="#9E9E9E" />
                                         <path d="M8 22V10C8 7.79086 9.79086 6 12 6H22" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
@@ -371,7 +371,7 @@ export function TaskCard({
                                     </svg>
                                     {t('tasks.card.menu.duplicate')}
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); onArchive?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                                <button onClick={(e) => { e.stopPropagation(); onArchive?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item">
                                     <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
                                         <rect x="4" y="12" width="24" height="16" rx="3" fill="#545454" />
                                         <rect x="6" y="8" width="20" height="4" rx="1" fill="#9E9E9E" />
@@ -382,7 +382,7 @@ export function TaskCard({
                                     </svg>
                                     {t('tasks.card.menu.archive')}
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); onDelete?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item">
+                                <button onClick={(e) => { e.stopPropagation(); onDelete?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-red-500 transition-colors group/item">
                                     <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
                                         <path d="M6 10V24C6 26.2091 7.79086 28 10 28H22C24.2091 28 26 26.2091 26 24V10H6Z" fill="#545454" />
                                         <rect x="4" y="6" width="24" height="4" rx="2" fill="#9E9E9E" />
@@ -410,12 +410,12 @@ export function TaskCard({
                         </svg>
                     </div>
                 )}
-                <h3 className={`font-semibold line-clamp-2 ${isBlocked ? 'text-gray-500' : (isCompleted ? 'line-through text-gray-500' : 'text-white')} ${isCollapsed ? 'mb-0' : ''}`}>{title}</h3>
+                <h3 className={`font-semibold line-clamp-2 ${isBlocked ? 'text-[var(--app-text-muted)]' : (isCompleted ? 'line-through text-[var(--app-text-muted)]' : 'text-[var(--app-text-primary)]')} ${isCollapsed ? 'mb-0' : ''}`}>{title}</h3>
             </div>
 
             {/* If collapsed, we show assignees + due date right under the title or to the side, then return early to hide the rest. */}
             {isCollapsed ? (
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-800/50">
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--app-border)]">
                     <div className="flex items-center gap-2 min-w-0 pr-2">
                         <span
                             className="px-1.5 py-0.5 rounded text-[10px] font-medium flex items-center gap-1 flex-shrink-0"
@@ -442,7 +442,7 @@ export function TaskCard({
                                     </div>
                                 ))}
                                 {safeLabels.length > 2 && (
-                                    <span className="text-[10px] text-gray-500 ml-0.5">+{safeLabels.length - 2}</span>
+                                    <span className="text-[10px] text-[var(--app-text-muted)] ml-0.5">+{safeLabels.length - 2}</span>
                                 )}
                             </div>
                         )}
@@ -459,7 +459,7 @@ export function TaskCard({
                             )
                         })}
                         {safeAssignees.length > 3 && (
-                            <div className="w-4 h-4 rounded-full border border-[#1a1a24] bg-gray-700 flex items-center justify-center text-white text-[8px] font-bold" style={{ zIndex: 0 }}>
+                            <div className="w-4 h-4 rounded-full border border-[var(--app-bg-card)] bg-[var(--app-bg-deepest)] flex items-center justify-center text-[var(--app-text-primary)] text-[8px] font-bold" style={{ zIndex: 0 }}>
                                 +{safeAssignees.length - 3}
                             </div>
                         )}
@@ -636,12 +636,12 @@ export function AddTaskCard({ onClick, label: propLabel }: { onClick?: () => voi
     return (
         <button
             onClick={onClick}
-            className="rounded-2xl border-2 border-dashed border-gray-700 bg-[#12121a]/50 p-4 flex flex-col items-center justify-center h-[140px] hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group"
+            className="rounded-2xl border-2 border-dashed border-[var(--app-border)] bg-[var(--app-bg-card)]/50 p-4 flex flex-col items-center justify-center h-[140px] hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group"
         >
-            <div className="w-12 h-12 rounded-full bg-gray-800 group-hover:bg-amber-500/20 flex items-center justify-center mb-3 transition-colors">
-                <span className="text-2xl text-gray-500 group-hover:text-amber-400">+</span>
+            <div className="w-12 h-12 rounded-full bg-[var(--app-bg-elevated)] group-hover:bg-amber-500/20 flex items-center justify-center mb-3 transition-colors border border-[var(--app-border)]">
+                <span className="text-2xl text-[var(--app-text-muted)] group-hover:text-amber-500">+</span>
             </div>
-            <span className="text-gray-400 group-hover:text-amber-400 font-medium transition-colors">{label}</span>
+            <span className="text-[var(--app-text-muted)] group-hover:text-amber-500 font-medium transition-colors">{label}</span>
         </button>
     )
 }

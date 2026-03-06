@@ -139,18 +139,18 @@ export function AccountSettingsTab() {
         <div className="space-y-8 max-w-3xl">
             {/* Header */}
             <div>
-                <h3 className="text-lg font-medium text-white">{t('settings.account.title')}</h3>
-                <p className="text-sm text-gray-400">{t('settings.account.subtitle')}</p>
+                <h3 className="text-lg font-medium text-[var(--app-text-primary)]">{t('settings.account.title')}</h3>
+                <p className="text-sm text-[var(--app-text-secondary)]">{t('settings.account.subtitle')}</p>
             </div>
 
             {/* Photo Section */}
             <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">{t('settings.account.photo.title')}</h3>
-                <div className="bg-[#1a1a24] rounded-xl p-6 flex items-center gap-6">
+                <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.account.photo.title')}</h3>
+                <div className="bg-[var(--app-bg-elevated)] rounded-xl p-6 flex items-center gap-6 border border-[var(--app-border)]">
                     <div className="relative group">
                         <div
                             onClick={() => fileInputRef.current?.click()}
-                            className={`w-20 h-20 rounded-xl flex items-center justify-center text-2xl font-bold text-black overflow-hidden shadow-lg border-2 border-[#1a1a24] cursor-pointer hover:opacity-80 transition-opacity ${user?.image ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}
+                            className={`w-20 h-20 rounded-xl flex items-center justify-center text-2xl font-bold text-black overflow-hidden shadow-lg border-2 border-[var(--app-bg-sidebar)] cursor-pointer hover:opacity-80 transition-opacity ${user?.image ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}
                         >
                             {user?.image ? (
                                 <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
@@ -177,7 +177,7 @@ export function AccountSettingsTab() {
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isUploading}
-                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+                                className="px-4 py-2 bg-[var(--app-bg-sidebar)] hover:bg-[var(--app-bg-sidebar)]/80 text-[var(--app-text-primary)] rounded-lg text-sm transition-colors border border-[var(--app-border)]"
                             >
                                 {isUploading ? t('settings.account.photo.uploading') : t('settings.account.photo.change')}
                             </button>
@@ -192,7 +192,7 @@ export function AccountSettingsTab() {
                                 {t('settings.account.photo.remove')}
                             </button>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">{t('settings.account.photo.hint')}</p>
+                        <p className="text-xs text-[var(--app-text-muted)] mt-2">{t('settings.account.photo.hint')}</p>
                     </div>
                 </div>
             </section>
@@ -202,27 +202,27 @@ export function AccountSettingsTab() {
                 {/* Personal Information */}
                 <section className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-white">{t('settings.account.personalInfo.title')}</h3>
+                        <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.account.personalInfo.title')}</h3>
                         <button
                             type="submit"
                             disabled={updateProfileMutation.isPending}
                             className={`px-4 py-2 font-medium rounded-lg text-sm transition-colors ${updateProfileMutation.isPending
-                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                                : 'bg-[#F2CE88] hover:bg-[#d9b877] text-black'
+                                ? 'bg-[var(--app-bg-input)] text-[var(--app-text-muted)] cursor-not-allowed'
+                                : 'bg-[var(--app-accent)] hover:opacity-90 text-black shadow-lg shadow-amber-500/20'
                                 }`}
                         >
                             {updateProfileMutation.isPending ? t('settings.account.personalInfo.saving') : t('settings.account.personalInfo.save')}
                         </button>
                     </div>
 
-                    <div className="bg-[#1a1a24] rounded-xl p-6 space-y-6">
+                    <div className="bg-[var(--app-bg-elevated)] rounded-xl p-6 space-y-6 border border-[var(--app-border)]">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* First Name */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">{t('settings.account.personalInfo.firstName')}</label>
+                                <label className="text-sm font-medium text-[var(--app-text-secondary)]">{t('settings.account.personalInfo.firstName')}</label>
                                 <input
                                     {...form.register('firstName')}
-                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                    className="w-full bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                                     placeholder={t('settings.account.personalInfo.firstNamePlaceholder')}
                                 />
                                 {form.formState.errors.firstName && (
@@ -232,10 +232,10 @@ export function AccountSettingsTab() {
 
                             {/* Last Name */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">{t('settings.account.personalInfo.lastName')}</label>
+                                <label className="text-sm font-medium text-[var(--app-text-secondary)]">{t('settings.account.personalInfo.lastName')}</label>
                                 <input
                                     {...form.register('lastName')}
-                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                    className="w-full bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                                     placeholder={t('settings.account.personalInfo.lastNamePlaceholder')}
                                 />
                                 {form.formState.errors.lastName && (
@@ -245,17 +245,17 @@ export function AccountSettingsTab() {
 
                             {/* Date of Birth */}
                             <div className="space-y-2 flex flex-col">
-                                <label className="text-sm font-medium text-gray-400">{t('settings.account.personalInfo.birthDate')}</label>
+                                <label className="text-sm font-medium text-[var(--app-text-secondary)]">{t('settings.account.personalInfo.birthDate')}</label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <button
                                             type="button"
                                             className={cn(
-                                                "w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-left text-sm transition-colors flex items-center gap-2 outline-none focus:border-[#F2CE88]",
-                                                !form.watch('birthDate') ? "text-gray-500" : "text-white"
+                                                "w-full bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-left text-sm transition-colors flex items-center gap-2 outline-none focus:border-[var(--app-accent)]",
+                                                !form.watch('birthDate') ? "text-[var(--app-text-muted)]" : "text-[var(--app-text-primary)]"
                                             )}
                                         >
-                                            <CalendarIcon className="w-4 h-4 text-gray-400" />
+                                            <CalendarIcon className="w-4 h-4 text-[var(--app-text-muted)]" />
                                             {form.watch('birthDate') ? (
                                                 format(new Date(form.watch('birthDate')!), "PPP")
                                             ) : (
@@ -263,7 +263,7 @@ export function AccountSettingsTab() {
                                             )}
                                         </button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0 bg-[#12121a] border-gray-800 text-white" align="start">
+                                    <PopoverContent className="w-auto p-0 bg-[var(--app-bg-card)] border-[var(--app-border)] text-[var(--app-text-primary)]" align="start">
                                         <Calendar
                                             mode="single"
                                             selected={form.watch('birthDate') ? new Date(form.watch('birthDate')!) : undefined}
@@ -280,7 +280,7 @@ export function AccountSettingsTab() {
                                                 date > new Date() || date < new Date("1900-01-01")
                                             }
                                             initialFocus
-                                            className="bg-[#12121a]"
+                                            className="bg-[var(--app-bg-card)]"
                                         />
                                     </PopoverContent>
                                 </Popover>
@@ -288,10 +288,10 @@ export function AccountSettingsTab() {
 
                             {/* Gender */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">{t('settings.account.personalInfo.gender')}</label>
+                                <label className="text-sm font-medium text-[var(--app-text-secondary)]">{t('settings.account.personalInfo.gender')}</label>
                                 <select
                                     {...form.register('gender')}
-                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] appearance-none"
+                                    className="w-full bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] appearance-none"
                                 >
                                     <option value="">{t('settings.account.personalInfo.selectGender')}</option>
                                     <option value="male">{t('settings.account.personalInfo.genders.male')}</option>
@@ -306,24 +306,24 @@ export function AccountSettingsTab() {
 
                 {/* Professional Details */}
                 <section className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white">{t('settings.account.professional.title')}</h3>
-                    <div className="bg-[#1a1a24] rounded-xl p-6 space-y-6">
+                    <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.account.professional.title')}</h3>
+                    <div className="bg-[var(--app-bg-elevated)] rounded-xl p-6 space-y-6 border border-[var(--app-border)]">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">{t('settings.account.professional.position')}</label>
+                            <label className="text-sm font-medium text-[var(--app-text-secondary)]">{t('settings.account.professional.position')}</label>
                             <input
                                 {...form.register('position')}
-                                className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                className="w-full bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                                 placeholder={t('settings.account.professional.positionPlaceholder')}
                             />
                         </div>
 
                         {/* Description */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">{t('settings.account.professional.description')}</label>
+                            <label className="text-sm font-medium text-[var(--app-text-secondary)]">{t('settings.account.professional.description')}</label>
                             <textarea
                                 {...form.register('description')}
                                 rows={4}
-                                className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] min-h-[100px]"
+                                className="w-full bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] min-h-[100px]"
                                 placeholder={t('settings.account.professional.descriptionPlaceholder')}
                             />
                         </div>
@@ -332,35 +332,35 @@ export function AccountSettingsTab() {
 
                 {/* Location & Preferences */}
                 <section className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white">{t('settings.account.location.title')}</h3>
-                    <div className="bg-[#1a1a24] rounded-xl p-6 space-y-6">
+                    <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.account.location.title')}</h3>
+                    <div className="bg-[var(--app-bg-elevated)] rounded-xl p-6 space-y-6 border border-[var(--app-border)]">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Country */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">{t('settings.account.location.country')}</label>
+                                <label className="text-sm font-medium text-[var(--app-text-secondary)]">{t('settings.account.location.country')}</label>
                                 <input
                                     {...form.register('country')}
-                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                    className="w-full bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                                     placeholder={t('settings.account.location.countryPlaceholder')}
                                 />
                             </div>
 
                             {/* City */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-400">{t('settings.account.location.city')}</label>
+                                <label className="text-sm font-medium text-[var(--app-text-secondary)]">{t('settings.account.location.city')}</label>
                                 <input
                                     {...form.register('city')}
-                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                    className="w-full bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                                     placeholder={t('settings.account.location.cityPlaceholder')}
                                 />
                             </div>
 
                             {/* Timezone */}
                             <div className="space-y-2 col-span-1 md:col-span-2">
-                                <label className="text-sm font-medium text-gray-400">{t('settings.account.location.timezone')}</label>
+                                <label className="text-sm font-medium text-[var(--app-text-secondary)]">{t('settings.account.location.timezone')}</label>
                                 <select
                                     {...form.register('timezone')}
-                                    className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] appearance-none"
+                                    className="w-full bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] appearance-none"
                                 >
                                     {supportedTimezones.map((tz: string) => {
                                         const offset = new Intl.DateTimeFormat('en-US', {
@@ -382,7 +382,7 @@ export function AccountSettingsTab() {
             </form>
 
             {/* Danger Zone */}
-            <div className="pt-8 border-t border-gray-800">
+            <div className="pt-8 border-t border-[var(--app-border)]">
                 <button
                     type="button"
                     onClick={() => {

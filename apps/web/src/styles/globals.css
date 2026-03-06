@@ -64,6 +64,43 @@
 }
 
 /* =============================================================================
+   APP THEME VARIABLES (used by dashboard, sidebar, header)
+   Default = dark. Overridden by [data-theme="light"].
+   ============================================================================= */
+
+:root {
+  --app-bg-deepest: #0a0a0f;
+  --app-bg-sidebar: #0d0d14;
+  --app-bg-card: #12121a;
+  --app-bg-elevated: #1a1a24;
+  --app-bg-input: #0a0a0f;
+  --app-border: rgba(31, 41, 55, 0.5);
+  --app-text-primary: #ffffff;
+  --app-text-secondary: #6b7280;
+  --app-text-muted: #4b5563;
+  --app-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --app-accent: #f2ce88;
+  --app-accent-text: #0a0a0f;
+  --app-accent-hover: #e0b462;
+}
+
+[data-theme="light"] {
+  --app-bg-deepest: #f1f3f6;
+  --app-bg-sidebar: #ffffff;
+  --app-bg-card: #ffffff;
+  --app-bg-elevated: #f8fafc;
+  --app-bg-input: #f1f5f9;
+  --app-border: rgba(0, 0, 0, 0.1);
+  --app-text-primary: #0f172a;
+  --app-text-secondary: #475569;
+  --app-text-muted: #64748b;
+  --app-shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --app-accent: #f59e0b;
+  --app-accent-text: #b45309;
+  --app-accent-hover: #d97706;
+}
+
+/* =============================================================================
    BASE STYLES
    ============================================================================= */
 
