@@ -1,5 +1,6 @@
 import { Excalidraw } from "@excalidraw/excalidraw";
-import { useState, useEffect } from "react";
+import "@excalidraw/excalidraw/index.css";
+import { useState } from "react";
 import { useThemeStore } from "@/lib/themeStore";
 
 interface ExcalidrawBoardProps {
@@ -10,40 +11,30 @@ interface ExcalidrawBoardProps {
 
 export const ExcalidrawBoard = ({ initialData, onSave, readOnly = false }: ExcalidrawBoardProps) => {
     const { theme } = useThemeStore();
-    const [elements, setElements] = useState(initialData?.elements || []);
-    const [appState, setAppState] = useState(initialData?.appState || {});
 
-    // Sync with initialData if it changes (e.g. switching boards)
-    useEffect(() => {
-        if (initialData) {
-            setElements(initialData.elements || []);
-            setAppState(initialData.appState || {});
+    const excalidrawInitialData = useState(() => {
+        const appState = initialData?.appState ? { ...initialData.appState } : {};
+        if (appState.collaborators) {
+            delete appState.collaborators; // Excalidraw expects a Map, DB saves a plain object
         }
-    }, [initialData]);
+        return {
+            elements: initialData?.elements || [],
+            appState: appState,
+            scrollToContent: true,
+        };
+    })[0];
 
-    const handleChange = (newElements: readonly any[], newAppState: any, files: any) => {
+    const handleChange = (elements: readonly any[], appState: any, files: any) => {
         if (readOnly) return;
-
-        setElements([...newElements]);
-        setAppState({ ...newAppState });
-
         if (onSave) {
-            onSave({
-                elements: newElements,
-                appState: newAppState,
-                files
-            });
+            onSave({ elements, appState, files });
         }
     };
 
     return (
         <div className="absolute inset-0 w-full h-full bg-[var(--app-bg-deepest)]">
             <Excalidraw
-                initialData={{
-                    elements: elements,
-                    appState: { ...appState, theme },
-                    scrollToContent: true,
-                }}
+                initialData={excalidrawInitialData}
                 onChange={handleChange}
                 viewModeEnabled={readOnly}
                 theme={theme}
