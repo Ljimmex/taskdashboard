@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { whiteboards, type NewWhiteboard } from '../../db/schema/whiteboards'
+
 import { type Auth } from '../../lib/auth'
 import { eq, desc } from 'drizzle-orm'
 import { z } from 'zod'
@@ -32,6 +33,23 @@ const updateWhiteboardSchema = z.object({
 
 export const whiteboardsRoutes = new Hono<Env>()
 
+// Helper: Resolve workspaceId (could be a slug or actual ID)
+async function resolveWorkspaceId(workspaceIdOrSlug: string): Promise<string | null> {
+    // First try to find by ID directly
+    const byId = await db.query.workspaces.findFirst({
+        where: (ws, { eq }) => eq(ws.id, workspaceIdOrSlug),
+        columns: { id: true }
+    })
+    if (byId) return byId.id
+
+    // If not found by ID, try by slug
+    const bySlug = await db.query.workspaces.findFirst({
+        where: (ws, { eq }) => eq(ws.slug, workspaceIdOrSlug),
+        columns: { id: true }
+    })
+    return bySlug?.id || null
+}
+
 // Helper: Get user's workspace role
 async function getUserWorkspaceRole(userId: string, workspaceId: string) {
     const member = await db.query.workspaceMembers.findFirst({
@@ -47,10 +65,15 @@ async function getUserWorkspaceRole(userId: string, workspaceId: string) {
 // GET /api/whiteboards - List whiteboards for a workspace
 whiteboardsRoutes.get('/', async (c) => {
     const user = c.get('user')
-    const workspaceId = c.req.query('workspaceId')
+    const workspaceIdOrSlug = c.req.query('workspaceId')
 
-    if (!workspaceId) {
+    if (!workspaceIdOrSlug) {
         return c.json({ error: 'workspaceId is required' }, 400)
+    }
+
+    const workspaceId = await resolveWorkspaceId(workspaceIdOrSlug)
+    if (!workspaceId) {
+        return c.json({ error: 'Workspace not found' }, 404)
     }
 
     const role = await getUserWorkspaceRole(user.id, workspaceId)
@@ -117,13 +140,18 @@ whiteboardsRoutes.post('/', async (c, next) => {
     const user = c.get('user')
     const body = c.req.valid('json')
 
-    const role = await getUserWorkspaceRole(user.id, body.workspaceId)
+    const workspaceId = await resolveWorkspaceId(body.workspaceId)
+    if (!workspaceId) {
+        return c.json({ error: 'Workspace not found' }, 404)
+    }
+
+    const role = await getUserWorkspaceRole(user.id, workspaceId)
     if (!role) {
         return c.json({ error: 'Forbidden' }, 403)
     }
 
     const newBoard: NewWhiteboard = {
-        workspaceId: body.workspaceId,
+        workspaceId: workspaceId,
         name: body.name,
         data: body.data || {},
         createdBy: user.id,

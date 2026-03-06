@@ -123,6 +123,8 @@ export interface DocumentRecord {
     title: string
     content: any // Tiptap JSON structure
     createdBy: string
+    projectId?: string | null
+    folderId?: string | null
     isArchived: boolean
     createdAt: Date | string
     updatedAt: Date | string
@@ -139,6 +141,8 @@ export interface WhiteboardRecord {
     name: string
     data: any // Tldraw data structure
     createdBy: string
+    projectId?: string | null
+    folderId?: string | null
     isArchived: boolean
     createdAt: Date | string
     updatedAt: Date | string

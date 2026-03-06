@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { DocumentRecord } from '@taskdashboard/types'
+import { apiFetch } from '@/lib/api'
 
 const API_BASE = '/api/docs'
 
@@ -8,8 +9,10 @@ export const useDocuments = (workspaceId?: string) => {
         queryKey: ['documents', workspaceId],
         queryFn: async () => {
             if (!workspaceId) return []
-            const res = await fetch(`${API_BASE}?workspaceId=${workspaceId}`)
-            const json = await res.json()
+            const res = await apiFetch(`${API_BASE}?workspaceId=${workspaceId}`)
+            const text = await res.text()
+            if (!text) throw new Error('Empty response from server')
+            const json = JSON.parse(text)
             if (!json.success) throw new Error(json.error)
             return json.data as DocumentRecord[]
         },
@@ -22,8 +25,10 @@ export const useDocument = (id?: string) => {
         queryKey: ['document', id],
         queryFn: async () => {
             if (!id) return null
-            const res = await fetch(`${API_BASE}/${id}`)
-            const json = await res.json()
+            const res = await apiFetch(`${API_BASE}/${id}`)
+            const text = await res.text()
+            if (!text) throw new Error('Empty response from server')
+            const json = JSON.parse(text)
             if (!json.success) throw new Error(json.error)
             return json.data as DocumentRecord
         },
@@ -35,12 +40,14 @@ export const useCreateDocument = () => {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async (data: { title: string; workspaceId: string; content?: any; projectId?: string; folderId?: string }) => {
-            const res = await fetch(API_BASE, {
+            const res = await apiFetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             })
-            const json = await res.json()
+            const text = await res.text()
+            if (!text) throw new Error('Empty response from server')
+            const json = JSON.parse(text)
             if (!json.success) throw new Error(json.error)
             return json.data as DocumentRecord
         },
@@ -57,12 +64,14 @@ export const useUpdateDocument = () => {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async ({ id, ...data }: Partial<DocumentRecord> & { id: string }) => {
-            const res = await fetch(`${API_BASE}/${id}`, {
+            const res = await apiFetch(`${API_BASE}/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             })
-            const json = await res.json()
+            const text = await res.text()
+            if (!text) throw new Error('Empty response from server')
+            const json = JSON.parse(text)
             if (!json.success) throw new Error(json.error)
             return json.data as DocumentRecord
         },
@@ -77,8 +86,10 @@ export const useDeleteDocument = () => {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`${API_BASE}/${id}`, { method: 'DELETE' })
-            const json = await res.json()
+            const res = await apiFetch(`${API_BASE}/${id}`, { method: 'DELETE' })
+            const text = await res.text()
+            if (!text) throw new Error('Empty response from server')
+            const json = JSON.parse(text)
             if (!json.success) throw new Error(json.error)
             return id
         },
