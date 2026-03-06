@@ -8,6 +8,13 @@
       "when": 1772801550318,
       "tag": "0000_public_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772814119740,
+      "tag": "0001_nostalgic_franklin_richards",
+      "breakpoints": true
     }
   ]
 }

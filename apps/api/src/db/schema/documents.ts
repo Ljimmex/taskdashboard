@@ -2,8 +2,6 @@ import { pgTable, uuid, varchar, text, timestamp, boolean, pgPolicy, jsonb } fro
 import { relations, sql } from 'drizzle-orm'
 import { workspaces } from './workspaces'
 import { users } from './users'
-import { projects } from './projects'
-import { folders } from './folders'
 
 export const documents = pgTable('documents', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -15,10 +13,6 @@ export const documents = pgTable('documents', {
     createdBy: text('created_by')
         .notNull()
         .references(() => users.id),
-    projectId: uuid('project_id')
-        .references(() => projects.id, { onDelete: 'set null' }),
-    folderId: text('folder_id')
-        .references(() => folders.id, { onDelete: 'set null' }),
     isArchived: boolean('is_archived').default(false).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -53,8 +47,6 @@ export const documents = pgTable('documents', {
 export const documentsRelations = relations(documents, ({ one }) => ({
     workspace: one(workspaces, { fields: [documents.workspaceId], references: [workspaces.id] }),
     creator: one(users, { fields: [documents.createdBy], references: [users.id] }),
-    project: one(projects, { fields: [documents.projectId], references: [projects.id] }),
-    folder: one(folders, { fields: [documents.folderId], references: [folders.id] }),
 }))
 
 export type Document = typeof documents.$inferSelect

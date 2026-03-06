@@ -2,8 +2,6 @@ import { pgTable, uuid, varchar, text, timestamp, boolean, pgPolicy, jsonb } fro
 import { relations, sql } from 'drizzle-orm'
 import { workspaces } from './workspaces'
 import { users } from './users'
-import { projects } from './projects'
-import { folders } from './folders'
 
 export const whiteboards = pgTable('whiteboards', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -15,10 +13,6 @@ export const whiteboards = pgTable('whiteboards', {
     createdBy: text('created_by')
         .notNull()
         .references(() => users.id),
-    projectId: uuid('project_id')
-        .references(() => projects.id, { onDelete: 'set null' }),
-    folderId: text('folder_id')
-        .references(() => folders.id, { onDelete: 'set null' }),
     isArchived: boolean('is_archived').default(false).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -53,8 +47,6 @@ export const whiteboards = pgTable('whiteboards', {
 export const whiteboardsRelations = relations(whiteboards, ({ one }) => ({
     workspace: one(workspaces, { fields: [whiteboards.workspaceId], references: [workspaces.id] }),
     creator: one(users, { fields: [whiteboards.createdBy], references: [users.id] }),
-    project: one(projects, { fields: [whiteboards.projectId], references: [projects.id] }),
-    folder: one(folders, { fields: [whiteboards.folderId], references: [folders.id] }),
 }))
 
 export type Whiteboard = typeof whiteboards.$inferSelect

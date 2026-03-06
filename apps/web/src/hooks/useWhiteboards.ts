@@ -39,7 +39,7 @@ export const useWhiteboard = (id?: string) => {
 export function useCreateBoard() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (data: { name: string; workspaceId: string; data?: any; projectId?: string; folderId?: string }) => {
+        mutationFn: async (data: { name: string; workspaceId: string; data?: any }) => {
             const res = await apiFetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

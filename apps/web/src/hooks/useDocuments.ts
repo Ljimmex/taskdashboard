@@ -39,7 +39,7 @@ export const useDocument = (id?: string) => {
 export const useCreateDocument = () => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (data: { title: string; workspaceId: string; content?: any; projectId?: string; folderId?: string }) => {
+        mutationFn: async (data: { title: string; workspaceId: string; content?: any }) => {
             const res = await apiFetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

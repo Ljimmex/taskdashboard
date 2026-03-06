@@ -18,16 +18,12 @@ const createWhiteboardSchema = z.object({
     name: zSanitizedString(),
     data: z.any().optional(),
     workspaceId: z.string(),
-    projectId: z.string().uuid().optional(),
-    folderId: z.string().optional(),
 })
 
 const updateWhiteboardSchema = z.object({
     name: zSanitizedStringOptional(),
     data: z.any().optional(),
     isArchived: z.boolean().optional(),
-    projectId: z.string().uuid().optional(),
-    folderId: z.string().optional(),
 })
 
 export const whiteboardsRoutes = new Hono<Env>()
@@ -35,14 +31,12 @@ export const whiteboardsRoutes = new Hono<Env>()
 // Helper: Resolve workspaceId — accepts either a workspace UUID or a slug
 async function resolveWorkspaceId(workspaceIdOrSlug: string): Promise<string | null> {
     try {
-        // First try to find workspace by ID
         const byId = await db.query.workspaces.findFirst({
             where: (ws, { eq }) => eq(ws.id, workspaceIdOrSlug),
             columns: { id: true }
         })
         if (byId) return byId.id
 
-        // If not found by ID, try by slug
         const bySlug = await db.query.workspaces.findFirst({
             where: (ws, { eq }) => eq(ws.slug, workspaceIdOrSlug),
             columns: { id: true }
@@ -78,7 +72,7 @@ whiteboardsRoutes.get('/', async (c) => {
 
         const workspaceId = await resolveWorkspaceId(workspaceIdOrSlug)
         if (!workspaceId) {
-            return c.json({ success: false, error: 'Workspace not found', receivedValue: workspaceIdOrSlug }, 404)
+            return c.json({ success: false, error: 'Workspace not found' }, 404)
         }
 
         const role = await getUserWorkspaceRole(user.id, workspaceId)
@@ -150,7 +144,7 @@ whiteboardsRoutes.post('/', zValidator('json', createWhiteboardSchema, (result, 
 
         const workspaceId = await resolveWorkspaceId(body.workspaceId)
         if (!workspaceId) {
-            return c.json({ success: false, error: 'Workspace not found', receivedValue: body.workspaceId }, 404)
+            return c.json({ success: false, error: 'Workspace not found' }, 404)
         }
 
         const role = await getUserWorkspaceRole(user.id, workspaceId)
@@ -163,8 +157,6 @@ whiteboardsRoutes.post('/', zValidator('json', createWhiteboardSchema, (result, 
             name: body.name,
             data: body.data || {},
             createdBy: user.id,
-            projectId: body.projectId,
-            folderId: body.folderId,
         }
 
         const [created] = await db.insert(whiteboards).values(newBoard).returning()
