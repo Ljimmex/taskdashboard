@@ -262,14 +262,14 @@ export function EditMemberPanel({
             {/* Main Edit Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
-                <div className="flex-none p-6 border-b border-gray-800 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-white">{t('teams.edit_panel.title')}</h2>
+                <div className="flex-none p-6 border-b border-[var(--app-border)] flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('teams.edit_panel.title')}</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        className="text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
                     >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -282,11 +282,11 @@ export function EditMemberPanel({
                 <div className="flex-1 p-6 overflow-y-auto space-y-6">
                     {/* Photo Section */}
                     <div>
-                        <Label className="text-gray-400 text-xs mb-2 block">{t('teams.edit_panel.photo')}</Label>
+                        <Label className="text-[var(--app-text-secondary)] text-xs mb-2 block">{t('teams.edit_panel.photo')}</Label>
                         <div className="flex items-center gap-4">
                             <div
                                 onClick={handleUploadClick}
-                                className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white overflow-hidden shadow-lg border-2 border-[#1a1a24] cursor-pointer hover:opacity-80 transition-opacity ${member?.avatar ? 'bg-transparent' : 'bg-gradient-to-br from-gray-700 to-gray-600'}`}
+                                className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-[var(--app-text-primary)] overflow-hidden shadow-lg border-2 border-[#1a1a24] cursor-pointer hover:opacity-80 transition-opacity ${member?.avatar ? 'bg-transparent' : 'bg-gradient-to-br from-gray-700 to-gray-600'}`}
                             >
                                 {member?.avatar ? (
                                     <img src={member.avatar} alt={member?.name} className="w-full h-full object-cover" />
@@ -305,19 +305,19 @@ export function EditMemberPanel({
                                 <div className="flex gap-2 text-sm">
                                     <button
                                         onClick={handleUploadClick}
-                                        className="text-gray-300 hover:text-white font-medium text-xs"
+                                        className="text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] font-medium text-xs"
                                     >
                                         {t('teams.edit_panel.change_photo')}
                                     </button>
-                                    <span className="text-gray-600">·</span>
+                                    <span className="text-[var(--app-text-muted)]">·</span>
                                     <button
                                         onClick={handleRemovePhoto}
-                                        className="text-gray-500 hover:text-white font-medium text-xs"
+                                        className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] font-medium text-xs"
                                     >
                                         {t('teams.edit_panel.remove_photo')}
                                     </button>
                                 </div>
-                                <p className="text-gray-500 text-[10px] mt-1">{t('teams.edit_panel.photo_help')}</p>
+                                <p className="text-[var(--app-text-muted)] text-[10px] mt-1">{t('teams.edit_panel.photo_help')}</p>
                             </div>
                         </div>
                     </div>
@@ -325,41 +325,41 @@ export function EditMemberPanel({
                     {/* Name Fields */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.first_name')}</Label>
+                            <Label className="text-[var(--app-text-secondary)] text-xs">{t('teams.edit_panel.first_name')}</Label>
                             <Input
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
-                                className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
+                                className="bg-[var(--app-bg-sidebar)] border-none text-[var(--app-text-primary)] rounded-lg focus:border-amber-500/50"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.last_name')}</Label>
+                            <Label className="text-[var(--app-text-secondary)] text-xs">{t('teams.edit_panel.last_name')}</Label>
                             <Input
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
-                                className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
+                                className="bg-[var(--app-bg-sidebar)] border-none text-[var(--app-text-primary)] rounded-lg focus:border-amber-500/50"
                             />
                         </div>
                     </div>
 
                     {/* Job Title */}
                     <div className="space-y-2">
-                        <Label className="text-gray-400 text-xs">{t('teams.edit_panel.job_title')}</Label>
+                        <Label className="text-[var(--app-text-secondary)] text-xs">{t('teams.edit_panel.job_title')}</Label>
                         <Input
                             value={position}
                             onChange={(e) => setPosition(e.target.value)}
-                            className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
+                            className="bg-[var(--app-bg-sidebar)] border-none text-[var(--app-text-primary)] rounded-lg focus:border-amber-500/50"
                             placeholder={t('teams.edit_panel.job_title_placeholder')}
                         />
                     </div>
 
                     {/* Team Level */}
                     <div className="space-y-2">
-                        <Label className="text-gray-400 text-xs">{t('teams.edit_panel.team_level')}</Label>
+                        <Label className="text-[var(--app-text-secondary)] text-xs">{t('teams.edit_panel.team_level')}</Label>
                         <select
                             value={teamLevel}
                             onChange={(e) => setTeamLevel(e.target.value as TeamLevel | '')}
-                            className="w-full px-3 py-2 bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50 focus:outline-none text-sm"
+                            className="w-full px-3 py-2 bg-[var(--app-bg-sidebar)] border-none text-[var(--app-text-primary)] rounded-lg focus:border-amber-500/50 focus:outline-none text-sm"
                         >
                             <option value="">{t('teams.edit_panel.select_level')}</option>
                             <option value="team_lead">{t('teams.roles.team_lead')}</option>
@@ -373,20 +373,20 @@ export function EditMemberPanel({
                     {/* Location */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.city')}</Label>
+                            <Label className="text-[var(--app-text-secondary)] text-xs">{t('teams.edit_panel.city')}</Label>
                             <Input
                                 value={city}
                                 onChange={(e) => setCity(e.target.value)}
-                                className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
+                                className="bg-[var(--app-bg-sidebar)] border-none text-[var(--app-text-primary)] rounded-lg focus:border-amber-500/50"
                                 placeholder={t('teams.edit_panel.city_placeholder')}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.country')}</Label>
+                            <Label className="text-[var(--app-text-secondary)] text-xs">{t('teams.edit_panel.country')}</Label>
                             <Input
                                 value={country}
                                 onChange={(e) => setCountry(e.target.value)}
-                                className="bg-[#1a1a24] border-none text-white rounded-lg focus:border-amber-500/50"
+                                className="bg-[var(--app-bg-sidebar)] border-none text-[var(--app-text-primary)] rounded-lg focus:border-amber-500/50"
                                 placeholder={t('teams.edit_panel.country_placeholder')}
                             />
                         </div>
@@ -394,23 +394,23 @@ export function EditMemberPanel({
 
                     <div className="space-y-2">
                         <div className="flex justify-between">
-                            <Label className="text-gray-400 text-xs">{t('teams.edit_panel.email')}</Label>
-                            <button className="text-xs text-gray-500 hover:text-white">{t('teams.edit_panel.change_email')}</button>
+                            <Label className="text-[var(--app-text-secondary)] text-xs">{t('teams.edit_panel.email')}</Label>
+                            <button className="text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]">{t('teams.edit_panel.change_email')}</button>
                         </div>
                         <Input
                             value={email}
                             readOnly
-                            className="bg-[#1a1a24] border-none text-gray-400 rounded-lg cursor-not-allowed"
+                            className="bg-[var(--app-bg-sidebar)] border-none text-[var(--app-text-secondary)] rounded-lg cursor-not-allowed"
                         />
                     </div>
 
                     {/* Team Groups */}
                     <div className="space-y-2.5 z-20 relative">
-                        <Label className="text-gray-400 text-xs font-medium tracking-wide uppercase">{t('teams.edit_panel.team_groups')}</Label>
+                        <Label className="text-[var(--app-text-secondary)] text-xs font-medium tracking-wide uppercase">{t('teams.edit_panel.team_groups')}</Label>
                         <div className="relative group">
                             <div className={cn(
-                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
-                                teams.length === 0 && "text-gray-500"
+                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                teams.length === 0 && "text-[var(--app-text-muted)]"
                             )}>
                                 <Select value="" onValueChange={(val) => {
                                     if (!teams.includes(val)) {
@@ -425,27 +425,27 @@ export function EditMemberPanel({
                                                         e.preventDefault()
                                                         e.stopPropagation()
                                                         removeTeam(team)
-                                                    }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
+                                                    }} className="flex items-center gap-1 bg-[var(--app-bg-elevated)] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-[var(--app-text-primary)] border border-[var(--app-border)]/50 group/tag transition-colors z-50 relative cursor-pointer">
                                                         <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: teamColorMap[team] || '#F59E0B' }} />
                                                         {team}
-                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-0.5 text-gray-500 group-hover/tag:text-red-400 transition-colors">
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-0.5 text-[var(--app-text-muted)] group-hover/tag:text-red-400 transition-colors">
                                                             <line x1="18" y1="6" x2="6" y2="18" />
                                                             <line x1="6" y1="6" x2="18" y2="18" />
                                                         </svg>
                                                     </div>
                                                 ))
                                             ) : (
-                                                <span className="text-gray-500 text-xs py-1">{t('teams.edit_panel.select_teams')}</span>
+                                                <span className="text-[var(--app-text-muted)] text-xs py-1">{t('teams.edit_panel.select_teams')}</span>
                                             )}
                                         </div>
                                     </SelectTrigger>
-                                    <SelectContent className="bg-[#1a1a24] border-gray-800 text-white z-[9999]">
+                                    <SelectContent className="bg-[var(--app-bg-sidebar)] border-[var(--app-border)] text-[var(--app-text-primary)] z-[9999]">
                                         {availableTeams.map((team) => (
                                             <SelectItem
                                                 key={team}
                                                 value={team}
                                                 className={cn(
-                                                    "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
+                                                    "focus:bg-[var(--app-bg-input)] focus:text-[var(--app-text-primary)] cursor-pointer py-3 text-[var(--app-text-secondary)] data-[state=checked]:text-[var(--app-text-primary)]",
                                                     teams.includes(team) && "opacity-50 pointer-events-none"
                                                 )}
                                             >
@@ -457,7 +457,7 @@ export function EditMemberPanel({
                                             </SelectItem>
                                         ))}
                                         {availableTeams.length === 0 && (
-                                            <div className="p-3 text-xs text-gray-500 text-center">{t('teams.edit_panel.no_teams_found')}</div>
+                                            <div className="p-3 text-xs text-[var(--app-text-muted)] text-center">{t('teams.edit_panel.no_teams_found')}</div>
                                         )}
                                     </SelectContent>
                                 </Select>
@@ -467,11 +467,11 @@ export function EditMemberPanel({
 
                     {/* Projects */}
                     <div className="space-y-2.5 z-10 relative">
-                        <Label className="text-gray-400 text-xs font-medium tracking-wide uppercase">{t('teams.edit_panel.projects')}</Label>
+                        <Label className="text-[var(--app-text-secondary)] text-xs font-medium tracking-wide uppercase">{t('teams.edit_panel.projects')}</Label>
                         <div className="relative group">
                             <div className={cn(
-                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24] text-white cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
-                                projectNames.length === 0 && "text-gray-500"
+                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                projectNames.length === 0 && "text-[var(--app-text-muted)]"
                             )}>
                                 <Select value="" onValueChange={(val) => {
                                     if (!projectNames.includes(val)) {
@@ -486,26 +486,26 @@ export function EditMemberPanel({
                                                         e.preventDefault()
                                                         e.stopPropagation()
                                                         removeProject(proj)
-                                                    }} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50 group/tag transition-colors z-50 relative cursor-pointer">
+                                                    }} className="flex items-center gap-1 bg-[var(--app-bg-elevated)] pl-2 pr-1 py-1 rounded-lg text-xs font-medium text-[var(--app-text-primary)] border border-[var(--app-border)]/50 group/tag transition-colors z-50 relative cursor-pointer">
                                                         {proj}
-                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-0.5 text-gray-500 group-hover/tag:text-red-400 transition-colors">
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ml-0.5 text-[var(--app-text-muted)] group-hover/tag:text-red-400 transition-colors">
                                                             <line x1="18" y1="6" x2="6" y2="18" />
                                                             <line x1="6" y1="6" x2="18" y2="18" />
                                                         </svg>
                                                     </div>
                                                 ))
                                             ) : (
-                                                <span className="text-gray-500 text-xs py-1">{t('teams.edit_panel.select_projects')}</span>
+                                                <span className="text-[var(--app-text-muted)] text-xs py-1">{t('teams.edit_panel.select_projects')}</span>
                                             )}
                                         </div>
                                     </SelectTrigger>
-                                    <SelectContent className="bg-[#1a1a24] border-gray-800 text-white z-[9999]">
+                                    <SelectContent className="bg-[var(--app-bg-sidebar)] border-[var(--app-border)] text-[var(--app-text-primary)] z-[9999]">
                                         {availableProjects.map((proj) => (
                                             <SelectItem
                                                 key={proj}
                                                 value={proj}
                                                 className={cn(
-                                                    "focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white",
+                                                    "focus:bg-[var(--app-bg-input)] focus:text-[var(--app-text-primary)] cursor-pointer py-3 text-[var(--app-text-secondary)] data-[state=checked]:text-[var(--app-text-primary)]",
                                                     projectNames.includes(proj) && "opacity-50 pointer-events-none"
                                                 )}
                                             >
@@ -516,7 +516,7 @@ export function EditMemberPanel({
                                             </SelectItem>
                                         ))}
                                         {availableProjects.length === 0 && (
-                                            <div className="p-3 text-xs text-gray-500 text-center">{t('teams.edit_panel.no_projects_found')}</div>
+                                            <div className="p-3 text-xs text-[var(--app-text-muted)] text-center">{t('teams.edit_panel.no_projects_found')}</div>
                                         )}
                                     </SelectContent>
                                 </Select>
@@ -526,7 +526,7 @@ export function EditMemberPanel({
                 </div >
 
                 {/* Footer */}
-                < div className="flex-none p-6 border-t border-gray-800 flex items-center justify-between bg-[#12121a] rounded-b-2xl" >
+                < div className="flex-none p-6 border-t border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-deepest)] rounded-b-2xl" >
                     <Button
                         onClick={() => setShowDeleteConfirm(true)}
                         variant="ghost"
@@ -539,7 +539,7 @@ export function EditMemberPanel({
                         <Button
                             onClick={onClose}
                             variant="ghost"
-                            className="text-gray-400 hover:text-white hover:bg-gray-800"
+                            className="text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)]"
                         >
                             {t('teams.create_panel.cancel')}
                         </Button>
@@ -560,29 +560,29 @@ export function EditMemberPanel({
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => setShowDeleteConfirm(false)} />
 
                     {/* Simplified Modal */}
-                    <div className="relative bg-[#0f0f14] rounded-xl shadow-2xl w-full max-w-sm border border-gray-800 overflow-hidden transform scale-100 transition-all">
+                    <div className="relative bg-[var(--app-bg-deepest)] rounded-xl shadow-2xl w-full max-w-sm border border-[var(--app-border)] overflow-hidden transform scale-100 transition-all">
                         <div className="p-6 text-center">
                             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-900/30 mb-4">
                                 <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
                             </div>
-                            <h3 className="text-lg leading-6 font-medium text-white mb-2">{t('teams.edit_panel.delete_member')}</h3>
-                            <p className="text-sm text-gray-400 mb-6">
+                            <h3 className="text-lg leading-6 font-medium text-[var(--app-text-primary)] mb-2">{t('teams.edit_panel.delete_member')}</h3>
+                            <p className="text-sm text-[var(--app-text-secondary)] mb-6">
                                 {t('teams.edit_panel.delete_confirmation', { name: member?.name })}
                             </p>
 
                             <div className="flex gap-3 justify-center">
                                 <Button
                                     onClick={() => setShowDeleteConfirm(false)}
-                                    className="bg-gray-800 hover:bg-gray-700 text-white w-full border border-gray-700 hover:border-gray-600"
+                                    className="bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] w-full border border-[var(--app-border)] hover:border-[var(--app-border)]"
                                 >
                                     {t('teams.create_panel.cancel')}
                                 </Button>
                                 <Button
                                     onClick={handleDelete}
                                     disabled={isDeleting}
-                                    className="bg-red-600 hover:bg-red-500 text-white w-full border border-red-500/50"
+                                    className="bg-red-600 hover:bg-red-500 text-[var(--app-text-primary)] w-full border border-red-500/50"
                                 >
                                     {isDeleting ? t('teams.edit_panel.deleting') : t('teams.table.delete')}
                                 </Button>

@@ -164,14 +164,14 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
             {/* Main View Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header: Compact & Productivity Focused */}
-                <div className="flex-none p-6 border-b border-gray-800 flex items-start justify-between">
+                <div className="flex-none p-6 border-b border-[var(--app-border)] flex items-start justify-between">
                     <div className="flex items-center gap-4">
                         {/* Avatar 48x48 */}
                         <div className="relative">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white overflow-hidden shadow-sm border border-gray-700 ${member.avatar ? 'bg-transparent' : 'bg-gradient-to-br from-gray-700 to-gray-600'}`}>
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-[var(--app-text-primary)] overflow-hidden shadow-sm border border-[var(--app-border)] ${member.avatar ? 'bg-transparent' : 'bg-gradient-to-br from-gray-700 to-gray-600'}`}>
                                 {member.avatar ? (
                                     <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
                                 ) : (
@@ -179,15 +179,15 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                 )}
                             </div>
                             {/* Presence Indicator Badge */}
-                            <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#12121a] ${member.lastActive === 'Just now' ? 'bg-green-500' : 'bg-gray-500'}`} title={member.lastActive === 'Just now' ? 'Online' : 'Offline'}></div>
+                            <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--app-bg-deepest)] ${member.lastActive === 'Just now' ? 'bg-green-500' : 'bg-[var(--app-text-muted)]'}`} title={member.lastActive === 'Just now' ? 'Online' : 'Offline'}></div>
                         </div>
 
                         <div>
-                            <h2 className="text-lg font-bold text-white leading-tight">{member.name}</h2>
-                            <p className="text-gray-400 text-xs mb-1">{member.role || member.position || 'No title'}</p>
+                            <h2 className="text-lg font-bold text-[var(--app-text-primary)] leading-tight">{member.name}</h2>
+                            <p className="text-[var(--app-text-secondary)] text-xs mb-1">{member.role || member.position || 'No title'}</p>
 
                             {/* NEW: Contact Info moved here */}
-                            <div className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors cursor-pointer w-fit">
+                            <div className="flex items-center gap-1.5 text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)] transition-colors cursor-pointer w-fit">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                                     <polyline points="22,6 12,13 2,6" />
@@ -199,7 +199,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
 
                     <button
                         onClick={onClose}
-                        className="text-gray-500 hover:text-white transition-colors p-1"
+                        className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors p-1"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -214,11 +214,11 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                     {/* Workload Indicator (Moved to top as it's key info) */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider">
+                            <Label className="uppercase text-xs font-semibold text-[var(--app-text-muted)] tracking-wider">
                                 {t('teams.view_panel.current_workload')}
                                 {isLoadingWorkload && <span className="ml-2 lowercase text-[10px] opacity-70">({t('common.loading', 'Loading...')})</span>}
                             </Label>
-                            <span className="text-xs text-gray-400">{t('teams.view_panel.tasks_count', { completed: completedTasks, total: totalTasks })}</span>
+                            <span className="text-xs text-[var(--app-text-secondary)]">{t('teams.view_panel.tasks_count', { completed: completedTasks, total: totalTasks })}</span>
                         </div>
                         <ProgressBar
                             value={completedTasks}
@@ -226,7 +226,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                             size="md"
                             showLabel={false}
                         />
-                        <p className="text-[10px] text-gray-500 mt-1 text-right">{t('teams.view_panel.capacity_used', { percentage: workloadPercentage })}</p>
+                        <p className="text-[10px] text-[var(--app-text-muted)] mt-1 text-right">{t('teams.view_panel.capacity_used', { percentage: workloadPercentage })}</p>
                     </div>
 
                     {/* Quick Actions - Improved Styling + Project Icons */}
@@ -234,7 +234,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                         <Button
                             variant="default" // Changed from outline for better visibility
                             onClick={() => setIsAssignTaskOpen(true)}
-                            className="h-auto py-3 flex flex-col gap-2 bg-[#1f1f2e] border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white transition-all shadow-sm group"
+                            className="h-auto py-3 flex flex-col gap-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] hover:bg-[var(--app-bg-input)] hover:border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-all shadow-sm group"
                         >
                             <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                                 <SubtaskCheckboxIcon />
@@ -248,7 +248,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                 onClose()
                                 router.navigate({ to: `/${workspaceSlug}/messages`, search: { userId: member.id } })
                             }}
-                            className="h-auto py-3 flex flex-col gap-2 bg-[#1f1f2e] border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white transition-all shadow-sm group"
+                            className="h-auto py-3 flex flex-col gap-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] hover:bg-[var(--app-bg-input)] hover:border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-all shadow-sm group"
                         >
                             <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                                 <SendIcon />
@@ -262,7 +262,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                 onClose()
                                 router.navigate({ to: `/${workspaceSlug}/my-tasks`, search: { userId: member.id } })
                             }}
-                            className="h-auto py-3 flex flex-col gap-2 bg-[#1f1f2e] border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white transition-all shadow-sm group"
+                            className="h-auto py-3 flex flex-col gap-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] hover:bg-[var(--app-bg-input)] hover:border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-all shadow-sm group"
                         >
                             <div className="opacity-80 group-hover:opacity-100 transition-opacity">
                                 <KanbanIconGrey />
@@ -275,16 +275,16 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                     <div className="space-y-6">
                         {/* Teams */}
                         <div>
-                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-3 block">{t('teams.view_panel.teams')}</Label>
-                            <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24]">
+                            <Label className="uppercase text-xs font-semibold text-[var(--app-text-muted)] tracking-wider mb-3 block">{t('teams.view_panel.teams')}</Label>
+                            <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-sidebar)]">
                                 <div className="flex flex-wrap gap-2">
                                     {displayTeams.length > 0 ? displayTeams.map((team, i) => (
-                                        <div key={i} className="flex items-center gap-1 bg-[#2a2b36] pl-2 pr-2.5 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50">
+                                        <div key={i} className="flex items-center gap-1 bg-[var(--app-bg-elevated)] pl-2 pr-2.5 py-1 rounded-lg text-xs font-medium text-[var(--app-text-primary)] border border-[var(--app-border)]/50">
                                             <div className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                                             {team}
                                         </div>
                                     )) : (
-                                        <span className="text-gray-500 text-xs py-1">{t('teams.view_panel.no_teams')}</span>
+                                        <span className="text-[var(--app-text-muted)] text-xs py-1">{t('teams.view_panel.no_teams')}</span>
                                     )}
                                 </div>
                             </div>
@@ -292,33 +292,33 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
 
                         {/* Projects */}
                         <div>
-                            <Label className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-3 block">{t('teams.view_panel.active_projects')}</Label>
-                            <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[#1a1a24]">
+                            <Label className="uppercase text-xs font-semibold text-[var(--app-text-muted)] tracking-wider mb-3 block">{t('teams.view_panel.active_projects')}</Label>
+                            <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-sidebar)]">
                                 {(member.projects && member.projects.length > 0) ? (
                                     <div className="flex flex-wrap gap-2">
                                         {member.projects.map((proj, i) => (
-                                            <div key={i} className="flex items-center gap-1 bg-[#2a2b36] px-2.5 py-1 rounded-lg text-xs font-medium text-gray-200 border border-gray-700/50">
+                                            <div key={i} className="flex items-center gap-1 bg-[var(--app-bg-elevated)] px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--app-text-primary)] border border-[var(--app-border)]/50">
                                                 {proj}
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-xs text-gray-500 py-1">{t('teams.view_panel.no_projects')}</p>
+                                    <p className="text-xs text-[var(--app-text-muted)] py-1">{t('teams.view_panel.no_projects')}</p>
                                 )}
                             </div>
                         </div>
                     </div>
 
                     {/* System Information */}
-                    <div className="pt-4 border-t border-gray-800 space-y-3">
-                        <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="pt-4 border-t border-[var(--app-border)] space-y-3">
+                        <div className="flex items-center justify-between text-xs text-[var(--app-text-muted)]">
                             <span>{t('teams.view_panel.member_since')}</span>
-                            <span className="text-gray-400 font-medium">{member.dateAdded || 'Unknown'}</span>
+                            <span className="text-[var(--app-text-secondary)] font-medium">{member.dateAdded || 'Unknown'}</span>
                         </div>
 
                         {/* Location */}
                         {(member.city || member.country) && (
-                            <div className="flex items-center justify-between text-xs text-gray-500">
+                            <div className="flex items-center justify-between text-xs text-[var(--app-text-muted)]">
                                 <span className="flex items-center gap-1.5">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
@@ -326,7 +326,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                     </svg>
                                     {t('teams.view_panel.location')}
                                 </span>
-                                <span className="text-gray-400 font-medium">
+                                <span className="text-[var(--app-text-secondary)] font-medium">
                                     {[member.city, member.country].filter(Boolean).join(', ')}
                                 </span>
                             </div>
@@ -334,7 +334,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
 
                         {/* Team Level */}
                         {member.teamLevel && (
-                            <div className="flex items-center justify-between text-xs text-gray-500">
+                            <div className="flex items-center justify-between text-xs text-[var(--app-text-muted)]">
                                 <span className="flex items-center gap-1.5">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -347,7 +347,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                     member.teamLevel === 'senior' ? 'bg-blue-500/20 text-blue-400' :
                                         member.teamLevel === 'mid' ? 'bg-green-500/20 text-green-400' :
                                             member.teamLevel === 'junior' ? 'bg-purple-500/20 text-purple-400' :
-                                                'bg-gray-500/20 text-gray-400'
+                                                'bg-gray-500/20 text-[var(--app-text-secondary)]'
                                     }`}>
                                     {member.teamLevel === 'team_lead' ? t('teams.roles.team_lead') :
                                         member.teamLevel === 'senior' ? t('teams.roles.senior') :
@@ -362,38 +362,38 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
 
             {/* Sub-panel: Assign Task */}
             <div
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-[60] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-gray-800 ${isAssignTaskOpen && isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-[60] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] ${isAssignTaskOpen && isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
-                <div className="flex-none p-6 border-b border-gray-800 flex items-center gap-3">
+                <div className="flex-none p-6 border-b border-[var(--app-border)] flex items-center gap-3">
                     <button
                         onClick={() => setIsAssignTaskOpen(false)}
-                        className="text-gray-500 hover:text-white transition-colors p-1 -ml-1"
+                        className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors p-1 -ml-1"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
                     <div>
-                        <h3 className="text-lg font-bold text-white leading-tight">Assign Task</h3>
-                        <p className="text-xs text-gray-400">Select a task to assign to {member.name}</p>
+                        <h3 className="text-lg font-bold text-[var(--app-text-primary)] leading-tight">Assign Task</h3>
+                        <p className="text-xs text-[var(--app-text-secondary)]">Select a task to assign to {member.name}</p>
                     </div>
                 </div>
 
                 {/* Task List */}
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
                     {isLoadingTasks ? (
-                        <div className="text-center py-8 text-sm text-gray-500">{t('common.loading')}</div>
+                        <div className="text-center py-8 text-sm text-[var(--app-text-muted)]">{t('common.loading')}</div>
                     ) : assignableTasks.length === 0 ? (
-                        <div className="text-center py-8 text-sm text-gray-500">No available tasks to assign.</div>
+                        <div className="text-center py-8 text-sm text-[var(--app-text-muted)]">No available tasks to assign.</div>
                     ) : (
                         assignableTasks.map((task: any) => {
                             const proj = projectsData?.data?.find((p: any) => p.id === task.projectId)
                             return (
                                 <div key={task.id} className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between gap-3 group cursor-pointer" onClick={() => !submittingTaskId && !assignTaskMutation.isPending && assignTaskMutation.mutate(task.id)}>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-medium text-white truncate">{task.title}</p>
-                                        <p className="text-xs text-gray-400/80 truncate mt-1">{proj?.name || 'Unknown Project'}</p>
+                                        <p className="text-sm font-medium text-[var(--app-text-primary)] truncate">{task.title}</p>
+                                        <p className="text-xs text-[var(--app-text-secondary)]/80 truncate mt-1">{proj?.name || 'Unknown Project'}</p>
                                     </div>
                                     <button
                                         disabled={submittingTaskId === task.id || assignTaskMutation.isPending}

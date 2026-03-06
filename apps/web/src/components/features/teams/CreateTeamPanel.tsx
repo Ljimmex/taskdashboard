@@ -150,19 +150,19 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
             <div
                 ref={panelRef}
                 onKeyDown={handleKeyDown}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
-                <div className="flex-none p-6 border-b border-gray-800">
+                <div className="flex-none p-6 border-b border-[var(--app-border)]">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                            className="p-2 rounded-lg text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] transition-colors"
                             title="Close"
                         >
                             <ChevronDoubleRightIcon />
                         </button>
-                        <h2 className="text-lg font-semibold text-white">{t('teams.create_panel.title')}</h2>
+                        <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('teams.create_panel.title')}</h2>
                     </div>
                 </div>
 
@@ -170,32 +170,32 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {/* Team Name */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.create_panel.team_name')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('teams.create_panel.team_name')}</label>
                         <input
                             ref={nameInputRef}
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder={t('teams.create_panel.team_name_placeholder')}
-                            className="w-full text-lg font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-transparent focus:border-amber-500/50 transition-colors"
+                            className="w-full text-lg font-semibold text-[var(--app-text-primary)] bg-[var(--app-bg-sidebar)] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-transparent focus:border-amber-500/50 transition-colors"
                         />
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.create_panel.description')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('teams.create_panel.description')}</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={t('teams.create_panel.description_placeholder')}
                             rows={3}
-                            className="w-full text-sm text-gray-300 bg-[#1a1a24] rounded-xl p-4 placeholder-gray-500 outline-none resize-none border border-transparent focus:border-amber-500/50 transition-colors"
+                            className="w-full text-sm text-[var(--app-text-secondary)] bg-[var(--app-bg-sidebar)] rounded-xl p-4 placeholder-gray-500 outline-none resize-none border border-transparent focus:border-amber-500/50 transition-colors"
                         />
                     </div>
 
                     {/* Color Picker */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-3">{t('teams.create_panel.team_color')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-3">{t('teams.create_panel.team_color')}</label>
                         <div className="grid grid-cols-6 gap-2">
                             {TEAM_COLORS.map(color => (
                                 <button
@@ -206,7 +206,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                                     title={color.name}
                                 >
                                     {selectedColor === color.value && (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--app-text-primary)" strokeWidth="3">
                                             <polyline points="20 6 9 17 4 12" />
                                         </svg>
                                     )}
@@ -217,7 +217,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
 
                     {/* Add Members */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.create_panel.members')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('teams.create_panel.members')}</label>
                         <div className="relative">
                             <input
                                 type="text"
@@ -228,28 +228,28 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                                 }}
                                 onFocus={() => setShowMemberResults(true)}
                                 placeholder={t('teams.create_panel.search_placeholder')}
-                                className="w-full text-sm text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-gray-800 focus:border-amber-500/50 transition-colors"
+                                className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-sidebar)] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-[var(--app-border)] focus:border-amber-500/50 transition-colors"
                             />
                             {showMemberResults && searchQuery && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-xl overflow-hidden z-20 max-h-48 overflow-y-auto">
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl shadow-xl overflow-hidden z-20 max-h-48 overflow-y-auto">
                                     {filteredUsers.length > 0 ? (
                                         filteredUsers.map(user => (
                                             <button
                                                 key={user.id}
                                                 onClick={() => addMember(user)}
-                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800/50 transition-colors text-left"
+                                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--app-bg-input)]/50 transition-colors text-left"
                                             >
                                                 <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-400">
                                                     {user.name.charAt(0)}
                                                 </div>
                                                 <div>
-                                                    <div className="text-sm font-medium text-white">{user.name}</div>
-                                                    <div className="text-xs text-gray-500">{user.email}</div>
+                                                    <div className="text-sm font-medium text-[var(--app-text-primary)]">{user.name}</div>
+                                                    <div className="text-xs text-[var(--app-text-muted)]">{user.email}</div>
                                                 </div>
                                             </button>
                                         ))
                                     ) : (
-                                        <div className="px-4 py-3 text-sm text-gray-500 text-center">{t('teams.create_panel.no_users_found')}</div>
+                                        <div className="px-4 py-3 text-sm text-[var(--app-text-muted)] text-center">{t('teams.create_panel.no_users_found')}</div>
                                     )}
                                 </div>
                             )}
@@ -265,12 +265,12 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                                                 {member.avatar ? (
                                                     <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <span className="text-sm font-bold text-white">{member.name.charAt(0)}</span>
+                                                    <span className="text-sm font-bold text-[var(--app-text-primary)]">{member.name.charAt(0)}</span>
                                                 )}
                                             </div>
                                             <div>
-                                                <div className="text-sm font-medium text-white">{member.name}</div>
-                                                <div className="text-xs text-gray-500">{member.email}</div>
+                                                <div className="text-sm font-medium text-[var(--app-text-primary)]">{member.name}</div>
+                                                <div className="text-xs text-[var(--app-text-muted)]">{member.email}</div>
                                             </div>
                                         </div>
 
@@ -278,7 +278,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                                             <div className="relative">
                                                 <button
                                                     onClick={() => setActiveDropdownId(activeDropdownId === member.id ? null : member.id)}
-                                                    className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors font-medium outline-none"
+                                                    className="flex items-center gap-1 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors font-medium outline-none"
                                                 >
                                                     <span className="capitalize">{member.role.replace('_', ' ')}</span>
                                                     <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" className={`transition-transform ${activeDropdownId === member.id ? 'rotate-180' : ''}`}>
@@ -288,7 +288,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
 
                                                 {/* Custom Dropdown */}
                                                 {activeDropdownId === member.id && (
-                                                    <div className="absolute right-0 top-full mt-2 w-32 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-xl overflow-hidden z-30 py-1">
+                                                    <div className="absolute right-0 top-full mt-2 w-32 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl shadow-xl overflow-hidden z-30 py-1">
                                                         {['team_lead', 'senior', 'mid', 'junior', 'intern', 'member'].map((role) => (
                                                             <button
                                                                 key={role}
@@ -296,7 +296,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                                                                     updateMemberRole(member.id, role as any)
                                                                     setActiveDropdownId(null)
                                                                 }}
-                                                                className={`w-full text-left px-3 py-2 text-sm transition-colors capitalize hover:bg-gray-800 ${member.role === role ? 'text-amber-400 bg-amber-500/10' : 'text-gray-300'}`}
+                                                                className={`w-full text-left px-3 py-2 text-sm transition-colors capitalize hover:bg-[var(--app-bg-input)] ${member.role === role ? 'text-amber-400 bg-amber-500/10' : 'text-[var(--app-text-secondary)]'}`}
                                                             >
                                                                 {role.replace('_', ' ')}
                                                             </button>
@@ -314,7 +314,7 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                                             </div>
                                             <button
                                                 onClick={() => removeMember(member.id)}
-                                                className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-1"
+                                                className="text-[var(--app-text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-1"
                                             >
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M18 6L6 18M6 6l12 12" />
@@ -329,11 +329,11 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                 </div>
 
                 {/* Footer */}
-                <div className="flex-none p-6 bg-[#0f0f14] rounded-b-2xl">
+                <div className="flex-none p-6 bg-[var(--app-bg-deepest)] rounded-b-2xl">
                     <div className="flex items-center justify-end gap-3">
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                            className="px-4 py-2 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
                         >
                             {t('teams.create_panel.cancel')}
                         </button>
@@ -341,8 +341,8 @@ export function CreateTeamPanel({ isOpen, onClose, onCreate }: CreateTeamPanelPr
                             onClick={handleCreate}
                             disabled={!name.trim()}
                             className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${name.trim()
-                                ? 'bg-[#0F4C75] hover:bg-[#0F4C75]/80 text-white'
-                                : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                                ? 'bg-[var(--app-accent)] hover:brightness-110 text-white'
+                                : 'bg-[var(--app-bg-input)] text-[var(--app-text-muted)] cursor-not-allowed'
                                 }`}
                         >
                             {t('teams.create_panel.create_button')}

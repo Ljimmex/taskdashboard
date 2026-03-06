@@ -113,19 +113,19 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                             onMouseLeave={() => setHoveredItem(null)}
                             className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all ${isActive
                                 ? 'bg-[var(--app-bg-elevated)]'
-                                : 'hover:bg-[var(--app-bg-elevated)]/50'
+                                : 'hover:bg-[var(--app-bg-elevated)]'
                                 }`}
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-6 h-6 flex items-center justify-center">
                                     {showGold ? icon.gold : icon.gray}
                                 </div>
-                                <span className={`text-sm ${showGold ? 'text-[var(--app-accent-text)] font-medium' : 'text-[var(--app-text-secondary)]'}`}>
+                                <span className={`text-sm ${showGold ? 'text-[var(--app-accent)] font-medium' : 'text-[var(--app-text-secondary)] group-hover:text-[var(--app-text-primary)]'}`}>
                                     {item.label}
                                 </span>
                             </div>
                             {item.count && (
-                                <span className={`text-xs ${showGold ? 'text-[var(--app-accent-text)]/60' : 'text-[var(--app-text-muted)]'}`}>
+                                <span className={`text-xs ${showGold ? 'text-[var(--app-accent)]/80' : 'text-[var(--app-text-muted)]'}`}>
                                     {item.count}
                                 </span>
                             )}
@@ -145,8 +145,8 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                         onMouseEnter={() => setHoveredItem('settings')}
                         onMouseLeave={() => setHoveredItem(null)}
                         className={`flex items-center gap-3 px-3 py-2 w-full rounded-lg transition-all ${hoveredItem === 'settings' || isSettingsOpen
-                            ? 'bg-[var(--app-bg-elevated)] text-[var(--app-accent-text)]'
-                            : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)]/50'
+                            ? 'bg-[var(--app-bg-elevated)] text-[var(--app-accent)]'
+                            : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)]'
                             }`}
                     >
                         <div className="w-6 h-6 flex items-center justify-center">
@@ -168,7 +168,7 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                     }}
                     onMouseEnter={() => setHoveredItem('logout')}
                     onMouseLeave={() => setHoveredItem(null)}
-                    className="flex items-center gap-3 px-3 py-2 w-full text-[var(--app-text-secondary)] hover:text-[#F2CE88] rounded-lg hover:bg-[var(--app-bg-elevated)]/50 transition-all"
+                    className="flex items-center gap-3 px-3 py-2 w-full text-[var(--app-text-secondary)] hover:text-[#F2CE88] rounded-lg hover:bg-[var(--app-bg-elevated)] transition-all"
                 >
                     <div className="w-6 h-6 flex items-center justify-center">
                         {hoveredItem === 'logout' ? icons.logout.gold : icons.logout.gray}

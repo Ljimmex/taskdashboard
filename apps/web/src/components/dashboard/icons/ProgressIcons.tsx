@@ -25,9 +25,9 @@ export const FoldersIcon = () => (
 
 export const CalendarSmallIcon = () => (
     <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-        <rect x="6" y="8" width="20" height="18" rx="3" fill="var(--app-accent-text)" />
-        <path d="M6 12H26" stroke="var(--app-accent-hover)" strokeWidth="2" />
-        <path d="M11 5V9" stroke="var(--app-accent-hover)" strokeWidth="2" strokeLinecap="round" />
-        <path d="M21 5V9" stroke="var(--app-accent-hover)" strokeWidth="2" strokeLinecap="round" />
+        <rect x="6" y="8" width="20" height="18" rx="3" fill="var(--app-accent)" />
+        <path d="M6 12H26" stroke="var(--app-bg-deepest)" strokeWidth="2" />
+        <path d="M11 5V9" stroke="var(--app-accent)" strokeWidth="2" strokeLinecap="round" />
+        <path d="M21 5V9" stroke="var(--app-accent)" strokeWidth="2" strokeLinecap="round" />
     </svg>
 )

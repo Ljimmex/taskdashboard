@@ -56,7 +56,13 @@ function DocsPage() {
                 ]
             }
         }, {
-            onSuccess: (data) => setSelectedDocId(data.id)
+            onSuccess: (data) => {
+                setIsCreationModalOpen(false)
+                setSelectedDocId(data.id)
+            },
+            onError: (error) => {
+                alert('Failed to create document: ' + error.message)
+            }
         })
     }
 
@@ -67,6 +73,7 @@ function DocsPage() {
             data: {}
         }, {
             onSuccess: (data) => {
+                setIsCreationModalOpen(false)
                 navigate({ to: `/${workspaceSlug}/board`, search: { selectedId: data.id } as any })
             }
         })

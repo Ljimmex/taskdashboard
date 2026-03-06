@@ -203,10 +203,10 @@ export function OverallProgress({
             {/* Date Range Dropdown */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1.5 text-[10px] text-[var(--app-text-muted)] mb-2 w-fit px-2 py-1 rounded bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] transition-colors outline-none cursor-pointer">
+                    <button className="flex items-center gap-1.5 text-[10px] text-[var(--app-text-primary)] mb-2 w-fit px-2.5 py-1.5 rounded-lg bg-[var(--app-bg-elevated)] border border-[var(--app-border)] hover:border-amber-500/30 hover:text-amber-500 transition-all outline-none cursor-pointer">
                         <CalendarSmallIcon />
-                        {getDateRangeLabel(dateRange)}
-                        <span className="ml-1 text-[8px]">▼</span>
+                        <span className="font-medium">{getDateRangeLabel(dateRange)}</span>
+                        <span className="ml-1 text-[8px] opacity-70">▼</span>
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="bg-[var(--app-bg-card)] border-[var(--app-border)] text-[var(--app-text-primary)] z-50">

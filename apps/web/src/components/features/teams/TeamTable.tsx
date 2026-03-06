@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 // Sort indicator icon helper
 const SortIcon = ({ direction }: { direction: 'asc' | 'desc' | null }) => (
-    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="text-gray-500">
+    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className="text-[var(--app-text-muted)]">
         <path d="M6 2L9 5H3L6 2Z" fill={direction === 'asc' ? '#F2CE88' : 'currentColor'} />
         <path d="M6 10L3 7H9L6 10Z" fill={direction === 'desc' ? '#F2CE88' : 'currentColor'} />
     </svg>
@@ -63,7 +63,7 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
             <button
                 ref={buttonRef}
                 onClick={handleOpen}
-                className="hover:text-white transition-colors p-1 rounded hover:bg-gray-700 relative z-10"
+                className="hover:text-[var(--app-text-primary)] transition-colors p-1 rounded hover:bg-[var(--app-bg-elevated)] relative z-10"
             >
                 •••
             </button>
@@ -71,7 +71,7 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
             {isOpen && createPortal(
                 <div
                     ref={menuRef}
-                    className="fixed bg-[#1a1a24] rounded-xl shadow-2xl z-[100] py-1 animate-in fade-in zoom-in-95 duration-200"
+                    className="fixed bg-[var(--app-bg-sidebar)] rounded-xl shadow-2xl z-[100] py-1 animate-in fade-in zoom-in-95 duration-200"
                     onClick={(e) => e.stopPropagation()}
                     style={{
                         top: dropdownPosition.top,
@@ -84,7 +84,7 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
                             onEditTeam?.(team)
                             setIsOpen(false)
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800/80 hover:text-white transition-colors flex items-center gap-3"
+                        className="w-full text-left px-4 py-2.5 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)]/80 hover:text-[var(--app-text-primary)] transition-colors flex items-center gap-3"
                     >
                         <PencilIcon />
                         {t('team_edit.menu.edit_team')}
@@ -103,14 +103,14 @@ function TeamMenu({ team, onEditTeam, onDeleteTeam }: { team: Team; onEditTeam?:
                             a.click()
                             setIsOpen(false)
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800/80 hover:text-white transition-colors flex items-center gap-3"
+                        className="w-full text-left px-4 py-2.5 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)]/80 hover:text-[var(--app-text-primary)] transition-colors flex items-center gap-3"
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
                         {t('team_edit.menu.export_members')}
                     </button>
-                    <div className="my-1 mx-2 h-px bg-gray-800" />
+                    <div className="my-1 mx-2 h-px bg-[var(--app-bg-input)]" />
                     <button
                         onClick={() => {
                             onDeleteTeam?.(team)
@@ -220,7 +220,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
     const Checkbox = ({ checked, indeterminate, onClick }: { checked?: boolean; indeterminate?: boolean; onClick?: () => void }) => (
         <div
             onClick={(e) => { e.stopPropagation(); onClick?.() }}
-            className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${checked || indeterminate ? 'bg-amber-500 border-amber-500' : 'border-gray-600 bg-transparent hover:border-gray-500'}`}
+            className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${checked || indeterminate ? 'bg-amber-500 border-amber-500' : 'border-[var(--app-border)] bg-transparent hover:border-[var(--app-border)]'}`}
         >
             {checked && !indeterminate && (
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
@@ -239,21 +239,21 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
             <div className={`w-1.5 flex-shrink-0 rounded-l-md`} style={{ backgroundColor: team.color }}></div>
 
             {/* Main Content */}
-            <div className="flex-1 bg-[#12121a] rounded-r-xl overflow-hidden relative">
+            <div className="flex-1 bg-[var(--app-bg-card)] rounded-r-xl overflow-hidden relative">
 
                 {/* Bulk Actions Toolbar Overlay */}
                 {canManage && selectedMemberIds.size > 0 && (
-                    <div className="absolute inset-x-0 top-0 z-10 h-[52px] bg-[#1a1a24] flex items-center justify-between px-4 border-b border-gray-800 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="absolute inset-x-0 top-0 z-10 h-[52px] bg-[var(--app-bg-sidebar)] flex items-center justify-between px-4 border-b border-[var(--app-border)] animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="flex items-center gap-4">
                             <Checkbox checked={true} onClick={toggleSelectAll} />
-                            <span className="text-sm font-medium text-white">{selectedMemberIds.size} {t('teams.table.selected')}</span>
+                            <span className="text-sm font-medium text-[var(--app-text-primary)]">{selectedMemberIds.size} {t('teams.table.selected')}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2">
+                            <button className="px-3 py-1.5 text-xs font-medium text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors flex items-center gap-2">
                                 <TrashIcon /> {t('teams.table.delete')}
                             </button>
-                            <button className="px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2">
-                                <span className="text-gray-400">{t('teams.table.move_to')}</span>
+                            <button className="px-3 py-1.5 text-xs font-medium text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors flex items-center gap-2">
+                                <span className="text-[var(--app-text-secondary)]">{t('teams.table.move_to')}</span>
                             </button>
                         </div>
                     </div>
@@ -261,14 +261,14 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
 
                 {/* Header Row (Team Name) */}
                 <div
-                    className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-gray-800/30 transition-colors ${selectedMemberIds.size > 0 ? 'opacity-0 pointer-events-none' : ''}`}
+                    className={`px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-[var(--app-bg-elevated)]/50 transition-colors ${selectedMemberIds.size > 0 ? 'opacity-0 pointer-events-none' : ''}`}
                     onClick={() => setIsExpanded(!isExpanded)}
                 >
-                    <h3 className="text-sm font-semibold text-gray-300">{team.name}</h3>
+                    <h3 className="text-sm font-semibold text-[var(--app-text-secondary)]">{team.name}</h3>
 
                     <div className="flex items-center gap-4">
                         {isExpanded && (
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <div className="flex items-center gap-1 text-xs text-[var(--app-text-muted)]">
                                 {/* Add Member */}
                                 {canManage && (
                                     <button
@@ -276,7 +276,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                             e.stopPropagation()
                                             onInvite(team)
                                         }}
-                                        className="p-1.5 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                                        className="p-1.5 hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded transition-colors"
                                         title="Add Member"
                                     >
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -297,7 +297,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                         // Toggle expanded view / fullscreen for this team
                                         setIsExpanded(!isExpanded)
                                     }}
-                                    className="p-1.5 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                                    className="p-1.5 hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded transition-colors"
                                     title={isExpanded ? "Collapse" : "Expand"}
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -308,7 +308,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                         )}
                         <svg
                             width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                            className={`text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                            className={`text-[var(--app-text-muted)] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                         >
                             <path d="M6 9l6 6 6-6" />
                         </svg>
@@ -319,7 +319,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                 {isExpanded && team.members.length > 0 && (
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-[#1a1a24]/50 text-xs text-gray-500 font-medium">
+                            <thead className="bg-[var(--app-bg-elevated)]/80 text-xs text-[var(--app-text-muted)] font-medium">
                                 <tr>
                                     {canManage && (
                                         <th className="w-12 p-3 text-left">
@@ -333,32 +333,32 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                         </th>
                                     )}
                                     <th
-                                        className="p-3 text-left cursor-pointer hover:text-white transition-colors"
+                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                                         onClick={() => handleSort('name')}
                                     >
                                         <div className="flex items-center gap-2">{t('teams.table.name')} <SortIcon direction={getSortDirection('name')} /></div>
                                     </th>
                                     <th
-                                        className="p-3 text-left cursor-pointer hover:text-white transition-colors"
+                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                                         onClick={() => handleSort('email')}
                                     >
                                         <div className="flex items-center gap-2">{t('teams.table.email')} <SortIcon direction={getSortDirection('email')} /></div>
                                     </th>
                                     <th
-                                        className="p-3 text-left cursor-pointer hover:text-white transition-colors"
+                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                                         onClick={() => handleSort('role')}
                                     >
                                         <div className="flex items-center gap-2">{t('teams.table.job_title')} <SortIcon direction={getSortDirection('role')} /></div>
                                     </th>
                                     <th className="p-3 text-left">{t('teams.table.current_projects')}</th>
                                     <th
-                                        className="p-3 text-left cursor-pointer hover:text-white transition-colors"
+                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                                         onClick={() => handleSort('dateAdded')}
                                     >
                                         <div className="flex items-center gap-2">{t('teams.table.date_added')} <SortIcon direction={getSortDirection('dateAdded')} /></div>
                                     </th>
                                     <th
-                                        className="p-3 text-left cursor-pointer hover:text-white transition-colors"
+                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                                         onClick={() => handleSort('lastActive')}
                                     >
                                         <div className="flex items-center gap-2">{t('teams.table.last_active')} <SortIcon direction={getSortDirection('lastActive')} /></div>
@@ -366,13 +366,13 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                     <th className="w-24 p-3"></th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-800/50">
+                            <tbody className="divide-y divide-[var(--app-border)]">
                                 {sortedMembers.map((member: TeamMember) => {
                                     const isSelected = selectedMemberIds.has(member.id)
                                     return (
                                         <tr
                                             key={member.id}
-                                            className={`group transition-colors ${isSelected ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-gray-800/30'}`}
+                                            className={`group transition-colors ${isSelected ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-[var(--app-bg-elevated)]/50'}`}
                                             onClick={() => toggleSelectMember(member.id)}
                                         >
                                             {canManage && (
@@ -389,49 +389,49 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                             )}
                                             <td className="p-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white overflow-hidden ${member.avatar ? 'bg-transparent' : 'bg-gradient-to-br from-gray-700 to-gray-600'}`}>
+                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-[var(--app-text-primary)] overflow-hidden ${member.avatar ? 'bg-transparent' : 'bg-gradient-to-br from-gray-700 to-gray-600'}`}>
                                                         {member.avatar ? (
                                                             <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
                                                         ) : (
                                                             member.name.charAt(0)
                                                         )}
                                                     </div>
-                                                    <span className={`text-sm font-medium ${isSelected ? 'text-amber-100' : 'text-gray-200'}`}>{member.name}</span>
+                                                    <span className={`text-sm font-medium ${isSelected ? 'text-amber-100' : 'text-[var(--app-text-primary)]'}`}>{member.name}</span>
                                                 </div>
                                             </td>
-                                            <td className="p-3 text-sm text-gray-400">{member.email}</td>
-                                            <td className="p-3 text-sm text-gray-300">{member.role}</td>
+                                            <td className="p-3 text-sm text-[var(--app-text-secondary)]">{member.email}</td>
+                                            <td className="p-3 text-sm text-[var(--app-text-secondary)]">{member.role}</td>
                                             <td className="p-3">
                                                 <div className="flex items-center gap-1.5">
                                                     {member.projects.slice(0, 2).map((proj: string, i: number) => (
-                                                        <span key={i} className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium text-gray-200 bg-[#2a2b36] border border-gray-700/50 max-w-[120px]">
+                                                        <span key={i} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium text-[var(--app-text-secondary)] bg-[var(--app-bg-input)] max-w-[120px]">
                                                             <span className="truncate">{proj}</span>
                                                         </span>
                                                     ))}
                                                     {member.projects.length > 2 && (
                                                         <div className="relative group/more">
-                                                            <span className="px-1.5 py-0.5 rounded-lg text-[10px] font-medium bg-[#2a2b36] border border-gray-700/50 text-gray-400 cursor-default">
+                                                            <span className="px-2 py-1 rounded-full text-[10px] font-medium bg-[var(--app-bg-input)] text-[var(--app-text-secondary)] cursor-default">
                                                                 +{member.projects.length - 2}
                                                             </span>
                                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/more:block z-50">
-                                                                <div className="bg-[#1a1a24] border border-gray-700/80 rounded-lg shadow-xl shadow-black/40 px-3 py-2 whitespace-nowrap">
+                                                                <div className="bg-[var(--app-bg-sidebar)] border border-[var(--app-border)]/80 rounded-lg shadow-xl shadow-black/40 px-3 py-2 whitespace-nowrap">
                                                                     {member.projects.slice(2).map((proj: string, i: number) => (
-                                                                        <div key={i} className="text-[11px] text-gray-300 py-0.5">{proj}</div>
+                                                                        <div key={i} className="text-[11px] text-[var(--app-text-secondary)] py-0.5">{proj}</div>
                                                                     ))}
                                                                 </div>
-                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1a1a24] border-r border-b border-gray-700/80 transform rotate-45 -mt-1" />
+                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-[var(--app-bg-sidebar)] border-r border-b border-[var(--app-border)]/80 transform rotate-45 -mt-1" />
                                                             </div>
                                                         </div>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="p-3 text-sm text-gray-400 font-medium">{member.dateAdded}</td>
-                                            <td className="p-3 text-sm text-gray-400 font-medium">{member.lastActive}</td>
+                                            <td className="p-3 text-sm text-[var(--app-text-secondary)] font-medium">{member.dateAdded}</td>
+                                            <td className="p-3 text-sm text-[var(--app-text-secondary)] font-medium">{member.lastActive}</td>
                                             <td className="p-3">
                                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                                                     <button
                                                         onClick={() => onViewMember(member)}
-                                                        className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
+                                                        className="p-1.5 text-[var(--app-text-muted)] hover:bg-[var(--app-bg-elevated)] rounded transition-all group/btn relative"
                                                         title={t('teams.table.actions.view_profile')}
                                                     >
                                                         <div className="group-hover/btn:hidden"><EyeIcon /></div>
@@ -441,7 +441,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                                         <>
                                                             <button
                                                                 onClick={() => onEditMember(member)}
-                                                                className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
+                                                                className="p-1.5 text-[var(--app-text-muted)] hover:bg-[var(--app-bg-elevated)] rounded transition-all group/btn relative"
                                                                 title={t('teams.table.actions.edit_member')}
                                                             >
                                                                 <div className="group-hover/btn:hidden"><PencilIcon /></div>
@@ -454,7 +454,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                                                         onDeleteMember?.(member)
                                                                     }
                                                                 }}
-                                                                className="p-1.5 text-gray-500 hover:bg-gray-800 rounded transition-all group/btn relative"
+                                                                className="p-1.5 text-[var(--app-text-muted)] hover:bg-[var(--app-bg-elevated)] rounded transition-all group/btn relative"
                                                                 title={t('teams.table.actions.remove_member')}
                                                             >
                                                                 <div className="group-hover/btn:hidden"><TrashIcon /></div>
@@ -473,7 +473,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                 )}
                 {/* Empty State for Expanded but no members */}
                 {isExpanded && team.members.length === 0 && (
-                    <div className="p-8 flex flex-col items-center justify-center text-gray-500 text-sm">
+                    <div className="p-8 flex flex-col items-center justify-center text-[var(--app-text-muted)] text-sm">
                         <p>{t('teams.table.empty_state')}</p>
                     </div>
                 )}

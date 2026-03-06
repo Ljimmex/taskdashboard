@@ -34,7 +34,7 @@ export const useWhiteboard = (id?: string) => {
 export function useCreateBoard() {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (data: { name: string; workspaceId: string; data?: any }) => {
+        mutationFn: async (data: { name: string; workspaceId: string; data?: any; projectId?: string; folderId?: string }) => {
             const res = await fetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -45,6 +45,9 @@ export function useCreateBoard() {
             return json.data as WhiteboardRecord
         },
         onSuccess: (data) => {
+            queryClient.setQueryData(['whiteboards', data.workspaceId], (old: WhiteboardRecord[] | undefined) => {
+                return old ? [data, ...old] : [data]
+            })
             queryClient.invalidateQueries({ queryKey: ['whiteboards', data.workspaceId] })
         },
     })

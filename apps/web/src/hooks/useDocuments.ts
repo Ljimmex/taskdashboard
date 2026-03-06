@@ -34,7 +34,7 @@ export const useDocument = (id?: string) => {
 export const useCreateDocument = () => {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (data: { title: string; workspaceId: string; content?: any }) => {
+        mutationFn: async (data: { title: string; workspaceId: string; content?: any; projectId?: string; folderId?: string }) => {
             const res = await fetch(API_BASE, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -45,6 +45,9 @@ export const useCreateDocument = () => {
             return json.data as DocumentRecord
         },
         onSuccess: (data) => {
+            queryClient.setQueryData(['documents', data.workspaceId], (old: DocumentRecord[] | undefined) => {
+                return old ? [data, ...old] : [data]
+            })
             queryClient.invalidateQueries({ queryKey: ['documents', data.workspaceId] })
         },
     })

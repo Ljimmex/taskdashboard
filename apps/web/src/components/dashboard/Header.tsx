@@ -143,8 +143,8 @@ export function Header() {
                                         </svg>
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
                                             <circle cx="16" cy="16" r="12" fill="var(--app-accent)" />
-                                            <circle cx="16" cy="12" r="4" fill="var(--app-accent-text)" />
-                                            <path d="M8.5 24C8.5 20 11.5 18 16 18C20.5 18 23.5 20 23.5 24" stroke="var(--app-accent-text)" strokeWidth="3" strokeLinecap="round" />
+                                            <circle cx="16" cy="12" r="4" fill="var(--app-bg-elevated)" />
+                                            <path d="M8.5 24C8.5 20 11.5 18 16 18C20.5 18 23.5 20 23.5 24" stroke="var(--app-bg-elevated)" strokeWidth="3" strokeLinecap="round" />
                                         </svg>
                                     </div>
                                     <span>{t('dashboard.myProfile')}</span>
@@ -159,8 +159,8 @@ export function Header() {
                                         </svg>
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
                                             <path d="M4 10C4 6.68629 6.68629 4 10 4H22C25.3137 4 28 6.68629 28 10V18C28 21.3137 25.3137 24 22 24H12L6 28V22H10C6.68629 22 4 19.3137 4 16V10Z" fill="var(--app-accent)" />
-                                            <rect x="10" y="11" width="12" height="3" rx="1.5" fill="var(--app-accent-text)" />
-                                            <rect x="10" y="17" width="8" height="3" rx="1.5" fill="var(--app-accent-text)" />
+                                            <rect x="10" y="11" width="12" height="3" rx="1.5" fill="var(--app-bg-elevated)" />
+                                            <rect x="10" y="17" width="8" height="3" rx="1.5" fill="var(--app-bg-elevated)" />
                                         </svg>
                                     </div>
                                     <span>{t('dashboard.myChat')}</span>
@@ -169,20 +169,20 @@ export function Header() {
                                     {/* Tasks icon */}
                                     <div className="w-5 h-5 flex items-center justify-center">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                            <rect x="10" y="8" width="16" height="4" rx="2" fill="var(--app-bg-sidebar)" />
-                                            <rect x="10" y="16" width="16" height="4" rx="2" fill="var(--app-bg-sidebar)" />
-                                            <rect x="10" y="24" width="12" height="4" rx="2" fill="var(--app-bg-sidebar)" />
+                                            <rect x="10" y="8" width="16" height="4" rx="2" fill="var(--app-text-secondary)" />
+                                            <rect x="10" y="16" width="16" height="4" rx="2" fill="var(--app-text-secondary)" />
+                                            <rect x="10" y="24" width="12" height="4" rx="2" fill="var(--app-text-secondary)" />
                                             <rect x="4" y="8" width="4" height="4" rx="1" fill="var(--app-text-muted)" />
                                             <rect x="4" y="16" width="4" height="4" rx="1" fill="var(--app-text-muted)" />
                                             <rect x="4" y="24" width="4" height="4" rx="1" fill="var(--app-text-muted)" />
                                         </svg>
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                            <rect x="10" y="8" width="16" height="4" rx="2" fill="var(--app-accent-text)" />
-                                            <rect x="10" y="16" width="16" height="4" rx="2" fill="var(--app-accent-text)" />
-                                            <rect x="10" y="24" width="12" height="4" rx="2" fill="var(--app-accent-text)" />
-                                            <rect x="4" y="8" width="4" height="4" rx="1" fill="var(--app-accent)" />
-                                            <rect x="4" y="16" width="4" height="4" rx="1" fill="var(--app-accent)" />
-                                            <rect x="4" y="24" width="4" height="4" rx="1" fill="var(--app-accent)" />
+                                            <rect x="10" y="8" width="16" height="4" rx="2" fill="var(--app-accent)" />
+                                            <rect x="10" y="16" width="16" height="4" rx="2" fill="var(--app-accent)" />
+                                            <rect x="10" y="24" width="12" height="4" rx="2" fill="var(--app-accent)" />
+                                            <rect x="4" y="8" width="4" height="4" rx="1" fill="var(--app-bg-elevated)" />
+                                            <rect x="4" y="16" width="4" height="4" rx="1" fill="var(--app-bg-elevated)" />
+                                            <rect x="4" y="24" width="4" height="4" rx="1" fill="var(--app-bg-elevated)" />
                                         </svg>
                                     </div>
                                     <span>{t('dashboard.myTasks')}</span>
@@ -197,12 +197,12 @@ export function Header() {
                                     {/* Settings icon */}
                                     <div className="w-5 h-5 flex items-center justify-center">
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                            <path fillRule="evenodd" clipRule="evenodd" d="M26.5 16C26.5 17.3 26.3 18.6 25.9 19.8L28.8 22.1L26 27L22.5 25.8C21.1 26.8 19.6 27.6 17.9 28L17.3 31.7H13.8L13.2 28C11.5 27.6 9.9 26.8 8.5 25.8L5.1 27L2.3 22.1L5.1 19.8C4.7 18.6 4.5 17.3 4.5 16C4.5 14.7 4.7 13.4 5.1 12.2L2.3 9.9L5.1 5L8.5 6.2C9.9 5.2 11.5 4.4 13.2 4L13.2 0.3H17.3L17.9 4C19.6 4.4 21.1 5.2 22.5 6.2L26 5L28.8 9.9L25.9 12.2C26.3 13.4 26.5 14.7 26.5 16Z" fill="var(--app-bg-sidebar)" />
-                                            <circle cx="15.5" cy="16" r="5.5" fill="var(--app-text-muted)" />
+                                            <path fillRule="evenodd" clipRule="evenodd" d="M26.5 16C26.5 17.3 26.3 18.6 25.9 19.8L28.8 22.1L26 27L22.5 25.8C21.1 26.8 19.6 27.6 17.9 28L17.3 31.7H13.8L13.2 28C11.5 27.6 9.9 26.8 8.5 25.8L5.1 27L2.3 22.1L5.1 19.8C4.7 18.6 4.5 17.3 4.5 16C4.5 14.7 4.7 13.4 5.1 12.2L2.3 9.9L5.1 5L8.5 6.2C9.9 5.2 11.5 4.4 13.2 4L13.2 0.3H17.3L17.9 4C19.6 4.4 21.1 5.2 22.5 6.2L26 5L28.8 9.9L25.9 12.2C26.3 13.4 26.5 14.7 26.5 16Z" fill="var(--app-text-muted)" />
+                                            <circle cx="15.5" cy="16" r="5.5" fill="var(--app-bg-card)" />
                                         </svg>
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                            <path fillRule="evenodd" clipRule="evenodd" d="M26.5 16C26.5 17.3 26.3 18.6 25.9 19.8L28.8 22.1L26 27L22.5 25.8C21.1 26.8 19.6 27.6 17.9 28L17.3 31.7H13.8L13.2 28C11.5 27.6 9.9 26.8 8.5 25.8L5.1 27L2.3 22.1L5.1 19.8C4.7 18.6 4.5 17.3 4.5 16C4.5 14.7 4.7 13.4 5.1 12.2L2.3 9.9L5.1 5L8.5 6.2C9.9 5.2 11.5 4.4 13.2 4L13.2 0.3H17.3L17.9 4C19.6 4.4 21.1 5.2 22.5 6.2L26 5L28.8 9.9L25.9 12.2C26.3 13.4 26.5 14.7 26.5 16Z" fill="var(--app-accent-text)" />
-                                            <circle cx="15.5" cy="16" r="5.5" fill="var(--app-accent)" />
+                                            <path fillRule="evenodd" clipRule="evenodd" d="M26.5 16C26.5 17.3 26.3 18.6 25.9 19.8L28.8 22.1L26 27L22.5 25.8C21.1 26.8 19.6 27.6 17.9 28L17.3 31.7H13.8L13.2 28C11.5 27.6 9.9 26.8 8.5 25.8L5.1 27L2.3 22.1L5.1 19.8C4.7 18.6 4.5 17.3 4.5 16C4.5 14.7 4.7 13.4 5.1 12.2L2.3 9.9L5.1 5L8.5 6.2C9.9 5.2 11.5 4.4 13.2 4L13.2 0.3H17.3L17.9 4C19.6 4.4 21.1 5.2 22.5 6.2L26 5L28.8 9.9L25.9 12.2C26.3 13.4 26.5 14.7 26.5 16Z" fill="var(--app-accent)" />
+                                            <circle cx="15.5" cy="16" r="5.5" fill="var(--app-bg-elevated)" />
                                         </svg>
                                     </div>
                                     <span>{t('dashboard.userSettings')}</span>
@@ -223,7 +223,7 @@ export function Header() {
                                             <path d="M22 10L28 16L22 22" stroke="var(--app-text-muted)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
                                         <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                            <path d="M12 8H8C5.79086 8 4 9.79086 4 12V20C4 22.2091 5.79086 24 8 24H12" stroke="var(--app-accent-text)" strokeWidth="3" strokeLinecap="round" />
+                                            <path d="M12 8H8C5.79086 8 4 9.79086 4 12V20C4 22.2091 5.79086 24 8 24H12" stroke="var(--app-accent)" strokeWidth="3" strokeLinecap="round" />
                                             <path d="M16 16H28" stroke="var(--app-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                                             <path d="M22 10L28 16L22 22" stroke="var(--app-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>

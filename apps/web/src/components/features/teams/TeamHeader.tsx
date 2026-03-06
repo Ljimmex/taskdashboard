@@ -15,12 +15,12 @@ const SortIcon = () => (
 
 // Custom Checkbox Component
 const Checkbox = ({ checked, onChange, label, color }: { checked: boolean; onChange: () => void; label: string; color?: string }) => (
-    <label className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-gray-800/50 cursor-pointer transition-colors group">
+    <label className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-[var(--app-bg-input)]/50 cursor-pointer transition-colors group">
         <div
             onClick={(e) => { e.preventDefault(); onChange() }}
             className={`w-4 h-4 rounded flex items-center justify-center transition-all flex-shrink-0 ${checked
                 ? 'bg-amber-500 border-amber-500'
-                : 'bg-transparent border-2 border-gray-600 group-hover:border-gray-500'
+                : 'bg-transparent border-2 border-[var(--app-border)] group-hover:border-[var(--app-border)]'
                 }`}
         >
             {checked && (
@@ -29,7 +29,7 @@ const Checkbox = ({ checked, onChange, label, color }: { checked: boolean; onCha
                 </svg>
             )}
         </div>
-        <span className={`text-sm ${color || 'text-gray-300'}`}>{label}</span>
+        <span className={`text-sm ${color || 'text-[var(--app-text-secondary)]'}`}>{label}</span>
     </label>
 )
 
@@ -140,7 +140,7 @@ export function TeamHeader({
 
     return (
         <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold text-white">{t('teams.title')}</h1>
+            <h1 className="text-2xl font-bold text-[var(--app-text-primary)]">{t('teams.title')}</h1>
 
             <div className="flex items-center gap-3">
                 {/* Search */}
@@ -155,7 +155,7 @@ export function TeamHeader({
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
                         onBlur={() => setSearchFocused(false)}
-                        className="w-56 pl-10 pr-4 py-2 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
+                        className="w-56 pl-10 pr-4 py-2 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
                     />
                 </div>
 
@@ -165,7 +165,7 @@ export function TeamHeader({
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${hasActiveFilters
                             ? 'bg-amber-500/10 text-amber-400'
-                            : 'bg-[#1a1a24] text-gray-400 hover:text-white'
+                            : 'bg-[var(--app-bg-sidebar)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)]'
                             }`}
                     >
                         <FilterIcon isHovered={!!hasActiveFilters} />
@@ -176,14 +176,14 @@ export function TeamHeader({
                     </button>
 
                     {isFilterOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-80 bg-[#1a1a24] rounded-xl shadow-2xl z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
+                        <div className="absolute right-0 top-full mt-2 w-80 bg-[var(--app-bg-sidebar)] rounded-xl shadow-2xl z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
                             {/* Role & Team Section */}
                             <div className="p-4">
-                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('teams.filters.role_and_team')}</span>
+                                <span className="text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">{t('teams.filters.role_and_team')}</span>
 
                                 {/* Job Title */}
                                 <div className="mt-3">
-                                    <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.job_title')}</label>
+                                    <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.job_title')}</label>
                                     <div className="space-y-0.5 max-h-32 overflow-y-auto">
                                         {availableRoles.map(role => (
                                             <Checkbox
@@ -194,7 +194,7 @@ export function TeamHeader({
                                             />
                                         ))}
                                         {availableRoles.length === 0 && (
-                                            <span className="text-xs text-gray-500 italic px-2">{t('teams.filters.no_roles')}</span>
+                                            <span className="text-xs text-[var(--app-text-muted)] italic px-2">{t('teams.filters.no_roles')}</span>
                                         )}
                                     </div>
                                 </div>
@@ -202,7 +202,7 @@ export function TeamHeader({
                                 {/* Teams */}
                                 {availableTeams.length > 1 && (
                                     <div className="mt-4">
-                                        <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.team')}</label>
+                                        <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.team')}</label>
                                         <div className="space-y-0.5 max-h-32 overflow-y-auto">
                                             {availableTeams.map(team => (
                                                 <Checkbox
@@ -218,12 +218,12 @@ export function TeamHeader({
                             </div>
 
                             {/* Status Section */}
-                            <div className="p-4 bg-[#12121a]/50">
-                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('teams.filters.status_and_availability')}</span>
+                            <div className="p-4 bg-[var(--app-bg-deepest)]/50">
+                                <span className="text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">{t('teams.filters.status_and_availability')}</span>
 
                                 {/* Account Status */}
                                 <div className="mt-3">
-                                    <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.account_status')}</label>
+                                    <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.account_status')}</label>
                                     <div className="space-y-0.5">
                                         {statusOptions.map(opt => (
                                             <Checkbox
@@ -238,7 +238,7 @@ export function TeamHeader({
 
                                 {/* Availability */}
                                 <div className="mt-4">
-                                    <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.availability')}</label>
+                                    <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.availability')}</label>
                                     <div className="space-y-0.5">
                                         {availabilityOptions.map(opt => (
                                             <Checkbox
@@ -256,10 +256,10 @@ export function TeamHeader({
                             {/* Projects Section */}
                             {availableProjects.length > 0 && (
                                 <div className="p-4">
-                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('teams.filters.work_context')}</span>
+                                    <span className="text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">{t('teams.filters.work_context')}</span>
 
                                     <div className="mt-3">
-                                        <label className="text-xs text-gray-400 mb-2 block font-medium">{t('teams.filters.assigned_project')}</label>
+                                        <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.assigned_project')}</label>
                                         <div className="space-y-0.5 max-h-32 overflow-y-auto">
                                             {availableProjects.map(proj => (
                                                 <Checkbox
@@ -275,13 +275,13 @@ export function TeamHeader({
                             )}
 
                             {/* Clear Filters */}
-                            <div className="p-3 bg-[#12121a]">
+                            <div className="p-3 bg-[var(--app-bg-deepest)]">
                                 <button
                                     onClick={() => {
                                         onFiltersChange({})
                                         setIsFilterOpen(false)
                                     }}
-                                    className="w-full px-3 py-2 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-all"
+                                    className="w-full px-3 py-2 text-xs text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-all"
                                 >
                                     {t('teams.filters.clear_all')}
                                 </button>
@@ -294,19 +294,19 @@ export function TeamHeader({
                 <div className="relative" ref={sortRef}>
                     <button
                         onClick={() => setIsSortOpen(!isSortOpen)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a24] text-gray-400 hover:text-white text-sm font-medium transition-all"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] text-sm font-medium transition-all"
                     >
                         <SortIcon />
-                        <span className="text-gray-300">{currentSortLabel}</span>
-                        <span className="text-gray-500 text-xs">({currentDirectionLabel})</span>
+                        <span className="text-[var(--app-text-secondary)]">{currentSortLabel}</span>
+                        <span className="text-[var(--app-text-muted)] text-xs">({currentDirectionLabel})</span>
                     </button>
 
                     {isSortOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-[#1a1a24] rounded-xl shadow-2xl z-50 overflow-hidden">
+                        <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--app-bg-sidebar)] rounded-xl shadow-2xl z-50 overflow-hidden">
                             <div className="p-2">
                                 {sortOptions.map(opt => (
                                     <div key={opt.value} className="mb-1">
-                                        <div className="px-3 py-1.5 text-xs text-gray-500 font-medium">{opt.label}</div>
+                                        <div className="px-3 py-1.5 text-xs text-[var(--app-text-muted)] font-medium">{opt.label}</div>
                                         <div className="flex gap-1 px-2">
                                             <button
                                                 onClick={() => {
@@ -315,7 +315,7 @@ export function TeamHeader({
                                                 }}
                                                 className={`flex-1 px-3 py-1.5 text-xs rounded-lg transition-all ${sortBy === opt.value && sortDirection === 'asc'
                                                     ? 'bg-amber-500/20 text-amber-400'
-                                                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                                    : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)] hover:text-[var(--app-text-primary)]'
                                                     }`}
                                             >
                                                 {opt.directions.asc}
@@ -327,7 +327,7 @@ export function TeamHeader({
                                                 }}
                                                 className={`flex-1 px-3 py-1.5 text-xs rounded-lg transition-all ${sortBy === opt.value && sortDirection === 'desc'
                                                     ? 'bg-amber-500/20 text-amber-400'
-                                                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                                                    : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)] hover:text-[var(--app-text-primary)]'
                                                     }`}
                                             >
                                                 {opt.directions.desc}

@@ -101,7 +101,19 @@ docsRoutes.get('/:id', async (c) => {
 })
 
 // POST /api/docs - Create document
-docsRoutes.post('/', zValidator('json', createDocSchema), async (c) => {
+docsRoutes.post('/', async (c, next) => {
+    try {
+        console.log('Incoming POST /api/docs:', await c.req.json().catch(() => ({})))
+    } catch (e) {
+        console.error('Failed to parse incoming body')
+    }
+    await next()
+}, zValidator('json', createDocSchema, (result, c) => {
+    if (!result.success) {
+        console.error('Zod Validation Error on createDocSchema:', result.error.errors)
+        return c.json({ error: 'Validation failed', details: result.error.errors }, 400)
+    }
+}), async (c) => {
     const user = c.get('user')
     const body = c.req.valid('json')
 

@@ -97,7 +97,11 @@ function BoardPage() {
             data: {}
         }, {
             onSuccess: (data) => {
+                setIsCreationModalOpen(false)
                 setSelectedResourceId(data.id)
+            },
+            onError: (error) => {
+                alert(t('resources.creation_error', { defaultValue: 'Failed to create board: ' }) + error.message)
             }
         })
     }
@@ -112,7 +116,11 @@ function BoardPage() {
             }
         }, {
             onSuccess: (data) => {
+                setIsCreationModalOpen(false)
                 setSelectedResourceId(data.id)
+            },
+            onError: (error) => {
+                alert(t('resources.creation_error', { defaultValue: 'Failed to create document: ' }) + error.message)
             }
         })
     }

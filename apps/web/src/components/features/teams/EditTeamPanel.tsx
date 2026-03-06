@@ -103,19 +103,19 @@ export function EditTeamPanel({ isOpen, onClose, team, onSave }: EditTeamPanelPr
             <div
                 ref={panelRef}
                 onKeyDown={handleKeyDown}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
-                <div className="flex-none p-6 border-b border-gray-800">
+                <div className="flex-none p-6 border-b border-[var(--app-border)]">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                            className="p-2 rounded-lg text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] transition-colors"
                             title="Close"
                         >
                             <ChevronDoubleRightIcon />
                         </button>
-                        <h2 className="text-lg font-semibold text-white">{t('teams.edit_panel.title')}</h2>
+                        <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('teams.edit_panel.title')}</h2>
                     </div>
                 </div>
 
@@ -123,32 +123,32 @@ export function EditTeamPanel({ isOpen, onClose, team, onSave }: EditTeamPanelPr
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {/* Team Name */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.edit_panel.team_name')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('teams.edit_panel.team_name')}</label>
                         <input
                             ref={nameInputRef}
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder={t('teams.edit_panel.team_name_placeholder')}
-                            className="w-full text-lg font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-transparent focus:border-amber-500/50 transition-colors"
+                            className="w-full text-lg font-semibold text-[var(--app-text-primary)] bg-[var(--app-bg-sidebar)] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-transparent focus:border-amber-500/50 transition-colors"
                         />
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('teams.edit_panel.description')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('teams.edit_panel.description')}</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={t('teams.edit_panel.description_placeholder')}
                             rows={3}
-                            className="w-full text-sm text-gray-300 bg-[#1a1a24] rounded-xl p-4 placeholder-gray-500 outline-none resize-none border border-transparent focus:border-amber-500/50 transition-colors"
+                            className="w-full text-sm text-[var(--app-text-secondary)] bg-[var(--app-bg-sidebar)] rounded-xl p-4 placeholder-gray-500 outline-none resize-none border border-transparent focus:border-amber-500/50 transition-colors"
                         />
                     </div>
 
                     {/* Color Picker */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-3">{t('teams.edit_panel.team_color')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-3">{t('teams.edit_panel.team_color')}</label>
                         <div className="grid grid-cols-6 gap-2">
                             {TEAM_COLORS.map(color => (
                                 <button
@@ -159,7 +159,7 @@ export function EditTeamPanel({ isOpen, onClose, team, onSave }: EditTeamPanelPr
                                     title={color.name}
                                 >
                                     {selectedColor === color.value && (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--app-text-primary)" strokeWidth="3">
                                             <polyline points="20 6 9 17 4 12" />
                                         </svg>
                                     )}
@@ -170,11 +170,11 @@ export function EditTeamPanel({ isOpen, onClose, team, onSave }: EditTeamPanelPr
                 </div>
 
                 {/* Footer */}
-                <div className="flex-none p-6 bg-[#0f0f14] rounded-b-2xl">
+                <div className="flex-none p-6 bg-[var(--app-bg-deepest)] rounded-b-2xl">
                     <div className="flex items-center justify-end gap-3">
                         <button
                             onClick={onClose}
-                            className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                            className="px-4 py-2 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
                         >
                             {t('teams.edit_panel.cancel')}
                         </button>
@@ -182,8 +182,8 @@ export function EditTeamPanel({ isOpen, onClose, team, onSave }: EditTeamPanelPr
                             onClick={handleSave}
                             disabled={!name.trim() || name === team.name && description === (team.description || '') && selectedColor === team.color}
                             className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${name.trim() && (name !== team.name || description !== (team.description || '') || selectedColor !== team.color)
-                                ? 'bg-[#0F4C75] hover:bg-[#0F4C75]/80 text-white'
-                                : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                                ? 'bg-[var(--app-accent)] hover:brightness-110 text-white'
+                                : 'bg-[var(--app-bg-input)] text-[var(--app-text-muted)] cursor-not-allowed'
                                 }`}
                         >
                             {t('teams.edit_panel.save_button')}
