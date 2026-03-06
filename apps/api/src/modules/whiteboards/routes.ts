@@ -35,19 +35,24 @@ export const whiteboardsRoutes = new Hono<Env>()
 
 // Helper: Resolve workspaceId (could be a slug or actual ID)
 async function resolveWorkspaceId(workspaceIdOrSlug: string): Promise<string | null> {
-    // First try to find by ID directly
-    const byId = await db.query.workspaces.findFirst({
-        where: (ws, { eq }) => eq(ws.id, workspaceIdOrSlug),
-        columns: { id: true }
-    })
-    if (byId) return byId.id
+    try {
+        // First try to find by ID directly
+        const byId = await db.query.workspaces.findFirst({
+            where: (ws, { eq }) => eq(ws.id, workspaceIdOrSlug),
+            columns: { id: true }
+        })
+        if (byId) return byId.id
 
-    // If not found by ID, try by slug
-    const bySlug = await db.query.workspaces.findFirst({
-        where: (ws, { eq }) => eq(ws.slug, workspaceIdOrSlug),
-        columns: { id: true }
-    })
-    return bySlug?.id || null
+        // If not found by ID, try by slug
+        const bySlug = await db.query.workspaces.findFirst({
+            where: (ws, { eq }) => eq(ws.slug, workspaceIdOrSlug),
+            columns: { id: true }
+        })
+        return bySlug?.id || null
+    } catch (error) {
+        console.error('resolveWorkspaceId error:', error)
+        return null
+    }
 }
 
 // Helper: Get user's workspace role
@@ -64,103 +69,111 @@ async function getUserWorkspaceRole(userId: string, workspaceId: string) {
 
 // GET /api/whiteboards - List whiteboards for a workspace
 whiteboardsRoutes.get('/', async (c) => {
-    const user = c.get('user')
-    const workspaceIdOrSlug = c.req.query('workspaceId')
+    try {
+        const user = c.get('user')
+        const workspaceIdOrSlug = c.req.query('workspaceId')
 
-    if (!workspaceIdOrSlug) {
-        return c.json({ error: 'workspaceId is required' }, 400)
+        if (!workspaceIdOrSlug) {
+            return c.json({ success: false, error: 'workspaceId is required' }, 400)
+        }
+
+        const workspaceId = await resolveWorkspaceId(workspaceIdOrSlug)
+        if (!workspaceId) {
+            return c.json({ success: false, error: 'Workspace not found' }, 404)
+        }
+
+        const role = await getUserWorkspaceRole(user.id, workspaceId)
+        if (!role) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        const result = await db.query.whiteboards.findMany({
+            where: (w, { eq, and }) => and(
+                eq(w.workspaceId, workspaceId),
+                eq(w.isArchived, false)
+            ),
+            with: {
+                creator: {
+                    columns: { id: true, name: true, image: true }
+                }
+            },
+            orderBy: [desc(whiteboards.updatedAt)]
+        })
+
+        return c.json({ success: true, data: result })
+    } catch (error: any) {
+        console.error('GET /api/whiteboards error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const workspaceId = await resolveWorkspaceId(workspaceIdOrSlug)
-    if (!workspaceId) {
-        return c.json({ error: 'Workspace not found' }, 404)
-    }
-
-    const role = await getUserWorkspaceRole(user.id, workspaceId)
-    if (!role) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    const result = await db.query.whiteboards.findMany({
-        where: (w, { eq, and }) => and(
-            eq(w.workspaceId, workspaceId),
-            eq(w.isArchived, false)
-        ),
-        with: {
-            creator: {
-                columns: { id: true, name: true, image: true }
-            }
-        },
-        orderBy: [desc(whiteboards.updatedAt)]
-    })
-
-    return c.json({ success: true, data: result })
 })
 
 // GET /api/whiteboards/:id - Get single whiteboard
 whiteboardsRoutes.get('/:id', async (c) => {
-    const user = c.get('user')
-    const id = c.req.param('id')
+    try {
+        const user = c.get('user')
+        const id = c.req.param('id')
 
-    const board = await db.query.whiteboards.findFirst({
-        where: (w, { eq }) => eq(w.id, id),
-        with: {
-            creator: {
-                columns: { id: true, name: true, image: true }
+        const board = await db.query.whiteboards.findFirst({
+            where: (w, { eq }) => eq(w.id, id),
+            with: {
+                creator: {
+                    columns: { id: true, name: true, image: true }
+                }
             }
+        })
+
+        if (!board) {
+            return c.json({ success: false, error: 'Whiteboard not found' }, 404)
         }
-    })
 
-    if (!board) {
-        return c.json({ error: 'Whiteboard not found' }, 404)
+        const role = await getUserWorkspaceRole(user.id, board.workspaceId)
+        if (!role) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        return c.json({ success: true, data: board })
+    } catch (error: any) {
+        console.error('GET /api/whiteboards/:id error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const role = await getUserWorkspaceRole(user.id, board.workspaceId)
-    if (!role) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    return c.json({ success: true, data: board })
 })
 
 // POST /api/whiteboards - Create whiteboard
-whiteboardsRoutes.post('/', async (c, next) => {
-    try {
-        console.log('Incoming POST /api/whiteboards:', await c.req.json().catch(() => ({})))
-    } catch (e) {
-        console.error('Failed to parse incoming body')
-    }
-    await next()
-}, zValidator('json', createWhiteboardSchema, (result, c) => {
+whiteboardsRoutes.post('/', zValidator('json', createWhiteboardSchema, (result, c) => {
     if (!result.success) {
         console.error('Zod Validation Error on createWhiteboardSchema:', result.error.errors)
-        return c.json({ error: 'Validation failed', details: result.error.errors }, 400)
+        return c.json({ success: false, error: 'Validation failed', details: result.error.errors }, 400)
     }
 }), async (c) => {
-    const user = c.get('user')
-    const body = c.req.valid('json')
+    try {
+        const user = c.get('user')
+        const body = c.req.valid('json')
 
-    const workspaceId = await resolveWorkspaceId(body.workspaceId)
-    if (!workspaceId) {
-        return c.json({ error: 'Workspace not found' }, 404)
+        const workspaceId = await resolveWorkspaceId(body.workspaceId)
+        if (!workspaceId) {
+            return c.json({ success: false, error: 'Workspace not found' }, 404)
+        }
+
+        const role = await getUserWorkspaceRole(user.id, workspaceId)
+        if (!role) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        const newBoard: NewWhiteboard = {
+            workspaceId: workspaceId,
+            name: body.name,
+            data: body.data || {},
+            createdBy: user.id,
+            projectId: body.projectId,
+            folderId: body.folderId,
+        }
+
+        const [created] = await db.insert(whiteboards).values(newBoard).returning()
+        return c.json({ success: true, data: created }, 201)
+    } catch (error: any) {
+        console.error('POST /api/whiteboards error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const role = await getUserWorkspaceRole(user.id, workspaceId)
-    if (!role) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    const newBoard: NewWhiteboard = {
-        workspaceId: workspaceId,
-        name: body.name,
-        data: body.data || {},
-        createdBy: user.id,
-        projectId: body.projectId,
-        folderId: body.folderId,
-    }
-
-    const [created] = await db.insert(whiteboards).values(newBoard).returning()
-    return c.json({ success: true, data: created }, 201)
 })
 
 // PATCH /api/whiteboards/:id - Update whiteboard

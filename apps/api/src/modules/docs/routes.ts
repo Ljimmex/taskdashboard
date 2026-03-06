@@ -35,19 +35,24 @@ export const docsRoutes = new Hono<Env>()
 
 // Helper: Resolve workspaceId (could be a slug or actual ID)
 async function resolveWorkspaceId(workspaceIdOrSlug: string): Promise<string | null> {
-    // First try to find by ID directly
-    const byId = await db.query.workspaces.findFirst({
-        where: (ws, { eq }) => eq(ws.id, workspaceIdOrSlug),
-        columns: { id: true }
-    })
-    if (byId) return byId.id
+    try {
+        // First try to find by ID directly
+        const byId = await db.query.workspaces.findFirst({
+            where: (ws, { eq }) => eq(ws.id, workspaceIdOrSlug),
+            columns: { id: true }
+        })
+        if (byId) return byId.id
 
-    // If not found by ID, try by slug
-    const bySlug = await db.query.workspaces.findFirst({
-        where: (ws, { eq }) => eq(ws.slug, workspaceIdOrSlug),
-        columns: { id: true }
-    })
-    return bySlug?.id || null
+        // If not found by ID, try by slug
+        const bySlug = await db.query.workspaces.findFirst({
+            where: (ws, { eq }) => eq(ws.slug, workspaceIdOrSlug),
+            columns: { id: true }
+        })
+        return bySlug?.id || null
+    } catch (error) {
+        console.error('resolveWorkspaceId error:', error)
+        return null
+    }
 }
 
 // Helper: Get user's workspace role
@@ -64,37 +69,42 @@ async function getUserWorkspaceRole(userId: string, workspaceId: string) {
 
 // GET /api/docs - List documents for a workspace
 docsRoutes.get('/', async (c) => {
-    const user = c.get('user')
-    const workspaceIdOrSlug = c.req.query('workspaceId')
+    try {
+        const user = c.get('user')
+        const workspaceIdOrSlug = c.req.query('workspaceId')
 
-    if (!workspaceIdOrSlug) {
-        return c.json({ error: 'workspaceId is required' }, 400)
+        if (!workspaceIdOrSlug) {
+            return c.json({ success: false, error: 'workspaceId is required' }, 400)
+        }
+
+        const workspaceId = await resolveWorkspaceId(workspaceIdOrSlug)
+        if (!workspaceId) {
+            return c.json({ success: false, error: 'Workspace not found' }, 404)
+        }
+
+        const role = await getUserWorkspaceRole(user.id, workspaceId)
+        if (!role) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        const result = await db.query.documents.findMany({
+            where: (d, { eq, and }) => and(
+                eq(d.workspaceId, workspaceId),
+                eq(d.isArchived, false)
+            ),
+            with: {
+                creator: {
+                    columns: { id: true, name: true, image: true }
+                }
+            },
+            orderBy: [desc(documents.updatedAt)]
+        })
+
+        return c.json({ success: true, data: result })
+    } catch (error: any) {
+        console.error('GET /api/docs error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const workspaceId = await resolveWorkspaceId(workspaceIdOrSlug)
-    if (!workspaceId) {
-        return c.json({ error: 'Workspace not found' }, 404)
-    }
-
-    const role = await getUserWorkspaceRole(user.id, workspaceId)
-    if (!role) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    const result = await db.query.documents.findMany({
-        where: (d, { eq, and }) => and(
-            eq(d.workspaceId, workspaceId),
-            eq(d.isArchived, false)
-        ),
-        with: {
-            creator: {
-                columns: { id: true, name: true, image: true }
-            }
-        },
-        orderBy: [desc(documents.updatedAt)]
-    })
-
-    return c.json({ success: true, data: result })
 })
 
 // GET /api/docs/:id - Get single document
@@ -124,43 +134,41 @@ docsRoutes.get('/:id', async (c) => {
 })
 
 // POST /api/docs - Create document
-docsRoutes.post('/', async (c, next) => {
-    try {
-        console.log('Incoming POST /api/docs:', await c.req.json().catch(() => ({})))
-    } catch (e) {
-        console.error('Failed to parse incoming body')
-    }
-    await next()
-}, zValidator('json', createDocSchema, (result, c) => {
+docsRoutes.post('/', zValidator('json', createDocSchema, (result, c) => {
     if (!result.success) {
         console.error('Zod Validation Error on createDocSchema:', result.error.errors)
-        return c.json({ error: 'Validation failed', details: result.error.errors }, 400)
+        return c.json({ success: false, error: 'Validation failed', details: result.error.errors }, 400)
     }
 }), async (c) => {
-    const user = c.get('user')
-    const body = c.req.valid('json')
+    try {
+        const user = c.get('user')
+        const body = c.req.valid('json')
 
-    const workspaceId = await resolveWorkspaceId(body.workspaceId)
-    if (!workspaceId) {
-        return c.json({ error: 'Workspace not found' }, 404)
+        const workspaceId = await resolveWorkspaceId(body.workspaceId)
+        if (!workspaceId) {
+            return c.json({ success: false, error: 'Workspace not found' }, 404)
+        }
+
+        const role = await getUserWorkspaceRole(user.id, workspaceId)
+        if (!role) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        const newDoc: NewDocument = {
+            workspaceId: workspaceId,
+            title: body.title,
+            content: body.content || {},
+            createdBy: user.id,
+            projectId: body.projectId,
+            folderId: body.folderId,
+        }
+
+        const [created] = await db.insert(documents).values(newDoc).returning()
+        return c.json({ success: true, data: created }, 201)
+    } catch (error: any) {
+        console.error('POST /api/docs error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const role = await getUserWorkspaceRole(user.id, workspaceId)
-    if (!role) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    const newDoc: NewDocument = {
-        workspaceId: workspaceId,
-        title: body.title,
-        content: body.content || {},
-        createdBy: user.id,
-        projectId: body.projectId,
-        folderId: body.folderId,
-    }
-
-    const [created] = await db.insert(documents).values(newDoc).returning()
-    return c.json({ success: true, data: created }, 201)
 })
 
 // PATCH /api/docs/:id - Update document
