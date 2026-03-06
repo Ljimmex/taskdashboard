@@ -10,7 +10,7 @@
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=web",
     "dev:api": "turbo run dev --filter=api",
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 turbo run build --concurrency=2",
+    "build": "turbo run build --concurrency=1",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
     "lint": "turbo run lint",
