@@ -106,19 +106,19 @@ export const sidebarIcons = {
             </svg>
         ),
     },
-    contact: {
+    board: {
         gold: (
             <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                <rect x="4" y="4" width="24" height="24" rx="5" fill="#F2CE88" />
-                <circle cx="16" cy="13" r="4" fill="#7A664E" />
-                <path d="M9 23C9 19.6863 12.134 17 16 17C19.866 17 23 19.6863 23 23" stroke="#7A664E" strokeWidth="3" strokeLinecap="round" />
+                <rect x="4" y="6" width="7" height="20" rx="2" fill="#F2CE88" />
+                <rect x="13" y="6" width="7" height="14" rx="2" fill="#7A664E" />
+                <rect x="22" y="6" width="7" height="18" rx="2" fill="#F2CE88" />
             </svg>
         ),
         gray: (
             <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                <rect x="4" y="4" width="24" height="24" rx="5" fill="#9E9E9E" />
-                <circle cx="16" cy="13" r="4" fill="#545454" />
-                <path d="M9 23C9 19.6863 12.134 17 16 17C19.866 17 23 19.6863 23 23" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
+                <rect x="4" y="6" width="7" height="20" rx="2" fill="#9E9E9E" />
+                <rect x="13" y="6" width="7" height="14" rx="2" fill="#545454" />
+                <rect x="22" y="6" width="7" height="18" rx="2" fill="#9E9E9E" />
             </svg>
         ),
     },

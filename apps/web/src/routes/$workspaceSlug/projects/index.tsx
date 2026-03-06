@@ -115,6 +115,7 @@ function ProjectsPage() {
                     // Map dueDate to endDate for display in ProjectSection
                     const mappedTasks = (tasksData.data || []).map((t: any) => ({
                         ...t,
+                        isCompleted: t.status === 'done' || t.status === 'completed',
                         startDate: t.startDate || null,
                         endDate: t.dueDate || null,
                         subtaskCount: t.subtasksCount,
@@ -123,6 +124,17 @@ function ProjectsPage() {
                         assignees: t.assignees || (t.assignee ? [t.assignee.id] : [])
                     }))
                     setTasks(mappedTasks)
+
+                    // Check URL for taskId to open automatically
+                    const urlParams = new URLSearchParams(window.location.search)
+                    const taskIdStr = urlParams.get('taskId')
+                    if (taskIdStr) {
+                        const taskToOpen = mappedTasks.find((t: any) => t.id === taskIdStr)
+                        if (taskToOpen) {
+                            setSelectedTask(taskToOpen)
+                            setShowTaskDetails(true)
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching data:', error)
@@ -631,6 +643,46 @@ function ProjectsPage() {
                 stages={projects.find(p => p.id === selectedTask?.projectId)?.stages || []}
                 teamMembers={teamMembers}
                 activities={selectedTask?.activities}
+                onEditTask={() => {
+                    // Placeholder to display the 3-dots menu
+                    console.log('Edit clicked for', selectedTask)
+                }}
+                onToggleStatus={async () => {
+                    if (!selectedTask) return
+                    const isCompleting = !selectedTask.isCompleted
+                    try {
+                        const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+                            method: 'PATCH',
+                            headers: { 'x-user-id': session?.user?.id || '' },
+                            body: JSON.stringify({ isCompleted: isCompleting })
+                        })
+                        if (res.ok) {
+                            setSelectedTask({ ...selectedTask, isCompleted: isCompleting })
+                            refetchTaskDetails(selectedTask.id)
+                            refetchTasks()
+                        }
+                    } catch (error) {
+                        console.error('Error toggling status:', error)
+                    }
+                }}
+                onDeleteTask={async () => {
+                    if (!selectedTask) return
+                    if (window.confirm('Are you sure you want to delete this task?')) {
+                        try {
+                            const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+                                method: 'DELETE',
+                                headers: { 'x-user-id': session?.user?.id || '' }
+                            })
+                            if (res.ok) {
+                                setShowTaskDetails(false)
+                                setSelectedTask(null)
+                                refetchTasks()
+                            }
+                        } catch (error) {
+                            console.error('Error deleting task:', error)
+                        }
+                    }
+                }}
             />
         </>
     )

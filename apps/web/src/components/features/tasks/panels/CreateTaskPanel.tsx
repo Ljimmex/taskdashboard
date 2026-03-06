@@ -614,42 +614,52 @@ export function CreateTaskPanel({
                         </p>
                     </div>
 
-                    {/* Properties Bar - single row layout */}
-                    <div className="flex flex-wrap items-center gap-3 mb-6 pb-6 border-b border-gray-800">
+                    {/* Properties Bar - Flexible Grid Layout */}
+                    <div className="flex flex-wrap items-start gap-y-5 gap-x-4 mb-6 pb-6 border-b border-gray-800">
                         {/* Status - only for tasks */}
                         {itemType === 'task' && (
-                            <StatusSelector
-                                value={status}
-                                stages={currentStages}
-                                onChange={(newStatus) => setStatus(newStatus)}
-                            />
+                            <div className="flex flex-col gap-1.5 flex-1 min-w-[120px]">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('projects.details.meta.status') || 'Status'}</span>
+                                <div className="w-full">
+                                    <StatusSelector
+                                        value={status}
+                                        stages={currentStages}
+                                        onChange={(newStatus) => setStatus(newStatus)}
+                                    />
+                                </div>
+                            </div>
                         )}
 
                         {/* Priority */}
-                        <PrioritySelector
-                            value={priority}
-                            onChange={setPriority}
-                            size="md"
-                        />
-
-                        {/* Assignee */}
-                        <div className="min-w-[160px]">
-                            <AssigneePicker
-                                selectedAssignees={assignees}
-                                availableAssignees={teamMembers as any}
-                                onSelect={setAssignees}
-                                maxVisible={2}
-                                placeholder={t('tasks.create.assignee_placeholder')}
-                            />
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-[120px]">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('projects.details.meta.priority') || 'Priority'}</span>
+                            <div className="w-full">
+                                <PrioritySelector
+                                    value={priority}
+                                    onChange={setPriority}
+                                    size="md"
+                                />
+                            </div>
                         </div>
 
-                        {/* Spacer */}
-                        <div className="flex-1" />
+                        {/* Assignee */}
+                        <div className="flex flex-col gap-1.5 relative z-20 flex-1 min-w-[140px]">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('projects.details.meta.assignee') || 'Assignee'}</span>
+                            <div className="w-full min-w-0">
+                                <AssigneePicker
+                                    selectedAssignees={assignees}
+                                    availableAssignees={teamMembers as any}
+                                    onSelect={setAssignees}
+                                    maxVisible={2}
+                                    placeholder={t('tasks.create.assignee_placeholder')}
+                                />
+                            </div>
+                        </div>
 
-                        {/* Dates - aligned right */}
-                        <div className="flex items-center gap-2">
-                            <div className="flex flex-col gap-0.5">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase">{t('tasks.create.start_date')}</span>
+                        {/* Start Date */}
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-[130px]">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('tasks.create.start_date')}</span>
+                            <div className="w-full">
                                 <DueDatePicker
                                     value={startDate}
                                     onChange={(date) => setStartDate(date || '')}
@@ -657,8 +667,12 @@ export function CreateTaskPanel({
                                     showTime={false}
                                 />
                             </div>
-                            <div className="flex flex-col gap-0.5">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase">{t('tasks.create.end_date')}</span>
+                        </div>
+
+                        {/* End Date */}
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-[130px]">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('tasks.create.end_date')}</span>
+                            <div className="w-full">
                                 <DueDatePicker
                                     value={dueDate}
                                     onChange={(date) => setDueDate(date || '')}
@@ -682,29 +696,34 @@ export function CreateTaskPanel({
                     </div>
 
                     {/* More Options Toggle */}
-                    <button
-                        onClick={() => setShowMore(!showMore)}
-                        className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors mb-4"
-                    >
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            className={`transition-transform ${showMore ? 'rotate-180' : ''}`}
-                        >
-                            <path d="M6 9L12 15L18 9" />
-                        </svg>
-                        {showMore ? t('tasks.create.less_options') : t('tasks.create.more_options')}
-                    </button>
+                    <div className="mb-4">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setShowMore(!showMore)}
+                                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+                            >
+                                <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    className={`transition-transform ${showMore ? 'rotate-180' : ''}`}
+                                >
+                                    <path d="M6 9L12 15L18 9" />
+                                </svg>
+                                {showMore ? t('tasks.create.less_options') : t('tasks.create.more_options')}
+                            </button>
+                            <div className="h-px bg-gray-800 flex-1"></div>
+                        </div>
+                    </div>
 
                     {/* Extended Options */}
                     {showMore && (
-                        <div className="space-y-4 pt-4 ">
+                        <div className="space-y-6 pt-2 pb-6">
                             {/* Depends On */}
-                            <div>
+                            <div className="space-y-3">
                                 <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
                                     <span className="text-lg">🔗</span>
                                     {t('tasks.create.dependencies')}
@@ -718,7 +737,7 @@ export function CreateTaskPanel({
 
                             {/* Subtasks - only for tasks */}
                             {itemType === 'task' && (
-                                <div>
+                                <div className="space-y-3">
                                     <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
                                         <SubtaskCheckboxIcon />
                                         {t('tasks.create.subtasks')}
@@ -824,7 +843,7 @@ export function CreateTaskPanel({
                             )}
 
                             {/* Attachments */}
-                            <div>
+                            <div className="space-y-3">
                                 <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
                                     <PaperclipIcon />
                                     {t('tasks.create.attachments')}

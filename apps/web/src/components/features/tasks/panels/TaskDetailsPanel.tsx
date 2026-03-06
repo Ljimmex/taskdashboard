@@ -20,6 +20,17 @@ import { SubtaskList, type Subtask } from '../subtasks/SubtaskList'
 import type { Assignee } from '../components/AssigneePicker'
 import { useTaskFiles } from '../../../../hooks/useTaskFiles'
 import { useTasks } from '../../../../hooks/useTasks'
+import {
+    ChevronsRight,
+    CheckCircle2,
+    Maximize2,
+    Minimize2,
+    Link as LinkIcon,
+    Paperclip,
+    MoreHorizontal,
+    Edit2,
+    Trash2
+} from 'lucide-react'
 
 // Subtask type is imported from SubtaskList
 
@@ -54,6 +65,9 @@ interface TaskDetailsPanelProps {
     stages?: { id: string; name: string; color: string; position: number }[]
     teamMembers?: Assignee[]
     onTaskClick?: (taskId: string) => void
+    onEditTask?: () => void
+    onDeleteTask?: () => void
+    onToggleStatus?: () => void
 }
 
 // File type icons
@@ -145,6 +159,9 @@ export function TaskDetailsPanel({
     stages = [],
     teamMembers = [],
     onTaskClick,
+    onEditTask,
+    onDeleteTask,
+    onToggleStatus,
 }: TaskDetailsPanelProps) {
     const { t, i18n } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
@@ -152,6 +169,23 @@ export function TaskDetailsPanel({
     const [sharedView, setSharedView] = useState<'files' | 'links'>('files')
     const panelRef = useRef<HTMLDivElement>(null)
     const setIsPanelOpen = usePanelStore((state) => state.setIsPanelOpen)
+    const [isMaximized, setIsMaximized] = useState(false)
+    const [showMoreMenu, setShowMoreMenu] = useState(false)
+    const [isCopied, setIsCopied] = useState(false)
+    const moreMenuRef = useRef<HTMLDivElement>(null)
+
+    // Handle click outside for more menu
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+                setShowMoreMenu(false)
+            }
+        }
+        if (showMoreMenu) {
+            document.addEventListener('mousedown', handleClickOutside)
+            return () => document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showMoreMenu])
 
     // Fetch tasks to resolve dependencies
     const { data: allTasks = [] } = useTasks(workspaceSlug)
@@ -305,55 +339,128 @@ export function TaskDetailsPanel({
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-lg bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
-                    }`}
+                className={`fixed top-4 right-4 bottom-4 w-full bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-all duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
+                    } ${isMaximized ? 'max-w-5xl' : 'max-w-lg'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-gray-800 rounded-t-2xl">
                     {/* Top row with collapse and actions */}
                     <div className="flex items-center justify-between mb-4">
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-                            title={t('projects.details.close')}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M13 17L18 12L13 7" />
-                                <path d="M6 17L11 12L6 7" />
-                            </svg>
-                        </button>
                         <div className="flex items-center gap-2">
-                            {onArchive && (
+                            <button
+                                onClick={onClose}
+                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                title={t('projects.details.close')}
+                            >
+                                <ChevronsRight size={18} />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (onToggleStatus) onToggleStatus()
+                                }}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${task.isCompleted
+                                    ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                                    }`}
+                                title={task.isCompleted ? t('tasks.details.mark_incomplete', { defaultValue: 'Oznacz jako niedokończone' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' })}
+                            >
+                                <CheckCircle2 size={16} className={task.isCompleted ? 'fill-emerald-500/20' : ''} />
+                                <span>{task.isCompleted ? t('tasks.status.done', { defaultValue: 'Gotowe' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' })}</span>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => setIsMaximized(!isMaximized)}
+                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                title={isMaximized ? t('tasks.details.minimize') : t('tasks.details.maximize')}
+                            >
+                                {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                            </button>
+
+                            <div className="relative flex items-center">
                                 <button
-                                    onClick={onArchive}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-amber-400 hover:bg-gray-800 transition-colors"
-                                    title={t('projects.details.archive')}
+                                    onClick={() => {
+                                        const url = new URL(window.location.href)
+                                        url.searchParams.set('taskId', task.id)
+                                        navigator.clipboard.writeText(url.toString())
+                                        setIsCopied(true)
+                                        setTimeout(() => setIsCopied(false), 2000)
+                                    }}
+                                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                    title={t('tasks.details.copy_link')}
                                 >
-                                    <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-                                        <rect x="4" y="12" width="24" height="16" rx="3" fill="currentColor" opacity="0.7" />
-                                        <rect x="6" y="8" width="20" height="4" rx="1" fill="currentColor" />
-                                    </svg>
+                                    <LinkIcon size={18} />
                                 </button>
-                            )}
-                            <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                                    <path d="M3 9H21" />
-                                </svg>
+                                {isCopied && (
+                                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-xs px-2.5 py-1.5 rounded-md shadow-xl text-white whitespace-nowrap z-50 animate-in fade-in slide-in-from-bottom-2">
+                                        {t('tasks.details.copied', 'Copied!')}
+                                    </span>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => setActiveTab('shared')}
+                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                title={t('tasks.details.attachments')}
+                            >
+                                <Paperclip size={18} />
                             </button>
-                            <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M15 3H21V9" />
-                                    <path d="M21 3L14 10" />
-                                </svg>
-                            </button>
-                            <button className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                    <circle cx="12" cy="5" r="2" />
-                                    <circle cx="12" cy="12" r="2" />
-                                    <circle cx="12" cy="19" r="2" />
-                                </svg>
-                            </button>
+
+                            <div className="relative" ref={moreMenuRef}>
+                                <button
+                                    onClick={() => setShowMoreMenu(!showMoreMenu)}
+                                    className={`p-2 rounded-lg transition-colors ${showMoreMenu ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                                    title={t('tasks.details.more_options')}
+                                >
+                                    <MoreHorizontal size={18} />
+                                </button>
+
+                                {showMoreMenu && (
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a24] rounded-xl shadow-2xl py-1.5 z-[100]">
+                                        {(onEditTask !== undefined) && (
+                                            <button
+                                                onClick={() => {
+                                                    setShowMoreMenu(false)
+                                                    onEditTask()
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 flex items-center gap-2"
+                                            >
+                                                <Edit2 size={14} />
+                                                {t('common.edit', { defaultValue: 'Edytuj' })}
+                                            </button>
+                                        )}
+                                        {onDeleteTask && (
+                                            <button
+                                                onClick={() => {
+                                                    setShowMoreMenu(false)
+                                                    onDeleteTask()
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 flex items-center gap-2"
+                                            >
+                                                <Trash2 size={14} />
+                                                {t('common.delete', { defaultValue: 'Usuń' })}
+                                            </button>
+                                        )}
+                                        {onArchive && (
+                                            <button
+                                                onClick={() => {
+                                                    setShowMoreMenu(false)
+                                                    onArchive()
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 flex items-center gap-2"
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="flex-shrink-0">
+                                                    <rect x="4" y="12" width="24" height="16" rx="3" fill="currentColor" opacity="0.7" />
+                                                    <rect x="6" y="8" width="20" height="4" rx="1" fill="currentColor" />
+                                                </svg>
+                                                {t('projects.menu.archive')}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -388,26 +495,47 @@ export function TaskDetailsPanel({
                         )}
 
                         {/* Assignees - Read Only */}
-                        <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-24 pt-0.5 flex-shrink-0">{t('projects.details.meta.assignee')}</span>
-                            <div className="w-64 overflow-hidden">
+                        <div className="flex items-start gap-4 h-8">
+                            <span className="text-sm text-gray-500 w-24 pt-[5px] flex-shrink-0">{t('projects.details.meta.assignee')}</span>
+                            <div className="flex-1">
                                 {assignees.length > 0 ? (
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                        {assignees.map((a: any) => (
-                                            <div key={a.id} className="flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded-full">
+                                    <div className="flex flex-row items-center gap-1">
+                                        {assignees.slice(0, 2).map((a: any) => (
+                                            <div key={a.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-[#1a1a24] rounded-full">
                                                 {a.avatar || (a as any).image ? (
                                                     <img src={a.avatar || (a as any).image} alt={a.name} className="w-5 h-5 rounded-full" />
                                                 ) : (
-                                                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-[10px] font-bold text-black">
+                                                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
                                                         {a.name.charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
-                                                <span className="text-xs text-gray-300">{a.name}</span>
+                                                <span className="text-sm font-medium text-gray-200">{a.name}</span>
                                             </div>
                                         ))}
+                                        {assignees.length > 2 && (
+                                            <div className="group relative">
+                                                <div className="flex items-center justify-center w-7 h-7 bg-gray-800 rounded-full cursor-default">
+                                                    <span className="text-xs font-medium text-gray-300">+{assignees.length - 2}</span>
+                                                </div>
+                                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 py-2 px-3 bg-[#1a1a24] border border-gray-800 shadow-xl rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[150px] flex flex-col gap-2">
+                                                    {assignees.slice(2).map((a: any) => (
+                                                        <div key={a.id} className="flex items-center gap-2">
+                                                            {a.avatar || (a as any).image ? (
+                                                                <img src={a.avatar || (a as any).image} alt={a.name} className="w-5 h-5 rounded-full" />
+                                                            ) : (
+                                                                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-[10px] font-bold text-white">
+                                                                    {a.name.charAt(0).toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                            <span className="text-xs text-gray-300 truncate">{a.name}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
-                                    <span className="text-xs text-gray-500">{t('projects.details.no_assignees')}</span>
+                                    <span className="text-sm text-gray-500 pt-[5px] block">{t('projects.details.no_assignees')}</span>
                                 )}
                             </div>
                         </div>
@@ -470,9 +598,9 @@ export function TaskDetailsPanel({
                         {dependentTasks.length > 0 && (
                             <div className="flex items-start gap-4">
                                 <span className="text-sm text-gray-500 w-24 pt-0.5 flex-shrink-0">{t('tasks.create.dependencies')}</span>
-                                <div className="w-64 overflow-hidden">
+                                <div className="w-64">
                                     <div className="flex items-center gap-1 flex-wrap">
-                                        {dependentTasks.map(t => (
+                                        {dependentTasks.slice(0, 3).map(t => (
                                             <div
                                                 key={t.id}
                                                 onClick={() => onTaskClick?.(t.id)}
@@ -495,6 +623,24 @@ export function TaskDetailsPanel({
                                                 </div>
                                             </div>
                                         ))}
+                                        {dependentTasks.length > 3 && (
+                                            <div className="relative group">
+                                                <span className="inline-flex items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider px-2 py-1 bg-gray-800 rounded-full cursor-default mt-1 opacity-80 hover:opacity-100 transition-opacity">
+                                                    {t('tasks.details.dependencies_more', { count: dependentTasks.length - 3 })}
+                                                </span>
+                                                <div className="absolute left-0 top-full mt-1 w-64 bg-[#1a1a24] rounded-lg border border-gray-800 shadow-xl p-2 z-50 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity">
+                                                    {dependentTasks.slice(3).map(t => (
+                                                        <div
+                                                            key={t.id}
+                                                            onClick={() => onTaskClick?.(t.id)}
+                                                            className={`text-xs text-gray-300 truncate py-1.5 px-2 rounded-md transition-colors ${onTaskClick ? 'cursor-pointer hover:bg-gray-800 text-amber-500/80 hover:text-amber-400' : ''}`}
+                                                        >
+                                                            {t.title}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -506,8 +652,10 @@ export function TaskDetailsPanel({
                 {task.description && (
                     <div className="flex-none p-6 border-b border-gray-800">
                         <h3 className="text-sm font-semibold text-white mb-2">{t('projects.details.description')}</h3>
-                        <div className="prose prose-sm prose-invert max-w-none text-gray-400 leading-relaxed break-words [&>h1]:text-white [&>h1]:text-lg [&>h1]:font-bold [&>h1]:mb-2 [&>h2]:text-white [&>h2]:text-base [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1.5 [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:mb-2 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:mb-2 [&>li]:mb-1 [&>blockquote]:border-l-2 [&>blockquote]:border-amber-500 [&>blockquote]:pl-3 [&>blockquote]:italic [&>blockquote]:text-gray-500 [&>code]:bg-gray-800 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-amber-400 [&>code]:text-xs [&>strong]:text-white [&>strong]:font-semibold [&>em]:italic">
-                            <Markdown rehypePlugins={[rehypeSanitize]}>{task.description}</Markdown>
+                        <div className="max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                            <div className="prose prose-sm prose-invert max-w-none text-gray-400 leading-relaxed break-words [&>h1]:text-white [&>h1]:text-lg [&>h1]:font-bold [&>h1]:mb-2 [&>h2]:text-white [&>h2]:text-base [&>h2]:font-semibold [&>h2]:mb-2 [&>h3]:text-white [&>h3]:text-sm [&>h3]:font-semibold [&>h3]:mb-1.5 [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:mb-2 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:mb-2 [&>li]:mb-1 [&>blockquote]:border-l-2 [&>blockquote]:border-amber-500 [&>blockquote]:pl-3 [&>blockquote]:italic [&>blockquote]:text-gray-500 [&>code]:bg-gray-800 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-amber-400 [&>code]:text-xs [&>strong]:text-white [&>strong]:font-semibold [&>em]:italic">
+                                <Markdown rehypePlugins={[rehypeSanitize]}>{task.description}</Markdown>
+                            </div>
                         </div>
                     </div>
                 )}

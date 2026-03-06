@@ -63,9 +63,11 @@ interface TaskColumnProps {
     onWatch?: () => void
     onMoveAllCards?: () => void
     onArchiveAll?: () => void
-    onExpandAll?: () => void
-    onCollapseAll?: () => void
+    onExpandAllCards?: () => void
+    onCollapseAllCards?: () => void
+    onToggleCollapse?: () => void
     isCollapsed?: boolean
+    isCardsCollapsed?: boolean
     onAddRule?: () => void
     onDeleteColumn?: () => void
     dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
@@ -488,9 +490,11 @@ function ColumnMenu({
     onWatch,
     onMoveAllCards,
     onArchiveAll,
-    onExpandAll,
-    onCollapseAll,
+    onExpandAllCards,
+    onCollapseAllCards,
+    onToggleCollapse,
     isCollapsed,
+    isCardsCollapsed,
     onAddRule,
     onDeleteColumn,
     userRole
@@ -502,9 +506,11 @@ function ColumnMenu({
     onWatch?: () => void
     onMoveAllCards?: () => void
     onArchiveAll?: () => void
-    onExpandAll?: () => void
-    onCollapseAll?: () => void
+    onExpandAllCards?: () => void
+    onCollapseAllCards?: () => void
+    onToggleCollapse?: () => void
     isCollapsed?: boolean
+    isCardsCollapsed?: boolean
     onAddRule?: () => void
     onDeleteColumn?: () => void
     userRole?: string
@@ -636,6 +642,27 @@ function ColumnMenu({
                         />
                     </>
                 )}
+                {isCardsCollapsed ? (
+                    <MenuItem
+                        icon={
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M4 14h16v6H4zm0-10h16v6H4z" />
+                            </svg>
+                        }
+                        label={t('board.column.menu.expand_all', { defaultValue: 'Rozwiń wszystkie karty' })}
+                        onClick={() => { onExpandAllCards?.(); onClose() }}
+                    />
+                ) : (
+                    <MenuItem
+                        icon={
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M4 14h16v2H4zm0-8h16v2H4z" />
+                            </svg>
+                        }
+                        label={t('board.column.menu.collapse_all', { defaultValue: 'Zwiń wszystkie karty' })}
+                        onClick={() => { onCollapseAllCards?.(); onClose() }}
+                    />
+                )}
                 {isCollapsed ? (
                     <MenuItem
                         icon={
@@ -643,8 +670,8 @@ function ColumnMenu({
                                 <path d="M6 9l6 6 6-6" />
                             </svg>
                         }
-                        label={t('board.column.menu.expand_all')}
-                        onClick={() => { onExpandAll?.(); onClose() }}
+                        label={t('board.column.menu.expand_column', { defaultValue: 'Rozwiń kolumnę' })}
+                        onClick={() => { onToggleCollapse?.(); onClose() }}
                     />
                 ) : (
                     <MenuItem
@@ -653,8 +680,8 @@ function ColumnMenu({
                                 <path d="M18 15l-6-6-6 6" />
                             </svg>
                         }
-                        label={t('board.column.menu.collapse_all')}
-                        onClick={() => { onCollapseAll?.(); onClose() }}
+                        label={t('board.column.menu.collapse', { defaultValue: 'Zwiń kolumnę' })}
+                        onClick={() => { onToggleCollapse?.(); onClose() }}
                     />
                 )}
             </MenuSection>
@@ -706,9 +733,11 @@ export function TaskColumn({
     onWatch,
     onMoveAllCards,
     onArchiveAll,
-    onExpandAll,
-    onCollapseAll,
+    onExpandAllCards,
+    onCollapseAllCards,
+    onToggleCollapse,
     isCollapsed,
+    isCardsCollapsed,
     onAddRule,
     onDeleteColumn,
     color,
@@ -716,7 +745,7 @@ export function TaskColumn({
     dragHandleProps,
     members,
     userRole
-}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[]; userRole?: string; isCollapsed?: boolean }) {
+}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[]; userRole?: string; isCollapsed?: boolean; isCardsCollapsed?: boolean }) {
     const [showQuickAdd, setShowQuickAdd] = useState(false)
     const [showColumnMenu, setShowColumnMenu] = useState(false)
     const [isRenaming, setIsRenaming] = useState(false)
@@ -742,20 +771,53 @@ export function TaskColumn({
         setIsRenaming(false)
     }
 
+    if (isCollapsed) {
+        return (
+            <div className="flex flex-col min-w-[50px] max-w-[50px] h-full min-h-0 bg-[#12121a]/30 hover:bg-[#1a1a24] transition-colors cursor-pointer items-center py-4 rounded-xl group/collapsed" onClick={onToggleCollapse}>
+                {/* Drag Handle */}
+                <div
+                    className="cursor-grab text-gray-700 group-hover/collapsed:text-gray-400 transition-colors mb-4"
+                    {...dragHandleProps}
+                    onClick={e => e.stopPropagation()} // Prevent clicking drag handle from toggling collapse
+                >
+                    <GripVerticalIcon className="w-4 h-4" />
+                </div>
+
+                <div className="w-3 h-3 rounded-full mb-3" style={{ backgroundColor: color || config.color }} />
+
+                <span
+                    className="px-2 py-0.5 rounded-md text-xs font-medium mb-4"
+                    style={{
+                        backgroundColor: `${color || '#6366f1'}20`,
+                        color: color || '#6366f1'
+                    }}
+                >
+                    {tasks.length}
+                </span>
+
+                <div className="flex-1 flex justify-center mt-2 group-hover/collapsed:text-white transition-colors">
+                    <h3 className="font-semibold text-gray-500 text-sm tracking-wider uppercase whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                        {title || config.label}
+                    </h3>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="flex flex-col min-w-[320px] max-w-[320px] h-full min-h-0">
             {/* Column Header */}
             <div className="flex items-center justify-between mb-4 px-1 relative group/column-header">
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                     {/* Drag Handle */}
                     <div
-                        className="cursor-grab hover:text-gray-200 text-gray-600 opacity-0 group-hover/column-header:opacity-100 transition-opacity"
+                        className="cursor-grab hover:text-gray-200 text-gray-600 opacity-0 group-hover/column-header:opacity-100 transition-opacity flex-shrink-0"
                         {...dragHandleProps}
                     >
                         <GripVerticalIcon className="w-4 h-4" />
                     </div>
 
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color || config.color }} />
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color || config.color }} />
                     {isRenaming ? (
                         <input
                             type="text"
@@ -764,24 +826,25 @@ export function TaskColumn({
                             onBlur={handleRenameSubmit}
                             onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()}
                             autoFocus
-                            className="bg-[#12121a] border border-gray-700 rounded px-2 py-0.5 text-sm text-white focus:outline-none focus:border-amber-500 w-full mr-2"
+                            className="bg-[#12121a] border border-gray-700 rounded px-2 py-0.5 text-sm text-white focus:outline-none focus:border-amber-500 w-full mr-2 min-w-0"
                         />
                     ) : (
                         <h3
-                            className={`font-semibold text-white text-sm transition-colors ${canEditColumn ? 'cursor-pointer hover:text-amber-400' : ''}`}
+                            className={`font-semibold text-white text-sm transition-colors truncate ${canEditColumn ? 'cursor-pointer hover:text-amber-400' : ''}`}
                             onDoubleClick={() => {
                                 if (canEditColumn) {
                                     setRenameTitle(title || config.label)
                                     setIsRenaming(true)
                                 }
                             }}
+                            title={title || config.label}
                         >
                             {title || config.label}
                         </h3>
                     )}
                     {!isRenaming && (
                         <span
-                            className="px-2 py-0.5 rounded-md text-xs font-medium"
+                            className="px-2 py-0.5 rounded-md text-xs font-medium flex-shrink-0"
                             style={{
                                 backgroundColor: `${color || '#6366f1'}20`,
                                 color: color || '#6366f1'
@@ -793,7 +856,7 @@ export function TaskColumn({
                 </div>
 
                 {/* Action buttons: Add + Menu */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                         onClick={() => setShowQuickAdd(!showQuickAdd)}
                         className="w-6 h-6 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-amber-400 transition-colors"
@@ -831,9 +894,11 @@ export function TaskColumn({
                         onWatch={onWatch}
                         onMoveAllCards={onMoveAllCards}
                         onArchiveAll={onArchiveAll}
-                        onExpandAll={onExpandAll}
-                        onCollapseAll={onCollapseAll}
+                        onExpandAllCards={onExpandAllCards}
+                        onCollapseAllCards={onCollapseAllCards}
+                        onToggleCollapse={onToggleCollapse}
                         isCollapsed={isCollapsed}
+                        isCardsCollapsed={isCardsCollapsed}
                         onAddRule={onAddRule}
                         onDeleteColumn={onDeleteColumn}
                         userRole={userRole}

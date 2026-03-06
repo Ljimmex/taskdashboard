@@ -131,13 +131,13 @@ export function AssigneePicker({
                     }
                 }}
                 className={cn(
-                    "flex items-center gap-2 px-2 py-1.5 rounded-lg bg-transparent hover:bg-gray-800/50 transition-colors w-full min-h-[32px] outline-none focus:ring-2 focus:ring-amber-500/50",
+                    "flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1a1a24] hover:bg-gray-800 transition-all w-full min-h-[36px] outline-none focus:ring-2 focus:ring-amber-500/50",
                     disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
                 )}
                 title={title}
             >
                 {selectedAssignees.length === 0 ? (
-                    <span className="text-sm text-gray-500">{placeholder === 'Przypisz osobę...' ? t('tasks.assignee.placeholder') : placeholder}</span>
+                    <span className="text-sm text-gray-400 font-medium">{placeholder === 'Przypisz osobę...' ? t('tasks.assignee.placeholder') : placeholder}</span>
                 ) : (
                     <div className="flex items-center gap-2 flex-wrap">
                         {visibleAssignees.map(assignee => (

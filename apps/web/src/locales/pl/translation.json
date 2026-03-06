@@ -151,7 +151,7 @@
         "messages": "Wiadomości",
         "calendar": "Kalendarz",
         "files": "Pliki",
-        "contact": "Kontakt",
+        "board": "Tablica",
         "settings": "Ustawienia Org.",
         "logout": "Wyloguj się",
         "dayMode": "Jasny motyw",
@@ -1362,7 +1362,17 @@
             "status": "Status",
             "priority": "Priorytet",
             "assignees": "Przypisane osoby",
-            "due_date": "Termin"
+            "due_date": "Termin",
+            "mark_complete": "Oznacz jako zakończone",
+            "mark_incomplete": "Oznacz jako niezakończone",
+            "maximize": "Maksymalizuj panel",
+            "minimize": "Zwiń panel",
+            "copy_link": "Skopiuj link",
+            "attachments": "Załączniki",
+            "more_options": "Więcej opcji",
+            "edit": "Edytuj",
+            "delete": "Usuń",
+            "dependencies_more": "+{{count}} więcej"
         },
         "status": {
             "todo": "Do zrobienia",
@@ -1647,7 +1657,8 @@
                 "auto_title": "Automatyzacje",
                 "add_rule": "Dodaj regułę",
                 "delete_column": "Usuń kolumnę",
-                "select_color": "Wybierz kolor"
+                "select_color": "Wybierz kolor",
+                "collapse": "Zwiń kolumnę"
             }
         },
         "add_column": {

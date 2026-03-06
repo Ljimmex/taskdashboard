@@ -12,7 +12,8 @@ interface FilesHeaderProps {
     // File Type Filter
     fileTypeFilter: string
     onFileTypeFilterChange: (value: string) => void
-    // Date Range
+    // Available file type categories (derived from actual workspace files)
+    availableTypes?: string[]
     // Date Range
     startDate: Date | null
     endDate: Date | null
@@ -46,6 +47,7 @@ export function FilesHeader({
     onViewModeChange,
     fileTypeFilter,
     onFileTypeFilterChange,
+    availableTypes,
     startDate,
     endDate,
     onDateRangeChange,
@@ -230,7 +232,12 @@ export function FilesHeader({
         )
     }
 
-    const selectedType = FILE_TYPES.find(t => t.value === fileTypeFilter)
+    // Filter FILE_TYPES to only show categories that exist in the workspace
+    const visibleTypes = availableTypes && availableTypes.length > 0
+        ? FILE_TYPES.filter(ft => ft.value === 'all' || availableTypes.includes(ft.value))
+        : FILE_TYPES
+
+    const selectedType = visibleTypes.find(t => t.value === fileTypeFilter)
     const selectedTypeLabel = selectedType ? t(selectedType.labelKey) : t('files.types.all')
 
     const selectedSort = SORT_OPTIONS.find(s => s.value === sortBy)
@@ -254,10 +261,10 @@ export function FilesHeader({
                 <button
                     ref={typeButtonRef}
                     onClick={() => setIsTypeOpen(!isTypeOpen)}
-                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[#1a1a24] text-gray-400 hover:text-white transition-colors"
+                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-medium bg-[#1a1a24] text-gray-400 hover:text-white transition-colors"
                 >
                     <span className="capitalize">{selectedTypeLabel}</span>
-                    <ChevronDown size={14} />
+                    <ChevronDown size={12} />
                 </button>
 
                 {/* Sort Dropdown */}
@@ -349,14 +356,14 @@ export function FilesHeader({
             {isTypeOpen && createPortal(
                 <div
                     ref={typeDropdownRef}
-                    className="fixed bg-[#16161f] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[9999] py-2 min-w-32 animate-in fade-in zoom-in duration-200"
+                    className="fixed bg-[#16161f] rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[9999] py-1 w-40 animate-in fade-in zoom-in duration-200"
                     style={{ top: `${typePosition.top}px`, left: `${typePosition.left}px` }}
                 >
-                    {FILE_TYPES.map(type => (
+                    {visibleTypes.map(type => (
                         <button
                             key={type.value}
                             onClick={() => { onFileTypeFilterChange(type.value); setIsTypeOpen(false) }}
-                            className={`w-full px-4 py-2 text-left text-sm transition-colors ${fileTypeFilter === type.value
+                            className={`w-full px-3 py-1.5 text-left text-xs transition-colors ${fileTypeFilter === type.value
                                 ? 'text-[#F2CE88] bg-amber-500/10'
                                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
                                 }`}

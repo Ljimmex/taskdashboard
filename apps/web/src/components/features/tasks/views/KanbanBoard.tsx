@@ -131,9 +131,11 @@ function SortableColumn({
     onChangeColumnColor,
     onDeleteColumn,
     onMoveAllCards,
-    onExpandAll,
-    onCollapseAll,
+    onExpandAllCards,
+    onCollapseAllCards,
+    onToggleCollapse,
     isCollapsed,
+    isCardsCollapsed,
     isOver,
     children
 }: {
@@ -150,9 +152,11 @@ function SortableColumn({
     onChangeColumnColor?: (color: string) => void
     onDeleteColumn?: () => void
     onMoveAllCards?: () => void
-    onExpandAll?: () => void
-    onCollapseAll?: () => void
+    onExpandAllCards?: () => void
+    onCollapseAllCards?: () => void
+    onToggleCollapse?: () => void
     isCollapsed?: boolean
+    isCardsCollapsed?: boolean
     isOver?: boolean
     children?: React.ReactNode
 }) {
@@ -200,9 +204,11 @@ function SortableColumn({
                 onChangeColor={onChangeColumnColor}
                 onDeleteColumn={onDeleteColumn}
                 onMoveAllCards={onMoveAllCards}
-                onExpandAll={onExpandAll}
-                onCollapseAll={onCollapseAll}
+                onExpandAllCards={onExpandAllCards}
+                onCollapseAllCards={onCollapseAllCards}
+                onToggleCollapse={onToggleCollapse}
                 isCollapsed={isCollapsed}
+                isCardsCollapsed={isCardsCollapsed}
                 dragHandleProps={{ ...attributes, ...listeners }}
             >
                 {children}
@@ -265,10 +271,23 @@ export function KanbanBoard({
     const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
 
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
-    const storageKey = `kanban-columns-collapsed-${workspaceSlug || 'default'}`
+
     const [columnCollapsedStates, setColumnCollapsedStates] = useState<Record<string, boolean>>(() => {
+        const pathSlug = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : ''
+        const slug = workspaceSlug || pathSlug || 'default'
         try {
-            const saved = localStorage.getItem(storageKey)
+            const saved = localStorage.getItem(`kanban-columns-collapsed-${slug}`)
+            return saved ? JSON.parse(saved) : {}
+        } catch {
+            return {}
+        }
+    })
+
+    const [cardCollapsedStates, setCardCollapsedStates] = useState<Record<string, boolean>>(() => {
+        const pathSlug = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : ''
+        const slug = workspaceSlug || pathSlug || 'default'
+        try {
+            const saved = localStorage.getItem(`kanban-cards-collapsed-${slug}`)
             return saved ? JSON.parse(saved) : {}
         } catch {
             return {}
@@ -276,12 +295,15 @@ export function KanbanBoard({
     })
 
     useEffect(() => {
+        const pathSlug = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : ''
+        const slug = workspaceSlug || pathSlug || 'default'
         try {
-            localStorage.setItem(storageKey, JSON.stringify(columnCollapsedStates))
+            localStorage.setItem(`kanban-columns-collapsed-${slug}`, JSON.stringify(columnCollapsedStates))
+            localStorage.setItem(`kanban-cards-collapsed-${slug}`, JSON.stringify(cardCollapsedStates))
         } catch (e) {
-            console.error('Failed to save column collapsed states:', e)
+            console.error('Failed to save collapsed states:', e)
         }
-    }, [columnCollapsedStates, storageKey])
+    }, [columnCollapsedStates, cardCollapsedStates, workspaceSlug])
 
     // Memoize column IDs for SortableContext
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns])
@@ -432,9 +454,11 @@ export function KanbanBoard({
                                 onChangeColumnColor={(color) => onChangeColumnColor?.(column.id, color)}
                                 onDeleteColumn={() => onDeleteColumn?.(column.id)}
                                 onMoveAllCards={() => onMoveAllCards?.(column.id)}
-                                onExpandAll={() => setColumnCollapsedStates(prev => ({ ...prev, [column.id]: false }))}
-                                onCollapseAll={() => setColumnCollapsedStates(prev => ({ ...prev, [column.id]: true }))}
+                                onExpandAllCards={() => setCardCollapsedStates(prev => ({ ...prev, [column.id]: false }))}
+                                onCollapseAllCards={() => setCardCollapsedStates(prev => ({ ...prev, [column.id]: true }))}
+                                onToggleCollapse={() => setColumnCollapsedStates(prev => ({ ...prev, [column.id]: !prev[column.id] }))}
                                 isCollapsed={columnCollapsedStates[column.id]}
+                                isCardsCollapsed={cardCollapsedStates[column.id]}
                             >
                                 <SortableContext
                                     items={column.tasks.map(t => t.id)}
@@ -459,7 +483,7 @@ export function KanbanBoard({
                                             userRole={userRole}
                                             userId={userId}
                                             isBlocked={isTaskBlocked(task as any, allTasks as any)}
-                                            isCollapsedOverride={columnCollapsedStates[column.id]}
+                                            isCollapsedOverride={cardCollapsedStates[column.id]}
                                         />
                                     ))}
                                 </SortableContext>

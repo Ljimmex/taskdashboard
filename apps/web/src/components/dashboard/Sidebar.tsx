@@ -75,7 +75,7 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
         { iconKey: 'messages', label: t('dashboard.messages'), path: `${baseUrl}/messages`, count: unreadCount || null },
         { iconKey: 'calendar', label: t('dashboard.calendar'), path: `${baseUrl}/calendar`, count: null },
         { iconKey: 'files', label: t('dashboard.files'), path: `${baseUrl}/files`, count: null },
-        { iconKey: 'contact', label: t('dashboard.contact'), path: `${baseUrl}/contact`, count: null },
+        { iconKey: 'board', label: t('dashboard.board'), path: `${baseUrl}/board`, count: null },
     ]
 
     return (

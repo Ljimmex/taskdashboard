@@ -151,7 +151,7 @@
         "messages": "Messages",
         "calendar": "Calendar",
         "files": "Files",
-        "contact": "Contact",
+        "board": "Board",
         "settings": "Org. Settings",
         "logout": "Log Out",
         "dayMode": "Day mode",
@@ -1359,7 +1359,17 @@
             "status": "Status",
             "priority": "Priority",
             "assignees": "Assignees",
-            "due_date": "Due date"
+            "due_date": "Due date",
+            "mark_complete": "Mark as complete",
+            "mark_incomplete": "Mark as incomplete",
+            "maximize": "Maximize panel",
+            "minimize": "Minimize panel",
+            "copy_link": "Copy link",
+            "attachments": "Attachments",
+            "more_options": "More options",
+            "edit": "Edit",
+            "delete": "Delete",
+            "dependencies_more": "+{{count}} more"
         },
         "status": {
             "todo": "To-Do",
@@ -1641,7 +1651,8 @@
                 "auto_title": "Automations",
                 "add_rule": "Add rule",
                 "delete_column": "Delete column",
-                "select_color": "Select Color"
+                "select_color": "Select Color",
+                "collapse": "Collapse column"
             }
         },
         "add_column": {

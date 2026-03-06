@@ -2,11 +2,23 @@ import { createFileRoute } from '@tanstack/react-router'
 import { FileExplorer } from '@/components/features/files/FileExplorer'
 import { FilesHeader } from '@/components/features/files/FilesHeader'
 import { FileUploadPanel } from '@/components/features/files/FileUploadPanel'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
+import { useFiles } from '@/hooks/useFiles'
+
+// Map a mimeType string to our filter category
+function mimeToCategory(mimeType: string | undefined | null): string | null {
+    if (!mimeType) return null
+    if (mimeType.includes('pdf')) return 'pdf'
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'document'
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'spreadsheet'
+    if (mimeType.startsWith('image/')) return 'image'
+    if (mimeType.startsWith('video/')) return 'video'
+    return null
+}
 
 export interface FilesSearch {
     fileId?: string
@@ -59,6 +71,18 @@ function FilesPage() {
     const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false)
     const [droppedFiles, setDroppedFiles] = useState<File[]>([])
     const [isDraggingOver, setIsDraggingOver] = useState(false)
+
+    // Fetch all files recursively to derive available categories
+    const { data: allFiles } = useFiles(workspaceSlug, null, true)
+    const availableTypes = useMemo(() => {
+        if (!allFiles || allFiles.length === 0) return []
+        const cats = new Set<string>()
+        allFiles.forEach((f: any) => {
+            const cat = mimeToCategory(f.mimeType)
+            if (cat) cats.add(cat)
+        })
+        return Array.from(cats)
+    }, [allFiles])
 
     const handleDateRangeChange = (start: Date | null, end: Date | null) => {
         setStartDate(start)
@@ -163,6 +187,7 @@ function FilesPage() {
                 onViewModeChange={setViewMode}
                 fileTypeFilter={fileTypeFilter}
                 onFileTypeFilterChange={setFileTypeFilter}
+                availableTypes={availableTypes}
                 startDate={startDate}
                 endDate={endDate}
                 onDateRangeChange={handleDateRangeChange}

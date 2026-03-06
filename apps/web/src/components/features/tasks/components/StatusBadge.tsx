@@ -137,7 +137,7 @@ export function StatusSelector({ value, onChange, stages, disabled, title, class
                 disabled={disabled}
                 title={title}
                 className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1a1a24] border border-gray-800 hover:border-gray-700 transition-all text-sm font-medium',
+                    'flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1a1a24] hover:bg-gray-800 transition-all text-sm font-medium',
                     disabled && 'opacity-50 cursor-not-allowed'
                 )}
             >

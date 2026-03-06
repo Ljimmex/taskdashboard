@@ -93,7 +93,7 @@ export function PrioritySelector({
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 disabled={disabled}
                 className={cn(
-                    'flex items-center rounded-lg font-medium transition-all',
+                    'flex items-center rounded-lg font-medium transition-all whitespace-nowrap flex-shrink-0 max-w-full',
                     sizeStyles,
                     'bg-gray-800/50 hover:bg-gray-800',
                     disabled && 'opacity-50 cursor-not-allowed'
@@ -101,7 +101,7 @@ export function PrioritySelector({
                 style={{ color: selected.color }}
             >
                 <SelectedIcon size={iconSize} />
-                <span>{selected.name}</span>
+                <span className="truncate">{selected.name}</span>
                 <svg
                     width="12"
                     height="12"
@@ -115,43 +115,45 @@ export function PrioritySelector({
                 </svg>
             </button>
 
-            {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-44 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                    {sortedPriorities.map(priority => {
-                        const Icon = ICON_MAP[priority.id] || PriorityMediumIcon
-                        return (
-                            <button
-                                key={priority.id}
-                                onClick={() => {
-                                    onChange(priority.id)
-                                    setIsOpen(false)
-                                }}
-                                className={cn(
-                                    'w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800 transition-colors flex items-center gap-2.5',
-                                    value === priority.id ? 'bg-gray-800/50' : ''
-                                )}
-                            >
-                                <Icon size={18} />
-                                <span style={{ color: priority.color }}>{priority.name}</span>
-                                {value === priority.id && (
-                                    <svg
-                                        width="14"
-                                        height="14"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        className="ml-auto text-[#F2CE88]"
-                                    >
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
-                                )}
-                            </button>
-                        )
-                    })}
-                </div>
-            )}
-        </div>
+            {
+                isOpen && (
+                    <div className="absolute top-full left-0 mt-2 w-44 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                        {sortedPriorities.map(priority => {
+                            const Icon = ICON_MAP[priority.id] || PriorityMediumIcon
+                            return (
+                                <button
+                                    key={priority.id}
+                                    onClick={() => {
+                                        onChange(priority.id)
+                                        setIsOpen(false)
+                                    }}
+                                    className={cn(
+                                        'w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800 transition-colors flex items-center gap-2.5',
+                                        value === priority.id ? 'bg-gray-800/50' : ''
+                                    )}
+                                >
+                                    <Icon size={18} />
+                                    <span style={{ color: priority.color }}>{priority.name}</span>
+                                    {value === priority.id && (
+                                        <svg
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            className="ml-auto text-[#F2CE88]"
+                                        >
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                    )}
+                                </button>
+                            )
+                        })}
+                    </div>
+                )
+            }
+        </div >
     )
 }
 

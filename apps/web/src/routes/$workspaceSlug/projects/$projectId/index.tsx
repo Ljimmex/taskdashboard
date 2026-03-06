@@ -1099,6 +1099,45 @@ function ProjectDetailPage() {
         teamMembers={teamMembers}
         activities={selectedTask?.activities}
         onTaskClick={(id) => handleTaskClick(id)}
+        onEditTask={() => {
+          if (selectedTask) handleFullEditTask(selectedTask.id)
+        }}
+        onToggleStatus={async () => {
+          if (!selectedTask) return
+          const isCompleting = !selectedTask.isCompleted
+          try {
+            const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+              method: 'PATCH',
+              headers: { 'x-user-id': session?.user?.id || '' },
+              body: JSON.stringify({ isCompleted: isCompleting })
+            })
+            if (res.ok) {
+              setSelectedTask({ ...selectedTask, isCompleted: isCompleting })
+              refetchTaskDetails(selectedTask.id)
+              refetchTasks()
+            }
+          } catch (error) {
+            console.error('Error toggling status:', error)
+          }
+        }}
+        onDeleteTask={async () => {
+          if (!selectedTask) return
+          if (window.confirm(t('board.messages.delete_task_confirm', { defaultValue: 'Czy na pewno chcesz usunąć to zadanie?' }))) {
+            try {
+              const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+                method: 'DELETE',
+                headers: { 'x-user-id': session?.user?.id || '' }
+              })
+              if (res.ok) {
+                setShowTaskDetails(false)
+                setSelectedTask(null)
+                refetchTasks()
+              }
+            } catch (error) {
+              console.error('Error deleting task:', error)
+            }
+          }
+        }}
       />
 
       {/* Bulk Actions Toolbar - fixed at bottom */}

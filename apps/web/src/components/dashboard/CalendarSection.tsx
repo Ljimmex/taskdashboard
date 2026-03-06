@@ -526,6 +526,43 @@ export function CalendarSection() {
                         console.error('Failed to toggle subtask:', err)
                     }
                 }}
+                onToggleStatus={async () => {
+                    if (!selectedTask) return
+                    try {
+                        const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+                            method: 'PATCH',
+                            headers: { 'x-user-id': session?.user?.id || '' },
+                            body: JSON.stringify({ isCompleted: !selectedTask.isCompleted })
+                        })
+                        if (res.ok) {
+                            const data = await apiFetchJson<any>(`/api/tasks/${selectedTask.id}`)
+                            if (data.success) {
+                                setSelectedTask(data.data)
+                                fetchEvents()
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error toggling status:', error)
+                    }
+                }}
+                onDeleteTask={async () => {
+                    if (!selectedTask) return
+                    if (window.confirm('Are you sure you want to delete this task?')) {
+                        try {
+                            const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+                                method: 'DELETE',
+                                headers: { 'x-user-id': session?.user?.id || '' }
+                            })
+                            if (res.ok) {
+                                setIsTaskPanelOpen(false)
+                                setSelectedTask(null)
+                                fetchEvents()
+                            }
+                        } catch (error) {
+                            console.error('Error deleting task:', error)
+                        }
+                    }
+                }}
             />
         </div>
     )

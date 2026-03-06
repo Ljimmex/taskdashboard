@@ -65,7 +65,7 @@ export function DashboardMockup() {
         { iconKey: 'messages', label: t('dashboard.messages'), count: 2 },
         { iconKey: 'calendar', label: t('dashboard.calendar') },
         { iconKey: 'files', label: t('dashboard.files') },
-        { iconKey: 'contact', label: t('dashboard.contact') },
+        { iconKey: 'board', label: t('dashboard.board') },
     ]
 
     return (
