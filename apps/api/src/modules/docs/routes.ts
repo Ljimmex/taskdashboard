@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { documents, type NewDocument } from '../../db/schema/documents'
-
 import { type Auth } from '../../lib/auth'
 import { eq, desc } from 'drizzle-orm'
 import { z } from 'zod'
@@ -33,10 +32,10 @@ const updateDocSchema = z.object({
 
 export const docsRoutes = new Hono<Env>()
 
-// Helper: Resolve workspaceId (could be a slug or actual ID)
+// Helper: Resolve workspaceId — accepts either a workspace UUID or a slug
 async function resolveWorkspaceId(workspaceIdOrSlug: string): Promise<string | null> {
     try {
-        // First try to find by ID directly
+        // First try to find workspace by ID
         const byId = await db.query.workspaces.findFirst({
             where: (ws, { eq }) => eq(ws.id, workspaceIdOrSlug),
             columns: { id: true }
@@ -79,7 +78,7 @@ docsRoutes.get('/', async (c) => {
 
         const workspaceId = await resolveWorkspaceId(workspaceIdOrSlug)
         if (!workspaceId) {
-            return c.json({ success: false, error: 'Workspace not found' }, 404)
+            return c.json({ success: false, error: 'Workspace not found', receivedValue: workspaceIdOrSlug }, 404)
         }
 
         const role = await getUserWorkspaceRole(user.id, workspaceId)
@@ -109,28 +108,33 @@ docsRoutes.get('/', async (c) => {
 
 // GET /api/docs/:id - Get single document
 docsRoutes.get('/:id', async (c) => {
-    const user = c.get('user')
-    const id = c.req.param('id')
+    try {
+        const user = c.get('user')
+        const id = c.req.param('id')
 
-    const doc = await db.query.documents.findFirst({
-        where: (d, { eq }) => eq(d.id, id),
-        with: {
-            creator: {
-                columns: { id: true, name: true, image: true }
+        const doc = await db.query.documents.findFirst({
+            where: (d, { eq }) => eq(d.id, id),
+            with: {
+                creator: {
+                    columns: { id: true, name: true, image: true }
+                }
             }
+        })
+
+        if (!doc) {
+            return c.json({ success: false, error: 'Document not found' }, 404)
         }
-    })
 
-    if (!doc) {
-        return c.json({ error: 'Document not found' }, 404)
+        const role = await getUserWorkspaceRole(user.id, doc.workspaceId)
+        if (!role) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        return c.json({ success: true, data: doc })
+    } catch (error: any) {
+        console.error('GET /api/docs/:id error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const role = await getUserWorkspaceRole(user.id, doc.workspaceId)
-    if (!role) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    return c.json({ success: true, data: doc })
 })
 
 // POST /api/docs - Create document
@@ -146,7 +150,7 @@ docsRoutes.post('/', zValidator('json', createDocSchema, (result, c) => {
 
         const workspaceId = await resolveWorkspaceId(body.workspaceId)
         if (!workspaceId) {
-            return c.json({ success: false, error: 'Workspace not found' }, 404)
+            return c.json({ success: false, error: 'Workspace not found', receivedValue: body.workspaceId }, 404)
         }
 
         const role = await getUserWorkspaceRole(user.id, workspaceId)
@@ -173,51 +177,61 @@ docsRoutes.post('/', zValidator('json', createDocSchema, (result, c) => {
 
 // PATCH /api/docs/:id - Update document
 docsRoutes.patch('/:id', zValidator('json', updateDocSchema), async (c) => {
-    const user = c.get('user')
-    const id = c.req.param('id')
-    const body = c.req.valid('json')
+    try {
+        const user = c.get('user')
+        const id = c.req.param('id')
+        const body = c.req.valid('json')
 
-    const doc = await db.query.documents.findFirst({
-        where: (d, { eq }) => eq(d.id, id)
-    })
+        const doc = await db.query.documents.findFirst({
+            where: (d, { eq }) => eq(d.id, id)
+        })
 
-    if (!doc) {
-        return c.json({ error: 'Document not found' }, 404)
+        if (!doc) {
+            return c.json({ success: false, error: 'Document not found' }, 404)
+        }
+
+        const role = await getUserWorkspaceRole(user.id, doc.workspaceId)
+        if (!role) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        const updateData: any = { ...body, updatedAt: new Date() }
+        const [updated] = await db.update(documents).set(updateData).where(eq(documents.id, id)).returning()
+
+        return c.json({ success: true, data: updated })
+    } catch (error: any) {
+        console.error('PATCH /api/docs/:id error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const role = await getUserWorkspaceRole(user.id, doc.workspaceId)
-    if (!role) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    const updateData: any = { ...body, updatedAt: new Date() }
-    const [updated] = await db.update(documents).set(updateData).where(eq(documents.id, id)).returning()
-
-    return c.json({ success: true, data: updated })
 })
 
-// DELETE /api/docs/:id - Delete document (soft delete or hard delete?)
+// DELETE /api/docs/:id - Delete document (soft delete)
 docsRoutes.delete('/:id', async (c) => {
-    const user = c.get('user')
-    const id = c.req.param('id')
+    try {
+        const user = c.get('user')
+        const id = c.req.param('id')
 
-    const doc = await db.query.documents.findFirst({
-        where: (d, { eq }) => eq(d.id, id)
-    })
+        const doc = await db.query.documents.findFirst({
+            where: (d, { eq }) => eq(d.id, id)
+        })
 
-    if (!doc) {
-        return c.json({ error: 'Document not found' }, 404)
+        if (!doc) {
+            return c.json({ success: false, error: 'Document not found' }, 404)
+        }
+
+        const role = await getUserWorkspaceRole(user.id, doc.workspaceId)
+        if (!role || !['owner', 'admin'].includes(role) && doc.createdBy !== user.id) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        const [updated] = await db.update(documents)
+            .set({ isArchived: true, updatedAt: new Date() })
+            .where(eq(documents.id, id))
+            .returning()
+
+        return c.json({ success: true, data: updated })
+    } catch (error: any) {
+        console.error('DELETE /api/docs/:id error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const role = await getUserWorkspaceRole(user.id, doc.workspaceId)
-    if (!role || !['owner', 'admin'].includes(role) && doc.createdBy !== user.id) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    const [updated] = await db.update(documents)
-        .set({ isArchived: true, updatedAt: new Date() })
-        .where(eq(documents.id, id))
-        .returning()
-
-    return c.json({ success: true, data: updated })
 })

@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { whiteboards, type NewWhiteboard } from '../../db/schema/whiteboards'
-
 import { type Auth } from '../../lib/auth'
 import { eq, desc } from 'drizzle-orm'
 import { z } from 'zod'
@@ -33,10 +32,10 @@ const updateWhiteboardSchema = z.object({
 
 export const whiteboardsRoutes = new Hono<Env>()
 
-// Helper: Resolve workspaceId (could be a slug or actual ID)
+// Helper: Resolve workspaceId — accepts either a workspace UUID or a slug
 async function resolveWorkspaceId(workspaceIdOrSlug: string): Promise<string | null> {
     try {
-        // First try to find by ID directly
+        // First try to find workspace by ID
         const byId = await db.query.workspaces.findFirst({
             where: (ws, { eq }) => eq(ws.id, workspaceIdOrSlug),
             columns: { id: true }
@@ -79,7 +78,7 @@ whiteboardsRoutes.get('/', async (c) => {
 
         const workspaceId = await resolveWorkspaceId(workspaceIdOrSlug)
         if (!workspaceId) {
-            return c.json({ success: false, error: 'Workspace not found' }, 404)
+            return c.json({ success: false, error: 'Workspace not found', receivedValue: workspaceIdOrSlug }, 404)
         }
 
         const role = await getUserWorkspaceRole(user.id, workspaceId)
@@ -151,7 +150,7 @@ whiteboardsRoutes.post('/', zValidator('json', createWhiteboardSchema, (result, 
 
         const workspaceId = await resolveWorkspaceId(body.workspaceId)
         if (!workspaceId) {
-            return c.json({ success: false, error: 'Workspace not found' }, 404)
+            return c.json({ success: false, error: 'Workspace not found', receivedValue: body.workspaceId }, 404)
         }
 
         const role = await getUserWorkspaceRole(user.id, workspaceId)
@@ -178,51 +177,61 @@ whiteboardsRoutes.post('/', zValidator('json', createWhiteboardSchema, (result, 
 
 // PATCH /api/whiteboards/:id - Update whiteboard
 whiteboardsRoutes.patch('/:id', zValidator('json', updateWhiteboardSchema), async (c) => {
-    const user = c.get('user')
-    const id = c.req.param('id')
-    const body = c.req.valid('json')
+    try {
+        const user = c.get('user')
+        const id = c.req.param('id')
+        const body = c.req.valid('json')
 
-    const board = await db.query.whiteboards.findFirst({
-        where: (w, { eq }) => eq(w.id, id)
-    })
+        const board = await db.query.whiteboards.findFirst({
+            where: (w, { eq }) => eq(w.id, id)
+        })
 
-    if (!board) {
-        return c.json({ error: 'Whiteboard not found' }, 404)
+        if (!board) {
+            return c.json({ success: false, error: 'Whiteboard not found' }, 404)
+        }
+
+        const role = await getUserWorkspaceRole(user.id, board.workspaceId)
+        if (!role) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        const updateData: any = { ...body, updatedAt: new Date() }
+        const [updated] = await db.update(whiteboards).set(updateData).where(eq(whiteboards.id, id)).returning()
+
+        return c.json({ success: true, data: updated })
+    } catch (error: any) {
+        console.error('PATCH /api/whiteboards/:id error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const role = await getUserWorkspaceRole(user.id, board.workspaceId)
-    if (!role) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    const updateData: any = { ...body, updatedAt: new Date() }
-    const [updated] = await db.update(whiteboards).set(updateData).where(eq(whiteboards.id, id)).returning()
-
-    return c.json({ success: true, data: updated })
 })
 
 // DELETE /api/whiteboards/:id - Delete whiteboard
 whiteboardsRoutes.delete('/:id', async (c) => {
-    const user = c.get('user')
-    const id = c.req.param('id')
+    try {
+        const user = c.get('user')
+        const id = c.req.param('id')
 
-    const board = await db.query.whiteboards.findFirst({
-        where: (w, { eq }) => eq(w.id, id)
-    })
+        const board = await db.query.whiteboards.findFirst({
+            where: (w, { eq }) => eq(w.id, id)
+        })
 
-    if (!board) {
-        return c.json({ error: 'Whiteboard not found' }, 404)
+        if (!board) {
+            return c.json({ success: false, error: 'Whiteboard not found' }, 404)
+        }
+
+        const role = await getUserWorkspaceRole(user.id, board.workspaceId)
+        if (!role || !['owner', 'admin'].includes(role) && board.createdBy !== user.id) {
+            return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        const [updated] = await db.update(whiteboards)
+            .set({ isArchived: true, updatedAt: new Date() })
+            .where(eq(whiteboards.id, id))
+            .returning()
+
+        return c.json({ success: true, data: updated })
+    } catch (error: any) {
+        console.error('DELETE /api/whiteboards/:id error:', error)
+        return c.json({ success: false, error: error.message || 'Internal Server Error' }, 500)
     }
-
-    const role = await getUserWorkspaceRole(user.id, board.workspaceId)
-    if (!role || !['owner', 'admin'].includes(role) && board.createdBy !== user.id) {
-        return c.json({ error: 'Forbidden' }, 403)
-    }
-
-    const [updated] = await db.update(whiteboards)
-        .set({ isArchived: true, updatedAt: new Date() })
-        .where(eq(whiteboards.id, id))
-        .returning()
-
-    return c.json({ success: true, data: updated })
 })
