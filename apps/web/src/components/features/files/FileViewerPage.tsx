@@ -9,7 +9,7 @@ import {
     Save, MessageSquare, Send, Check,
     Trash2, RotateCcw, Download, Loader2,
     Columns2, Rows2, GalleryVerticalEnd, MessageCircle,
-    ChevronLeft, ChevronRight, Maximize2, Minimize2, Star,
+    ChevronLeft, ChevronRight, Maximize2, Minimize2,
     MousePointer, Hand, StickyNote, Highlighter, Type, Pencil,
     Undo2, Redo2, Eraser, FileEdit, Link, Bold, Italic, TypeOutline,
     AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd
@@ -292,16 +292,16 @@ function PageThumbnails({ previewUrl, numPages, currentPage, onPageClick, onClos
     }
 
     return (
-        <div className="absolute top-3 left-3 bottom-20 w-[170px] z-30 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl flex flex-col min-h-0 shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <div className="absolute top-4 left-4 bottom-20 w-[170px] z-30 bg-[var(--app-bg-card)] border border-[var(--app-border)] backdrop-blur-xl rounded-2xl flex flex-col min-h-0 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)]/50 bg-[var(--app-bg-elevated)]/30">
+                <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-widest">
                     {t('files.viewer.thumbnails', 'Thumbnails')}
                 </span>
-                <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors">
-                    <X className="h-3.5 w-3.5" />
+                <button onClick={onClose} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors">
+                    <X className="h-4 w-4" />
                 </button>
             </div>
-            <div className="flex-1 overflow-auto py-2 px-2 space-y-2">
+            <div className="flex-1 overflow-auto py-3 px-3 space-y-3 custom-scrollbar">
                 <Document file={previewUrl} loading={null}>
                     {pageGroups.map((group, gIdx) => {
                         const isActive = group.includes(currentPage)
@@ -309,24 +309,24 @@ function PageThumbnails({ previewUrl, numPages, currentPage, onPageClick, onClos
                             <div
                                 key={gIdx}
                                 ref={el => { thumbRefs.current[gIdx] = el }}
-                                className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all hover:border-amber-400/40 ${isActive
-                                    ? 'border-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.25)]'
-                                    : 'border-transparent opacity-60 hover:opacity-100'
+                                className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all hover:border-[var(--app-accent)]/50 ${isActive
+                                    ? 'border-[var(--app-accent)] shadow-lg scale-[1.02]'
+                                    : 'border-transparent opacity-70 hover:opacity-100 hover:scale-[1.01]'
                                     }`}
                                 onClick={() => onPageClick(group[0])}
                             >
-                                <div className={`flex ${layoutMode === 'double' ? 'gap-0.5' : ''}`}>
+                                <div className={`flex ${layoutMode === 'double' ? 'gap-0.5' : ''} bg-white rounded-lg overflow-hidden`}>
                                     {group.map(pageNum => (
                                         <Page
                                             key={pageNum}
                                             pageNumber={pageNum}
-                                            width={layoutMode === 'double' ? 72 : 148}
+                                            width={layoutMode === 'double' ? 70 : 140}
                                             renderTextLayer={false}
                                             renderAnnotationLayer={false}
                                         />
                                     ))}
                                 </div>
-                                <div className={`absolute bottom-0 inset-x-0 text-center text-[10px] py-0.5 font-medium ${isActive ? 'bg-amber-500 text-black' : 'bg-black/60 text-gray-400'
+                                <div className={`absolute bottom-0 inset-x-0 text-center text-[10px] py-1 font-bold ${isActive ? 'bg-[var(--app-accent)] text-white' : 'bg-black/60 text-white'
                                     }`}>
                                     {group.length > 1 ? `${group[0]}-${group[1]}` : group[0]}
                                 </div>
@@ -370,95 +370,97 @@ function CommentsSidebar({ annotations, onClose, onDeleteAnnotation, onResolveAn
     const topLevel = annotations.filter(a => !a.parentId)
 
     return (
-        <div className="absolute top-3 right-3 bottom-20 w-[280px] z-30 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl flex flex-col min-h-0 shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <div className="absolute top-4 right-4 bottom-20 w-[300px] z-30 bg-[var(--app-bg-card)] border border-[var(--app-border)] backdrop-blur-xl rounded-2xl flex flex-col min-h-0 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)]/50 bg-[var(--app-bg-elevated)]/30">
+                <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-widest">
                     {t('files.viewer.comments', 'Comments')}
                 </span>
-                <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors">
-                    <X className="h-3.5 w-3.5" />
+                <button onClick={onClose} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors">
+                    <X className="h-4 w-4" />
                 </button>
             </div>
 
             {newCommentPos && (
-                <div className="p-3 border-b border-white/5 bg-white/3">
-                    <p className="text-[11px] text-gray-400 mb-2">
+                <div className="p-4 border-b border-[var(--app-border)]/50 bg-[var(--app-bg-elevated)]/50">
+                    <p className="text-[10px] font-bold text-[var(--app-accent)] uppercase mb-2 tracking-wider">
                         {t('files.viewer.new_comment_on_page', 'Comment on page')} {newCommentPos.page}
                     </p>
                     <textarea
                         value={newCommentText}
                         onChange={e => onNewCommentTextChange(e.target.value)}
                         placeholder={t('files.viewer.type_comment', 'Type your comment...') as string}
-                        className="w-full bg-[#0f1019] border border-white/10 rounded-lg p-2 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:ring-1 focus:ring-amber-500"
+                        className="w-full bg-[var(--app-bg-input)] border border-[var(--app-border)]/50 rounded-xl p-3 text-sm text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--app-accent)]/20 transition-all font-medium"
                         rows={3}
                         autoFocus
                     />
-                    <div className="flex justify-end gap-2 mt-2">
-                        <button onClick={onCancelComment} className="px-2.5 py-1 text-xs text-gray-400 hover:text-white rounded-md hover:bg-white/5 transition-colors">
+                    <div className="flex justify-end gap-2 mt-3">
+                        <button onClick={onCancelComment} className="px-3 py-1.5 text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] rounded-lg hover:bg-[var(--app-bg-elevated)] transition-all font-semibold">
                             {t('common.cancel', 'Cancel')}
                         </button>
                         <button onClick={onSubmitComment} disabled={!newCommentText.trim()}
-                            className="px-2.5 py-1 text-xs bg-amber-500 text-black font-medium rounded-md hover:bg-amber-400 disabled:opacity-40 transition-colors flex items-center gap-1">
-                            <Send className="h-3 w-3" />
+                            className="px-4 py-1.5 text-xs bg-[var(--app-accent)] text-white font-bold rounded-lg hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-1.5 shadow-sm">
+                            <Send className="h-3.5 w-3.5" />
                             {t('common.send', 'Send')}
                         </button>
                     </div>
                 </div>
             )}
 
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-auto custom-scrollbar">
                 {topLevel.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                        <Star className="h-10 w-10 text-gray-700 mb-3" />
-                        <p className="text-sm text-gray-500">{t('files.viewer.no_comments', 'No comments yet.')}</p>
+                    <div className="flex flex-col items-center justify-center h-full text-center px-8">
+                        <div className="w-16 h-16 rounded-full bg-[var(--app-bg-elevated)] flex items-center justify-center mb-4 shadow-inner">
+                            <MessageCircle className="h-8 w-8 text-[var(--app-text-muted)] opacity-30" />
+                        </div>
+                        <p className="text-sm font-bold text-[var(--app-text-secondary)]">{t('files.viewer.no_comments', 'No comments yet.')}</p>
                     </div>
                 ) : (
                     topLevel.map(ann => (
-                        <div key={ann.id} className={`p-3 border-b border-white/5 hover:bg-white/3 transition-colors ${ann.resolved ? 'opacity-50' : ''}`}>
-                            <div className="flex items-start gap-2">
+                        <div key={ann.id} className={`p-4 border-b border-[var(--app-border)]/30 hover:bg-[var(--app-bg-elevated)]/30 transition-colors ${ann.resolved ? 'opacity-60' : ''}`}>
+                            <div className="flex items-start gap-3">
                                 {ann.user?.image ? (
-                                    <img src={ann.user.image} alt={ann.user.name} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                                    <img src={ann.user.image} alt={ann.user.name} className="w-8 h-8 rounded-xl object-cover flex-shrink-0 border border-[var(--app-border)]/50" />
                                 ) : (
-                                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
-                                        {ann.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--app-accent)] to-[var(--app-accent-hover)] flex items-center justify-center text-white text-xs font-black flex-shrink-0 shadow-sm uppercase">
+                                        {ann.user?.name?.charAt(0) || '?'}
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium text-white truncate">{ann.user?.name || 'Unknown'}</span>
-                                        <div className="flex items-center gap-0.5">
+                                        <span className="text-xs font-bold text-[var(--app-text-primary)] truncate">{ann.user?.name || 'Unknown'}</span>
+                                        <div className="flex items-center gap-1">
                                             {ann.pageNumber && (
-                                                <span className="text-[10px] text-amber-400 cursor-pointer hover:underline mr-1" onClick={() => scrollToPage(ann.pageNumber!)}>
+                                                <span className="text-[10px] font-bold text-[var(--app-accent)] cursor-pointer hover:underline mr-1 bg-[var(--app-accent)]/10 px-1.5 py-0.5 rounded-md" onClick={() => scrollToPage(ann.pageNumber!)}>
                                                     p.{ann.pageNumber}
                                                 </span>
                                             )}
-                                            <button onClick={() => onResolveAnnotation(ann.id, !ann.resolved)} className="p-0.5 hover:bg-white/5 rounded">
-                                                <Check className={`h-3 w-3 ${ann.resolved ? 'text-green-400' : 'text-gray-500'}`} />
+                                            <button onClick={() => onResolveAnnotation(ann.id, !ann.resolved)} className="p-1 hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors">
+                                                <Check className={`h-3.5 w-3.5 ${ann.resolved ? 'text-green-500 font-bold' : 'text-[var(--app-text-muted)]'}`} />
                                             </button>
-                                            <button onClick={() => onDeleteAnnotation(ann.id)} className="p-0.5 hover:bg-white/5 rounded">
-                                                <Trash2 className="h-3 w-3 text-gray-500 hover:text-red-400" />
+                                            <button onClick={() => onDeleteAnnotation(ann.id)} className="p-1 hover:bg-red-500/10 rounded-lg transition-colors group/del">
+                                                <Trash2 className="h-3.5 w-3.5 text-[var(--app-text-muted)] group-hover/del:text-red-500" />
                                             </button>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-300 mt-1 whitespace-pre-wrap">{ann.content}</p>
-                                    <span className="text-[10px] text-gray-600 mt-1 block">
+                                    <p className="text-xs text-[var(--app-text-secondary)] mt-1.5 whitespace-pre-wrap leading-relaxed font-medium">{ann.content}</p>
+                                    <span className="text-[10px] font-bold text-[var(--app-text-muted)] mt-2 block uppercase">
                                         {format(new Date(ann.createdAt), 'dd.MM.yyyy HH:mm')}
                                     </span>
 
                                     {ann.replies && ann.replies.length > 0 && (
-                                        <div className="mt-2 pl-2 border-l-2 border-white/10 space-y-1.5">
+                                        <div className="mt-3 pl-3 border-l-2 border-[var(--app-border)] space-y-2">
                                             {ann.replies.map(reply => (
-                                                <div key={reply.id} className="flex items-start gap-1.5">
+                                                <div key={reply.id} className="flex items-start gap-2">
                                                     {reply.user?.image ? (
-                                                        <img src={reply.user.image} alt={reply.user.name} className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+                                                        <img src={reply.user.image} alt={reply.user.name} className="w-6 h-6 rounded-lg object-cover flex-shrink-0 border border-[var(--app-border)]/50" />
                                                     ) : (
-                                                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-[8px] font-bold flex-shrink-0">
-                                                            {reply.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                                                        <div className="w-6 h-6 rounded-lg bg-[var(--app-bg-elevated)] border border-[var(--app-border)]/50 flex items-center justify-center text-[var(--app-text-muted)] text-[8px] font-black flex-shrink-0 uppercase">
+                                                            {reply.user?.name?.charAt(0) || '?'}
                                                         </div>
                                                     )}
                                                     <div>
-                                                        <span className="text-[10px] font-medium text-gray-300">{reply.user?.name}</span>
-                                                        <p className="text-[11px] text-gray-400">{reply.content}</p>
+                                                        <span className="text-[10px] font-bold text-[var(--app-text-primary)]">{reply.user?.name}</span>
+                                                        <p className="text-[11px] text-[var(--app-text-secondary)] font-medium leading-relaxed">{reply.content}</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -466,21 +468,21 @@ function CommentsSidebar({ annotations, onClose, onDeleteAnnotation, onResolveAn
                                     )}
 
                                     {replyingTo === ann.id ? (
-                                        <div className="mt-2 flex gap-1">
+                                        <div className="mt-3 flex gap-1.5">
                                             <input
                                                 value={replyText}
                                                 onChange={e => setReplyText(e.target.value)}
                                                 placeholder={t('files.viewer.reply', 'Reply...') as string}
-                                                className="flex-1 bg-[#0f1019] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                className="flex-1 bg-[var(--app-bg-input)] border border-[var(--app-border)]/50 rounded-lg px-3 py-1.5 text-xs text-[var(--app-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--app-accent)]/20 transition-all font-medium"
                                                 autoFocus
                                                 onKeyDown={e => e.key === 'Enter' && handleSubmitReply(ann.id)}
                                             />
-                                            <button className="h-6 px-2 bg-amber-500 text-black text-xs rounded font-medium" onClick={() => handleSubmitReply(ann.id)}>
-                                                <Send className="h-3 w-3" />
+                                            <button className="h-8 w-8 bg-[var(--app-accent)] text-white rounded-lg flex items-center justify-center shadow-sm hover:opacity-90 active:scale-95 transition-all" onClick={() => handleSubmitReply(ann.id)}>
+                                                <Send className="h-3.5 w-3.5" />
                                             </button>
                                         </div>
                                     ) : (
-                                        <button onClick={() => setReplyingTo(ann.id)} className="text-[10px] text-amber-400 hover:underline mt-1">
+                                        <button onClick={() => setReplyingTo(ann.id)} className="text-[10px] font-bold text-[var(--app-accent)] hover:underline mt-2 uppercase tracking-wide">
                                             {t('files.viewer.reply', 'Reply')}
                                         </button>
                                     )}
@@ -805,7 +807,7 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
     ]
 
     return (
-        <div ref={viewerRootRef} className="flex-1 flex flex-col min-h-0 relative bg-[#0c0e1a]">
+        <div ref={viewerRootRef} className="flex-1 flex flex-col min-h-0 relative bg-[var(--app-bg-deepest)]">
             {activeTool === 'edit-text' && (
                 <style>{`
                     .pdf-edit-text-mode .react-pdf__Page__textContent {
@@ -842,22 +844,22 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
 
             {/* TOOL OPTIONS FLOATING PANELS */}
             {activeTool === 'pencil' && (
-                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-3 py-2 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/5">
-                    <div className="flex items-center gap-2 border-r border-white/10 pr-3">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Color</span>
+                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-3 py-2 bg-[var(--app-bg-card)]/95 backdrop-blur-md rounded-xl shadow-2xl border border-[var(--app-border)]">
+                    <div className="flex items-center gap-2 border-r border-[var(--app-border)] pr-3">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider">Color</span>
                         <input type="color" value={drawStyle.color} onChange={e => setDrawStyle(s => ({ ...s, color: e.target.value }))} className="w-5 h-5 rounded cursor-pointer bg-transparent border-0 p-0" title="Stroke Color" />
                     </div>
-                    <div className="flex items-center gap-2 border-r border-white/10 pr-3">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider w-10">Width <span className="text-white/70 ml-1">{drawStyle.width}</span></span>
-                        <input type="range" min="1" max="50" value={drawStyle.width} onChange={e => setDrawStyle(s => ({ ...s, width: Number(e.target.value) }))} className="w-24 accent-amber-500 cursor-pointer" />
+                    <div className="flex items-center gap-2 border-r border-[var(--app-border)] pr-3">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider w-10">Width <span className="text-[var(--app-text-primary)] ml-1">{drawStyle.width}</span></span>
+                        <input type="range" min="1" max="50" value={drawStyle.width} onChange={e => setDrawStyle(s => ({ ...s, width: Number(e.target.value) }))} className="w-24 accent-[var(--app-accent)] cursor-pointer" />
                     </div>
-                    <div className="flex items-center gap-2 border-r border-white/10 pr-3">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider w-12">Opacity <span className="text-white/70 ml-1">{drawStyle.opacity}%</span></span>
-                        <input type="range" min="10" max="100" step="5" value={drawStyle.opacity} onChange={e => setDrawStyle(s => ({ ...s, opacity: Number(e.target.value) }))} className="w-24 accent-amber-500 cursor-pointer" />
+                    <div className="flex items-center gap-2 border-r border-[var(--app-border)] pr-3">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider w-12">Opacity <span className="text-[var(--app-text-primary)] ml-1">{drawStyle.opacity}%</span></span>
+                        <input type="range" min="10" max="100" step="5" value={drawStyle.opacity} onChange={e => setDrawStyle(s => ({ ...s, opacity: Number(e.target.value) }))} className="w-24 accent-[var(--app-accent)] cursor-pointer" />
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Blend</span>
-                        <select value={drawStyle.blendMode} onChange={e => setDrawStyle(s => ({ ...s, blendMode: e.target.value }))} className="bg-[#0c0e1a] text-gray-200 border border-white/10 rounded px-1.5 py-0.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider">Blend</span>
+                        <select value={drawStyle.blendMode} onChange={e => setDrawStyle(s => ({ ...s, blendMode: e.target.value }))} className="bg-[var(--app-bg-deepest)] text-[var(--app-text-secondary)] border border-[var(--app-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:ring-1 focus:ring-[var(--app-accent)] cursor-pointer">
                             <option value="source-over">Normal</option>
                             <option value="multiply">Multiply</option>
                             <option value="screen">Screen</option>
@@ -868,22 +870,22 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
             )}
 
             {activeTool === 'highlight' && (
-                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-3 py-2 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/5">
-                    <div className="flex items-center gap-2 border-r border-white/10 pr-3">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Color</span>
+                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-3 py-2 bg-[var(--app-bg-card)]/95 backdrop-blur-md rounded-xl shadow-2xl border border-[var(--app-border)]">
+                    <div className="flex items-center gap-2 border-r border-[var(--app-border)] pr-3">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider">Color</span>
                         <input type="color" value={highlightStyle.color} onChange={e => setHighlightStyle(s => ({ ...s, color: e.target.value }))} className="w-5 h-5 rounded cursor-pointer bg-transparent border-0 p-0" title="Highlight Color" />
                     </div>
-                    <div className="flex items-center gap-2 border-r border-white/10 pr-3">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider w-10">Width <span className="text-white/70 ml-1">{highlightStyle.width}</span></span>
-                        <input type="range" min="5" max="100" value={highlightStyle.width} onChange={e => setHighlightStyle(s => ({ ...s, width: Number(e.target.value) }))} className="w-24 accent-amber-500 cursor-pointer" />
+                    <div className="flex items-center gap-2 border-r border-[var(--app-border)] pr-3">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider w-10">Width <span className="text-[var(--app-text-primary)] ml-1">{highlightStyle.width}</span></span>
+                        <input type="range" min="5" max="100" value={highlightStyle.width} onChange={e => setHighlightStyle(s => ({ ...s, width: Number(e.target.value) }))} className="w-24 accent-[var(--app-accent)] cursor-pointer" />
                     </div>
-                    <div className="flex items-center gap-2 border-r border-white/10 pr-3">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider w-12">Opacity <span className="text-white/70 ml-1">{highlightStyle.opacity}%</span></span>
-                        <input type="range" min="10" max="100" step="5" value={highlightStyle.opacity} onChange={e => setHighlightStyle(s => ({ ...s, opacity: Number(e.target.value) }))} className="w-24 accent-amber-500 cursor-pointer" />
+                    <div className="flex items-center gap-2 border-r border-[var(--app-border)] pr-3">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider w-12">Opacity <span className="text-[var(--app-text-primary)] ml-1">{highlightStyle.opacity}%</span></span>
+                        <input type="range" min="10" max="100" step="5" value={highlightStyle.opacity} onChange={e => setHighlightStyle(s => ({ ...s, opacity: Number(e.target.value) }))} className="w-24 accent-[var(--app-accent)] cursor-pointer" />
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Blend</span>
-                        <select value={highlightStyle.blendMode} onChange={e => setHighlightStyle(s => ({ ...s, blendMode: e.target.value }))} className="bg-[#0c0e1a] text-gray-200 border border-white/10 rounded px-1.5 py-0.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider">Blend</span>
+                        <select value={highlightStyle.blendMode} onChange={e => setHighlightStyle(s => ({ ...s, blendMode: e.target.value }))} className="bg-[var(--app-bg-deepest)] text-[var(--app-text-secondary)] border border-[var(--app-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:ring-1 focus:ring-[var(--app-accent)] cursor-pointer">
                             <option value="source-over">Normal</option>
                             <option value="multiply">Multiply</option>
                             <option value="screen">Screen</option>
@@ -893,59 +895,59 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
             )}
 
             {activeTool === 'eraser' && (
-                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/5">
-                    <div className="flex items-center gap-2 text-white text-xs">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider w-16">Size <span className="text-white/70 ml-1">{eraserWidth}</span></span>
+                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[var(--app-bg-card)]/95 backdrop-blur-md rounded-xl shadow-2xl border border-[var(--app-border)]">
+                    <div className="flex items-center gap-2 text-[var(--app-text-primary)] text-xs">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider w-16">Size <span className="text-[var(--app-text-primary)] ml-1">{eraserWidth}</span></span>
                     </div>
                     <div className="flex items-center gap-1">
-                        <input type="range" min="10" max="125" value={eraserWidth} onChange={e => setEraserWidth(Number(e.target.value))} className="w-32 accent-amber-500 cursor-pointer" />
+                        <input type="range" min="10" max="125" value={eraserWidth} onChange={e => setEraserWidth(Number(e.target.value))} className="w-32 accent-[var(--app-accent)] cursor-pointer" />
                     </div>
                 </div>
             )}
 
             {activeTool === 'text-highlight' && (
-                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-3 py-2 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/5">
-                    <div className="flex items-center gap-2 pr-2 border-r border-white/10">
-                        <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Color</span>
+                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-3 py-2 bg-[var(--app-bg-card)]/95 backdrop-blur-md rounded-xl shadow-2xl border border-[var(--app-border)]">
+                    <div className="flex items-center gap-2 pr-2 border-r border-[var(--app-border)]">
+                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] uppercase tracking-wider">Color</span>
                         <input type="color" value={highlightStyle.color} onChange={e => setHighlightStyle(s => ({ ...s, color: e.target.value }))} className="w-5 h-5 rounded cursor-pointer bg-transparent border-0 p-0" title="Text Highlight Color" />
                     </div>
-                    <div className="text-xs text-amber-400 font-medium tracking-wide">Select text to highlight</div>
+                    <div className="text-xs text-[var(--app-accent)] font-medium tracking-wide">Select text to highlight</div>
                 </div>
             )}
 
             {activeTool === 'link' && !newLinkSelection && (
-                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center px-4 py-2 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/5">
-                    <div className="text-xs text-amber-400 font-medium tracking-wide">Select text to add link</div>
+                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center px-4 py-2 bg-[var(--app-bg-card)]/95 backdrop-blur-md rounded-xl shadow-2xl border border-[var(--app-border)]">
+                    <div className="text-xs text-[var(--app-accent)] font-medium tracking-wide">Select text to add link</div>
                 </div>
             )}
 
             {/* NEW LINK SELECTION MODAL */}
             {newLinkSelection && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[#1a1d2e] rounded-xl shadow-2xl border border-white/10 w-[320px] overflow-hidden drop-shadow-2xl ring-1 ring-black/50">
-                    <div className="px-4 py-3 bg-[#1e2235] border-b border-white/5 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-white tracking-wide">Link Settings</span>
-                        <button onClick={() => setNewLinkSelection(null)} className="text-gray-400 hover:text-white"><X className="w-4 h-4" /></button>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--app-bg-card)] rounded-xl shadow-2xl border border-[var(--app-border)] w-[320px] overflow-hidden drop-shadow-2xl">
+                    <div className="px-4 py-3 bg-[var(--app-bg-elevated)] border-b border-[var(--app-border)] flex items-center justify-between">
+                        <span className="text-sm font-semibold text-[var(--app-text-primary)] tracking-wide">Link Settings</span>
+                        <button onClick={() => setNewLinkSelection(null)} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"><X className="w-4 h-4" /></button>
                     </div>
                     <div className="p-4 space-y-4">
                         <div>
-                            <label className="text-xs font-medium text-gray-400 mb-1.5 block uppercase tracking-wider">Link To</label>
-                            <div className="flex bg-[#0f1019] border border-white/5 rounded-lg p-1">
+                            <label className="text-xs font-medium text-[var(--app-text-muted)] mb-1.5 block uppercase tracking-wider">Link To</label>
+                            <div className="flex bg-[var(--app-bg-deepest)] border border-[var(--app-border)] rounded-lg p-1">
                                 <button
                                     onClick={() => setLinkModalType('website')}
-                                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${linkModalType === 'website' ? 'bg-amber-500 text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${linkModalType === 'website' ? 'bg-[var(--app-accent)] text-white shadow-sm' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'}`}
                                 >
                                     {linkModalType === 'website' && <Check className="w-3.5 h-3.5 inline mr-1" />} Website
                                 </button>
                                 <button
                                     onClick={() => setLinkModalType('page')}
-                                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${linkModalType === 'page' ? 'bg-amber-500 text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${linkModalType === 'page' ? 'bg-[var(--app-accent)] text-white shadow-sm' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'}`}
                                 >
                                     {linkModalType === 'page' && <Check className="w-3.5 h-3.5 inline mr-1" />} Page
                                 </button>
                             </div>
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-gray-400 mb-1.5 block uppercase tracking-wider">
+                            <label className="text-xs font-medium text-[var(--app-text-muted)] mb-1.5 block uppercase tracking-wider">
                                 {linkModalType === 'website' ? 'URL Link' : 'Page Number'}
                             </label>
                             <input
@@ -953,7 +955,7 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
                                 placeholder={linkModalType === 'website' ? 'www.example.com' : 'e.g. 2'}
                                 value={linkModalValue}
                                 onChange={e => setLinkModalValue(e.target.value)}
-                                className="w-full bg-[#0f1019] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-amber-500 transition-colors"
+                                className="w-full bg-[var(--app-bg-deepest)] border border-[var(--app-border)] rounded-lg px-3 py-2 text-sm text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] transition-colors"
                                 autoFocus
                                 onKeyDown={e => {
                                     e.stopPropagation()
@@ -963,8 +965,8 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
                             />
                         </div>
                         <div className="flex justify-end gap-2 pt-2">
-                            <button onClick={() => setNewLinkSelection(null)} className="px-4 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors font-medium">Cancel</button>
-                            <button onClick={handleSaveLink} className="px-4 py-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-lg transition-colors shadow-sm">Save Link</button>
+                            <button onClick={() => setNewLinkSelection(null)} className="px-4 py-1.5 text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors font-medium">Cancel</button>
+                            <button onClick={handleSaveLink} className="px-4 py-1.5 text-xs bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-white font-semibold rounded-lg transition-colors shadow-sm">Save Link</button>
                         </div>
                     </div>
                 </div>
@@ -972,67 +974,67 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
 
             {/* TEXT FORMATTING TOOLBAR */}
             {(editingTextId || activeTool === 'edit-text') && (
-                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-2 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl shadow-2xl border border-white/5">
-                    <div className="flex items-center gap-1 border-r border-white/10 pr-2">
+                <div className="absolute bottom-[5.5rem] left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-3 py-2 bg-[var(--app-bg-card)]/95 backdrop-blur-md rounded-xl shadow-2xl border border-[var(--app-border)]">
+                    <div className="flex items-center gap-1 border-r border-[var(--app-border)] pr-2">
                         <input type="color" value={textStyle.color} onChange={e => {
                             if (activeTool === 'edit-text') { document.execCommand('foreColor', false, e.target.value); setTextStyle(s => ({ ...s, color: e.target.value })) }
                             else updateTextStyle({ color: e.target.value })
                         }} className="w-5 h-5 rounded cursor-pointer bg-transparent border-0 p-0" title="Text Color" />
                     </div>
-                    <div className="flex items-center gap-1 border-r border-white/10 pr-2">
+                    <div className="flex items-center gap-1 border-r border-[var(--app-border)] pr-2">
                         <select value={textStyle.fontFamily} onChange={e => {
                             if (activeTool === 'edit-text') { document.execCommand('fontName', false, e.target.value); setTextStyle(s => ({ ...s, fontFamily: e.target.value })) }
                             else updateTextStyle({ fontFamily: e.target.value })
-                        }} className="bg-[#0c0e1a] text-gray-200 border border-white/10 rounded px-1.5 py-0.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer">
+                        }} className="bg-[var(--app-bg-deepest)] text-[var(--app-text-secondary)] border border-[var(--app-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:ring-1 focus:ring-[var(--app-accent)] cursor-pointer">
                             <option value="Helvetica">Helvetica</option>
                             <option value="Times New Roman">Times New Roman</option>
                             <option value="Courier">Courier</option>
                             <option value="Arial">Arial</option>
                         </select>
                     </div>
-                    <div className="flex items-center gap-1 border-r border-white/10 pr-2">
+                    <div className="flex items-center gap-1 border-r border-[var(--app-border)] pr-2">
                         <select value={textStyle.fontSize} onChange={e => {
                             if (activeTool === 'edit-text') { document.execCommand('fontSize', false, "7"); setTextStyle(s => ({ ...s, fontSize: Number(e.target.value) })) }
                             else updateTextStyle({ fontSize: Number(e.target.value) })
-                        }} className="bg-[#0c0e1a] text-gray-200 border border-white/10 rounded px-1.5 py-0.5 text-xs outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer">
+                        }} className="bg-[var(--app-bg-deepest)] text-[var(--app-text-secondary)] border border-[var(--app-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:ring-1 focus:ring-[var(--app-accent)] cursor-pointer">
                             {[8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 30, 36].map(s => <option key={s} value={s}>{s} pt</option>)}
                         </select>
                     </div>
-                    <div className="flex items-center gap-1 border-r border-white/10 pr-2">
+                    <div className="flex items-center gap-1 border-r border-[var(--app-border)] pr-2">
                         <button onClick={() => {
                             if (activeTool === 'edit-text') { document.execCommand('bold'); setTextStyle(s => ({ ...s, isBold: !s.isBold })) }
                             else updateTextStyle({ isBold: !textStyle.isBold })
-                        }} className={`p-1 rounded ${textStyle.isBold ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                        }} className={`p-1 rounded ${textStyle.isBold ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}>
                             <Bold className="h-4 w-4" />
                         </button>
                         <button onClick={() => {
                             if (activeTool === 'edit-text') { document.execCommand('italic'); setTextStyle(s => ({ ...s, isItalic: !s.isItalic })) }
                             else updateTextStyle({ isItalic: !textStyle.isItalic })
-                        }} className={`p-1 rounded ${textStyle.isItalic ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                        }} className={`p-1 rounded ${textStyle.isItalic ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}>
                             <Italic className="h-4 w-4" />
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-1 border-r border-white/10 pr-2">
-                        <button onClick={() => updateTextStyle({ textAlign: 'left' })} className={`p-1 rounded ${textStyle.textAlign === 'left' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                    <div className="flex items-center gap-1 border-r border-[var(--app-border)] pr-2">
+                        <button onClick={() => updateTextStyle({ textAlign: 'left' })} className={`p-1 rounded ${textStyle.textAlign === 'left' ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}>
                             <AlignLeft className="h-4 w-4" />
                         </button>
-                        <button onClick={() => updateTextStyle({ textAlign: 'center' })} className={`p-1 rounded ${textStyle.textAlign === 'center' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                        <button onClick={() => updateTextStyle({ textAlign: 'center' })} className={`p-1 rounded ${textStyle.textAlign === 'center' ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}>
                             <AlignCenter className="h-4 w-4" />
                         </button>
-                        <button onClick={() => updateTextStyle({ textAlign: 'right' })} className={`p-1 rounded ${textStyle.textAlign === 'right' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                        <button onClick={() => updateTextStyle({ textAlign: 'right' })} className={`p-1 rounded ${textStyle.textAlign === 'right' ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}>
                             <AlignRight className="h-4 w-4" />
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-1 border-r border-white/10 pr-2">
-                        <button onClick={() => updateTextStyle({ verticalAlign: 'top' })} className={`p-1 rounded ${textStyle.verticalAlign === 'top' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                    <div className="flex items-center gap-1 border-r border-[var(--app-border)] pr-2">
+                        <button onClick={() => updateTextStyle({ verticalAlign: 'top' })} className={`p-1 rounded ${textStyle.verticalAlign === 'top' ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}>
                             <AlignVerticalJustifyStart className="h-4 w-4" />
                         </button>
-                        <button onClick={() => updateTextStyle({ verticalAlign: 'middle' })} className={`p-1 rounded ${textStyle.verticalAlign === 'middle' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                        <button onClick={() => updateTextStyle({ verticalAlign: 'middle' })} className={`p-1 rounded ${textStyle.verticalAlign === 'middle' ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}>
                             <AlignVerticalJustifyCenter className="h-4 w-4" />
                         </button>
-                        <button onClick={() => updateTextStyle({ verticalAlign: 'bottom' })} className={`p-1 rounded ${textStyle.verticalAlign === 'bottom' ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                        <button onClick={() => updateTextStyle({ verticalAlign: 'bottom' })} className={`p-1 rounded ${textStyle.verticalAlign === 'bottom' ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}>
                             <AlignVerticalJustifyEnd className="h-4 w-4" />
                         </button>
                     </div>
@@ -1043,26 +1045,26 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
                                 saveHistoryState()
                                 setTextOverlays(prev => prev.filter(t => t.id !== editingTextId))
                                 setEditingTextId(null)
-                            }} className="p-1 text-gray-400 hover:text-red-400 rounded hover:bg-white/5" title="Delete">
+                            }} className="p-1 text-[var(--app-text-muted)] hover:text-red-500 rounded hover:bg-[var(--app-bg-elevated)]" title="Delete">
                                 <Trash2 className="h-4 w-4" />
                             </button>
                             {activeTool === 'edit-text' && (
                                 <>
-                                    <button onClick={() => setEditingTextId(null)} className="px-3 py-1 text-xs text-gray-300 hover:text-white hover:bg-white/5 rounded transition-colors">
+                                    <button onClick={() => setEditingTextId(null)} className="px-3 py-1 text-xs text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded transition-colors">
                                         Cancel
                                     </button>
-                                    <button onClick={() => setEditingTextId(null)} className="px-3 py-1 text-xs bg-amber-500 hover:bg-amber-600 text-black rounded transition-colors font-medium shadow-sm">
+                                    <button onClick={() => setEditingTextId(null)} className="px-3 py-1 text-xs bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-white rounded transition-colors font-medium shadow-sm">
                                         Save
                                     </button>
                                 </>
                             )}
                         </div>
                     ) : (activeTool === 'edit-text' || activeTool === 'text') ? (
-                        <div className="flex items-center gap-1 pl-1 text-xs text-amber-500/80">
+                        <div className="flex items-center gap-1 pl-1 text-xs text-[var(--app-accent)]">
                             (Click anywhere on page to add text)
                         </div>
                     ) : (
-                        <div className="flex items-center gap-1 pl-1 text-xs text-gray-400">
+                        <div className="flex items-center gap-1 pl-1 text-xs text-[var(--app-text-muted)]">
                             (Select Native Text & Apply)
                         </div>
                     )}
@@ -1348,10 +1350,10 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
             )}
 
             {/* FLOATING BOTTOM TOOLBAR (center) */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-2 py-1.5 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl shadow-2xl z-40">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-2 bg-[var(--app-bg-card)]/90 backdrop-blur-xl rounded-2xl border border-[var(--app-border)] shadow-2xl z-40">
                 {toolbarItems.map(item => {
                     if (item.id.startsWith('sep')) {
-                        return <div key={item.id} className="w-px h-6 bg-white/10 mx-1" />
+                        return <div key={item.id} className="w-px h-6 bg-[var(--app-border)]/30 mx-1.5" />
                     }
                     const Icon = item.icon!
                     const isActive = activeTool === item.id
@@ -1365,45 +1367,45 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
                                 else if (item.id === 'layout') setLayoutMode(prev => prev === 'single' ? 'double' : 'single')
                                 else setActiveTool(prev => prev === item.id ? 'cursor' : item.id)
                             }}
-                            className={`p-2.5 rounded-lg transition-all ${isActive
-                                ? 'bg-amber-500/20 text-amber-400'
+                            className={`p-2.5 rounded-xl transition-all ${isActive
+                                ? 'bg-[var(--app-accent)] text-white shadow-sm scale-110'
                                 : item.id === 'layout' && layoutMode === 'double'
-                                    ? 'bg-amber-500/10 text-amber-400/60'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400'
+                                    ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
+                                    : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] disabled:opacity-20 disabled:hover:bg-transparent'
                                 }`}
                             title={item.label}
                         >
-                            <Icon className="h-[18px] w-[18px]" />
+                            <Icon className="h-5 w-5" />
                         </button>
                     )
                 })}
             </div>
 
             {/* BOTTOM LEFT: Page nav */}
-            <div className="absolute bottom-4 left-3 flex items-center gap-1 px-2.5 py-1.5 bg-[#1a1d2e]/95 backdrop-blur-md rounded-lg shadow-xl z-40">
-                <button onClick={prevPage} disabled={currentPage <= 1} className="p-1 text-gray-400 hover:text-white disabled:opacity-30 transition-colors">
-                    <ChevronLeft className="h-3.5 w-3.5" />
+            <div className="absolute bottom-6 left-6 flex items-center gap-2 px-3 py-2 bg-[var(--app-bg-card)]/90 backdrop-blur-xl rounded-xl border border-[var(--app-border)] shadow-xl z-40">
+                <button onClick={prevPage} disabled={currentPage <= 1} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg disabled:opacity-20 transition-all">
+                    <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="text-xs text-gray-300 select-none px-1 min-w-[85px] text-center">
-                    Page {getPageDisplay()} of {numPages || '–'}
+                <span className="text-xs font-bold text-[var(--app-text-secondary)] select-none px-2 min-w-[90px] text-center tracking-tight">
+                    {getPageDisplay()} / {numPages || '–'}
                 </span>
-                <button onClick={nextPage} disabled={currentPage >= numPages} className="p-1 text-gray-400 hover:text-white disabled:opacity-30 transition-colors">
-                    <ChevronRight className="h-3.5 w-3.5" />
+                <button onClick={nextPage} disabled={currentPage >= numPages} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg disabled:opacity-20 transition-all">
+                    <ChevronRight className="h-4 w-4" />
                 </button>
             </div>
 
             {/* BOTTOM RIGHT: Zoom + fullscreen */}
-            <div className="absolute bottom-4 right-3 flex items-center gap-1 px-2.5 py-1.5 bg-[#1a1d2e]/95 backdrop-blur-md rounded-lg shadow-xl z-40">
-                <button onClick={zoomOut} className="p-1 text-gray-400 hover:text-white transition-colors">
-                    <ZoomOut className="h-3.5 w-3.5" />
+            <div className="absolute bottom-6 right-6 flex items-center gap-2 px-3 py-2 bg-[var(--app-bg-card)]/90 backdrop-blur-xl rounded-xl border border-[var(--app-border)] shadow-xl z-40">
+                <button onClick={zoomOut} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-all">
+                    <ZoomOut className="h-4 w-4" />
                 </button>
-                <span className="text-xs text-gray-300 min-w-[36px] text-center select-none">{Math.round(scale * 100)}%</span>
-                <button onClick={zoomIn} className="p-1 text-gray-400 hover:text-white transition-colors">
-                    <ZoomIn className="h-3.5 w-3.5" />
+                <span className="text-xs font-bold text-[var(--app-text-secondary)] min-w-[45px] text-center select-none">{Math.round(scale * 100)}%</span>
+                <button onClick={zoomIn} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-all">
+                    <ZoomIn className="h-4 w-4" />
                 </button>
-                <div className="w-px h-4 bg-white/10 mx-0.5" />
-                <button onClick={toggleFullscreen} className="p-1 text-gray-400 hover:text-white transition-colors" title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
-                    {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                <div className="w-px h-5 bg-[var(--app-border)]/30 mx-1" />
+                <button onClick={toggleFullscreen} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-all" title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
+                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                 </button>
             </div>
         </div>
@@ -1434,24 +1436,24 @@ function TextEditor({ content, onSave, isSaving }: {
     }, [hasChanges])
 
     return (
-        <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex items-center justify-between px-4 py-2 bg-[#1a1d2e] border-b border-white/5">
+        <div className="flex-1 flex flex-col min-h-0 bg-[var(--app-bg-deepest)]">
+            <div className="flex items-center justify-between px-4 py-2 bg-[var(--app-bg-card)] border-b border-[var(--app-border)]/50">
                 <div className="flex items-center gap-2">
                     {hasChanges && (
-                        <span className="text-xs text-amber-400 flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                        <span className="text-xs text-amber-500 flex items-center gap-1 font-semibold">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                             {t('files.viewer.unsaved_changes', 'Unsaved changes')}
                         </span>
                     )}
                 </div>
                 <div className="flex items-center gap-2">
                     <button onClick={() => setText(content)} disabled={!hasChanges}
-                        className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-400 hover:text-white disabled:opacity-30 rounded-lg hover:bg-white/5 transition-colors">
+                        className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] disabled:opacity-30 rounded-lg hover:bg-[var(--app-bg-elevated)] transition-all">
                         <RotateCcw className="h-3.5 w-3.5" />
                         {t('files.viewer.revert', 'Revert')}
                     </button>
                     <button onClick={() => onSave(text)} disabled={!hasChanges || isSaving}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 text-white font-medium rounded-lg hover:bg-green-500 disabled:opacity-40 transition-colors">
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs bg-[var(--app-accent)] text-white font-bold rounded-lg hover:opacity-90 disabled:opacity-40 transition-all shadow-sm">
                         {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                         {t('common.save', 'Save')}
                     </button>
@@ -1461,7 +1463,7 @@ function TextEditor({ content, onSave, isSaving }: {
                 <textarea
                     value={text}
                     onChange={e => setText(e.target.value)}
-                    className="w-full h-full bg-[#0c0e1a] text-gray-200 text-sm font-mono p-6 resize-none focus:outline-none leading-relaxed"
+                    className="w-full h-full bg-[var(--app-bg-deepest)] text-[var(--app-text-primary)] text-sm font-mono p-6 resize-none focus:outline-none leading-relaxed custom-scrollbar"
                     spellCheck={false}
                 />
             </div>
@@ -1477,23 +1479,25 @@ function ImageViewer({ previewUrl, fileName }: { previewUrl: string; fileName: s
     const [scale, setScale] = useState(1)
 
     return (
-        <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1a1d2e]">
-                <button onClick={() => setScale(s => Math.max(0.25, s - 0.25))} className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
+        <div className="flex-1 flex flex-col min-h-0 bg-[var(--app-bg-deepest)]">
+            <div className="flex items-center justify-center gap-4 px-4 py-2 bg-[var(--app-bg-card)] border-b border-[var(--app-border)]/50">
+                <button onClick={() => setScale(s => Math.max(0.25, s - 0.25))} className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] rounded-lg hover:bg-[var(--app-bg-elevated)] transition-all">
                     <ZoomOut className="h-4 w-4" />
                 </button>
-                <span className="text-xs text-gray-400 min-w-[40px] text-center">{Math.round(scale * 100)}%</span>
-                <button onClick={() => setScale(s => Math.min(5, s + 0.25))} className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors">
+                <span className="text-xs font-bold text-[var(--app-text-secondary)] min-w-[50px] text-center">{Math.round(scale * 100)}%</span>
+                <button onClick={() => setScale(s => Math.min(5, s + 0.25))} className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] rounded-lg hover:bg-[var(--app-bg-elevated)] transition-all">
                     <ZoomIn className="h-4 w-4" />
                 </button>
             </div>
-            <div className="flex-1 overflow-auto flex items-center justify-center bg-[#0c0e1a] p-4">
-                <img
-                    src={previewUrl}
-                    alt={fileName}
-                    style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}
-                    className="max-w-none transition-transform"
-                />
+            <div className="flex-1 overflow-auto flex items-center justify-center bg-[var(--app-bg-deepest)] p-8 custom-scrollbar">
+                <div className="relative shadow-2xl rounded-lg overflow-hidden border border-[var(--app-border)]/30">
+                    <img
+                        src={previewUrl}
+                        alt={fileName}
+                        style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}
+                        className="max-w-none transition-transform duration-200 ease-out"
+                    />
+                </div>
             </div>
         </div>
     )
@@ -1613,49 +1617,49 @@ export function FileViewerPage({ fileId, onClose }: FileViewerProps) {
     }, [onClose])
 
     return (
-        <div className="fixed inset-0 z-50 bg-[#0c0e1a] flex flex-col text-white">
+        <div className="fixed inset-0 z-50 bg-[var(--app-bg-deepest)] flex flex-col text-[var(--app-text-primary)]">
             {/* FLOATING HEADER — no border */}
-            <div className="absolute top-3 left-3 right-3 z-40 flex items-center justify-between h-11 px-3 bg-[#1a1d2e]/95 backdrop-blur-md rounded-xl shadow-2xl">
-                <div className="flex items-center gap-3">
-                    <button onClick={onClose} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-sm">
-                        <X className="h-3.5 w-3.5" />
-                        <span className="text-xs font-medium">{t('common.close', 'Close')}</span>
+            <div className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between h-14 px-4 bg-[var(--app-bg-card)]/90 backdrop-blur-xl rounded-2xl border border-[var(--app-border)] shadow-2xl">
+                <div className="flex items-center gap-4">
+                    <button onClick={onClose} className="flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-all text-sm font-semibold">
+                        <X className="h-4 w-4" />
+                        <span>{t('common.close')}</span>
                     </button>
 
-                    <div className="w-px h-5 bg-white/10" />
+                    <div className="w-px h-6 bg-[var(--app-border)]/30" />
 
-                    <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded bg-amber-500/20 flex items-center justify-center">
-                            <span className="text-[8px] text-amber-400 font-bold uppercase">{fileData?.fileType || '?'}</span>
+                    <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-lg bg-[var(--app-accent)]/10 border border-[var(--app-accent)]/20 flex items-center justify-center">
+                            <span className="text-[10px] text-[var(--app-accent)] font-black uppercase">{fileData?.fileType || '?'}</span>
                         </div>
-                        <span className="text-sm font-medium text-white truncate max-w-[300px]">
-                            {fileData?.name || t('files.viewer.loading', 'Loading...')}
+                        <span className="text-sm font-bold text-[var(--app-text-primary)] truncate max-w-[400px]">
+                            {fileData?.name || t('files.viewer.loading')}
                         </span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1">
-                    <button onClick={handleDownload} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-xs">
-                        <Download className="h-3.5 w-3.5" />
-                        <span>{t('files.actions.download', 'Download')}</span>
+                <div className="flex items-center gap-2">
+                    <button onClick={handleDownload} className="flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-all text-xs font-semibold">
+                        <Download className="h-4 w-4" />
+                        <span>{t('files.actions.download')}</span>
                     </button>
 
                     {isPdf && (
                         <>
-                            <div className="w-px h-5 bg-white/10 mx-1" />
+                            <div className="w-px h-6 bg-[var(--app-border)]/30 mx-1" />
                             <button
                                 onClick={() => setShowThumbnails(v => !v)}
-                                className={`p-2 rounded-lg transition-colors ${showThumbnails ? 'text-amber-400 bg-amber-500/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                                className={`p-2.5 rounded-xl transition-all ${showThumbnails ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/10 shadow-sm' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}
                                 title="Toggle thumbnails"
                             >
-                                <GalleryVerticalEnd className="h-3.5 w-3.5" />
+                                <GalleryVerticalEnd className="h-4 w-4" />
                             </button>
                             <button
                                 onClick={() => setShowComments(v => !v)}
-                                className={`p-2 rounded-lg transition-colors ${showComments ? 'text-amber-400 bg-amber-500/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                                className={`p-2.5 rounded-xl transition-all ${showComments ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/10 shadow-sm' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}
                                 title="Toggle comments"
                             >
-                                <MessageCircle className="h-3.5 w-3.5" />
+                                <MessageCircle className="h-4 w-4" />
                             </button>
                         </>
                     )}

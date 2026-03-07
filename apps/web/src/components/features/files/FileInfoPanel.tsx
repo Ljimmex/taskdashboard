@@ -126,14 +126,14 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} `}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} `}
             >
                 {/* Header */}
-                <div className="flex-none p-6 border-b border-gray-800 flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-white">{t('files.properties.details')}</h2>
+                <div className="flex-none p-6 border-b border-[var(--app-border)]/50 flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-[var(--app-text-primary)]">{t('files.properties.details')}</h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-500 hover:text-white transition-colors p-1"
+                        className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors p-1"
                     >
                         <X size={20} />
                     </button>
@@ -142,7 +142,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                 {/* Content */}
                 <div className="flex-1 px-6 py-6 overflow-y-auto space-y-6">
                     {/* Preview Thumbnail */}
-                    <div className="aspect-video bg-[#1f1f2e] rounded-xl flex items-center justify-center border border-gray-800">
+                    <div className="aspect-video bg-[var(--app-bg-input)] rounded-xl flex items-center justify-center border border-[var(--app-border)]/50">
                         {isImage && file.thumbnailUrl ? (
                             <img
                                 src={file.thumbnailUrl}
@@ -150,14 +150,14 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                                 className="max-w-full max-h-full object-contain rounded-lg"
                             />
                         ) : (
-                            <span className="text-5xl">{getFileIcon(file.mimeType)}</span>
+                            <span className="text-5xl filter grayscale opacity-50">{getFileIcon(file.mimeType)}</span>
                         )}
                     </div>
 
                     {/* File Name */}
                     <div>
-                        <h3 className="text-xl font-semibold text-white break-words">{file.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1">{getFriendlyFileType(file.mimeType, file.fileType)}</p>
+                        <h3 className="text-xl font-semibold text-[var(--app-text-primary)] break-words">{file.name}</h3>
+                        <p className="text-sm text-[var(--app-text-muted)] mt-1">{getFriendlyFileType(file.mimeType, file.fileType)}</p>
                     </div>
 
                     {/* Actions */}
@@ -165,7 +165,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                         {onDownload && (
                             <button
                                 onClick={() => onDownload(file.id)}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 text-black rounded-xl font-medium hover:bg-amber-400 transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--app-accent)] text-white rounded-xl font-medium hover:opacity-90 transition-all shadow-sm"
                             >
                                 <Download size={18} />
                                 {t('files.actions.download')}
@@ -174,7 +174,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                         {onRename && (
                             <button
                                 onClick={() => onRename(file.id)}
-                                className="p-2.5 rounded-xl text-gray-400 hover:text-white bg-[#1f1f2e] hover:bg-gray-800 border border-gray-800 transition-colors"
+                                className="p-2.5 rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] border border-[var(--app-border)]/50 transition-colors"
                                 title={t('files.actions.rename')}
                             >
                                 <Pencil size={18} />
@@ -183,7 +183,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                         {onDelete && (
                             <button
                                 onClick={() => onDelete(file.id)}
-                                className="p-2.5 rounded-xl text-gray-400 hover:text-red-400 bg-[#1f1f2e] hover:bg-gray-800 border border-gray-800 transition-colors"
+                                className="p-2.5 rounded-xl text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors"
                                 title={t('files.actions.delete')}
                             >
                                 <Trash2 size={18} />
@@ -192,57 +192,57 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                     </div>
 
                     {/* File Properties */}
-                    <div className="pt-4 border-t border-gray-800 space-y-3">
-                        <h4 className="uppercase text-xs font-semibold text-gray-500 tracking-wider mb-4">{t('files.properties.section_title')}</h4>
+                    <div className="pt-4 border-t border-[var(--app-border)]/50 space-y-3">
+                        <h4 className="uppercase text-xs font-bold text-[var(--app-text-muted)] tracking-wider mb-4">{t('files.properties.section_title')}</h4>
 
-                        <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <HardDrive size={14} />
+                        <div className="flex items-center justify-between text-sm py-1">
+                            <div className="flex items-center gap-2 text-[var(--app-text-muted)]">
+                                <HardDrive size={14} className="opacity-70" />
                                 <span>{t('files.properties.size')}</span>
                             </div>
-                            <span className="text-gray-300 font-medium">{formatFileSize(file.size)}</span>
+                            <span className="text-[var(--app-text-primary)] font-medium">{formatFileSize(file.size)}</span>
                         </div>
 
-                        <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <FileType size={14} />
+                        <div className="flex items-center justify-between text-sm py-1">
+                            <div className="flex items-center gap-2 text-[var(--app-text-muted)]">
+                                <FileType size={14} className="opacity-70" />
                                 <span>{t('files.properties.type')}</span>
                             </div>
-                            <span className="text-gray-300 font-medium">{getFriendlyFileType(file.mimeType, file.fileType)}</span>
+                            <span className="text-[var(--app-text-primary)] font-medium">{getFriendlyFileType(file.mimeType, file.fileType)}</span>
                         </div>
 
-                        <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <Calendar size={14} />
+                        <div className="flex items-center justify-between text-sm py-1">
+                            <div className="flex items-center gap-2 text-[var(--app-text-muted)]">
+                                <Calendar size={14} className="opacity-70" />
                                 <span>{t('files.properties.created')}</span>
                             </div>
-                            <span className="text-gray-300 font-medium">{format(new Date(file.createdAt), 'dd.MM.yyyy', { locale: currentLocale })}</span>
+                            <span className="text-[var(--app-text-primary)] font-medium">{format(new Date(file.createdAt), 'dd.MM.yyyy', { locale: currentLocale })}</span>
                         </div>
 
-                        <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <Folder size={14} />
+                        <div className="flex items-center justify-between text-sm py-1">
+                            <div className="flex items-center gap-2 text-[var(--app-text-muted)]">
+                                <Folder size={14} className="opacity-70" />
                                 <span>{t('files.properties.location')}</span>
                             </div>
-                            <span className="text-gray-300 font-medium">{file.folderId ? t('files.messages.in_folder') : t('files.messages.root')}</span>
+                            <span className="text-[var(--app-text-primary)] font-medium">{file.folderId ? t('files.messages.in_folder') : t('files.messages.root')}</span>
                         </div>
 
                         {file.teamId && (
-                            <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2 text-gray-500">
-                                    <Users size={14} />
+                            <div className="flex items-center justify-between text-sm py-1">
+                                <div className="flex items-center gap-2 text-[var(--app-text-muted)]">
+                                    <Users size={14} className="opacity-70" />
                                     <span>{t('files.properties.team')}</span>
                                 </div>
-                                <span className="text-gray-300 font-medium font-mono text-xs">{file.teamId.slice(0, 12)}...</span>
+                                <span className="text-[var(--app-text-primary)] font-medium font-mono text-xs">{file.teamId.slice(0, 12)}...</span>
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 text-gray-500">
-                                <Hash size={14} />
+                        <div className="flex items-center justify-between text-sm py-1">
+                            <div className="flex items-center gap-2 text-[var(--app-text-muted)]">
+                                <Hash size={14} className="opacity-70" />
                                 <span>{t('files.properties.id')}</span>
                             </div>
-                            <span className="text-gray-500 font-mono text-xs">{file.id.slice(0, 12)}...</span>
+                            <span className="text-[var(--app-text-muted)] font-mono text-xs">{file.id.slice(0, 12)}...</span>
                         </div>
                     </div>
                 </div>

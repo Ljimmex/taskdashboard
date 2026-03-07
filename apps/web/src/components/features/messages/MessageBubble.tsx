@@ -76,13 +76,13 @@ export function MessageBubble({
                     // Fallback
                 }
             }
-            
+
             // Try to parse as encrypted packet (Legacy V1)
             try {
                 const packet = JSON.parse(content)
                 if (packet.v === '1' && packet.data && packet.key && packet.iv) {
-                     const allKeys = [privateKey, ...(historyKeys || [])].filter(Boolean) as CryptoKey[]
-                     if (allKeys.length === 0) return
+                    const allKeys = [privateKey, ...(historyKeys || [])].filter(Boolean) as CryptoKey[]
+                    if (allKeys.length === 0) return
 
                     decryptWithFallback(packet, allKeys)
                         .then(plainText => setDecryptedContent(plainText))
@@ -97,27 +97,27 @@ export function MessageBubble({
                 setDecryptedContent(content)
                 return
             }
-            
+
             // Fallback for string
             setDecryptedContent(content)
-        } 
+        }
         // Handle Object content (V2 Envelope)
         else if (typeof content === 'object' && content !== null && 'v' in content) {
-             const envelope = content as unknown as MessageEnvelope
-             if (envelope.v === 2) {
-                 if (!privateKey) {
-                      setDecryptedContent('🔒 ' + (t('messages.waitingForKey') || 'Waiting for key...'))
-                      return
-                 }
-                 decryptMessage(envelope, currentUserId, privateKey)
+            const envelope = content as unknown as MessageEnvelope
+            if (envelope.v === 2) {
+                if (!privateKey) {
+                    setDecryptedContent('🔒 ' + (t('messages.waitingForKey') || 'Waiting for key...'))
+                    return
+                }
+                decryptMessage(envelope, currentUserId, privateKey)
                     .then(plainText => setDecryptedContent(plainText))
                     .catch(err => {
-                         console.warn('V2 Decryption failed:', err)
-                         setDecryptedContent('🔒 ' + (t('messages.decryptionError') || 'Decryption failed'))
+                        console.warn('V2 Decryption failed:', err)
+                        setDecryptedContent('🔒 ' + (t('messages.decryptionError') || 'Decryption failed'))
                     })
-             } else {
-                 setDecryptedContent('Unknown message version')
-             }
+            } else {
+                setDecryptedContent('Unknown message version')
+            }
         } else {
             // Unknown type
             setDecryptedContent('Unsupported message format')
@@ -131,7 +131,7 @@ export function MessageBubble({
             setDecryptedReplyContent(null)
             return
         }
-        
+
         const content = replyToMessage.content
         const allKeys = [privateKey, ...(historyKeys || [])].filter(Boolean) as CryptoKey[]
 
@@ -139,7 +139,7 @@ export function MessageBubble({
         const setReply = (text: string) => setDecryptedReplyContent(text)
 
         if (typeof content === 'string') {
-             try {
+            try {
                 const packet = JSON.parse(content)
                 if (packet.v === '1' && allKeys.length > 0) {
                     decryptWithFallback(packet, allKeys)
@@ -153,14 +153,14 @@ export function MessageBubble({
             }
             setReply(content)
         } else if (typeof content === 'object' && content !== null && 'v' in content) {
-             const envelope = content as unknown as MessageEnvelope
-             if (envelope.v === 2 && privateKey) {
-                 decryptMessage(envelope, currentUserId, privateKey)
+            const envelope = content as unknown as MessageEnvelope
+            if (envelope.v === 2 && privateKey) {
+                decryptMessage(envelope, currentUserId, privateKey)
                     .then(setReply)
                     .catch(() => setReply('🔒 Encrypted Reply'))
-             } else {
-                 setReply('🔒 Encrypted Reply')
-             }
+            } else {
+                setReply('🔒 Encrypted Reply')
+            }
         }
 
     }, [replyToMessage, privateKey, historyKeys, currentUserId])
@@ -247,9 +247,9 @@ export function MessageBubble({
                 {/* Avatar */}
                 <div className="flex-shrink-0 -mb-1">
                     {senderAvatar ? (
-                        <img src={senderAvatar} alt={senderName} className="w-8 h-8 rounded-full object-cover ring-2 ring-[#13161c]" />
+                        <img src={senderAvatar} alt={senderName} className="w-8 h-8 rounded-full object-cover ring-2 ring-[var(--app-bg-card)]" />
                     ) : (
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-2 ring-[#13161c] ${isOwnMessage
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-2 ring-[var(--app-bg-card)] ${isOwnMessage
                             ? 'bg-gradient-to-br from-amber-500 to-orange-600'
                             : 'bg-gradient-to-br from-gray-700 to-gray-600'
                             }`}>
@@ -265,7 +265,7 @@ export function MessageBubble({
                     {(message as any).replyToId && !isDeleted && (
                         <div className={`
                             flex items-center gap-2 mb-1 px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-white/5 transition-colors
-                            ${isOwnMessage ? 'bg-[#2b2f3e]/50 text-gray-400 self-end mr-1' : 'bg-[#2b2f3e]/50 text-gray-400 self-start ml-1'}
+                            ${isOwnMessage ? 'bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] self-end mr-1' : 'bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] self-start ml-1'}
                          `}>
                             <div className="w-0.5 h-3 bg-amber-500 rounded-full"></div>
                             <span className="font-medium opacity-75">{t('messages.replyingToLabel')}</span>
@@ -282,7 +282,7 @@ export function MessageBubble({
                                 className={`
                                     absolute ${pickerPosition === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'} 
                                     ${isOwnMessage ? 'right-0' : 'left-0'} 
-                                    flex items-center bg-[#2b2f3e] rounded-full p-1 shadow-xl border border-gray-700 z-50 animate-in fade-in zoom-in duration-200
+                                    flex items-center bg-[var(--app-bg-card)] rounded-full p-1 shadow-xl border border-[var(--app-border)] z-50 animate-in fade-in zoom-in duration-200
                                 `}
                             >
                                 {QUICK_REACTIONS.map(emoji => (
@@ -319,7 +319,7 @@ export function MessageBubble({
                                 <button
                                     ref={reactButtonRef}
                                     onClick={() => setShowReactionPicker(!showReactionPicker)}
-                                    className={`p-1.5 rounded-full transition-colors ${showReactionPicker ? 'text-amber-500 bg-gray-800' : 'text-gray-500 hover:text-amber-500 hover:bg-gray-800'}`}
+                                    className={`p-1.5 rounded-full transition-colors ${showReactionPicker ? 'text-amber-500 bg-[var(--app-bg-elevated)]' : 'text-[var(--app-text-secondary)] hover:text-amber-500 hover:bg-[var(--app-bg-elevated)]'}`}
                                     title="React"
                                 >
                                     <Smile className="w-4 h-4" />
@@ -328,7 +328,7 @@ export function MessageBubble({
                                 {/* Reply Button */}
                                 <button
                                     onClick={() => onReply && onReply(decryptedContent)}
-                                    className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-800 rounded-full transition-colors"
+                                    className="p-1.5 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-full transition-colors"
                                     title="Reply"
                                 >
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -341,7 +341,7 @@ export function MessageBubble({
                                     <button
                                         ref={menuButtonRef}
                                         onClick={() => setShowMenu(!showMenu)}
-                                        className={`p-1.5 rounded-full transition-colors ${showMenu ? 'text-white bg-gray-800' : 'text-gray-500 hover:text-white hover:bg-gray-800'}`}
+                                        className={`p-1.5 rounded-full transition-colors ${showMenu ? 'text-[var(--app-text-primary)] bg-[var(--app-bg-elevated)]' : 'text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}
                                         title="More"
                                     >
                                         <MoreVertical className="w-4 h-4" />
@@ -353,12 +353,12 @@ export function MessageBubble({
                                             ref={menuRef}
                                             className={`
                                                 absolute top-full mt-2 left-1/2 -translate-x-1/2
-                                                bg-[#2b2f3e] rounded-lg shadow-xl z-50 py-1 min-w-[120px] flex flex-col
+                                                bg-[var(--app-bg-card)] rounded-lg shadow-xl z-50 py-1 min-w-[120px] flex flex-col border border-[var(--app-border)]
                                             `}
                                         >
                                             <button
                                                 onClick={() => { onPin && onPin(); setShowMenu(false) }}
-                                                className="px-4 py-2 text-left hover:bg-white/5 text-sm text-gray-300 hover:text-white flex items-center gap-2"
+                                                className="px-4 py-2 text-left hover:bg-white/5 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] flex items-center gap-2"
                                             >
                                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -368,7 +368,7 @@ export function MessageBubble({
                                             {isEditable && (
                                                 <button
                                                     onClick={() => { onEdit && onEdit(decryptedContent); setShowMenu(false) }}
-                                                    className="px-4 py-2 text-left hover:bg-white/5 text-sm text-gray-300 hover:text-white flex items-center gap-2"
+                                                    className="px-4 py-2 text-left hover:bg-white/5 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] flex items-center gap-2"
                                                 >
                                                     <Edit2 className="w-4 h-4" />
                                                     Edit
@@ -377,7 +377,7 @@ export function MessageBubble({
                                             {isDeletable && (
                                                 <button
                                                     onClick={() => { onDelete && onDelete(); setShowMenu(false) }}
-                                                    className="px-4 py-2 text-left hover:bg-white/5 text-sm text-gray-300 hover:text-white hover:bg-red-500/10 hover:text-red-400 flex items-center gap-2"
+                                                    className="px-4 py-2 text-left hover:bg-white/5 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-red-500/10 hover:text-red-400 flex items-center gap-2"
                                                 >
                                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -395,10 +395,10 @@ export function MessageBubble({
                         <div className={`
                             rounded-2xl shadow-sm relative text-[15px] leading-relaxed break-words whitespace-pre-wrap px-5 py-3
                             ${isDeleted
-                                ? 'bg-transparent text-gray-400 border border-gray-700 italic select-none py-2 px-4 rounded-full'
+                                ? 'bg-transparent text-[var(--app-text-muted)] border border-[var(--app-border)] italic select-none py-2 px-4 rounded-full'
                                 : isOwnMessage
-                                    ? 'bg-amber-600 text-white rounded-br-sm'
-                                    : 'bg-[#2b2f3e] text-gray-100 rounded-bl-sm border border-gray-700/50'
+                                    ? 'bg-amber-600 text-white rounded-br-sm shadow-amber-900/10'
+                                    : 'bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] rounded-bl-sm border border-[var(--app-border)]'
                             }
                         `}>
                             {(message as any).isPinned && !isDeleted && (
@@ -424,10 +424,10 @@ export function MessageBubble({
                                 <button
                                     key={emoji}
                                     onClick={() => onReact && onReact(emoji)}
-                                    className="flex items-center gap-1 bg-[#1a1a24] border border-gray-800 rounded-full px-2 py-0.5 text-xs hover:bg-gray-800 transition-colors"
+                                    className="flex items-center gap-1 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-full px-2 py-0.5 text-xs hover:bg-[var(--app-bg-elevated)] transition-colors"
                                 >
                                     <span>{emoji}</span>
-                                    {count > 1 && <span className="text-gray-500">{count}</span>}
+                                    {count > 1 && <span className="text-[var(--app-text-secondary)]">{count}</span>}
                                 </button>
                             ))}
                         </div>
@@ -436,7 +436,7 @@ export function MessageBubble({
             </div>
 
             {/* Timestamp + Edited Label + Status */}
-            <div className={`flex items-center gap-2 text-[11px] text-gray-500 mt-1.5 font-medium select-none ${isOwnMessage ? 'mr-12' : 'ml-12'}`}>
+            <div className={`flex items-center gap-2 text-[11px] text-[var(--app-text-secondary)] mt-1.5 font-medium select-none ${isOwnMessage ? 'mr-12' : 'ml-12'}`}>
                 {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true, locale })}
                 {message.edited && !isDeleted && (
                     <span className="italic opacity-60">{t('messages.edited')}</span>

@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePanelStore } from '../../../lib/panelStore'
 import { ChevronDoubleRightIcon } from '../tasks/components/TaskIcons'
-import { Upload, Trash2 } from 'lucide-react'
+import { Upload, Trash2, Loader2 } from 'lucide-react'
 import { useParams } from '@tanstack/react-router'
 import { useUploadFile, useCreateFolder } from '@/hooks/useFiles'
 import { useTranslation } from 'react-i18next'
@@ -364,34 +364,34 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
         <>
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 backdrop-blur-[2px] ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => !isUploading && onClose()}
             />
 
             {/* Panel - Side panel style like other panels */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
-                <div className="flex-none p-6 border-b border-gray-800">
+                <div className="flex-none p-6 border-b border-[var(--app-border)]/50">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => !isUploading && onClose()}
                             disabled={isUploading}
-                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
+                            className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors disabled:opacity-50"
                         >
                             <ChevronDoubleRightIcon />
                         </button>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">{t('files.messages.upload_files')}</h2>
-                            <p className="text-xs text-gray-500">{t('files.messages.add_files_desc')}</p>
+                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('files.messages.upload_files')}</h2>
+                            <p className="text-xs text-[var(--app-text-muted)]">{t('files.messages.add_files_desc')}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 p-6 overflow-y-auto">
+                <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
                     {/* Drop Zone */}
                     <div
                         ref={dropZoneRef}
@@ -402,18 +402,18 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                         className={`
                             relative flex flex-col items-center justify-center py-12 px-6 rounded-xl border-2 border-dashed cursor-pointer transition-all mb-6
                             ${isDragOver
-                                ? 'border-amber-500 bg-amber-500/10'
-                                : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/30'
+                                ? 'border-[var(--app-accent)] bg-[var(--app-accent)]/10'
+                                : 'border-[var(--app-border)]/50 bg-[var(--app-bg-input)] hover:border-[var(--app-accent)]/30 hover:bg-[var(--app-bg-elevated)]'
                             }
                         `}
                     >
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-colors ${isDragOver ? 'bg-amber-500/20' : 'bg-gray-800'}`}>
-                            <Upload className={`w-6 h-6 transition-colors ${isDragOver ? 'text-amber-500' : 'text-gray-400'}`} />
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-colors ${isDragOver ? 'bg-[var(--app-accent)]/20' : 'bg-[var(--app-bg-elevated)]'}`}>
+                            <Upload className={`w-6 h-6 transition-colors ${isDragOver ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'}`} />
                         </div>
-                        <p className="text-sm text-gray-400 text-center">
+                        <p className="text-sm text-[var(--app-text-secondary)] text-center">
                             {t('files.messages.drag_drop_files_folders')}
                         </p>
-                        <p className="text-sm text-amber-500 font-medium text-center mt-1">
+                        <p className="text-sm text-[var(--app-accent)] font-semibold text-center mt-1">
                             {t('files.messages.click_to_browse')}
                         </p>
                         <input
@@ -431,23 +431,23 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                             {queuedFiles.map((qFile) => (
                                 <div
                                     key={qFile.id}
-                                    className="flex items-center gap-3 p-3 rounded-xl bg-[#1a1a24] group"
+                                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)]/30 group"
                                 >
                                     {/* File Icon */}
-                                    <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-lg flex-shrink-0">
+                                    <div className="w-10 h-10 rounded-lg bg-[var(--app-bg-elevated)] border border-[var(--app-border)]/50 flex items-center justify-center text-lg flex-shrink-0">
                                         {getFileIcon(qFile.file)}
                                     </div>
 
                                     {/* File Info */}
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-white truncate" title={qFile.relativePath}>{qFile.relativePath}</p>
-                                        <p className="text-xs text-gray-500">{formatFileSize(qFile.file.size)}</p>
+                                        <p className="text-sm font-medium text-[var(--app-text-primary)] truncate" title={qFile.relativePath}>{qFile.relativePath}</p>
+                                        <p className="text-xs text-[var(--app-text-muted)]">{formatFileSize(qFile.file.size)}</p>
 
                                         {/* Progress Bar */}
                                         {qFile.status === 'uploading' && (
-                                            <div className="mt-1.5 h-1 bg-gray-700 rounded-full overflow-hidden">
+                                            <div className="mt-2 h-1.5 bg-[var(--app-bg-elevated)] rounded-full overflow-hidden">
                                                 <div
-                                                    className="h-full bg-amber-500 rounded-full transition-all duration-200"
+                                                    className="h-full bg-[var(--app-accent)] rounded-full transition-all duration-200 shadow-[0_0_8px_var(--app-accent)]"
                                                     style={{ width: `${qFile.progress}%` }}
                                                 />
                                             </div>
@@ -467,11 +467,8 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                                             </svg>
                                         </div>
                                     ) : qFile.status === 'uploading' ? (
-                                        <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                                            <svg className="w-4 h-4 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                            </svg>
+                                        <div className="w-8 h-8 rounded-lg bg-[var(--app-accent)]/10 flex items-center justify-center">
+                                            <Loader2 size={16} className="text-[var(--app-accent)] animate-spin" />
                                         </div>
                                     ) : qFile.status === 'error' ? (
                                         <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
@@ -482,7 +479,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                                     ) : (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); removeFile(qFile.id) }}
-                                            className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                                            className="w-8 h-8 rounded-lg bg-[var(--app-bg-elevated)] flex items-center justify-center text-[var(--app-text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -494,11 +491,11 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                 </div>
 
                 {/* Footer */}
-                <div className="flex-none p-6 border-t border-gray-800">
+                <div className="flex-none p-6 border-t border-[var(--app-border)]/50 bg-[var(--app-bg-deepest)]">
                     <button
                         onClick={handleUpload}
                         disabled={pendingCount === 0 || isUploading}
-                        className="w-full py-3 bg-[#F2CE88] text-[#0a0a0f] font-bold rounded-xl hover:bg-amber-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3.5 bg-[var(--app-accent)] text-white font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                     >
                         {isUploading ? t('files.picker.uploading') : pendingCount > 0 ? t('files.picker.upload_count', { count: pendingCount }) : t('files.actions.upload')}
                     </button>

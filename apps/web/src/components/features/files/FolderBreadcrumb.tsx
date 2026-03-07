@@ -52,16 +52,16 @@ function DroppableBreadcrumb({
 
     return (
         <div className="flex items-center gap-1">
-            {index > 0 && <ChevronRight size={14} className="text-gray-600" />}
+            {index > 0 && <ChevronRight size={14} className="text-[var(--app-text-muted)]" />}
             <button
                 onClick={onNavigate}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-colors ${isLast
-                    ? 'text-white font-medium'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    } ${isDragOver ? 'ring-2 ring-amber-500 bg-amber-500/20' : ''}`}
+                    ? 'text-[var(--app-text-primary)] font-medium'
+                    : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
+                    } ${isDragOver ? 'ring-2 ring-[var(--app-accent)] bg-[var(--app-accent)]/20' : ''}`}
             >
                 {index === 0 ? (
                     <Home size={14} />

@@ -247,7 +247,7 @@ export function ChatWindow({
     // EARLY UI RETURN (After all hooks)
     if (!recipientUserId) {
         return (
-            <div className="flex-1 flex items-center justify-center bg-[#1a1a24] text-gray-500">
+            <div className="flex-1 flex items-center justify-center bg-[var(--app-bg-card)] text-[var(--app-text-secondary)]">
                 {t('messages.selectMember')}
             </div>
         )
@@ -450,12 +450,12 @@ export function ChatWindow({
     }
 
     return (
-        <div className="flex-1 flex flex-col bg-[#1a1a24]">
+        <div className="flex-1 flex flex-col bg-[var(--app-bg-deepest)]">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-[#252530] flex items-center justify-between bg-[#1a1a24] relative z-20">
+            <div className="px-6 py-4 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-card)] relative z-20">
                 <div className="flex items-center gap-4">
                     {showSearch ? (
-                        <div className="flex items-center bg-[#1a1a24] rounded-lg px-3 py-2 border border-gray-700 w-full md:w-64 animate-in fade-in slide-in-from-left duration-200">
+                        <div className="flex items-center bg-[var(--app-bg-input)] rounded-lg px-3 py-2 border border-[var(--app-border)] w-full md:w-64 animate-in fade-in slide-in-from-left duration-200">
                             <Search className="w-4 h-4 text-gray-500 mr-2" />
                             <input
                                 autoFocus
@@ -484,11 +484,11 @@ export function ChatWindow({
                                     </div>
                                 )}
                                 {recipient?.isOnline && (
-                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1a1a24] rounded-full"></div>
+                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--app-bg-sidebar)] rounded-full"></div>
                                 )}
                             </div>
                             <div>
-                                <h2 className="font-semibold text-gray-100">
+                                <h2 className="font-semibold text-[var(--app-text-primary)]">
                                     {recipient?.name || t('messages.unknownUser')}
                                     {showPinnedOnly && <span className="ml-2 text-xs bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full border border-amber-500/20">{t('messages.pinnedOnly')}</span>}
                                 </h2>
@@ -502,18 +502,18 @@ export function ChatWindow({
                     )}
                 </div>
 
-                <div className="flex items-center gap-4 text-gray-400 relative">
-                    <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+                <div className="flex items-center gap-4 text-[var(--app-text-secondary)] relative">
+                    <button className="p-2 hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors">
                         <Phone className="w-5 h-5" />
                     </button>
-                    <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+                    <button className="p-2 hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors">
                         <Video className="w-5 h-5" />
                     </button>
                     <div className="relative">
                         <button
                             ref={menuButtonRef}
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className={`p-2 rounded-lg transition-colors ${isMenuOpen ? 'bg-gray-800 text-white' : 'hover:bg-gray-800'}`}
+                            className={`p-2 rounded-lg transition-colors ${isMenuOpen ? 'bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)]' : 'hover:bg-[var(--app-bg-elevated)]'}`}
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
@@ -522,7 +522,7 @@ export function ChatWindow({
                         {isMenuOpen && (
                             <div
                                 ref={menuRef}
-                                className="absolute right-0 top-full mt-2 w-56 bg-[#2b2f3e] border border-gray-700 rounded-lg shadow-xl z-50 py-1 flex flex-col animate-in fade-in zoom-in-95 duration-150"
+                                className="absolute right-0 top-full mt-2 w-56 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg shadow-xl z-50 py-1 flex flex-col animate-in fade-in zoom-in-95 duration-150"
                             >
                                 <button
                                     onClick={() => { setShowSearch(true); setIsMenuOpen(false) }}
@@ -703,14 +703,14 @@ export function ChatWindow({
                                         <div className="flex gap-3 max-w-[80%] flex-row relative">
                                             <div className="flex-shrink-0 self-end -mb-1">
                                                 {recipient?.avatar ? (
-                                                    <img src={recipient.avatar} alt={recipient.name} className="w-8 h-8 rounded-full object-cover ring-2 ring-[#1a1a24]" />
+                                                    <img src={recipient.avatar} alt={recipient.name} className="w-8 h-8 rounded-full object-cover ring-2 ring-[var(--app-bg-card)]" />
                                                 ) : (
-                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-2 ring-[#1a1a24] bg-gradient-to-br from-gray-700 to-gray-600">
+                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ring-2 ring-[var(--app-bg-card)] bg-gradient-to-br from-gray-700 to-gray-600">
                                                         {recipient?.name?.substring(0, 2).toUpperCase()}
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="rounded-2xl px-4 py-3 bg-[#2b2f3e] text-gray-100 rounded-bl-sm border border-gray-700/50 flex items-center gap-1">
+                                            <div className="rounded-2xl px-4 py-3 bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] rounded-bl-sm border border-[var(--app-border)] flex items-center gap-1">
                                                 <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                                                 <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                                                 <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"></div>

@@ -107,10 +107,10 @@ export function MessageInput({
     }
 
     return (
-        <div className="bg-[#1a1a24] p-4">
+        <div className="bg-[var(--app-bg-card)] p-4 border-t border-[var(--app-border)]">
             {/* Editing Context Banner */}
             {isEditing && (
-                <div className="flex items-center justify-between px-4 py-2 bg-[#12121a] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
+                <div className="flex items-center justify-between px-4 py-2 bg-[var(--app-bg-input)] border border-[var(--app-border)] text-sm mb-2 rounded-t-lg">
                     <div className="flex items-center gap-2 text-amber-500">
                         <span className="font-medium">{t('messages.editingMessage')}</span>
                     </div>
@@ -130,9 +130,9 @@ export function MessageInput({
 
             {/* Replying Context Banner */}
             {replyTo && (
-                <div className="flex items-center justify-between px-4 py-2 bg-[#12121a] border-b border-gray-800 text-sm mb-2 rounded-t-lg">
-                    <div className="flex items-center gap-2 text-gray-300">
-                        <span className="text-gray-500">{t('messages.replyingTo')} {replyTo.senderName}:</span>
+                <div className="flex items-center justify-between px-4 py-2 bg-[var(--app-bg-input)] border border-[var(--app-border)] text-sm mb-2 rounded-t-lg">
+                    <div className="flex items-center gap-2 text-[var(--app-text-secondary)]">
+                        <span className="text-[var(--app-text-muted)]">{t('messages.replyingTo')} {replyTo.senderName}:</span>
                         <span className="italic truncate max-w-[200px] opacity-75">{replyTo.content}</span>
                     </div>
                     <button
@@ -148,12 +148,12 @@ export function MessageInput({
                 </div>
             )}
 
-            <div className="flex items-end gap-3 bg-[#1a1a24] p-4">
+            <div className="flex items-end gap-3 bg-[var(--app-bg-card)]">
                 {/* Attachment Button */}
                 <div className="flex gap-2">
                     <button
                         type="button"
-                        className="p-2 hover:bg-gray-800/50 rounded-full transition-colors text-gray-400 hover:text-white"
+                        className="p-2 hover:bg-[var(--app-bg-elevated)] rounded-full transition-colors text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)]"
                         aria-label="Add attachment"
                         disabled
                         title="Coming soon"
@@ -161,11 +161,11 @@ export function MessageInput({
                         <Paperclip className="w-5 h-5" />
                     </button>
                     {/* Emoji Picker - Moved here */}
-                    <EmojiPicker onEmojiSelect={handleEmojiSelect} className="hover:bg-gray-800/50 rounded-full p-2 transition-colors text-gray-400 hover:text-amber-500" />
+                    <EmojiPicker onEmojiSelect={handleEmojiSelect} className="hover:bg-[var(--app-bg-elevated)] rounded-full p-2 transition-colors text-[var(--app-text-secondary)] hover:text-amber-500" />
                 </div>
 
                 {/* Input Container */}
-                <div className="flex-1 relative bg-[#12121a] rounded-2xl">
+                <div className="flex-1 relative bg-[var(--app-bg-input)] rounded-2xl border border-[var(--app-border)]">
                     <textarea
                         ref={textareaRef}
                         value={message}
@@ -174,7 +174,7 @@ export function MessageInput({
                         placeholder={placeholder === 'Type a message...' ? t('messages.typeMessage') : placeholder}
                         disabled={disabled || isSending}
                         rows={1}
-                        className="w-full resize-none bg-transparent border-none rounded-2xl pl-4 pr-10 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-0 max-h-32 overflow-y-auto disabled:cursor-not-allowed"
+                        className="w-full resize-none bg-transparent border-none rounded-2xl pl-4 pr-10 py-3 text-[var(--app-text-primary)] placeholder-gray-500 focus:outline-none focus:ring-0 max-h-32 overflow-y-auto disabled:cursor-not-allowed"
                         style={{ minHeight: '44px' }}
                     />
 
@@ -187,7 +187,7 @@ export function MessageInput({
                     className={`mb-1 p-2.5 text-white rounded-full transition-all shadow-lg hover:shadow-amber-900/20 ${isEditing
                         ? 'bg-blue-600 hover:bg-blue-500' // Blue for Edit Save
                         : 'bg-amber-600 hover:bg-amber-500' // Amber for Send
-                        } disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed`}
+                        } disabled:bg-[var(--app-bg-elevated)] disabled:text-[var(--app-text-muted)] disabled:cursor-not-allowed`}
                     aria-label={isEditing ? t('messages.save') : "Send message"}
                 >
                     {isEditing ? (

@@ -296,7 +296,7 @@ export function FileExplorer({
                     {userRole !== 'member' && (
                         <button
                             onClick={() => setIsCreateFolderOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white bg-[#1a1a24] hover:bg-gray-800 rounded-lg transition-colors"
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-card)] hover:bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-lg transition-colors"
                         >
                             <FolderPlus size={16} />
                             {t('files.actions.new_folder')}
@@ -327,7 +327,7 @@ export function FileExplorer({
                         {/* Folders Section */}
                         {filteredFolders && filteredFolders.length > 0 && (
                             <div>
-                                <h3 className="text-xs font-medium text-[#F2CE88] uppercase tracking-wider mb-4">{t('files.header.folders')}</h3>
+                                <h3 className="text-xs font-medium text-[var(--app-accent)] uppercase tracking-wider mb-4">{t('files.header.folders')}</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                                     {filteredFolders.map((folder: Folder) => (
                                         <FolderGridItem
@@ -347,7 +347,7 @@ export function FileExplorer({
                         {/* Files Section */}
                         {filteredFiles && filteredFiles.length > 0 && (
                             <div>
-                                <h3 className="text-xs font-medium text-[#F2CE88] uppercase tracking-wider mb-4">{t('files.header.files')}</h3>
+                                <h3 className="text-xs font-medium text-[var(--app-accent)] uppercase tracking-wider mb-4">{t('files.header.files')}</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                                     {filteredFiles.map((file: FileRecord) => (
                                         <FileGridItem

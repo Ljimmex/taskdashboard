@@ -29,7 +29,7 @@ export function ConversationItem({
     // Get last message
     const lastMessage = messages[messages.length - 1]
     const content = lastMessage?.content
-    const lastMessageText = typeof content === 'string' 
+    const lastMessageText = typeof content === 'string'
         ? (content.substring(0, 50) || t('messages.noMessagesYet'))
         : (content ? '🔒 Encrypted Message' : t('messages.noMessagesYet'))
 
@@ -41,8 +41,8 @@ export function ConversationItem({
         <button
             onClick={onClick}
             className={`
-                w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-800/30 transition-colors text-left border-l-4
-                ${isSelected ? 'bg-gray-800/50 border-amber-500' : 'border-transparent'}
+                w-full px-4 py-3 flex items-center gap-3 hover:bg-[var(--app-bg-elevated)]/30 transition-colors text-left border-l-4
+                ${isSelected ? 'bg-[var(--app-bg-elevated)]/50 border-amber-500' : 'border-transparent'}
             `}
         >
             {/* Avatar with online indicator */}
@@ -51,14 +51,14 @@ export function ConversationItem({
                     {conversation.name?.substring(0, 2).toUpperCase() || 'CH'}
                 </div>
                 {isOtherOnline && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#0f1419] rounded-full"></div>
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--app-bg-sidebar)] rounded-full"></div>
                 )}
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-gray-200 truncate">
+                    <h3 className="font-semibold text-[var(--app-text-primary)] truncate">
                         {conversation.name || t('messages.unnamedConversation')}
                     </h3>
                     {lastMessage && (

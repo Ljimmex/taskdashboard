@@ -123,29 +123,29 @@ export function FilePicker({ onSelect, onCancel, maxFiles = 1, allowedTypes, ini
 
     // Using relative z-10 so the modal is clickable and not obscured by the backdrop overlay.
     return (
-        <div className="relative z-10 flex flex-col h-[600px] w-full max-w-3xl bg-[#12121a] rounded-2xl border border-gray-800 shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                <h2 className="text-lg font-semibold text-white">{t('files.picker.title')}</h2>
+        <div className="relative z-10 flex flex-col h-[600px] w-full max-w-3xl bg-[var(--app-bg-card)] rounded-2xl border border-[var(--app-border)] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-[var(--app-border)]/50">
+                <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('files.picker.title')}</h2>
                 <button
                     onClick={onCancel}
-                    className="p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                    className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                 >
                     <X className="w-5 h-5" />
                 </button>
             </div>
 
             <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as 'select' | 'upload')} className="flex-1 flex flex-col overflow-hidden">
-                <div className="px-6 border-b border-gray-800">
+                <div className="px-6 border-b border-[var(--app-border)]/50">
                     <TabsList className="bg-transparent p-0 gap-6 h-auto">
                         <TabsTrigger
                             value="select"
-                            className="bg-transparent border-b-2 border-transparent data-[state=active]:border-amber-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-2 py-3 text-gray-300 data-[state=active]:text-amber-500 hover:text-white transition-colors font-medium"
+                            className="bg-transparent border-b-2 border-transparent data-[state=active]:border-[var(--app-accent)] data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-2 py-3 text-[var(--app-text-muted)] data-[state=active]:text-[var(--app-accent)] hover:text-[var(--app-text-primary)] transition-colors font-semibold"
                         >
                             {t('files.picker.select_mode')}
                         </TabsTrigger>
                         <TabsTrigger
                             value="upload"
-                            className="bg-transparent border-b-2 border-transparent data-[state=active]:border-amber-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-2 py-3 text-gray-300 data-[state=active]:text-amber-500 hover:text-white transition-colors font-medium"
+                            className="bg-transparent border-b-2 border-transparent data-[state=active]:border-[var(--app-accent)] data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-2 py-3 text-[var(--app-text-muted)] data-[state=active]:text-[var(--app-accent)] hover:text-[var(--app-text-primary)] transition-colors font-semibold"
                         >
                             {t('files.picker.upload_mode')}
                         </TabsTrigger>
@@ -154,24 +154,24 @@ export function FilePicker({ onSelect, onCancel, maxFiles = 1, allowedTypes, ini
 
                 <TabsContent value="select" className="flex-1 flex flex-col min-h-0 mt-0 data-[state=inactive]:hidden">
                     <div className="px-6 py-4 flex items-center gap-4">
-                        <div className="relative flex-1 flex items-center bg-[#1a1a24] border border-gray-700/50 rounded-lg h-10 px-3 focus-within:border-amber-500/50 focus-within:ring-1 focus-within:ring-amber-500/50 transition-all">
-                            <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                        <div className="relative flex-1 flex items-center bg-[var(--app-bg-input)] border border-[var(--app-border)]/50 rounded-xl h-11 px-3 focus-within:border-[var(--app-accent)]/50 focus-within:ring-2 focus-within:ring-[var(--app-accent)]/20 transition-all">
+                            <Search className="w-4 h-4 text-[var(--app-text-muted)] shrink-0" />
                             <input
                                 placeholder={t('files.picker.search_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-transparent border-none text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-0 ml-2"
+                                className="w-full bg-transparent border-none text-sm text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-0 ml-2"
                             />
                         </div>
-                        <div className="flex items-center gap-0.5 bg-[#1a1a24] border border-gray-700/50 rounded-lg p-1">
+                        <div className="flex items-center gap-1 bg-[var(--app-bg-input)] border border-[var(--app-border)]/50 rounded-xl p-1">
                             <button
-                                className={cn("p-1.5 rounded-md transition-colors", viewMode === 'grid' ? "bg-amber-500/10 text-amber-500" : "text-gray-400 hover:text-white hover:bg-gray-800")}
+                                className={cn("p-1.5 rounded-lg transition-all", viewMode === 'grid' ? "bg-[var(--app-accent)]/10 text-[var(--app-accent)] shadow-sm" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]")}
                                 onClick={() => setViewMode('grid')}
                             >
                                 <Grid className="w-4 h-4" />
                             </button>
                             <button
-                                className={cn("p-1.5 rounded-md transition-colors", viewMode === 'list' ? "bg-amber-500/10 text-amber-500" : "text-gray-400 hover:text-white hover:bg-gray-800")}
+                                className={cn("p-1.5 rounded-lg transition-all", viewMode === 'list' ? "bg-[var(--app-accent)]/10 text-[var(--app-accent)] shadow-sm" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]")}
                                 onClick={() => setViewMode('list')}
                             >
                                 <List className="w-4 h-4" />
@@ -179,17 +179,17 @@ export function FilePicker({ onSelect, onCancel, maxFiles = 1, allowedTypes, ini
                         </div>
                     </div>
 
-                    <ScrollArea className="flex-1">
-                        <div className="px-6 pb-6">
+                    <ScrollArea className="flex-1 px-1">
+                        <div className="px-5 pb-6">
                             {filteredFiles.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                                    <div className="w-16 h-16 rounded-full bg-[#1a1a24] flex items-center justify-center mb-4">
-                                        <Search className="w-8 h-8 text-gray-500" />
+                                    <div className="w-20 h-20 rounded-full bg-[var(--app-bg-elevated)] flex items-center justify-center mb-6 shadow-inner">
+                                        <Search className="w-10 h-10 text-[var(--app-text-muted)] opacity-50" />
                                     </div>
-                                    <p className="text-lg font-medium text-white mb-1">{t('files.picker.no_files')}</p>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-lg font-bold text-[var(--app-text-primary)] mb-2">{t('files.picker.no_files')}</p>
+                                    <p className="text-sm text-[var(--app-text-muted)] max-w-xs mx-auto">
                                         {files.length === 0
-                                            ? t('files.messages.drag_drop_desc') // Reuse or generic "Upload some files first"
+                                            ? t('files.messages.drag_drop_desc')
                                             : t('files.picker.adjust_search_query')}
                                     </p>
                                 </div>
@@ -217,21 +217,21 @@ export function FilePicker({ onSelect, onCancel, maxFiles = 1, allowedTypes, ini
                         </div>
                     </ScrollArea>
 
-                    <div className="p-4 border-t border-gray-800 bg-[#16161f] flex items-center justify-between">
-                        <div className="text-sm font-medium text-gray-300">
+                    <div className="p-4 px-6 border-t border-[var(--app-border)]/50 bg-[var(--app-bg-deepest)] flex items-center justify-between">
+                        <div className="text-sm font-semibold text-[var(--app-text-secondary)]">
                             {t('files.picker.selected', { count: selectedIds.size })}
                         </div>
                         <div className="flex gap-3">
                             <button
                                 onClick={onCancel}
-                                className="px-4 py-2 text-sm font-bold text-gray-300 hover:text-white transition-colors"
+                                className="px-4 py-2.5 text-sm font-bold text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-xl transition-all"
                             >
                                 {t('files.picker.cancel')}
                             </button>
                             <button
                                 onClick={handleConfirm}
                                 disabled={selectedIds.size === 0}
-                                className="px-4 py-2 text-sm font-medium bg-amber-500 text-black hover:bg-amber-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-4 py-2.5 text-sm font-bold bg-[var(--app-accent)] text-white hover:opacity-90 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm min-w-[100px]"
                             >
                                 {selectedIds.size > 0 ? t('files.picker.select_plural', { count: selectedIds.size }) : t('files.picker.select')}
                             </button>

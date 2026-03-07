@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, FileText, Palette, Search, Trash2, ArrowLeft } from 'lucide-react'
+import { Plus, FileText, Palette, Search, Trash2, ArrowLeft, Share2, Undo2, Redo2, MessageSquare, MoreVertical } from 'lucide-react'
 import { useWhiteboards, useCreateBoard, useDeleteBoard, useUpdateBoard } from '@/hooks/useWhiteboards'
 import { useDocuments, useCreateDocument, useDeleteDocument, useUpdateDocument } from '@/hooks/useDocuments'
 import { ExcalidrawBoard } from '@/components/features/whiteboards/ExcalidrawBoard'
@@ -47,6 +47,16 @@ function BoardPage() {
     const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null)
     const [isCreationModalOpen, setIsCreationModalOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
+    const [activeCollaborators, setActiveCollaborators] = useState<any[]>([])
+    const [characterCount, setCharacterCount] = useState(0)
+    const [isSaving, setIsSaving] = useState(false)
+    const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+    const [editorActions, setEditorActions] = useState({
+        canUndo: false,
+        canRedo: false,
+        undo: () => { },
+        redo: () => { },
+    })
 
     // Consolidate resources into one list
     const resources = useMemo(() => {
@@ -70,6 +80,7 @@ function BoardPage() {
     }, [whiteboards, documents])
 
     const selectedResource = resources.find(r => r.id === selectedResourceId)
+    const isWhiteboardSelected = selectedResource?.type === 'whiteboard'
 
     // Debounced updates
     const debouncedUpdateBoard = useCallback(
@@ -79,11 +90,43 @@ function BoardPage() {
         []
     )
 
-    const debouncedUpdateDoc = useCallback(
-        debounce((id: string, data: any) => {
-            updateDoc({ id, ...data })
-        }, 1000),
-        []
+    const debouncedUpdateDoc = useMemo(
+        () =>
+            debounce((id: string, data: any) => {
+                updateDoc(
+                    { id, ...data },
+                    {
+                        onSuccess: (updated) => {
+                            setLastSavedAt(new Date(updated.updatedAt))
+                            setIsSaving(false)
+                        },
+                        onError: () => {
+                            setIsSaving(false)
+                        },
+                    }
+                )
+            }, 900),
+        [updateDoc]
+    )
+
+    useEffect(() => {
+        return () => {
+            debouncedUpdateDoc.cancel()
+        }
+    }, [debouncedUpdateDoc])
+
+    useEffect(() => {
+        if (selectedResource?.type === 'doc' && selectedResource.updatedAt) {
+            setLastSavedAt(new Date(selectedResource.updatedAt))
+        }
+    }, [selectedResource?.id, selectedResource?.updatedAt, selectedResource?.type])
+
+    const queueDocSave = useCallback(
+        (id: string, data: any) => {
+            setIsSaving(true)
+            debouncedUpdateDoc(id, data)
+        },
+        [debouncedUpdateDoc]
     )
 
     const filteredResources = resources.filter(r =>
@@ -144,16 +187,18 @@ function BoardPage() {
     if (selectedResource) {
         return (
             <div className="flex flex-col h-full bg-[var(--app-bg-deepest)]">
-                <div className="flex-none px-6 py-3 flex items-center justify-between border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)]">
+                <div className={`flex-none ${isWhiteboardSelected ? 'h-14 px-3 bg-white dark:bg-[#2d2d44]' : 'px-6 py-3 bg-[var(--app-bg-sidebar)]'} flex items-center justify-between border-b border-[var(--app-border)]`}>
                     <div className="flex items-center gap-4 flex-1">
                         <button
                             onClick={() => setSelectedResourceId(null)}
-                            className="p-2 rounded-xl hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all flex items-center justify-center border border-transparent hover:border-[var(--app-border)] shadow-sm"
+                            className={`p-2 rounded-xl hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all flex items-center justify-center border border-transparent hover:border-[var(--app-border)] shadow-sm ${isWhiteboardSelected ? 'bg-white dark:bg-[#222236]' : ''}`}
                         >
                             <ArrowLeft size={20} />
                         </button>
                         <div className="flex items-center gap-2 flex-1">
-                            {selectedResource.type === 'doc' ? <FileText size={20} className="text-[var(--app-accent)]" /> : <Palette size={20} className="text-[var(--app-accent)]" />}
+                            {selectedResource.type === 'doc' ? <FileText size={20} className="text-[var(--app-accent)]" /> : (
+                                <div className="w-8 h-8 rounded-lg bg-[#f1f5f9] dark:bg-[#1d2434] text-[var(--app-text-primary)] flex items-center justify-center font-semibold text-sm">M</div>
+                            )}
                             <input
                                 type="text"
                                 value={selectedResource.name}
@@ -161,31 +206,84 @@ function BoardPage() {
                                     if (selectedResource.type === 'whiteboard') {
                                         debouncedUpdateBoard(selectedResource.id, { name: e.target.value })
                                     } else {
-                                        debouncedUpdateDoc(selectedResource.id, { title: e.target.value })
+                                        queueDocSave(selectedResource.id, { title: e.target.value })
                                     }
                                 }}
-                                className="text-xl font-bold bg-transparent border-none outline-none text-[var(--app-text-primary)] w-full focus:ring-0"
+                                className={`text-xl font-bold bg-transparent border-none outline-none text-[var(--app-text-primary)] w-full focus:ring-0 ${isWhiteboardSelected ? 'max-w-[420px]' : ''}`}
                             />
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)] px-2 py-1 rounded-full mr-4">
-                            {t('resources.auto_save')}
-                        </span>
-                        <button
-                            onClick={handleDelete}
-                            className="p-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
-                        >
-                            <Trash2 size={20} />
-                        </button>
+                    <div className="flex items-center gap-3">
+                        {selectedResource.type === 'doc' && (
+                            <>
+                                <button
+                                    onClick={editorActions.undo}
+                                    disabled={!editorActions.canUndo}
+                                    className="p-2 rounded-lg hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    title="Cofnij"
+                                >
+                                    <Undo2 size={18} />
+                                </button>
+                                <button
+                                    onClick={editorActions.redo}
+                                    disabled={!editorActions.canRedo}
+                                    className="p-2 rounded-lg hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    title="Ponów"
+                                >
+                                    <Redo2 size={18} />
+                                </button>
+                            </>
+                        )}
+                        {selectedResource.type === 'whiteboard' && (
+                            <>
+                                <div className="hidden md:flex items-center -space-x-2 mr-2">
+                                    {activeCollaborators.slice(0, 3).map((collab) => (
+                                        <div key={collab.userId} className="w-8 h-8 rounded-full border-2 border-white dark:border-[#2d2d44] bg-gray-600 overflow-hidden flex items-center justify-center text-[10px] font-bold text-white" style={{ backgroundColor: collab.color?.background }}>
+                                            {collab.avatarUrl ? (
+                                                <img src={collab.avatarUrl} alt={collab.username} className="w-full h-full rounded-full object-cover" />
+                                            ) : (
+                                                collab.username?.charAt(0) || '?'
+                                            )}
+                                        </div>
+                                    ))}
+                                    <div className="w-8 h-8 rounded-full border-2 border-dashed border-[var(--app-border)] bg-transparent ml-1" />
+                                </div>
+                                <button className="hidden md:flex p-2 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)]">
+                                    <MessageSquare size={18} />
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(window.location.href);
+                                        alert("Skopiowano link do tablicy!");
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-black text-white hover:bg-black/90 transition-colors"
+                                >
+                                    <Share2 size={14} />
+                                    <span>Share</span>
+                                </button>
+                                <button className="p-2 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)]">
+                                    <MoreVertical size={18} />
+                                </button>
+                            </>
+                        )}
+                        {!isWhiteboardSelected && (
+                            <button
+                                onClick={handleDelete}
+                                className="p-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
+                            >
+                                <Trash2 size={20} />
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="flex-1 relative overflow-hidden">
                     {selectedResource.type === 'whiteboard' ? (
                         <ExcalidrawBoard
                             key={selectedResource.id}
+                            boardId={selectedResource.id}
                             initialData={selectedResource.data}
                             onSave={(data) => debouncedUpdateBoard(selectedResource.id, { data })}
+                            onCollaboratorsChange={setActiveCollaborators}
                         />
                     ) : (
                         <div className="h-full overflow-y-auto custom-scrollbar bg-[var(--app-bg-page)] p-6">
@@ -193,12 +291,30 @@ function BoardPage() {
                                 <TiptapEditor
                                     key={selectedResource.id}
                                     content={selectedResource.content}
-                                    onChange={(content) => debouncedUpdateDoc(selectedResource.id, { content })}
+                                    onChange={(content) => queueDocSave(selectedResource.id, { content })}
+                                    onCharacterCountChange={setCharacterCount}
+                                    onEditorActionsChange={setEditorActions}
                                 />
                             </div>
                         </div>
                     )}
                 </div>
+                {!isWhiteboardSelected && (
+                    <div className="flex-none h-8 border-t border-[var(--app-border)] bg-[var(--app-bg-card)] px-4 text-xs text-[var(--app-text-muted)] flex items-center justify-between">
+                        <span>Ostatnia edycja: {format(lastSavedAt ? new Date(lastSavedAt) : new Date(selectedResource.updatedAt), 'd MMM yyyy, HH:mm')}</span>
+                        <span>{characterCount} znaków</span>
+                        <span>{isSaving ? 'Zapisywanie...' : 'Zapisano automatycznie'}</span>
+                    </div>
+                )}
+                {isWhiteboardSelected && (
+                    <div className="flex-none h-8 border-t border-[var(--app-border)] bg-[var(--app-bg-card)] px-4 text-xs text-[var(--app-text-muted)] flex items-center justify-between">
+                        <span>Last saved: {format(new Date(selectedResource.updatedAt), 'HH:mm')}</span>
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            Connected • {activeCollaborators.length} online
+                        </span>
+                    </div>
+                )}
             </div>
         )
     }

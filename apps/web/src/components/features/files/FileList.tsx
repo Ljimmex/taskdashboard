@@ -126,30 +126,30 @@ export function FileList({
     const canManageFolder = userRole !== 'member'
 
     return (
-        <div className="rounded-xl bg-[#1a1a24] overflow-hidden">
+        <div className="rounded-xl bg-[var(--app-bg-card)] border border-[var(--app-border)] overflow-hidden">
             <table className="w-full">
                 <thead>
-                    <tr className="border-b border-gray-800/50">
+                    <tr className="border-b border-[var(--app-border)]/50">
                         <th
-                            className="w-[50%] px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                            className="w-[50%] px-4 py-3 text-left text-xs font-medium text-[var(--app-text-muted)] uppercase tracking-wider cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                             onClick={() => onSort('name')}
                         >
                             <div className="flex items-center">{t('files.sort.name')} {renderSortIcon('name')}</div>
                         </th>
                         <th
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                            className="px-4 py-3 text-left text-xs font-medium text-[var(--app-text-muted)] uppercase tracking-wider cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                             onClick={() => onSort('size')}
                         >
                             <div className="flex items-center">{t('files.sort.size')} {renderSortIcon('size')}</div>
                         </th>
                         <th
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                            className="px-4 py-3 text-left text-xs font-medium text-[var(--app-text-muted)] uppercase tracking-wider cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                             onClick={() => onSort('type')}
                         >
                             <div className="flex items-center">{t('files.sort.type')} {renderSortIcon('type')}</div>
                         </th>
                         <th
-                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                            className="px-4 py-3 text-left text-xs font-medium text-[var(--app-text-muted)] uppercase tracking-wider cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                             onClick={() => onSort('date')}
                         >
                             <div className="flex items-center">{t('files.properties.modified')} {renderSortIcon('date')}</div>
@@ -161,54 +161,54 @@ export function FileList({
                     {folders.map(folder => (
                         <tr
                             key={folder.id}
-                            className="cursor-pointer hover:bg-[#1e1e29] transition-colors"
+                            className="cursor-pointer border-b border-[var(--app-border)]/30 hover:bg-[var(--app-bg-elevated)] transition-colors"
                             onClick={() => onNavigate(folder.id)}
                         >
                             <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                                        <FolderIcon className="h-4 w-4 text-amber-500 fill-amber-500/20" />
+                                    <div className="w-9 h-9 rounded-lg bg-[var(--app-accent)]/10 flex items-center justify-center">
+                                        <FolderIcon className="h-4 w-4 text-[var(--app-accent)] fill-[var(--app-accent)]/20" />
                                     </div>
-                                    <span className="text-sm font-medium text-white">{folder.name}</span>
+                                    <span className="text-sm font-medium text-[var(--app-text-primary)]">{folder.name}</span>
                                 </div>
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-500">{formatSize((folder as any).size)}</td>
-                            <td className="px-4 py-3 text-sm text-gray-500">{t('files.types.folder')}</td>
-                            <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(folder.updatedAt || folder.createdAt), 'dd MMM, yyyy', { locale: currentLocale })}</td>
+                            <td className="px-4 py-3 text-sm text-[var(--app-text-muted)]">{formatSize((folder as any).size)}</td>
+                            <td className="px-4 py-3 text-sm text-[var(--app-text-muted)]">{t('files.types.folder')}</td>
+                            <td className="px-4 py-3 text-sm text-[var(--app-text-muted)]">{format(new Date(folder.updatedAt || folder.createdAt), 'dd MMM, yyyy', { locale: currentLocale })}</td>
                             <td className="px-4 py-3" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-white hover:bg-gray-800">
+                                        <Button variant="ghost" className="h-8 w-8 p-0 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]">
                                             <span className="sr-only">Open menu</span>
                                             <MoreHorizontal className="h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
+                                    <DropdownMenuContent align="end" className="w-40 bg-[var(--app-bg-card)] border-[var(--app-border)] p-1">
                                         {canManageFolder && (
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                <Pencil className="h-4 w-4 text-amber-500" />
+                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                <Pencil className="h-4 w-4 text-[var(--app-accent)]" />
                                                 <span>{t('files.actions.edit')}</span>
                                             </DropdownMenuItem>
                                         )}
                                         {canManageFolder && (
                                             <>
-                                                <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                    <Copy className="h-4 w-4 text-gray-400" />
+                                                <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                    <Copy className="h-4 w-4 text-[var(--app-text-muted)]" />
                                                     <span>{t('files.actions.duplicate')}</span>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                    <Archive className="h-4 w-4 text-gray-400" />
+                                                <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                    <Archive className="h-4 w-4 text-[var(--app-text-muted)]" />
                                                     <span>{t('files.actions.archive')}</span>
                                                 </DropdownMenuItem>
                                             </>
                                         )}
-                                        <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                            <Info className="h-4 w-4 text-gray-400" />
+                                        <DropdownMenuItem onClick={(e) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                            <Info className="h-4 w-4 text-[var(--app-text-muted)]" />
                                             <span>{t('files.actions.info')}</span>
                                         </DropdownMenuItem>
                                         {canManageFolder && (
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                <Trash2 className="h-4 w-4 text-amber-600" />
+                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 rounded-md cursor-pointer">
+                                                <Trash2 className="h-4 w-4 text-amber-500" />
                                                 <span>{t('files.actions.delete')}</span>
                                             </DropdownMenuItem>
                                         )}
@@ -223,73 +223,76 @@ export function FileList({
                         const iconColor = getFileColor(file.mimeType)
 
                         return (
-                            <tr key={file.id} className="cursor-pointer hover:bg-[#1e1e29] transition-colors" onClick={() => onInfo?.(file.id)} onDoubleClick={(e) => { e.stopPropagation(); onOpen?.(file.id) }}>
+                            <tr key={file.id} className="cursor-pointer border-b border-[var(--app-border)]/30 hover:bg-[var(--app-bg-elevated)] transition-colors" onClick={() => onInfo?.(file.id)} onDoubleClick={(e) => { e.stopPropagation(); onOpen?.(file.id) }}>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-lg bg-[#12121a] flex items-center justify-center">
+                                        <div className="w-9 h-9 rounded-lg bg-[var(--app-bg-input)] flex items-center justify-center border border-[var(--app-border)]/50">
                                             <FileTypeIcon className={`h-4 w-4 ${iconColor}`} />
                                         </div>
-                                        <span className="text-sm font-medium text-white">{file.name}</span>
+                                        <span className="text-sm font-medium text-[var(--app-text-primary)]">{file.name}</span>
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 text-sm text-gray-500">{formatSize(file.size)}</td>
-                                <td className="px-4 py-3 text-sm text-gray-500">
+                                <td className="px-4 py-3 text-sm text-[var(--app-text-muted)]">{formatSize(file.size)}</td>
+                                <td className="px-4 py-3 text-sm text-[var(--app-text-muted)]">
                                     {getFriendlyFileType(file.mimeType)}
                                 </td>
-                                <td className="px-4 py-3 text-sm text-gray-500">
+                                <td className="px-4 py-3 text-sm text-[var(--app-text-muted)]">
                                     {format(new Date(file.updatedAt || file.createdAt), 'dd MMM, yyyy', { locale: currentLocale })}
                                 </td>
                                 <td className="px-4 py-3">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-white hover:bg-gray-800">
+                                            <Button variant="ghost" className="h-8 w-8 p-0 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]">
                                                 <span className="sr-only">Open menu</span>
                                                 <MoreHorizontal className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
-                                            {/* Open / View */}
-                                            {onOpen && (
-                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onOpen(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                    <Eye className="h-4 w-4 text-blue-400" />
-                                                    <span>{t('files.actions.open', 'Open')}</span>
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canManageFile && (
-                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                    <Pencil className="h-4 w-4 text-amber-500" />
-                                                    <span>{t('files.actions.edit')}</span>
-                                                </DropdownMenuItem>
-                                            )}
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDownload(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                <Download className="h-4 w-4 text-gray-400" />
+                                        <DropdownMenuContent align="end" className="w-40 bg-[var(--app-bg-card)] border-[var(--app-border)] p-1">
+                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onOpen?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                <Eye className="h-4 w-4 text-[var(--app-text-muted)]" />
+                                                <span>{t('files.actions.open')}</span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDownload(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                <Download className="h-4 w-4 text-[var(--app-text-muted)]" />
                                                 <span>{t('files.actions.download')}</span>
                                             </DropdownMenuItem>
+                                            <div className="h-px bg-[var(--app-border)]/50 my-1"></div>
+                                            {canManageFile && (
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                    <Pencil className="h-4 w-4 text-[var(--app-accent)]" />
+                                                    <span>{t('files.actions.rename')}</span>
+                                                </DropdownMenuItem>
+                                            )}
+                                            {onArchive && canManageFile && (
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                    <Archive className="h-4 w-4 text-[var(--app-text-muted)]" />
+                                                    <span>{t('files.actions.archive')}</span>
+                                                </DropdownMenuItem>
+                                            )}
                                             {canManageFile && (
                                                 <>
-                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                        <Copy className="h-4 w-4 text-gray-400" />
+                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                        <Copy className="h-4 w-4 text-[var(--app-text-muted)]" />
                                                         <span>{t('files.actions.duplicate')}</span>
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMove(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                        <FolderOpen className="h-4 w-4 text-gray-400" />
+                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMove(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                        <FolderOpen className="h-4 w-4 text-[var(--app-text-muted)]" />
                                                         <span>{t('files.actions.move')}</span>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                        <Archive className="h-4 w-4 text-gray-400" />
-                                                        <span>{t('files.actions.archive')}</span>
                                                     </DropdownMenuItem>
                                                 </>
                                             )}
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onInfo?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                <Info className="h-4 w-4 text-gray-400" />
+                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onInfo?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                                <Info className="h-4 w-4 text-[var(--app-text-muted)]" />
                                                 <span>{t('files.actions.info')}</span>
                                             </DropdownMenuItem>
                                             {canManageFile && (
-                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                                    <Trash2 className="h-4 w-4 text-amber-600" />
-                                                    <span>{t('files.actions.delete')}</span>
-                                                </DropdownMenuItem>
+                                                <>
+                                                    <div className="h-px bg-[var(--app-border)]/50 my-1"></div>
+                                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(file.id) }} className="flex items-center gap-3 px-3 py-2 text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 rounded-md cursor-pointer">
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span>{t('files.actions.delete')}</span>
+                                                    </DropdownMenuItem>
+                                                </>
                                             )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -300,7 +303,7 @@ export function FileList({
 
                     {folders.length === 0 && files.length === 0 && (
                         <tr>
-                            <td colSpan={5} className="h-24 text-center text-gray-500">
+                            <td colSpan={5} className="h-24 text-center text-[var(--app-text-muted)]">
                                 {t('files.picker.no_files')}
                             </td>
                         </tr>

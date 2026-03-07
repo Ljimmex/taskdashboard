@@ -82,7 +82,7 @@ export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDown
             userRole={userRole}
         >
             <div
-                className="group relative flex flex-col rounded-xl bg-[#1a1a24] overflow-hidden transition-all hover:bg-[#1e1e29] cursor-pointer"
+                className="group relative flex flex-col rounded-xl bg-[var(--app-bg-card)] border border-[var(--app-border)] overflow-hidden transition-all hover:bg-[var(--app-bg-elevated)] cursor-pointer"
                 onClick={() => onClick?.(file.id)}
                 onDoubleClick={(e) => { e.stopPropagation(); onOpen?.(file.id) }}
                 draggable={userRole !== 'member'}
@@ -93,7 +93,7 @@ export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDown
                 }}
             >
                 {/* Thumbnail / Icon Area - Fixed aspect ratio */}
-                <div className="relative aspect-[4/3] w-full bg-[#12121a] flex items-center justify-center overflow-hidden">
+                <div className="relative aspect-[4/3] w-full bg-[var(--app-bg-deepest)] flex items-center justify-center overflow-hidden">
                     {isImage && file.thumbnailUrl ? (
                         <img src={file.thumbnailUrl} alt={file.name} className="object-cover w-full h-full" />
                     ) : (
@@ -104,47 +104,47 @@ export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDown
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="secondary" size="icon" className="h-7 w-7 bg-[#1a1a24]/90 backdrop-blur-sm hover:bg-gray-800">
-                                    <MoreVertical className="h-4 w-4 text-gray-400" />
+                                <Button variant="secondary" size="icon" className="h-7 w-7 bg-[var(--app-bg-card)]/90 backdrop-blur-sm hover:bg-[var(--app-bg-elevated)] border border-[var(--app-border)]/50">
+                                    <MoreVertical className="h-4 w-4 text-[var(--app-text-muted)]" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
+                            <DropdownMenuContent align="end" className="w-40 bg-[var(--app-bg-card)] border-[var(--app-border)] p-1">
                                 {/* Open / View */}
                                 {onOpen && (
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onOpen(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                        <Eye className="h-4 w-4 text-blue-400" />
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onOpen(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                        <Eye className="h-4 w-4 text-blue-500" />
                                         <span>{t('files.actions.open', 'Open')}</span>
                                     </DropdownMenuItem>
                                 )}
                                 {userRole !== 'member' && (
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
                                         <Pencil className="h-4 w-4 text-amber-500" />
                                         <span>{t('files.actions.edit')}</span>
                                     </DropdownMenuItem>
                                 )}
                                 {userRole !== 'member' && (
                                     <>
-                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                            <Copy className="h-4 w-4 text-gray-400" />
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                            <Copy className="h-4 w-4 text-[var(--app-text-muted)]" />
                                             <span>{t('files.actions.duplicate')}</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMove(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                            <FolderOpen className="h-4 w-4 text-gray-400" />
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMove(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                            <FolderOpen className="h-4 w-4 text-[var(--app-text-muted)]" />
                                             <span>{t('files.actions.move')}</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                            <Archive className="h-4 w-4 text-gray-400" />
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                            <Archive className="h-4 w-4 text-[var(--app-text-muted)]" />
                                             <span>{t('files.actions.archive')}</span>
                                         </DropdownMenuItem>
                                     </>
                                 )}
-                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onInfo?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                    <Info className="h-4 w-4 text-gray-400" />
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onInfo?.(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                    <Info className="h-4 w-4 text-[var(--app-text-muted)]" />
                                     <span>{t('files.actions.info')}</span>
                                 </DropdownMenuItem>
                                 {userRole !== 'member' && (
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(file.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                        <Trash2 className="h-4 w-4 text-amber-600" />
+                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(file.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                        <Trash2 className="h-4 w-4 text-red-500" />
                                         <span>{t('files.actions.delete')}</span>
                                     </DropdownMenuItem>
                                 )}
@@ -154,14 +154,14 @@ export function FileGridItem({ file, onClick, onRename, onDelete, onMove, onDown
                 </div>
 
                 {/* File Info */}
-                <div className="p-3 space-y-2 bg-[#1a1a24]">
+                <div className="p-3 space-y-2 bg-[var(--app-bg-card)] border-t border-[var(--app-border)]">
                     <div className="flex items-center gap-2">
                         <FileTypeIcon className={`h-4 w-4 flex-shrink-0 ${iconColor}`} />
-                        <p className="text-sm font-medium text-white truncate" title={file.name}>
+                        <p className="text-sm font-medium text-[var(--app-text-primary)] truncate" title={file.name}>
                             {file.name}
                         </p>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-[var(--app-text-muted)]">
                         <span>{formatSize(file.size)}</span>
                         <span>{format(new Date(file.createdAt), 'dd.MM.yyyy', { locale: currentLocale })}</span>
                     </div>
@@ -221,20 +221,20 @@ export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileD
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`group relative flex flex-col rounded-xl bg-[#1a1a24] p-4 transition-all hover:bg-[#1e1e29] cursor-pointer ${isDragOver ? 'ring-2 ring-amber-500 bg-amber-500/10' : ''}`}
+                className={`group relative flex flex-col rounded-xl bg-[var(--app-bg-card)] border border-[var(--app-border)] p-4 transition-all hover:bg-[var(--app-bg-elevated)] cursor-pointer ${isDragOver ? 'ring-2 ring-[var(--app-accent)] bg-[var(--app-accent)]/10' : ''}`}
             >
                 {/* Folder Icon */}
                 <div className="mb-3">
-                    <FolderIcon className="h-10 w-10 text-amber-500 fill-amber-500/20" />
+                    <FolderIcon className="h-10 w-10 text-[var(--app-accent)] fill-[var(--app-accent)]/20" />
                 </div>
 
                 {/* Folder Name */}
-                <p className="text-sm font-medium text-white truncate mb-2" title={folder.name}>
+                <p className="text-sm font-medium text-[var(--app-text-primary)] truncate mb-2" title={folder.name}>
                     {folder.name}
                 </p>
 
                 {/* Size and Date */}
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs text-[var(--app-text-muted)]">
                     <span>{formatSize((folder as any).size)}</span>
                     <span>{format(new Date(folder.updatedAt || folder.createdAt), 'dd.MM.yyyy', { locale: currentLocale })}</span>
                 </div>
@@ -243,11 +243,11 @@ export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileD
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-white hover:bg-gray-800" onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]" onClick={(e) => e.stopPropagation()}>
                                 <MoreVertical className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40 bg-[#1a1a24] border-gray-800 p-1">
+                        <DropdownMenuContent align="end" className="w-40 bg-[var(--app-bg-card)] border-[var(--app-border)] p-1">
                             {userRole !== 'member' && (
                                 <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
                                     <Pencil className="h-4 w-4 text-amber-500" />

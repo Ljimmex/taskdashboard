@@ -98,7 +98,7 @@ export function ConversationList({
         }) || []
 
     return (
-        <div className="w-80 bg-[#12121a] flex flex-col h-full border-r border-[#1a1a24]">
+        <div className="w-80 bg-[var(--app-bg-sidebar)] flex flex-col h-full border-r border-[var(--app-border)]">
             {/* Header */}
             <div className="p-4">
                 {/* Search + Sort */}
@@ -119,7 +119,7 @@ export function ConversationList({
                             placeholder={t('messages.searchTeam')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50 text-sm"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-gray-500 focus:outline-none focus:border-amber-500/50 text-sm border border-[var(--app-border)]"
                         />
                     </div>
 
@@ -127,14 +127,14 @@ export function ConversationList({
                     <div className="relative" ref={sortDropdownRef}>
                         <button
                             onClick={() => setShowSortDropdown(!showSortDropdown)}
-                            className="px-3 py-2.5 rounded-xl bg-[#1a1a24] text-gray-400 hover:border-amber-500/50 transition-colors text-sm flex items-center gap-1.5 whitespace-nowrap"
+                            className="px-3 py-2.5 rounded-xl bg-[var(--app-bg-card)] text-[var(--app-text-secondary)] border border-[var(--app-border)] hover:border-amber-500/50 transition-colors text-sm flex items-center gap-1.5 whitespace-nowrap"
                         >
                             <span className="text-gray-500">{t('messages.sortBy')}</span>
                             <span className="text-amber-500">{sortBy === 'date' ? t('messages.date') : t('messages.name')}</span>
                             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} />
                         </button>
                         {showSortDropdown && (
-                            <div className="absolute right-0 top-12 w-36 bg-[#1a1f2e] rounded-lg shadow-2xl overflow-hidden z-50 border border-gray-800">
+                            <div className="absolute right-0 top-12 w-36 bg-[var(--app-bg-card)] rounded-lg shadow-2xl overflow-hidden z-50 border border-[var(--app-border)]">
                                 <div className="py-1">
                                     <button
                                         onClick={() => {
@@ -200,8 +200,8 @@ export function ConversationList({
                                 key={member.id}
                                 onClick={() => onSelectConversation(member.id)}
                                 className={`
-                                w-full px-4 py-3 flex items-center gap-3 hover:bg-[#1a1a24] transition-colors text-left border-l-4
-                                ${selectedConversationId === member.id ? 'bg-[#1a1a24] border-amber-500' : 'border-transparent'}
+                                w-full px-4 py-3 flex items-center gap-3 hover:bg-[var(--app-bg-elevated)] transition-colors text-left border-l-4
+                                ${selectedConversationId === member.id ? 'bg-[var(--app-bg-elevated)] border-amber-500' : 'border-transparent'}
                             `}
                             >
                                 {/* Avatar with glowing online indicator */}
@@ -217,13 +217,13 @@ export function ConversationList({
                                             {member.name.substring(0, 2).toUpperCase()}
                                         </div>
                                     )}
-                                    <div className={`absolute bottom-0 right-0 w-3 h-3 ${statusColor} border-2 border-[#12121a] rounded-full transition-all duration-300 ${glowClass}`}></div>
+                                    <div className={`absolute bottom-0 right-0 w-3 h-3 ${statusColor} border-2 border-[var(--app-bg-sidebar)] rounded-full transition-all duration-300 ${glowClass}`}></div>
                                 </div>
 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-0.5">
-                                        <h3 className={`font-semibold truncate pr-2 ${unreadCount > 0 ? 'text-white' : 'text-gray-200'}`}>
+                                        <h3 className={`font-semibold truncate pr-2 ${unreadCount > 0 ? 'text-[var(--app-text-primary)]' : 'text-[var(--app-text-primary)]'}`}>
                                             {member.name}
                                         </h3>
                                         {/* Timestamp: Show last message time if exists, else last active */}

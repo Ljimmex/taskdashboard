@@ -50,37 +50,37 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
         <>
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/40 z-50 backdrop-blur-[2px] animate-in fade-in duration-200"
                 onClick={onClose}
             />
 
             {/* Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="relative w-full max-w-md bg-[#16161f] rounded-2xl shadow-2xl overflow-hidden">
+                <div className="relative w-full max-w-md bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border)]/50">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                                <FolderOpen className="w-5 h-5 text-amber-400" />
+                            <div className="w-10 h-10 rounded-xl bg-[var(--app-accent)]/10 flex items-center justify-center">
+                                <FolderOpen className="w-5 h-5 text-[var(--app-accent)]" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-semibold text-white">{t('files.modals.move.title')}</h2>
-                                <p className="text-xs text-gray-500 truncate max-w-[200px]">{fileName}</p>
+                                <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('files.modals.move.title')}</h2>
+                                <p className="text-xs text-[var(--app-text-muted)] truncate max-w-[200px]">{fileName}</p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                            className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors"
                         >
                             <X size={20} />
                         </button>
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 max-h-[400px] overflow-y-auto">
+                    <div className="p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
                         {isLoading ? (
                             <div className="flex items-center justify-center py-8">
-                                <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+                                <Loader2 className="h-6 w-6 animate-spin text-[var(--app-accent)]" />
                             </div>
                         ) : (
                             <div className="space-y-2">
@@ -88,17 +88,17 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                                 <button
                                     onClick={() => setSelectedFolderId(null)}
                                     disabled={currentFolderId === null}
-                                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${selectedFolderId === null
-                                        ? 'bg-amber-500/20 border-amber-500/50 border'
-                                        : 'bg-[#1a1a24] border border-gray-800 hover:border-gray-700'
+                                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all border ${selectedFolderId === null
+                                        ? 'bg-[var(--app-accent)]/10 border-[var(--app-accent)]/50'
+                                        : 'bg-[var(--app-bg-input)] border-[var(--app-border)]/50 hover:border-[var(--app-accent)]/30 hover:bg-[var(--app-bg-elevated)]'
                                         } ${currentFolderId === null ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
-                                    <Home className={`h-5 w-5 ${selectedFolderId === null ? 'text-amber-400' : 'text-gray-500'}`} />
-                                    <span className={selectedFolderId === null ? 'text-white font-medium' : 'text-gray-300'}>
+                                    <Home className={`h-5 w-5 ${selectedFolderId === null ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'}`} />
+                                    <span className={selectedFolderId === null ? 'text-[var(--app-text-primary)] font-medium' : 'text-[var(--app-text-secondary)]'}>
                                         {t('files.modals.move.root')}
                                     </span>
                                     {currentFolderId === null && (
-                                        <span className="ml-auto text-xs text-gray-500">{t('files.modals.move.current')}</span>
+                                        <span className="ml-auto text-xs text-[var(--app-text-muted)]">{t('files.modals.move.current')}</span>
                                     )}
                                 </button>
 
@@ -108,23 +108,23 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                                         key={folder.id}
                                         onClick={() => setSelectedFolderId(folder.id)}
                                         disabled={folder.id === currentFolderId}
-                                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${selectedFolderId === folder.id
-                                            ? 'bg-amber-500/20 border-amber-500/50 border'
-                                            : 'bg-[#1a1a24] border border-gray-800 hover:border-gray-700'
+                                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all border ${selectedFolderId === folder.id
+                                            ? 'bg-[var(--app-accent)]/10 border-[var(--app-accent)]/50'
+                                            : 'bg-[var(--app-bg-input)] border-[var(--app-border)]/50 hover:border-[var(--app-accent)]/30 hover:bg-[var(--app-bg-elevated)]'
                                             } ${folder.id === currentFolderId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                     >
-                                        <Folder className={`h-5 w-5 ${selectedFolderId === folder.id ? 'text-amber-400' : 'text-amber-500/70'}`} />
-                                        <span className={selectedFolderId === folder.id ? 'text-white font-medium' : 'text-gray-300'}>
+                                        <Folder className={`h-5 w-5 ${selectedFolderId === folder.id ? 'text-[var(--app-accent)]' : 'text-[var(--app-accent)]/60'}`} />
+                                        <span className={selectedFolderId === folder.id ? 'text-[var(--app-text-primary)] font-medium' : 'text-[var(--app-text-secondary)]'}>
                                             {folder.name}
                                         </span>
                                         {folder.id === currentFolderId && (
-                                            <span className="ml-auto text-xs text-gray-500">{t('files.modals.move.current')}</span>
+                                            <span className="ml-auto text-xs text-[var(--app-text-muted)]">{t('files.modals.move.current')}</span>
                                         )}
                                     </button>
                                 ))}
 
                                 {(!folders || folders.length === 0) && (
-                                    <div className="text-center py-8 text-gray-500 text-sm">
+                                    <div className="text-center py-8 text-[var(--app-text-muted)] text-sm">
                                         {t('files.modals.move.no_folders')}
                                     </div>
                                 )}
@@ -133,18 +133,18 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-3 px-6 py-4 border-t border-gray-800">
+                    <div className="flex gap-3 px-6 py-4 border-t border-[var(--app-border)]/50 bg-[var(--app-bg-gray)]">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2.5 text-gray-400 bg-[#1a1a24] rounded-xl font-medium hover:text-white hover:bg-gray-800 transition-colors"
+                            className="flex-1 px-4 py-2.5 text-[var(--app-text-muted)] bg-[var(--app-bg-input)] border border-[var(--app-border)]/50 rounded-xl font-medium hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors"
                         >
                             {t('files.modals.move.cancel')}
                         </button>
                         <button
                             onClick={handleMove}
                             disabled={selectedFolderId === undefined || moveFile.isPending || (selectedFolderId === null && currentFolderId === null)}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 text-black rounded-xl font-medium hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--app-accent)] text-white rounded-xl font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                         >
                             {moveFile.isPending ? (
                                 <>

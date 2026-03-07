@@ -19,7 +19,7 @@ export function ProjectCard({
     onViewProject,
 }: ProjectCardProps) {
     return (
-        <div className="rounded-2xl bg-[var(--app-bg-elevated)] p-5 relative transition-all duration-300">
+        <div className="rounded-2xl bg-[var(--app-bg-elevated)] border border-[var(--app-border)] shadow-sm p-5 relative transition-all duration-300">
             {/* Header with icon and title */}
             <div className="flex items-start gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-lg">
@@ -85,7 +85,7 @@ export function ProjectCard({
 
                 <button
                     onClick={onViewProject}
-                    className="px-3 py-1.5 rounded-lg bg-[var(--app-bg-page)] text-xs text-[var(--app-text-primary)] border border-[var(--app-border)] hover:bg-[var(--app-accent)] hover:text-white hover:border-[var(--app-accent)] dark:hover:text-black transition-all shadow-sm font-medium"
+                    className="px-3 py-1.5 rounded-lg bg-[var(--app-bg-card)] text-xs text-[var(--app-text-primary)] border border-[var(--app-border)] hover:bg-[var(--app-accent)] hover:text-white hover:border-[var(--app-accent)] dark:hover:text-black transition-all shadow-sm font-medium"
                 >
                     View project
                 </button>

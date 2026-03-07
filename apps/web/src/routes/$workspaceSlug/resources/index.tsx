@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useCallback } from 'react'
-import { Plus, Search, FileText, Trash2 } from 'lucide-react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { Plus, Search, FileText, Trash2, Undo2, Redo2 } from 'lucide-react'
 import { useDocuments, useCreateDocument, useDeleteDocument, useUpdateDocument } from '@/hooks/useDocuments'
 import { useCreateBoard } from '@/hooks/useWhiteboards'
 import { TiptapEditor } from '@/components/features/docs/TiptapEditor'
@@ -10,7 +10,7 @@ import { pl } from 'date-fns/locale'
 import { debounce } from 'lodash'
 import { useNavigate } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/$workspaceSlug/docs/')({
+export const Route = createFileRoute('/$workspaceSlug/resources/')({
     component: DocsPage,
 })
 
@@ -27,15 +27,55 @@ function DocsPage() {
     const [isCreationModalOpen, setIsCreationModalOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [characterCount, setCharacterCount] = useState(0)
+    const [isSaving, setIsSaving] = useState(false)
+    const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+    const [editorActions, setEditorActions] = useState({
+        canUndo: false,
+        canRedo: false,
+        undo: () => { },
+        redo: () => { },
+    })
 
     const selectedDoc = documents?.find(d => d.id === selectedDocId)
 
     // Debounced update function
-    const debouncedUpdate = useCallback(
-        debounce((id: string, data: any) => {
-            updateDoc({ id, ...data })
-        }, 1000),
-        []
+    const debouncedUpdate = useMemo(
+        () =>
+            debounce((id: string, data: any) => {
+                updateDoc(
+                    { id, ...data },
+                    {
+                        onSuccess: (updated) => {
+                            setLastSavedAt(new Date(updated.updatedAt))
+                            setIsSaving(false)
+                        },
+                        onError: () => {
+                            setIsSaving(false)
+                        },
+                    }
+                )
+            }, 900),
+        [updateDoc]
+    )
+
+    useEffect(() => {
+        return () => {
+            debouncedUpdate.cancel()
+        }
+    }, [debouncedUpdate])
+
+    useEffect(() => {
+        if (selectedDoc?.updatedAt) {
+            setLastSavedAt(new Date(selectedDoc.updatedAt))
+        }
+    }, [selectedDoc?.id, selectedDoc?.updatedAt])
+
+    const queueSave = useCallback(
+        (id: string, data: any) => {
+            setIsSaving(true)
+            debouncedUpdate(id, data)
+        },
+        [debouncedUpdate]
     )
 
     const filteredDocs = documents?.filter(d =>
@@ -123,7 +163,7 @@ function DocsPage() {
                         >
                             <div className="flex items-center gap-2">
                                 <FileText size={16} className={selectedDocId === doc.id ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'} />
-                                <span className={`text-sm font-medium truncate ${selectedDocId === doc.id ? 'text-[var(--app-text-primary)]' : 'text-[var(--app-text-secondary)]'}`}>
+                                <span className={`text-sm font-medium truncate ${selectedDocId === doc.id ? `text-[var(--app-text-primary)]` : `text-[var(--app-text-secondary)]`}`}>
                                     {doc.title || 'Bez tytułu'}
                                 </span>
                             </div>
@@ -153,8 +193,24 @@ function DocsPage() {
                                 type="text"
                                 className="text-2xl font-semibold bg-transparent border-none outline-none text-[var(--app-text-primary)] w-full focus:ring-0"
                                 value={selectedDoc.title}
-                                onChange={(e) => debouncedUpdate(selectedDoc.id, { title: e.target.value })}
+                                onChange={(e) => queueSave(selectedDoc.id, { title: e.target.value })}
                             />
+                            <button
+                                onClick={editorActions.undo}
+                                disabled={!editorActions.canUndo}
+                                className="p-2 rounded-lg hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                title="Cofnij"
+                            >
+                                <Undo2 size={18} />
+                            </button>
+                            <button
+                                onClick={editorActions.redo}
+                                disabled={!editorActions.canRedo}
+                                className="p-2 rounded-lg hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                title="Ponów"
+                            >
+                                <Redo2 size={18} />
+                            </button>
                             <button
                                 onClick={() => {
                                     if (confirm('Czy na pewno chcesz usunąć ten dokument?')) {
@@ -172,15 +228,16 @@ function DocsPage() {
                             <TiptapEditor
                                 key={selectedDoc.id} // Important: remount editor when changing doc
                                 content={selectedDoc.content}
-                                onChange={(content) => debouncedUpdate(selectedDoc.id, { content })}
+                                onChange={(content) => queueSave(selectedDoc.id, { content })}
                                 onCharacterCountChange={setCharacterCount}
+                                onEditorActionsChange={setEditorActions}
                             />
                         </div>
                         <div className="mt-4">
                             <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-card)] px-4 py-2.5 flex items-center justify-between text-xs text-[var(--app-text-secondary)]">
-                                <span>Ostatnia edycja: {format(new Date(selectedDoc.updatedAt), 'd MMM yyyy, HH:mm', { locale: pl })}</span>
+                                <span>Ostatnia edycja: {format(lastSavedAt ? new Date(lastSavedAt) : new Date(selectedDoc.updatedAt), 'd MMM yyyy, HH:mm', { locale: pl })}</span>
                                 <span>{characterCount} znaków</span>
-                                <span className="font-medium text-[var(--app-text-muted)]">Zapisywane automatycznie</span>
+                                <span className="font-medium text-[var(--app-text-muted)]">{isSaving ? 'Zapisywanie...' : 'Zapisano automatycznie'}</span>
                             </div>
                         </div>
                     </div>

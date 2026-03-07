@@ -1,0 +1,280 @@
+/* =============================================================================
+   EXCALIDRAW CUSTOM THEME OVERRIDES
+   ============================================================================= */
+
+.excalidrawWrapper {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--app-bg-deepest);
+    overflow: hidden;
+}
+
+/* Theme Variables Bridge - Applies to both Light and Dark using standard App App styles */
+.excalidrawWrapper :global(.excalidraw) {
+    --color-primary: var(--app-accent);
+    --color-primary-light: color-mix(in srgb, var(--app-accent) 20%, transparent);
+    --color-primary-darker: var(--app-accent-hover);
+    --color-primary-darkest: var(--app-accent-hover);
+
+    /* Text */
+    --text-primary-color: var(--app-text-primary);
+
+    /* Borders */
+    --sidebar-border-color: var(--app-border);
+    --border-color: var(--app-border);
+    --color-border: var(--app-border);
+
+    /* Glass Panels */
+    --island-bg-color: color-mix(in srgb, var(--app-bg-card) 90%, transparent) !important;
+    --popup-bg-color: color-mix(in srgb, var(--app-bg-elevated) 95%, transparent) !important;
+    --popover-bg: color-mix(in srgb, var(--app-bg-elevated) 95%, transparent) !important;
+    --sidebar-bg-color: var(--app-bg-sidebar) !important;
+
+    /* UI Backgrounds */
+    --color-bg-1: var(--app-bg-deepest) !important;
+    --color-bg-2: var(--app-bg-sidebar) !important;
+    --color-bg-3: var(--app-bg-card) !important;
+    --color-bg-4: var(--app-bg-elevated) !important;
+
+    /* Shared Interactive Styles */
+    --button-hover-bg: color-mix(in srgb, var(--app-text-primary) 6%, transparent);
+}
+
+/* Dark Mode Specific Overrides */
+.excalidrawWrapper.dark :global(.excalidraw) {
+    --color-surface-lowest: rgba(255, 255, 255, 0.02);
+    --color-surface-low: rgba(255, 255, 255, 0.04);
+    --color-surface-mid: rgba(255, 255, 255, 0.06);
+    --color-surface-high: rgba(255, 255, 255, 0.08);
+    --color-surface-highest: rgba(255, 255, 255, 0.12);
+}
+
+/* Light Mode Specific Overrides */
+.excalidrawWrapper:not(.dark) :global(.excalidraw) {
+    --color-surface-lowest: rgba(0, 0, 0, 0.02);
+    --color-surface-low: rgba(0, 0, 0, 0.04);
+    --color-surface-mid: rgba(0, 0, 0, 0.06);
+    --color-surface-high: rgba(0, 0, 0, 0.08);
+    --color-surface-highest: rgba(0, 0, 0, 0.12);
+}
+
+/* =============================================================================
+   Specific UI Overrides to match the modern/glassy style
+   ============================================================================= */
+
+/* Glassmorphism on Island Panes */
+.excalidrawWrapper :global(.excalidraw .Island),
+.excalidrawWrapper :global(.excalidraw .App-bottom-bar),
+.excalidrawWrapper :global(.excalidraw .layer-ui__wrapper .zen-mode-transition),
+.excalidrawWrapper :global(.excalidraw .sidebar) {
+    border-radius: 16px !important;
+    border: 1px solid var(--app-border) !important;
+    background-color: color-mix(in srgb, var(--app-bg-card) 85%, transparent) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    transition: background 0.2s ease, transform 0.2s ease !important;
+}
+
+/* 
+ * HIDE NATIVE TOOLBAR
+ * We are using our own custom floating toolbar instead
+ */
+.excalidrawWrapper :global(.excalidraw .App-toolbar-container) {
+    display: none !important;
+}
+
+/* Hide the unused right part of the top menu to remove Library overlap for now as user requested custom share */
+.excalidrawWrapper :global(.excalidraw .App-menu_top__right) {
+    display: none !important;
+}
+
+/* Keep the hamburger menu / left part at the top left */
+.excalidrawWrapper :global(.excalidraw .App-menu_top__left) {
+    background-color: color-mix(in srgb, var(--app-bg-card) 85%, transparent) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--app-border) !important;
+    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.1) !important;
+    padding: 2px !important;
+}
+
+/* Ensure the top menu container itself doesn't block clicks in the center */
+.excalidrawWrapper :global(.excalidraw .App-menu_top) {
+    pointer-events: none !important;
+}
+
+.excalidrawWrapper :global(.excalidraw .App-menu_top > *) {
+    pointer-events: auto !important;
+}
+
+/* Remove default background from properties panel */
+.excalidrawWrapper :global(.excalidraw .p-1) {
+    background: transparent !important;
+}
+
+/* =============================================================================
+   CUSTOM BOTTOM RIGHT CONTROLS
+   Move native bottom-left (zoom, undo/redo) to bottom-right
+   ============================================================================= */
+
+/* =============================================================================
+   CUSTOM BOTTOM RIGHT CONTROLS
+   Move native footer controls to bottom-right
+   ============================================================================= */
+
+/* Main wrappers for bottom elements */
+.excalidrawWrapper :global(.excalidraw .App-bottom-bar),
+.excalidrawWrapper :global(.excalidraw .layer-ui__wrapper__footer-left) {
+    position: absolute !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    left: auto !important;
+    top: auto !important;
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    align-items: flex-end !important;
+    gap: 12px !important;
+    z-index: 50 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+/* Make sure child elements are clickable */
+.excalidrawWrapper :global(.excalidraw .App-bottom-bar > *),
+.excalidrawWrapper :global(.excalidraw .layer-ui__wrapper__footer-left > *) {
+    pointer-events: auto !important;
+}
+
+/* Zoom Actions Box */
+.excalidrawWrapper :global(.excalidraw .zoom-actions) {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    background-color: color-mix(in srgb, var(--app-bg-card) 95%, transparent) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid var(--app-border) !important;
+    border-radius: 14px !important;
+    padding: 4px !important;
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.3) !important;
+    margin: 0 !important;
+}
+
+/* Hide the middle percentage text in zoom */
+.excalidrawWrapper :global(.excalidraw .zoom-actions .zoom-reset-button) {
+    display: none !important;
+}
+
+/* Undo Redo Box */
+.excalidrawWrapper :global(.excalidraw .undo-redo-buttons),
+.excalidrawWrapper :global(.excalidraw .App-bottom-bar > div:not(.zoom-actions)) {
+    display: flex !important;
+    flex-direction: row !important;
+    background-color: color-mix(in srgb, var(--app-bg-card) 95%, transparent) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid var(--app-border) !important;
+    border-radius: 14px !important;
+    padding: 4px !important;
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.3) !important;
+    margin: 0 !important;
+}
+
+/* Clean up native button backgrounds inside the boxes */
+.excalidrawWrapper :global(.excalidraw .App-bottom-bar button),
+.excalidrawWrapper :global(.excalidraw .layer-ui__wrapper__footer-left button) {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    width: 2.2rem !important;
+    height: 2.2rem !important;
+    margin: 0 !important;
+}
+
+.excalidrawWrapper :global(.excalidraw .App-bottom-bar button:hover),
+.excalidrawWrapper :global(.excalidraw .layer-ui__wrapper__footer-left button:hover) {
+    background-color: color-mix(in srgb, var(--app-text-primary) 8%, transparent) !important;
+}
+
+/* Center bottom footer right element if it exists */
+.excalidrawWrapper :global(.excalidraw .layer-ui__wrapper__footer-right),
+.excalidrawWrapper :global(.excalidraw .FixedSideContainer--bottom-right) {
+    position: absolute !important;
+    bottom: 24px !important;
+    right: 170px !important;
+    z-index: 50 !important;
+}
+
+/* Remove Excalidraw hints/text that get stuck in the middle */
+.excalidrawWrapper :global(.excalidraw .App-menu__left > p),
+.excalidrawWrapper :global(.excalidraw .FixedSideContainer .hint) {
+    display: none !important;
+}
+
+/* Ensure zen mode button doesn't look weird */
+.excalidrawWrapper :global(.excalidraw .layer-ui__wrapper .zen-mode-transition) {
+    margin-bottom: 24px !important;
+    margin-right: 24px !important;
+}
+
+/* =============================================================================
+   Rounded Buttons & Icons
+   ============================================================================= */
+
+.excalidrawWrapper :global(.excalidraw .ToolIcon__icon) {
+    border-radius: 8px !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    margin: 2px !important;
+    width: 2rem !important;
+    height: 2rem !important;
+}
+
+/* Hover effect for generic buttons */
+.excalidrawWrapper :global(.excalidraw .ToolIcon_type_button:hover .ToolIcon__icon) {
+    background-color: color-mix(in srgb, var(--app-text-primary) 8%, transparent) !important;
+}
+
+/* Active/Checked State - Use full accent color */
+.excalidrawWrapper :global(.excalidraw .ToolIcon_type_radio:checked + .ToolIcon__icon),
+.excalidrawWrapper :global(.excalidraw .ToolIcon_type_checkbox:checked + .ToolIcon__icon),
+.excalidrawWrapper :global(.excalidraw .ToolIcon_type_button:active .ToolIcon__icon),
+.excalidrawWrapper :global(.excalidraw .ToolIcon_type_button.active .ToolIcon__icon),
+.excalidrawWrapper :global(.excalidraw .App-toolbar .ToolIcon_type_button.is-locked .ToolIcon__icon) {
+    background-color: var(--app-accent) !important;
+    color: var(--app-accent-text) !important;
+    box-shadow: 0 2px 8px -1px color-mix(in srgb, var(--app-accent) 50%, transparent) !important;
+}
+
+/* Style for input fields inside panels */
+.excalidrawWrapper :global(.excalidraw input[type='text']),
+.excalidrawWrapper :global(.excalidraw input[type='number']) {
+    border-radius: 8px !important;
+    background-color: color-mix(in srgb, var(--app-bg-deepest) 50%, transparent) !important;
+    border: 1px solid var(--app-border) !important;
+    color: var(--app-text-primary) !important;
+}
+
+/* Main Menu Overrides */
+.excalidrawWrapper :global(.excalidraw .dropdown-menu) {
+    background: color-mix(in srgb, var(--app-bg-elevated) 95%, transparent) !important;
+    border: 1px solid var(--app-border) !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(20px) !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2) !important;
+}
+
+.excalidrawWrapper :global(.excalidraw .dropdown-menu-item) {
+    border-radius: 8px !important;
+    margin: 2px 6px !important;
+    color: var(--app-text-primary) !important;
+}
+
+.excalidrawWrapper :global(.excalidraw .dropdown-menu-item:hover) {
+    background-color: color-mix(in srgb, var(--app-text-primary) 5%, transparent) !important;
+}
