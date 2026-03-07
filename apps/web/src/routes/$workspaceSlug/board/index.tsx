@@ -7,6 +7,7 @@ import { useDocuments, useCreateDocument, useDeleteDocument, useUpdateDocument }
 import { ExcalidrawBoard } from '@/components/features/whiteboards/ExcalidrawBoard'
 import { TiptapEditor } from '@/components/features/docs/TiptapEditor'
 import { CreationSidePanel } from '@/components/features/shared/CreationSidePanel'
+import { useSession } from '@/lib/auth'
 import { format } from 'date-fns'
 import { debounce } from 'lodash'
 import * as locales from 'date-fns/locale'
@@ -29,6 +30,8 @@ interface Resource {
 function BoardPage() {
     const { t, i18n } = useTranslation()
     const { workspaceSlug } = Route.useParams()
+    const { data: session } = useSession()
+    const user = session?.user
 
     // Fetch both types of resources
     const { data: whiteboards, isLoading: isWhiteboardsLoading } = useWhiteboards(workspaceSlug)
@@ -57,6 +60,7 @@ function BoardPage() {
         undo: () => { },
         redo: () => { },
     })
+    const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false)
 
     // Consolidate resources into one list
     const resources = useMemo(() => {
@@ -187,11 +191,11 @@ function BoardPage() {
     if (selectedResource) {
         return (
             <div className="flex flex-col h-full bg-[var(--app-bg-deepest)]">
-                <div className={`flex-none ${isWhiteboardSelected ? 'h-14 px-3 bg-white dark:bg-[#2d2d44]' : 'px-6 py-3 bg-[var(--app-bg-sidebar)]'} flex items-center justify-between border-b border-[var(--app-border)]`}>
+                <div className="flex-none h-14 px-3 bg-[var(--app-bg-sidebar)] flex items-center justify-between border-b border-[var(--app-border)]">
                     <div className="flex items-center gap-4 flex-1">
                         <button
                             onClick={() => setSelectedResourceId(null)}
-                            className={`p-2 rounded-xl hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all flex items-center justify-center border border-transparent hover:border-[var(--app-border)] shadow-sm ${isWhiteboardSelected ? 'bg-white dark:bg-[#222236]' : ''}`}
+                            className="p-2 rounded-xl hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all flex items-center justify-center border border-transparent hover:border-[var(--app-border)] shadow-sm bg-[var(--app-bg-elevated)]/50"
                         >
                             <ArrowLeft size={20} />
                         </button>
@@ -209,71 +213,91 @@ function BoardPage() {
                                         queueDocSave(selectedResource.id, { title: e.target.value })
                                     }
                                 }}
-                                className={`text-xl font-bold bg-transparent border-none outline-none text-[var(--app-text-primary)] w-full focus:ring-0 ${isWhiteboardSelected ? 'max-w-[420px]' : ''}`}
+                                className="text-xl font-bold bg-transparent border-none outline-none text-[var(--app-text-primary)] w-full focus:ring-0 max-w-[420px]"
                             />
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        {selectedResource.type === 'doc' && (
-                            <>
-                                <button
-                                    onClick={editorActions.undo}
-                                    disabled={!editorActions.canUndo}
-                                    className="p-2 rounded-lg hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                    title="Cofnij"
-                                >
-                                    <Undo2 size={18} />
-                                </button>
-                                <button
-                                    onClick={editorActions.redo}
-                                    disabled={!editorActions.canRedo}
-                                    className="p-2 rounded-lg hover:bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                    title="Ponów"
-                                >
-                                    <Redo2 size={18} />
-                                </button>
-                            </>
-                        )}
-                        {selectedResource.type === 'whiteboard' && (
-                            <>
-                                <div className="hidden md:flex items-center -space-x-2 mr-2">
-                                    {activeCollaborators.slice(0, 3).map((collab) => (
-                                        <div key={collab.userId} className="w-8 h-8 rounded-full border-2 border-white dark:border-[#2d2d44] bg-gray-600 overflow-hidden flex items-center justify-center text-[10px] font-bold text-white" style={{ backgroundColor: collab.color?.background }}>
-                                            {collab.avatarUrl ? (
-                                                <img src={collab.avatarUrl} alt={collab.username} className="w-full h-full rounded-full object-cover" />
-                                            ) : (
-                                                collab.username?.charAt(0) || '?'
-                                            )}
+                        <>
+                            <div className="hidden md:flex items-center -space-x-2 mr-2">
+                                {activeCollaborators.slice(0, 5).map((collab) => (
+                                    <div
+                                        key={collab.userId || collab.name}
+                                        className="w-8 h-8 rounded-full border-2 border-[var(--app-bg-sidebar)] bg-gray-600 overflow-hidden flex items-center justify-center text-[10px] font-bold text-white relative group"
+                                        style={{ backgroundColor: collab.color?.background || collab.color }}
+                                        title={collab.username || collab.name}
+                                    >
+                                        {collab.avatarUrl ? (
+                                            <img src={collab.avatarUrl} alt={collab.username || collab.name} className="w-full h-full rounded-full object-cover" />
+                                        ) : (
+                                            (collab.username || collab.name || '?').charAt(0).toUpperCase()
+                                        )}
+                                    </div>
+                                ))}
+                                {activeCollaborators.length > 5 && (
+                                    <div className="relative group">
+                                        <div className="w-8 h-8 rounded-full border-2 border-[var(--app-bg-sidebar)] bg-[var(--app-bg-card)] flex items-center justify-center text-[10px] font-bold text-[var(--app-text-secondary)]">
+                                            +{activeCollaborators.length - 5}
                                         </div>
-                                    ))}
+                                        <div className="absolute top-full right-0 mt-2 p-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 flex flex-col gap-1">
+                                            {activeCollaborators.slice(5).map(c => (
+                                                <div key={c.userId || c.name} className="text-xs text-[var(--app-text-primary)] flex items-center gap-2">
+                                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: c.color?.background || c.color }} />
+                                                    {c.username || c.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {activeCollaborators.length === 0 && (
                                     <div className="w-8 h-8 rounded-full border-2 border-dashed border-[var(--app-border)] bg-transparent ml-1" />
-                                </div>
-                                <button className="hidden md:flex p-2 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)]">
-                                    <MessageSquare size={18} />
-                                </button>
+                                )}
+                            </div>
+                            <button className="hidden md:flex p-2 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)]">
+                                <MessageSquare size={18} />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(window.location.href);
+                                    alert("Skopiowano link!");
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[var(--app-accent)] text-[var(--app-accent-text)] hover:brightness-110 transition-all font-bold"
+                            >
+                                <Share2 size={14} />
+                                <span>Share</span>
+                            </button>
+
+                            {/* Dropdown Menu for More Options */}
+                            <div className="relative">
                                 <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(window.location.href);
-                                        alert("Skopiowano link do tablicy!");
-                                    }}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-black text-white hover:bg-black/90 transition-colors"
+                                    onClick={() => setIsOptionsMenuOpen(!isOptionsMenuOpen)}
+                                    className="p-2 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)]"
                                 >
-                                    <Share2 size={14} />
-                                    <span>Share</span>
-                                </button>
-                                <button className="p-2 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)]">
                                     <MoreVertical size={18} />
                                 </button>
-                            </>
-                        )}
-                        {!isWhiteboardSelected && (
-                            <button
-                                onClick={handleDelete}
-                                className="p-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
-                            >
-                                <Trash2 size={20} />
-                            </button>
-                        )}
+
+                                {isOptionsMenuOpen && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-40"
+                                            onClick={() => setIsOptionsMenuOpen(false)}
+                                        />
+                                        <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-card)] shadow-[var(--app-shadow-card)] overflow-hidden z-50 py-1">
+                                            <button
+                                                onClick={() => {
+                                                    setIsOptionsMenuOpen(false);
+                                                    handleDelete();
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-500/10 transition-colors text-left"
+                                            >
+                                                <Trash2 size={16} />
+                                                <span>{t('resources.delete', { defaultValue: 'Usuń' })}</span>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </>
                     </div>
                 </div>
                 <div className="flex-1 relative overflow-hidden">
@@ -286,17 +310,43 @@ function BoardPage() {
                             onCollaboratorsChange={setActiveCollaborators}
                         />
                     ) : (
-                        <div className="h-full overflow-y-auto custom-scrollbar bg-[var(--app-bg-page)] p-6">
-                            <div className="max-w-5xl mx-auto">
-                                <TiptapEditor
-                                    key={selectedResource.id}
-                                    content={selectedResource.content}
-                                    onChange={(content) => queueDocSave(selectedResource.id, { content })}
-                                    onCharacterCountChange={setCharacterCount}
-                                    onEditorActionsChange={setEditorActions}
-                                />
+                        <>
+                            <div className="h-full overflow-y-auto custom-scrollbar bg-[var(--app-bg-page)] p-6">
+                                <div className="max-w-5xl mx-auto">
+                                    <TiptapEditor
+                                        key={selectedResource.id}
+                                        documentId={selectedResource.id}
+                                        user={user}
+                                        onCollaboratorsChange={setActiveCollaborators}
+                                        content={selectedResource.content}
+                                        onChange={(content) => queueDocSave(selectedResource.id, { content })}
+                                        onCharacterCountChange={setCharacterCount}
+                                        onEditorActionsChange={setEditorActions}
+                                    />
+                                </div>
                             </div>
-                        </div>
+
+                            {/* Floating Undo/Redo Controls */}
+                            <div className="absolute bottom-6 right-6 flex items-center bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl shadow-lg p-1 z-[50]">
+                                <button
+                                    onClick={editorActions.undo}
+                                    disabled={!editorActions.canUndo}
+                                    className="h-10 w-10 flex items-center justify-center rounded-lg hover:bg-[var(--app-bg-card)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    title="Cofnij"
+                                >
+                                    <Undo2 size={18} />
+                                </button>
+                                <div className="w-[1px] h-6 bg-[var(--app-border)] mx-1" />
+                                <button
+                                    onClick={editorActions.redo}
+                                    disabled={!editorActions.canRedo}
+                                    className="h-10 w-10 flex items-center justify-center rounded-lg hover:bg-[var(--app-bg-card)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    title="Ponów"
+                                >
+                                    <Redo2 size={18} />
+                                </button>
+                            </div>
+                        </>
                     )}
                 </div>
                 {!isWhiteboardSelected && (

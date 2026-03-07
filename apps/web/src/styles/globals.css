@@ -3,9 +3,6 @@
 @tailwind utilities;
 
 /* ... existing styles ... */
-/* Actually I will skip this call and view the file first to be safe */
-@tailwind components;
-@tailwind utilities;
 
 /* =============================================================================
    CSS VARIABLES - DESIGN SYSTEM
@@ -265,7 +262,33 @@ input:-webkit-autofill:active {
 }
 
 .notion-editor ol {
-  list-style-type: decimal;
+  list-style: none;
+  counter-reset: ordered-list-item;
+  padding-left: 0;
+}
+
+.notion-editor ol>li {
+  position: relative;
+  counter-increment: ordered-list-item;
+  padding-left: 2.1rem;
+  min-height: 1.6rem;
+}
+
+.notion-editor ol>li::before {
+  content: counter(ordered-list-item);
+  position: absolute;
+  left: 0;
+  top: 0.08rem;
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--app-accent) 90%, transparent);
+  color: var(--app-accent-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .notion-editor li {
@@ -341,12 +364,12 @@ input:-webkit-autofill:active {
   margin-bottom: 0.25rem;
 }
 
-.notion-editor ul[data-type="taskList"] li > label {
+.notion-editor ul[data-type="taskList"] li>label {
   flex-shrink: 0;
   margin-top: 0.125rem;
 }
 
-.notion-editor ul[data-type="taskList"] li > label input[type="checkbox"] {
+.notion-editor ul[data-type="taskList"] li>label input[type="checkbox"] {
   width: 1rem;
   height: 1rem;
   border-radius: 0.35rem;
@@ -360,17 +383,17 @@ input:-webkit-autofill:active {
   transition: all 0.2s ease;
 }
 
-.notion-editor ul[data-type="taskList"] li > label input[type="checkbox"]:hover {
+.notion-editor ul[data-type="taskList"] li>label input[type="checkbox"]:hover {
   border-color: var(--app-accent);
   background: color-mix(in srgb, var(--app-accent) 10%, var(--app-bg-card));
 }
 
-.notion-editor ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+.notion-editor ul[data-type="taskList"] li>label input[type="checkbox"]:checked {
   background: var(--app-accent);
   border-color: var(--app-accent);
 }
 
-.notion-editor ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+.notion-editor ul[data-type="taskList"] li>label input[type="checkbox"]:checked::after {
   content: "";
   position: absolute;
   width: 0.28rem;
@@ -382,11 +405,11 @@ input:-webkit-autofill:active {
   top: 0.12rem;
 }
 
-.notion-editor ul[data-type="taskList"] li > div {
+.notion-editor ul[data-type="taskList"] li>div {
   flex: 1;
 }
 
-.notion-editor ul[data-type="taskList"] li[data-checked="true"] > div {
+.notion-editor ul[data-type="taskList"] li[data-checked="true"]>div {
   text-decoration: line-through;
   color: var(--app-text-muted);
 }
@@ -408,71 +431,46 @@ input:-webkit-autofill:active {
   outline: none;
 }
 
-.notion-editor .notion-table,
-.notion-editor table {
-  border-collapse: collapse;
-  margin: 1rem 0;
-  width: 100%;
-  table-layout: fixed;
-  overflow: hidden;
-  border-radius: 0.5rem;
-  border: 1px solid var(--app-border);
-}
-
 .notion-editor .tableWrapper {
   position: relative;
-  overflow-x: auto;
-  margin: 1rem 0;
-  padding: 0;
-  border: 1px solid var(--app-border);
-  border-radius: 0.75rem;
+  overflow-x: visible;
+  margin: 1.5rem 0 1.5rem 2rem;
+  padding: 1rem 0;
+}
+
+.notion-editor table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0;
   overflow: hidden;
-  background: color-mix(in srgb, var(--app-bg-card) 92%, transparent);
+  border: 1px solid var(--app-border);
+  border-radius: 4px;
 }
 
 .notion-editor table th,
 .notion-editor table td {
   border: 1px solid var(--app-border);
-  padding: 0.5rem 0.75rem;
+  padding: 8px 12px;
   position: relative;
   vertical-align: top;
   text-align: left;
-  min-width: 100px;
+  min-width: 0;
+  box-sizing: border-box;
+  word-break: break-word;
+}
+
+.notion-editor table th:not([style*="background-color"]) {
+  background-color: color-mix(in srgb, var(--app-text-primary) 5%, transparent);
 }
 
 .notion-editor table th {
-  background-color: rgba(127, 127, 127, 0.14);
   font-weight: 600;
   color: var(--app-text-primary);
-  letter-spacing: 0.01em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-[data-theme="light"] .notion-editor table th {
-  border-bottom: 1px solid rgba(15, 23, 42, 0.2);
-}
-
-.notion-editor table th:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: -1px;
-  width: 1px;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.18);
-  pointer-events: none;
-}
-
-[data-theme="light"] .notion-editor table th:not(:last-child)::after {
-  background: rgba(15, 23, 42, 0.2);
-}
-
-.notion-editor table td {
-  background-color: transparent;
 }
 
 .notion-editor table .selectedCell {
-  background-color: rgba(99, 102, 241, 0.16);
+  background-color: color-mix(in srgb, var(--app-accent) 12%, transparent);
 }
 
 .notion-editor table .column-resize-handle {
@@ -590,4 +588,34 @@ input:-webkit-autofill:active {
 .notion-editor .hljs-class .hljs-title,
 .notion-editor .hljs-function {
   color: #93c5fd;
+}
+
+/* =============================================================================
+   TIPTAP EXTENSIONS
+   ============================================================================= */
+
+/* Custom Drag Handle Styling */
+.custom-drag-handle {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.375rem;
+  color: var(--app-text-secondary);
+  border: 1px solid var(--app-border);
+  background-color: var(--app-bg-elevated);
+  cursor: grab;
+  transition: all 0.2s;
+  opacity: 0.5;
+}
+
+.custom-drag-handle:hover {
+  background-color: var(--app-bg-card);
+  color: var(--app-text-primary);
+  opacity: 1;
+}
+
+.custom-drag-handle:active {
+  cursor: grabbing;
 }
