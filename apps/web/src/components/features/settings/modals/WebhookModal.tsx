@@ -189,16 +189,16 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-[#12121a] rounded-2xl w-full max-w-lg shadow-2xl border border-gray-800/50 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-[var(--app-bg-card)] rounded-2xl w-full max-w-lg shadow-2xl border border-[var(--app-border)] flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
                 {/* Header */}
-                <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-[#14141b] rounded-t-2xl">
-                    <h2 className="text-xl font-bold text-white">
+                <div className="p-6 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-card)] rounded-t-2xl">
+                    <h2 className="text-xl font-bold text-[var(--app-text-primary)]">
                         {webhook ? t('settings.organization.integrations.webhook_modal.edit_webhook') : t('settings.organization.integrations.webhook_modal.add_webhook')}
                     </h2>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+                        className="p-2 hover:bg-[var(--app-bg-elevated)] rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -206,7 +206,7 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
 
                 <div className="p-6 overflow-y-auto space-y-6">
                     {error && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-center gap-2">
                             <AlertCircle className="w-4 h-4" />
                             {error}
                         </div>
@@ -214,18 +214,18 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
 
                     {/* Platform Selector */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.integrations.webhook_modal.platform')}</label>
-                        <div className="flex bg-[#1a1a24] p-1 rounded-full w-full border border-gray-800/50">
+                        <label className="block text-sm font-medium text-[var(--app-text-muted)] mb-3">{t('settings.organization.integrations.webhook_modal.platform')}</label>
+                        <div className="flex bg-[var(--app-bg-elevated)] p-1 rounded-xl w-full border border-[var(--app-border)]">
                             <button
                                 onClick={() => setType('discord')}
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all",
+                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all",
                                     type === 'discord'
-                                        ? "bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10"
-                                        : "text-gray-500 hover:text-white"
+                                        ? "bg-[var(--app-bg-card)] text-[var(--app-text-primary)] shadow-sm border border-[var(--app-border)]"
+                                        : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
                                 )}
                             >
-                                <div className="scale-75 origin-center">
+                                <div className="scale-75 origin-center text-[#5865F2]">
                                     <DiscordIcon />
                                 </div>
                                 Discord
@@ -234,10 +234,10 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                             <button
                                 onClick={() => setType('slack')}
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all",
+                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all",
                                     type === 'slack'
-                                        ? "bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10"
-                                        : "text-gray-500 hover:text-white"
+                                        ? "bg-[var(--app-bg-card)] text-[var(--app-text-primary)] shadow-sm border border-[var(--app-border)]"
+                                        : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
                                 )}
                             >
                                 <div className="scale-75 origin-center">
@@ -249,13 +249,13 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                             <button
                                 onClick={() => setType('generic')}
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all",
+                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all",
                                     type === 'generic'
-                                        ? "bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10"
-                                        : "text-gray-500 hover:text-white"
+                                        ? "bg-[var(--app-bg-card)] text-[var(--app-text-primary)] shadow-sm border border-[var(--app-border)]"
+                                        : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
                                 )}
                             >
-                                <div className="scale-75 origin-center">
+                                <div className="scale-75 origin-center text-[var(--app-accent)]">
                                     <GenericIcon />
                                 </div>
                                 {t('settings.organization.integrations.webhook_modal.other')}
@@ -265,7 +265,7 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
 
                     {/* URL Input */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.integrations.webhook_modal.url_label')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-muted)] mb-2">{t('settings.organization.integrations.webhook_modal.url_label')}</label>
                         <input
                             type="text"
                             value={url}
@@ -275,14 +275,14 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                     type === 'slack' ? "https://hooks.slack.com/services/..." :
                                         "https://example.com/webhook"
                             }
-                            className="w-full bg-[#1a1a24] border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-amber-500/50 focus:bg-[#1f1f2e] focus:outline-none transition-all font-mono text-sm"
+                            className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)]/50 focus:border-[var(--app-accent)] focus:ring-2 focus:ring-[var(--app-accent)]/10 outline-none transition-all font-mono text-sm"
                         />
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">
-                            {t('settings.organization.integrations.webhook_modal.description_label')} <span className="text-gray-600 font-normal">({t('settings.organization.integrations.webhook_modal.optional')})</span>
+                        <label className="block text-sm font-medium text-[var(--app-text-muted)] mb-2">
+                            {t('settings.organization.integrations.webhook_modal.description_label')} <span className="text-[var(--app-text-muted)]/60 font-normal">({t('settings.organization.integrations.webhook_modal.optional')})</span>
                         </label>
                         <input
                             type="text"
@@ -293,13 +293,13 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                     type === 'slack' ? t('settings.organization.integrations.webhook_modal.description_placeholder_slack') :
                                         t('settings.organization.integrations.webhook_modal.description_placeholder_generic')
                             }
-                            className="w-full bg-[#1a1a24] border border-gray-800 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-amber-500/50 focus:bg-[#1f1f2e] focus:outline-none transition-all"
+                            className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)]/50 focus:border-[var(--app-accent)] focus:ring-2 focus:ring-[var(--app-accent)]/10 outline-none transition-all"
                         />
                     </div>
 
                     {/* Silent Mode */}
                     {type === 'discord' && (
-                        <label className="flex items-center gap-3 p-4 bg-[#1a1a24] rounded-xl border border-gray-800 cursor-pointer hover:bg-[#1f1f2e] transition-colors group">
+                        <label className="flex items-center gap-3 p-4 bg-[var(--app-bg-elevated)] rounded-xl border border-[var(--app-border)] cursor-pointer hover:bg-[var(--app-bg-card)] transition-colors group">
                             <div className="relative flex items-center justify-center">
                                 <input
                                     type="checkbox"
@@ -308,26 +308,26 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                     className="sr-only"
                                 />
                                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${silentMode
-                                    ? 'bg-amber-500 border-amber-500 text-black'
-                                    : 'bg-transparent border-gray-600 group-hover:border-gray-500'
+                                    ? 'bg-[var(--app-accent)] border-[var(--app-accent)] text-white'
+                                    : 'bg-transparent border-[var(--app-border-hover)] group-hover:border-[var(--app-text-muted)]'
                                     }`}>
                                     {silentMode && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                                 </div>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white group-hover:text-amber-500 transition-colors">{t('settings.organization.integrations.webhook_modal.silent_mode_title')}</span>
-                                <span className="text-xs text-gray-500">{t('settings.organization.integrations.webhook_modal.silent_mode_description')}</span>
+                                <span className="text-sm font-medium text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)] transition-colors">{t('settings.organization.integrations.webhook_modal.silent_mode_title')}</span>
+                                <span className="text-xs text-[var(--app-text-muted)]">{t('settings.organization.integrations.webhook_modal.silent_mode_description')}</span>
                             </div>
                         </label>
                     )}
 
                     {/* Events Selection */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-3">{t('settings.organization.integrations.webhook_modal.events_label')}</label>
-                        <div className="bg-[#1a1a24] rounded-xl border border-gray-800 p-2 max-h-[280px] overflow-y-auto custom-scrollbar">
+                        <label className="block text-sm font-medium text-[var(--app-text-muted)] mb-3">{t('settings.organization.integrations.webhook_modal.events_label')}</label>
+                        <div className="bg-[var(--app-bg-elevated)] rounded-xl border border-[var(--app-border)] p-2 max-h-[280px] overflow-y-auto custom-scrollbar">
                             {EVENT_GROUPS.map(group => (
                                 <div key={group.title} className="mb-2 last:mb-0">
-                                    <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 py-2">
+                                    <h3 className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-widest px-3 py-2">
                                         {group.title}
                                     </h3>
                                     <div className="space-y-0.5">
@@ -337,8 +337,8 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                                 <label
                                                     key={event.id}
                                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${isSelected
-                                                        ? 'bg-amber-500/10'
-                                                        : 'hover:bg-white/5'
+                                                        ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
+                                                        : 'hover:bg-[var(--app-bg-card)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                                                         }`}
                                                 >
                                                     <div className="relative flex items-center justify-center">
@@ -355,13 +355,13 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                                                             className="sr-only"
                                                         />
                                                         <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${isSelected
-                                                            ? 'bg-amber-500 border-amber-500 text-black'
-                                                            : 'bg-transparent border-gray-600'
+                                                            ? 'bg-[var(--app-accent)] border-[var(--app-accent)] text-white'
+                                                            : 'bg-transparent border-[var(--app-border-hover)]'
                                                             }`}>
                                                             {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                                                         </div>
                                                     </div>
-                                                    <span className={`text-sm ${isSelected ? 'text-white font-medium' : 'text-gray-400'}`}>
+                                                    <span className={`text-sm ${isSelected ? 'font-medium' : ''}`}>
                                                         {event.label}
                                                     </span>
                                                 </label>
@@ -375,17 +375,17 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                 </div>
 
                 {/* Footer */}
-                <div className="p-5 border-t border-gray-800 flex justify-end gap-3 bg-[#14141b]">
+                <div className="p-5 border-t border-[var(--app-border)] flex justify-end gap-3 bg-[var(--app-bg-card)]">
                     <button
                         onClick={onClose}
-                        className="px-5 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 font-medium transition-colors text-sm"
+                        className="px-5 py-2.5 rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] font-medium transition-colors text-sm"
                     >
                         {t('common.cancel')}
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={mutation.isPending}
-                        className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 active:translate-y-[1px] text-black font-bold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(245,158,11,0.2)] hover:shadow-[0_6px_16px_rgba(245,158,11,0.3)] text-sm"
+                        className="px-6 py-2.5 bg-[var(--app-accent)] hover:opacity-90 active:translate-y-[1px] text-[var(--app-accent-text)] font-bold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--app-accent)]/10 text-sm"
                     >
                         {mutation.isPending ? t('common.saving') : t('common.save')}
                     </button>
@@ -399,11 +399,11 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                     background: transparent;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: #374151;
+                    background: var(--app-border);
                     border-radius: 3px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #4b5563;
+                    background: var(--app-border-hover);
                 }
             `}</style>
         </div>

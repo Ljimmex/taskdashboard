@@ -37,6 +37,10 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
     // Update mutation
     const updateWorkspaceMock = async (data: any) => {
         if (!workspace?.id) return
+        // The instruction's provided snippet for updateWorkspaceMock was syntactically incorrect.
+        // Assuming the intent was to keep the original PATCH call for workspace updates,
+        // and the `members` line was an accidental inclusion or part of a different change.
+        // Reverting to the original correct structure for updating the workspace.
         return apiFetchJson(`/api/workspaces/${workspace.id}`, {
             method: 'PATCH',
             headers: { 'x-user-id': session?.user?.id || '' },
@@ -106,7 +110,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
         setIsUploading(true)
 
         try {
-            const fileName = `workspace-logos/${workspace.id}/${Date.now()}-${file.name}`
+            const fileName = `workspace - logos / ${workspace.id}/${Date.now()}-${file.name}`
 
             // Upload to Supabase 'avatars' bucket
             const { error: uploadErr } = await supabase.storage
@@ -146,7 +150,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
 
             {/* Logo Section */}
             <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">{t('settings.organization.general.logo_title')}</h3>
+                <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.organization.general.logo_title')}</h3>
 
                 {uploadError && (
                     <div className="bg-red-500/10 text-red-500 p-3 rounded-lg text-sm">
@@ -154,7 +158,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
                     </div>
                 )}
 
-                <div className="bg-[#1a1a24] rounded-xl p-6 flex items-center gap-6">
+                <div className="bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl p-6 flex items-center gap-6">
                     <div className="relative group">
                         {workspace.logo ? (
                             <img
@@ -185,11 +189,11 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
-                            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+                            className="px-4 py-2 bg-[var(--app-bg-card)] hover:bg-[var(--app-bg-page)] text-[var(--app-text-primary)] border border-[var(--app-border)] rounded-lg text-sm transition-colors"
                         >
                             {isUploading ? t('common.uploading') : t('settings.organization.general.change_logo')}
                         </button>
-                        <p className="text-xs text-gray-500 mt-2">{t('settings.organization.general.logo_hint')}</p>
+                        <p className="text-xs text-[var(--app-text-muted)] mt-2">{t('settings.organization.general.logo_hint')}</p>
                     </div>
                 </div>
             </section>
@@ -197,51 +201,51 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
             {/* Section: Organization Profile */}
             <section className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-white">{t('settings.organization.general.profile_title')}</h3>
+                    <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.organization.general.profile_title')}</h3>
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
                         className={`px-4 py-2 font-medium rounded-lg text-sm transition-colors ${isSaving
-                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            : 'bg-[#F2CE88] hover:bg-[#d9b877] text-black'
+                            ? 'bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] cursor-not-allowed'
+                            : 'bg-[var(--app-accent)] hover:opacity-90 text-[var(--app-accent-text)]'
                             }`}
                     >
                         {isSaving ? t('common.saving') : t('common.save_changes')}
                     </button>
                 </div>
 
-                <div className="bg-[#1a1a24] rounded-xl p-6 space-y-4">
+                <div className="bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.general.name_label')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('settings.organization.general.name_label')}</label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                            className="w-full bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                             placeholder={t('settings.organization.general.name_placeholder')}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.general.slug_label')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('settings.organization.general.slug_label')}</label>
                         <div className="flex">
-                            <span className="inline-flex items-center px-3 rounded-l-lg bg-[#12121a] border border-r-0 border-gray-800 text-gray-500 text-sm">
+                            <span className="inline-flex items-center px-3 rounded-l-lg bg-[var(--app-bg-card)] border border-r-0 border-[var(--app-border)] text-[var(--app-text-muted)] text-sm">
                                 zadano.app/
                             </span>
                             <input
                                 type="text"
                                 value={slug}
                                 onChange={(e) => setSlug(e.target.value)}
-                                className="flex-1 bg-[#12121a] border border-gray-800 rounded-r-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                                className="flex-1 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-r-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                                 placeholder="slug"
                             />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.general.description_label')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('settings.organization.general.description_label')}</label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88] min-h-[100px]"
+                            className="w-full bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] min-h-[100px]"
                             placeholder={t('settings.organization.general.description_placeholder')}
                         />
                     </div>
@@ -250,14 +254,14 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
 
             {/* Section: Timezone */}
             <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">{t('settings.organization.general.location_title')}</h3>
-                <div className="bg-[#1a1a24] rounded-xl p-6 space-y-4">
+                <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.organization.general.location_title')}</h3>
+                <div className="bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('settings.organization.general.timezone_label')}</label>
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('settings.organization.general.timezone_label')}</label>
                         <select
                             value={timezone}
                             onChange={(e) => setTimezone(e.target.value)}
-                            className="w-full bg-[#12121a] border border-gray-800 rounded-lg px-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                            className="w-full bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                         >
                             {supportedTimezones.map((tz: string) => {
                                 const offset = new Intl.DateTimeFormat('en-US', {
@@ -272,7 +276,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
                                 )
                             })}
                         </select>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-[var(--app-text-muted)] mt-2">
                             {t('settings.organization.general.timezone_hint', { tz: Intl.DateTimeFormat().resolvedOptions().timeZone })}
                         </p>
                     </div>
@@ -280,7 +284,7 @@ export function GeneralSettingsTab({ workspace }: GeneralSettingsTabProps) {
             </section>
 
             {/* Section: Danger Zone */}
-            <section className="pt-8 border-t border-gray-800">
+            <section className="pt-8 border-t border-[var(--app-border)]">
                 <button
                     type="button"
                     className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors"

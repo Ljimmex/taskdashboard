@@ -133,17 +133,19 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
 
     return (
         <div className="space-y-6">
-            <div>
-                <h3 className="text-lg font-semibold text-white mb-2">{t('settings.organization.labels.title')}</h3>
-                <p className="text-sm text-gray-400">
-                    {t('settings.organization.labels.subtitle')}
-                </p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.organization.labels.title')}</h3>
+                    <p className="text-sm text-[var(--app-text-secondary)]">
+                        {t('settings.organization.labels.subtitle')}
+                    </p>
+                </div>
             </div>
 
             {/* Labels list */}
             <div className="space-y-2">
                 {labels.length === 0 && !isCreating && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-[var(--app-text-muted)]">
                         {t('settings.organization.labels.no_labels')}
                     </div>
                 )}
@@ -151,7 +153,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                 {labels.map((label) => (
                     <div
                         key={label.id}
-                        className="flex items-center gap-3 p-3 bg-[#1a1a24] rounded-lg border border-gray-800/50 hover:border-gray-700/50 transition-colors"
+                        className="flex items-center gap-3 p-3 bg-[var(--app-bg-card)] rounded-lg border border-[var(--app-border)] hover:border-[var(--app-border-hover)] transition-colors"
                     >
                         {editingId === label.id ? (
                             // Edit mode
@@ -164,7 +166,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                     type="text"
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
-                                    className="flex-1 bg-[#14141b] border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#F2CE88]"
+                                    className="flex-1 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded px-3 py-1.5 text-[var(--app-text-primary)] text-sm focus:outline-none focus:border-[var(--app-accent)]"
                                     placeholder={t('settings.organization.labels.name_placeholder')}
                                     autoFocus
                                     onKeyDown={(e) => {
@@ -184,7 +186,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                     <button
                                         onClick={cancelEditing}
                                         disabled={updateMutation.isPending}
-                                        className="p-2 text-gray-400 hover:bg-gray-700/50 rounded transition-colors"
+                                        className="p-2 text-[var(--app-text-muted)] hover:bg-[var(--app-bg-elevated)] rounded transition-colors"
                                         title={t('common.cancel')}
                                     >
                                         <X className="w-4 h-4" />
@@ -198,11 +200,11 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                     className="w-6 h-6 rounded flex-shrink-0"
                                     style={{ backgroundColor: label.color }}
                                 />
-                                <span className="flex-1 text-white text-sm">{label.name}</span>
+                                <span className="flex-1 text-[var(--app-text-primary)] text-sm">{label.name}</span>
                                 <div className="flex gap-1">
                                     <button
                                         onClick={() => startEditing(label)}
-                                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded transition-colors"
+                                        className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded transition-colors"
                                         title={t('common.edit')}
                                     >
                                         <Edit2 className="w-4 h-4" />
@@ -210,7 +212,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                     <button
                                         onClick={() => handleDelete(label.id, label.name)}
                                         disabled={deleteMutation.isPending}
-                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50"
+                                        className="p-2 text-[var(--app-text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50"
                                         title={t('common.delete')}
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -223,7 +225,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
 
                 {/* Create new label */}
                 {isCreating ? (
-                    <div className="flex items-center gap-3 p-3 bg-[#1a1a24] rounded-lg border border-[#F2CE88]/50">
+                    <div className="flex items-center gap-3 p-3 bg-[var(--app-bg-card)] rounded-lg border border-[var(--app-accent)]">
                         <ColorPicker
                             color={newColor}
                             onChange={setNewColor}
@@ -232,7 +234,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                             type="text"
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
-                            className="flex-1 bg-[#14141b] border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#F2CE88]"
+                            className="flex-1 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded px-3 py-1.5 text-[var(--app-text-primary)] text-sm focus:outline-none focus:border-[var(--app-accent)]"
                             placeholder={t('settings.organization.labels.new_name_placeholder')}
                             autoFocus
                             onKeyDown={(e) => {
@@ -259,7 +261,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                                     setNewColor('#6B7280')
                                 }}
                                 disabled={createMutation.isPending}
-                                className="p-2 text-gray-400 hover:bg-gray-700/50 rounded transition-colors"
+                                className="p-2 text-[var(--app-text-muted)] hover:bg-[var(--app-bg-elevated)] rounded transition-colors"
                                 title="Anuluj"
                             >
                                 <X className="w-4 h-4" />
@@ -269,7 +271,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
                 ) : (
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="w-full flex items-center justify-center gap-2 p-3 bg-[#1a1a24] rounded-lg border border-dashed border-gray-700 hover:border-[#F2CE88] text-gray-400 hover:text-white transition-colors"
+                        className="w-full flex items-center justify-center gap-2 p-3 bg-[var(--app-bg-card)] rounded-lg border border-dashed border-[var(--app-border)] hover:border-[var(--app-accent)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         <span className="text-sm font-medium">{t('settings.organization.labels.add_button')}</span>
@@ -279,7 +281,7 @@ export function LabelsSettingsTab({ workspace: _workspace }: LabelsSettingsTabPr
 
             {/* Info box */}
             <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <p className="text-sm text-blue-300">
+                <p className="text-sm text-blue-600 dark:text-blue-300">
                     <strong>{t('settings.organization.labels.tip_header')}:</strong> {t('settings.organization.labels.tip_content')}
                 </p>
             </div>
@@ -297,7 +299,7 @@ function ColorPicker({ color, onChange }: { color: string, onChange: (color: str
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-8 h-8 rounded-lg border-2 border-gray-700 hover:border-[#F2CE88] transition-all shadow-md flex-shrink-0"
+                className="w-8 h-8 rounded-lg border-2 border-[var(--app-border)] hover:border-[var(--app-accent)] transition-all shadow-md flex-shrink-0"
                 style={{ backgroundColor: color }}
                 title={t('settings.organization.labels.color_picker_tooltip')}
             />
@@ -311,7 +313,7 @@ function ColorPicker({ color, onChange }: { color: string, onChange: (color: str
                     />
 
                     {/* Color palette */}
-                    <div className="absolute top-10 left-0 z-[101] p-3 bg-[#1a1a24] border border-gray-700/50 rounded-xl shadow-2xl w-[184px]">
+                    <div className="absolute top-10 left-0 z-[101] p-3 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-xl shadow-2xl w-[184px]">
                         <div className="flex flex-wrap gap-2">
                             {PRESET_COLORS.map((presetColor) => (
                                 <button
@@ -324,7 +326,7 @@ function ColorPicker({ color, onChange }: { color: string, onChange: (color: str
                                     className="w-6 h-6 rounded-md border-2 transition-all hover:scale-110 flex-shrink-0"
                                     style={{
                                         backgroundColor: presetColor,
-                                        borderColor: color === presetColor ? '#F2CE88' : 'transparent'
+                                        borderColor: color === presetColor ? 'var(--app-accent)' : 'transparent'
                                     }}
                                     title={presetColor}
                                 />
@@ -332,9 +334,9 @@ function ColorPicker({ color, onChange }: { color: string, onChange: (color: str
                         </div>
 
                         {/* Custom color input */}
-                        <div className="mt-3 pt-3 border-t border-gray-800">
+                        <div className="mt-3 pt-3 border-t border-[var(--app-border)]">
                             <div className="flex items-center gap-2">
-                                <div className="relative flex-1 h-8 rounded-lg overflow-hidden border border-gray-700">
+                                <div className="relative flex-1 h-8 rounded-lg overflow-hidden border border-[var(--app-border)]">
                                     <input
                                         type="color"
                                         value={color}
@@ -342,7 +344,7 @@ function ColorPicker({ color, onChange }: { color: string, onChange: (color: str
                                         className="absolute -inset-2 w-[calc(100%+16px)] h-[calc(100%+16px)] cursor-pointer bg-transparent border-none"
                                     />
                                 </div>
-                                <span className="text-[10px] font-mono text-gray-500 uppercase">{color}</span>
+                                <span className="text-[10px] font-mono text-[var(--app-text-muted)] uppercase">{color}</span>
                             </div>
                         </div>
                     </div>

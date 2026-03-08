@@ -76,7 +76,6 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
             })
         },
         onSuccess: () => {
-            // Invalidate the workspace query to refresh priorities
             queryClient.invalidateQueries({ queryKey: ['workspace', workspaceSlug] })
             setIsCreating(false)
             setNewName('')
@@ -162,109 +161,176 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
 
     return (
         <div className="space-y-8">
-            {/* Priorities Section */}
-            <div>
-                <h3 className="text-lg font-semibold text-white mb-2">{t('settings.organization.defaults.priorities_title')}</h3>
-                <p className="text-sm text-gray-400 mb-4">
-                    {t('settings.organization.defaults.priorities_subtitle')}
-                </p>
+            {/* Default Industry Template Section */}
+            <div className="bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h4 className="font-semibold text-[var(--app-text-primary)] text-lg">{t('settings.organization.defaults.default_template_title')}</h4>
+                        <p className="text-sm text-[var(--app-text-secondary)]">{t('settings.organization.defaults.default_template_subtitle')}</p>
+                    </div>
+                </div>
+                <div className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-[var(--app-text-primary)]">
+                            {t('settings.organization.defaults.select_default_template')}
+                        </label>
+                        <select
+                            className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
+                            value={workspace?.settings?.defaultIndustryTemplateId || ''}
+                            onChange={(e) => {
+                                updateDefaultsMutation.mutate({ defaultIndustryTemplateId: e.target.value || undefined })
+                            }}
+                        >
+                            <option value="">{t('settings.organization.defaults.no_template')}</option>
+                            {templates.map((template) => (
+                                <option key={template.id} value={template.id}>
+                                    {template.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <p className="text-xs text-[var(--app-text-muted)]">
+                        {t('settings.organization.defaults.industry_template_hint')}
+                    </p>
+                </div>
+            </div>
 
-                {!workspace ? (
-                    <div className="text-center py-8 text-gray-500">{t('settings.organization.defaults.loading_priorities')}</div>
-                ) : (
-                    <div className="space-y-2">
-                        {priorities.map((priority) => (
-                            <div
-                                key={priority.id}
-                                className="bg-[#1a1a24] border border-gray-800 rounded-lg p-4 flex items-center gap-3"
-                            >
-                                <GripVertical className="w-4 h-4 text-gray-600" />
+            {/* Priorities Management */}
+            <div className="bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h4 className="font-semibold text-[var(--app-text-primary)] text-lg">{t('settings.organization.defaults.priorities_title')}</h4>
+                        <p className="text-sm text-[var(--app-text-secondary)]">{t('settings.organization.defaults.priorities_subtitle')}</p>
+                    </div>
+                    {!isCreating && (
+                        <button
+                            onClick={() => setIsCreating(true)}
+                            className="p-2 hover:bg-[var(--app-bg-elevated)] rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
 
-                                {editingId === priority.id ? (
-                                    <>
+                <div className="space-y-3">
+                    {priorities.map((priority) => (
+                        <div
+                            key={priority.id}
+                            className="flex items-center gap-4 p-4 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl group hover:border-[var(--app-border-hover)] transition-all"
+                        >
+                            <div className="cursor-grab active:cursor-grabbing text-[var(--app-text-muted)] group-hover:text-[var(--app-text-secondary)]">
+                                <GripVertical className="w-5 h-5" />
+                            </div>
+
+                            {editingId === priority.id ? (
+                                <div className="flex-1 flex items-center gap-3">
+                                    <div
+                                        className="w-1.5 h-10 rounded-full shrink-0"
+                                        style={{ backgroundColor: editColor }}
+                                    />
+                                    <div className="flex-1 space-y-3">
                                         <input
                                             type="text"
                                             value={editName}
                                             onChange={(e) => setEditName(e.target.value)}
-                                            className="flex-1 bg-[#0f0f14] border border-gray-700 rounded px-3 py-2 text-sm text-white"
+                                            className="w-full bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded px-3 py-2 text-sm text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
+                                            autoFocus
                                         />
-                                        <div className="flex gap-1 flex-wrap" style={{ maxWidth: '160px' }}>
+                                        <div className="flex flex-wrap gap-2">
                                             {PRESET_COLORS.map((color) => (
                                                 <button
                                                     key={color}
                                                     type="button"
                                                     onClick={() => setEditColor(color)}
-                                                    className={`w-5 h-5 rounded border-2 transition-all ${editColor === color ? 'border-white scale-110' : 'border-gray-700'
+                                                    className={`w-6 h-6 rounded-md border-2 transition-all ${editColor === color ? 'border-[var(--app-text-primary)] scale-110 shadow-sm' : 'border-transparent'
                                                         }`}
                                                     style={{ backgroundColor: color }}
                                                 />
                                             ))}
                                         </div>
+                                    </div>
+                                    <div className="flex gap-2">
                                         <button
                                             onClick={handleSaveEdit}
-                                            className="p-2 bg-green-600 hover:bg-green-700 rounded transition-colors"
+                                            className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
                                         >
                                             <Check className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => setEditingId(null)}
-                                            className="p-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                                            className="p-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] rounded-lg transition-colors"
                                         >
                                             <X className="w-4 h-4" />
                                         </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div
-                                            className="w-3 h-3 rounded-full"
-                                            style={{ backgroundColor: priority.color }}
-                                        />
-                                        <span className="flex-1 text-white">{priority.name}</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div
+                                        className="w-1.5 h-10 rounded-full"
+                                        style={{ backgroundColor: priority.color }}
+                                    />
+
+                                    <div className="flex-1">
+                                        <h5 className="font-medium text-[var(--app-text-primary)]">{priority.name}</h5>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider font-bold">
+                                                ID: {priority.id}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={() => handleEditPriority(priority)}
-                                            className="p-2 hover:bg-gray-800 rounded transition-colors"
+                                            className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] rounded-lg transition-colors"
                                         >
-                                            <Edit2 className="w-4 h-4 text-gray-400" />
+                                            <Edit2 className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDeletePriority(priority.id)}
-                                            className="p-2 hover:bg-gray-800 rounded transition-colors"
+                                            className="p-2 text-[var(--app-text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                                             disabled={priorities.length <= 1}
                                         >
-                                            <Trash2 className="w-4 h-4 text-red-400" />
+                                            <Trash2 className="w-4 h-4" />
                                         </button>
-                                    </>
-                                )}
-                            </div>
-                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ))}
 
-                        {/* Create New Priority */}
-                        {isCreating ? (
-                            <div className="bg-[#1a1a24] border border-gray-800 rounded-lg p-4 flex items-center gap-3">
+                    {/* Create New Priority */}
+                    {isCreating && (
+                        <div className="flex items-center gap-4 p-4 bg-[var(--app-bg-elevated)] border border-[var(--app-accent)] rounded-xl">
+                            <Plus className="w-5 h-5 text-[var(--app-accent)]" />
+                            <div className="flex-1 space-y-3">
                                 <input
                                     type="text"
                                     value={newName}
                                     onChange={(e) => setNewName(e.target.value)}
                                     placeholder={t('settings.organization.defaults.priority_name_placeholder')}
-                                    className="flex-1 bg-[#0f0f14] border border-gray-700 rounded px-3 py-2 text-sm text-white"
+                                    className="w-full bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded px-3 py-2 text-sm text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                                     autoFocus
                                 />
-                                <div className="flex gap-1 flex-wrap" style={{ maxWidth: '160px' }}>
+                                <div className="flex flex-wrap gap-2">
                                     {PRESET_COLORS.map((color) => (
                                         <button
                                             key={color}
                                             type="button"
                                             onClick={() => setNewColor(color)}
-                                            className={`w-5 h-5 rounded border-2 transition-all ${newColor === color ? 'border-white scale-110' : 'border-gray-700'
+                                            className={`w-6 h-6 rounded-md border-2 transition-all ${newColor === color ? 'border-[var(--app-text-primary)] scale-110 shadow-sm' : 'border-transparent'
                                                 }`}
                                             style={{ backgroundColor: color }}
                                         />
                                     ))}
                                 </div>
+                            </div>
+                            <div className="flex gap-2">
                                 <button
                                     onClick={handleCreatePriority}
-                                    disabled={!newName.trim()}
-                                    className="p-2 bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50"
+                                    className="p-2 bg-[var(--app-accent)] hover:opacity-90 text-[var(--app-accent-text)] rounded-lg transition-colors"
+                                    disabled={createPriorityMutation.isPending || !newName.trim()}
                                 >
                                     <Check className="w-4 h-4" />
                                 </button>
@@ -272,45 +338,32 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
                                     onClick={() => {
                                         setIsCreating(false)
                                         setNewName('')
-                                        setNewIcon('')
                                     }}
-                                    className="p-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                                    className="p-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] rounded-lg transition-colors"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
-                        ) : (
-                            <button
-                                onClick={() => setIsCreating(true)}
-                                className="w-full bg-[#1a1a24] border border-gray-800 border-dashed rounded-lg p-4 text-gray-400 hover:text-white hover:border-gray-600 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Plus className="w-4 h-4" />
-                                {t('settings.organization.defaults.add_priority_button')}
-                            </button>
-                        )}
-                    </div>
-                )}
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Default Industry Template Section */}
-            <div>
-                <h3 className="text-lg font-semibold text-white mb-2">{t('settings.organization.defaults.default_template_title')}</h3>
-                <p className="text-sm text-gray-400 mb-4">
-                    {t('settings.organization.defaults.default_template_subtitle')}
-                </p>
-
-                <select
-                    value={workspace.defaultIndustryTemplateId || ''}
-                    onChange={(e) => updateDefaultsMutation.mutate({ defaultIndustryTemplateId: e.target.value || undefined })}
-                    className="w-full bg-[#1a1a24] border border-gray-800 rounded-lg px-4 py-2 text-white"
-                >
-                    <option value="">{t('settings.organization.defaults.no_default_template')}</option>
-                    {templates.map((template) => (
-                        <option key={template.id} value={template.id}>
-                            {template.name} - {template.description}
-                        </option>
-                    ))}
-                </select>
+            {/* Tips card */}
+            <div className="bg-[var(--app-accent)]/5 border border-[var(--app-accent)]/10 rounded-2xl p-6">
+                <div className="flex gap-4">
+                    <div className="w-10 h-10 bg-[var(--app-accent)]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Plus className="w-5 h-5 text-[var(--app-accent)]" />
+                    </div>
+                    <div>
+                        <h5 className="font-semibold text-[var(--app-text-primary)] mb-1">
+                            {t('settings.organization.defaults.pro_tip_title')}
+                        </h5>
+                        <p className="text-sm text-[var(--app-text-secondary)] leading-relaxed">
+                            {t('settings.organization.defaults.pro_tip_content')}
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     )

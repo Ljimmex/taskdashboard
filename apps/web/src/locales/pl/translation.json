@@ -900,7 +900,7 @@
                 "silent_badge": "Cichy",
                 "delete_webhook_confirm": "Czy na pewno chcesz usunąć ten webhook?",
                 "all_events_header": "Wszystkie zdarzenia:",
-                "test_title": "Testuj",
+                "test_title": "Test",
                 "logs_title": "Logi",
                 "fails_stat_one": "{{count}} błąd",
                 "fails_stat_few": "{{count}} błędy",

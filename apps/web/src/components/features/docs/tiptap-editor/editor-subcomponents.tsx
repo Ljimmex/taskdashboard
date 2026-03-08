@@ -1,36 +1,7 @@
-"use client"
-
-import { useEditor, EditorContent } from '@tiptap/react'
 import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus'
-import { Mark, mergeAttributes } from '@tiptap/core'
-import StarterKit from '@tiptap/starter-kit'
-import Placeholder from '@tiptap/extension-placeholder'
-import TaskList from '@tiptap/extension-task-list'
-import TaskItem from '@tiptap/extension-task-item'
-import Highlight from '@tiptap/extension-highlight'
-import TextAlign from '@tiptap/extension-text-align'
-import CharacterCount from '@tiptap/extension-character-count'
-import Image from '@tiptap/extension-image'
-import { Table } from '@tiptap/extension-table'
-import TableRow from '@tiptap/extension-table-row'
 import TableHeader from '@tiptap/extension-table-header'
 import TableCell from '@tiptap/extension-table-cell'
-import Youtube from '@tiptap/extension-youtube'
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
-import SuperscriptExtension from '@tiptap/extension-superscript'
-import SubscriptExtension from '@tiptap/extension-subscript'
-import DragHandle from '@tiptap/extension-drag-handle'
-import { common, createLowlight } from 'lowlight'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import type { RealtimeChannel } from '@supabase/supabase-js'
-import {
-    BubbleMenuBar as EditorBubbleMenuBar,
-    CustomTableCell as EditorCustomTableCell,
-    CustomTableHeader as EditorCustomTableHeader,
-    FloatingMenuBar as EditorFloatingMenuBar,
-    TableOverlayControls as EditorTableOverlayControls,
-} from './tiptap-editor/editor-subcomponents'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import {
     Bold,
     Italic,
@@ -66,83 +37,7 @@ import {
     Square,
 } from 'lucide-react'
 
-const lowlight = createLowlight(common)
-
-const TextColorMark = Mark.create({
-    name: 'textColorMark',
-    addAttributes() {
-        return {
-            color: {
-                default: null,
-                parseHTML: (element) => element.style.color || null,
-                renderHTML: (attributes) => {
-                    if (!attributes.color) return {}
-                    return { style: `color: ${attributes.color}` }
-                },
-            },
-        }
-    },
-    parseHTML() {
-        return [{ tag: 'span[style*=color]' }]
-    },
-    renderHTML({ HTMLAttributes }) {
-        return ['span', mergeAttributes(HTMLAttributes), 0]
-    },
-    addCommands() {
-        return {
-            setTextColor:
-                (color: string) =>
-                    ({ chain }: any) =>
-                        chain().setMark(this.name, { color }).run(),
-            unsetTextColor:
-                () =>
-                    ({ chain }: any) =>
-                        chain().unsetMark(this.name).run(),
-        } as any
-    },
-})
-
-const colorFromString = (value: string) => {
-    let hash = 0
-    for (let i = 0; i < value.length; i++) {
-        hash = value.charCodeAt(i) + ((hash << 5) - hash)
-    }
-    const hue = Math.abs(hash) % 360
-    return `hsl(${hue} 85% 60%)`
-}
-
-interface TiptapEditorProps {
-    content?: string
-    onChange?: (content: string) => void
-    editable?: boolean
-    characterCount?: number
-    onCharacterCountChange?: (count: number) => void
-    onEditorActionsChange?: (actions: { canUndo: boolean; canRedo: boolean; undo: () => void; redo: () => void }) => void
-    documentId?: string
-    user?: any
-    onCollaboratorsChange?: (collaborators: any[]) => void
-}
-
-type LiveCursor = {
-    userId: string
-    name: string
-    color: string
-    avatarUrl?: string
-    x: number
-    y: number
-    updatedAt: number
-}
-
-type MediaInsertType = 'image' | 'video'
-
-type TocHeading = {
-    level: number
-    text: string
-    id: string
-    pos: number
-}
-
-const BubbleMenuBar = ({ editor }: { editor: any }) => {
+export const BubbleMenuBar = ({ editor }: { editor: any }) => {
     if (!editor) return null
 
     const setLink = useCallback(() => {
@@ -333,7 +228,7 @@ const BubbleMenuBar = ({ editor }: { editor: any }) => {
     )
 }
 
-const CustomTableCell = TableCell.extend({
+export const CustomTableCell = TableCell.extend({
     addAttributes() {
         return {
             ...this.parent?.(),
@@ -365,7 +260,7 @@ const CustomTableCell = TableCell.extend({
     },
 })
 
-const CustomTableHeader = TableHeader.extend({
+export const CustomTableHeader = TableHeader.extend({
     addAttributes() {
         return {
             ...this.parent?.(),
@@ -434,7 +329,7 @@ const TableGridSelector = ({ onSelect }: { onSelect: (rows: number, cols: number
     )
 }
 
-const TableOverlayControls = ({ editor }: { editor: any }) => {
+export const TableOverlayControls = ({ editor }: { editor: any }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [menuType, setMenuType] = useState<'column' | 'row' | 'table' | 'cell'>('table')
     const [activeSubMenu, setActiveSubMenu] = useState<'color' | 'align' | null>(null)
@@ -516,7 +411,6 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
             const rows = Array.from(table.querySelectorAll('tr')) as HTMLTableRowElement[]
             const rowRects = rows.map(r => r.getBoundingClientRect())
 
-            // Get columns from first row
             const firstRowCells = Array.from(rows[0]?.querySelectorAll('td, th') || []) as HTMLElement[]
             const colRects = firstRowCells.map(c => c.getBoundingClientRect())
 
@@ -808,7 +702,6 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
         <div ref={containerRef} className="absolute inset-0 pointer-events-none z-[55]">
             {tableBounds && (
                 <>
-                    {/* Column handle */}
                     <div
                         className="pointer-events-auto absolute group flex flex-col items-center"
                         style={{
@@ -825,7 +718,6 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
                         </button>
                     </div>
 
-                    {/* Row handle */}
                     <div
                         className="pointer-events-auto absolute group flex items-start"
                         style={{
@@ -842,7 +734,6 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
                         </button>
                     </div>
 
-                    {/* Cell handle (4-dot) */}
                     <button
                         onClick={(e) => { e.stopPropagation(); openMenu('cell', e.currentTarget); }}
                         className="pointer-events-auto absolute h-5 w-5 rounded-full bg-[var(--app-accent)] text-[var(--app-accent-text)] flex items-center justify-center shadow-lg hover:scale-110 transition-transform opacity-100 z-[56]"
@@ -855,7 +746,6 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
                         <Layout size={10} fill="currentColor" />
                     </button>
 
-                    {/* UNIFIED ADD BAR ON THE RIGHT (Vertical) */}
                     <button
                         onClick={() => appendColumn()}
                         className="pointer-events-auto absolute w-1.5 rounded-full bg-[var(--app-accent)] opacity-0 hover:opacity-40 transition-opacity flex items-center justify-center group/add-bar cursor-pointer"
@@ -870,7 +760,6 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
                         </div>
                     </button>
 
-                    {/* UNIFIED ADD BAR BELOW (Horizontal) */}
                     <button
                         onClick={() => appendRow()}
                         className="pointer-events-auto absolute h-1.5 rounded-full bg-[var(--app-accent)] opacity-0 hover:opacity-40 transition-opacity flex items-center justify-center group/add-bar cursor-pointer"
@@ -1005,12 +894,12 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
 type SlashItem = {
     label: string
     description: string
-    icon: React.ReactNode
+    icon: ReactNode
     color: string
     action: () => void
 }
 
-const FloatingMenuBar = ({
+export const FloatingMenuBar = ({
     editor,
     onInsertImage,
     onInsertVideo,
@@ -1095,7 +984,6 @@ const FloatingMenuBar = ({
     }
 
     const insertTableOfContents = () => {
-        // Get all headings from the editor
         const headings: { level: number; text: string; id: string }[] = []
         editor.state.doc.descendants((node: any, _pos: number) => {
             if (node.type.name === 'heading') {
@@ -1110,7 +998,6 @@ const FloatingMenuBar = ({
             return
         }
 
-        // Generate HTML for table of contents
         let tocHtml = '<div class="toc-wrapper"><p><strong>Spis treści</strong></p><ul>'
         headings.forEach((h) => {
             const indent = (h.level - 1) * 16
@@ -1125,202 +1012,55 @@ const FloatingMenuBar = ({
         {
             heading: 'Bloki tekstu',
             items: [
-                {
-                    label: 'Tekst',
-                    description: 'Zwykły akapit',
-                    icon: <Type size={16} />,
-                    color: 'bg-muted text-muted-foreground',
-                    action: () => editor.chain().focus().setParagraph().run(),
-                },
-                {
-                    label: 'Nagłówek 1',
-                    description: 'Duży tytuł',
-                    icon: <Heading1 size={16} />,
-                    color: 'bg-blue-500/10 text-blue-500',
-                    action: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-                },
-                {
-                    label: 'Nagłówek 2',
-                    description: 'Średni tytuł',
-                    icon: <Heading2 size={16} />,
-                    color: 'bg-emerald-500/10 text-emerald-500',
-                    action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-                },
-                {
-                    label: 'Nagłówek 3',
-                    description: 'Mały tytuł',
-                    icon: <Heading3 size={16} />,
-                    color: 'bg-teal-500/10 text-teal-500',
-                    action: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-                },
+                { label: 'Tekst', description: 'Zwykły akapit', icon: <Type size={16} />, color: 'bg-muted text-muted-foreground', action: () => editor.chain().focus().setParagraph().run() },
+                { label: 'Nagłówek 1', description: 'Duży tytuł', icon: <Heading1 size={16} />, color: 'bg-blue-500/10 text-blue-500', action: () => editor.chain().focus().toggleHeading({ level: 1 }).run() },
+                { label: 'Nagłówek 2', description: 'Średni tytuł', icon: <Heading2 size={16} />, color: 'bg-emerald-500/10 text-emerald-500', action: () => editor.chain().focus().toggleHeading({ level: 2 }).run() },
+                { label: 'Nagłówek 3', description: 'Mały tytuł', icon: <Heading3 size={16} />, color: 'bg-teal-500/10 text-teal-500', action: () => editor.chain().focus().toggleHeading({ level: 3 }).run() },
             ],
         },
         {
             heading: 'Listy',
             items: [
-                {
-                    label: 'Lista punktowana',
-                    description: 'Prosta lista z kropkami',
-                    icon: <List size={16} />,
-                    color: 'bg-amber-500/10 text-amber-500',
-                    action: () => editor.chain().focus().toggleBulletList().run(),
-                },
-                {
-                    label: 'Lista numerowana',
-                    description: 'Lista z numeracją',
-                    icon: <ListOrdered size={16} />,
-                    color: 'bg-orange-500/10 text-orange-500',
-                    action: () => editor.chain().focus().toggleOrderedList().run(),
-                },
-                {
-                    label: 'Lista zadań',
-                    description: 'Lista z polami wyboru',
-                    icon: <CheckSquare size={16} />,
-                    color: 'bg-violet-500/10 text-violet-500',
-                    action: () => editor.chain().focus().toggleTaskList().run(),
-                },
+                { label: 'Lista punktowana', description: 'Prosta lista z kropkami', icon: <List size={16} />, color: 'bg-amber-500/10 text-amber-500', action: () => editor.chain().focus().toggleBulletList().run() },
+                { label: 'Lista numerowana', description: 'Lista z numeracją', icon: <ListOrdered size={16} />, color: 'bg-orange-500/10 text-orange-500', action: () => editor.chain().focus().toggleOrderedList().run() },
+                { label: 'Lista zadań', description: 'Lista z polami wyboru', icon: <CheckSquare size={16} />, color: 'bg-violet-500/10 text-violet-500', action: () => editor.chain().focus().toggleTaskList().run() },
             ],
         },
         {
             heading: 'Media',
             items: [
-                {
-                    label: 'Obrazek',
-                    description: 'Wstaw obraz z URL',
-                    icon: <ImageIcon size={16} />,
-                    color: 'bg-pink-500/10 text-pink-500',
-                    action: addImage,
-                },
-                {
-                    label: 'Wideo YouTube',
-                    description: 'Osadź wideo z YouTube',
-                    icon: <Video size={16} />,
-                    color: 'bg-red-500/10 text-red-500',
-                    action: addVideo,
-                },
-                {
-                    label: 'Tabela',
-                    description: 'Wstaw tabelę z siatki',
-                    icon: <TableIcon size={16} />,
-                    color: 'bg-indigo-500/10 text-indigo-500',
-                    action: () => {
-                        // This will be handled by a special state in FloatingMenuBar to show TableGridSelector
-                        setShowTableGrid(true)
-                    },
-                },
+                { label: 'Obrazek', description: 'Wstaw obraz z URL', icon: <ImageIcon size={16} />, color: 'bg-pink-500/10 text-pink-500', action: addImage },
+                { label: 'Wideo YouTube', description: 'Osadź wideo z YouTube', icon: <Video size={16} />, color: 'bg-red-500/10 text-red-500', action: addVideo },
+                { label: 'Tabela', description: 'Wstaw tabelę z siatki', icon: <TableIcon size={16} />, color: 'bg-indigo-500/10 text-indigo-500', action: () => setShowTableGrid(true) },
             ],
         },
         {
             heading: 'Formatowanie',
             items: [
-                {
-                    label: 'Pogrubienie',
-                    description: 'Pogrub zaznaczony tekst',
-                    icon: <Bold size={16} />,
-                    color: 'bg-slate-500/10 text-slate-600',
-                    action: () => editor.chain().focus().toggleBold().run(),
-                },
-                {
-                    label: 'Kursywa',
-                    description: 'Pochyl zaznaczony tekst',
-                    icon: <Italic size={16} />,
-                    color: 'bg-slate-500/10 text-slate-600',
-                    action: () => editor.chain().focus().toggleItalic().run(),
-                },
-                {
-                    label: 'Podkreślenie',
-                    description: 'Podkreśl zaznaczony tekst',
-                    icon: <UnderlineIcon size={16} />,
-                    color: 'bg-slate-500/10 text-slate-600',
-                    action: () => editor.chain().focus().toggleUnderline().run(),
-                },
-                {
-                    label: 'Przekreślenie',
-                    description: 'Przekreśl zaznaczony tekst',
-                    icon: <Strikethrough size={16} />,
-                    color: 'bg-slate-500/10 text-slate-600',
-                    action: () => editor.chain().focus().toggleStrike().run(),
-                },
-                {
-                    label: 'Zaznaczenie',
-                    description: 'Podświetl tekst na żółto',
-                    icon: <Highlighter size={16} />,
-                    color: 'bg-yellow-400/20 text-yellow-600',
-                    action: () => editor.chain().focus().toggleHighlight().run(),
-                },
-                {
-                    label: 'Link',
-                    description: 'Dodaj hiperłącze',
-                    icon: <LinkIcon size={16} />,
-                    color: 'bg-blue-400/10 text-blue-500',
-                    action: setLink,
-                },
+                { label: 'Pogrubienie', description: 'Pogrub zaznaczony tekst', icon: <Bold size={16} />, color: 'bg-slate-500/10 text-slate-600', action: () => editor.chain().focus().toggleBold().run() },
+                { label: 'Kursywa', description: 'Pochyl zaznaczony tekst', icon: <Italic size={16} />, color: 'bg-slate-500/10 text-slate-600', action: () => editor.chain().focus().toggleItalic().run() },
+                { label: 'Podkreślenie', description: 'Podkreśl zaznaczony tekst', icon: <UnderlineIcon size={16} />, color: 'bg-slate-500/10 text-slate-600', action: () => editor.chain().focus().toggleUnderline().run() },
+                { label: 'Przekreślenie', description: 'Przekreśl zaznaczony tekst', icon: <Strikethrough size={16} />, color: 'bg-slate-500/10 text-slate-600', action: () => editor.chain().focus().toggleStrike().run() },
+                { label: 'Zaznaczenie', description: 'Podświetl tekst na żółto', icon: <Highlighter size={16} />, color: 'bg-yellow-400/20 text-yellow-600', action: () => editor.chain().focus().toggleHighlight().run() },
+                { label: 'Link', description: 'Dodaj hiperłącze', icon: <LinkIcon size={16} />, color: 'bg-blue-400/10 text-blue-500', action: setLink },
             ],
         },
         {
             heading: 'Wyrównanie',
             items: [
-                {
-                    label: 'Do lewej',
-                    description: 'Wyrównaj tekst do lewej',
-                    icon: <AlignLeft size={16} />,
-                    color: 'bg-gray-500/10 text-gray-500',
-                    action: () => editor.chain().focus().setTextAlign('left').run(),
-                },
-                {
-                    label: 'Do środka',
-                    description: 'Wyśrodkuj tekst',
-                    icon: <AlignCenter size={16} />,
-                    color: 'bg-gray-500/10 text-gray-500',
-                    action: () => editor.chain().focus().setTextAlign('center').run(),
-                },
-                {
-                    label: 'Do prawej',
-                    description: 'Wyrównaj tekst do prawej',
-                    icon: <AlignRight size={16} />,
-                    color: 'bg-gray-500/10 text-gray-500',
-                    action: () => editor.chain().focus().setTextAlign('right').run(),
-                },
+                { label: 'Do lewej', description: 'Wyrównaj tekst do lewej', icon: <AlignLeft size={16} />, color: 'bg-gray-500/10 text-gray-500', action: () => editor.chain().focus().setTextAlign('left').run() },
+                { label: 'Do środka', description: 'Wyśrodkuj tekst', icon: <AlignCenter size={16} />, color: 'bg-gray-500/10 text-gray-500', action: () => editor.chain().focus().setTextAlign('center').run() },
+                { label: 'Do prawej', description: 'Wyrównaj tekst do prawej', icon: <AlignRight size={16} />, color: 'bg-gray-500/10 text-gray-500', action: () => editor.chain().focus().setTextAlign('right').run() },
             ],
         },
         {
             heading: 'Wstawki',
             items: [
-                {
-                    label: 'Cytat',
-                    description: 'Wyróżniony blok tekstu',
-                    icon: <Quote size={16} />,
-                    color: 'bg-pink-500/10 text-pink-500',
-                    action: insertQuoteSmart,
-                },
-                {
-                    label: 'Blok kodu',
-                    description: 'Kod z kolorowaniem składni',
-                    icon: <Code size={16} />,
-                    color: 'bg-slate-500/10 text-slate-500',
-                    action: insertCodeBlockSmart,
-                },
-                {
-                    label: 'Linia pozioma',
-                    description: 'Wizualny separator',
-                    icon: <Minus size={16} />,
-                    color: 'bg-gray-500/10 text-gray-500',
-                    action: () => editor.chain().focus().setHorizontalRule().run(),
-                },
-                {
-                    label: 'Spis treści',
-                    description: 'Generuj z nagłówków',
-                    icon: <ListTree size={16} />,
-                    color: 'bg-cyan-500/10 text-cyan-500',
-                    action: insertTableOfContents,
-                },
-                {
-                    label: 'Prostokąt kolorowy',
-                    description: 'Blok do pisania z wybranym tłem',
-                    icon: <Square size={16} />,
-                    color: 'bg-indigo-500/10 text-indigo-500',
-                    action: insertColoredPanel,
-                },
+                { label: 'Cytat', description: 'Wyróżniony blok tekstu', icon: <Quote size={16} />, color: 'bg-pink-500/10 text-pink-500', action: insertQuoteSmart },
+                { label: 'Blok kodu', description: 'Kod z kolorowaniem składni', icon: <Code size={16} />, color: 'bg-slate-500/10 text-slate-500', action: insertCodeBlockSmart },
+                { label: 'Linia pozioma', description: 'Wizualny separator', icon: <Minus size={16} />, color: 'bg-gray-500/10 text-gray-500', action: () => editor.chain().focus().setHorizontalRule().run() },
+                { label: 'Spis treści', description: 'Generuj z nagłówków', icon: <ListTree size={16} />, color: 'bg-cyan-500/10 text-cyan-500', action: insertTableOfContents },
+                { label: 'Prostokąt kolorowy', description: 'Blok do pisania z wybranym tłem', icon: <Square size={16} />, color: 'bg-indigo-500/10 text-indigo-500', action: insertColoredPanel },
             ],
         },
     ]
@@ -1363,548 +1103,5 @@ const FloatingMenuBar = ({
                 </div>
             ))}
         </FloatingMenu>
-    )
-}
-
-void [BubbleMenuBar, CustomTableCell, CustomTableHeader, TableOverlayControls, FloatingMenuBar]
-
-export function TiptapEditor({
-    content,
-    onChange,
-    editable = true,
-    onCharacterCountChange,
-    onEditorActionsChange,
-    documentId,
-    user,
-    onCollaboratorsChange
-}: TiptapEditorProps) {
-    const [mediaToast, setMediaToast] = useState<{
-        open: boolean
-        type: MediaInsertType
-        value: string
-        error?: string
-    }>({ open: false, type: 'image', value: '' })
-    const [headings, setHeadings] = useState<TocHeading[]>([])
-    const [showTocPreview, setShowTocPreview] = useState(false)
-    const [liveCursors, setLiveCursors] = useState<Record<string, LiveCursor>>({})
-    const liveChannelRef = useRef<RealtimeChannel | null>(null)
-    const isApplyingRemoteRef = useRef(false)
-    const lastContentBroadcastRef = useRef(0)
-    const lastPointerBroadcastRef = useRef(0)
-    const channelSubscribedRef = useRef(false)
-    const editorSurfaceRef = useRef<HTMLDivElement | null>(null)
-    const sendLiveEvent = useCallback((event: string, payload: Record<string, any>) => {
-        const channel = liveChannelRef.current as any
-        if (!channel || !channelSubscribedRef.current) return
-        const body = { type: 'broadcast', event, payload }
-        channel.send(body).catch(() => { })
-    }, [])
-
-    const editor = useEditor({
-        immediatelyRender: false,
-        extensions: [
-            StarterKit.configure({
-                heading: { levels: [1, 2, 3] },
-                codeBlock: false,
-                link: {
-                    openOnClick: false,
-                    HTMLAttributes: {
-                        class: 'text-blue-500 underline cursor-pointer hover:text-blue-600',
-                    },
-                },
-            }),
-            CodeBlockLowlight.configure({
-                lowlight,
-            }),
-            Placeholder.configure({
-                placeholder: ({ node }) => {
-                    if (node.type.name === 'heading') return 'Wpisz nagłówek...'
-                    if (node.type.name === 'tableCell' || node.type.name === 'tableHeader') return ''
-                    return "Wpisz '/' dla komend lub zacznij pisać..."
-                },
-            }),
-            TaskList,
-            TaskItem.configure({ nested: true }),
-            TextColorMark,
-            Highlight.configure({ multicolor: true }),
-            TextAlign.configure({ types: ['heading', 'paragraph'] }),
-            CharacterCount,
-            SuperscriptExtension,
-            SubscriptExtension,
-            Image.configure({
-                HTMLAttributes: {
-                    class: 'max-w-full h-auto rounded-lg my-4',
-                },
-            }),
-            Table.configure({
-                resizable: true,
-                HTMLAttributes: {
-                    class: 'notion-table',
-                },
-            }),
-            TableRow,
-            EditorCustomTableHeader,
-            EditorCustomTableCell,
-            Youtube.configure({
-                HTMLAttributes: {
-                    class: 'w-full aspect-video rounded-lg my-4',
-                },
-            }),
-            DragHandle.configure({
-                render: () => {
-                    const element = document.createElement('div')
-                    element.classList.add('custom-drag-handle')
-                    element.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>`
-                    return element
-                },
-            }),
-        ],
-        content: content || '',
-        editable,
-        onUpdate: ({ editor }) => {
-            if (isApplyingRemoteRef.current) {
-                isApplyingRemoteRef.current = false
-                if (onCharacterCountChange) {
-                    onCharacterCountChange(editor.storage.characterCount?.characters() || 0)
-                }
-                return
-            }
-            if (onChange) onChange(editor.getHTML())
-            if (onCharacterCountChange) {
-                onCharacterCountChange(editor.storage.characterCount?.characters() || 0)
-            }
-            const channel = liveChannelRef.current
-            if (channel && documentId && user?.id) {
-                const now = Date.now()
-                if (now - lastContentBroadcastRef.current > 120) {
-                    lastContentBroadcastRef.current = now
-                    sendLiveEvent('doc-update', {
-                        userId: user.id,
-                        content: editor.getHTML(),
-                        updatedAt: now,
-                    })
-                }
-            }
-        },
-        editorProps: {
-            attributes: {
-                class: 'notion-editor prose prose-lg dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-260px)] px-16 py-12',
-            },
-        },
-    }, [documentId, user?.id, editable])
-
-
-    useEffect(() => {
-        if (!editor || !documentId || !user?.id) {
-            channelSubscribedRef.current = false
-            liveChannelRef.current = null
-            setLiveCursors({})
-            if (onCollaboratorsChange) onCollaboratorsChange([])
-            return
-        }
-
-        const channel = supabase.channel(`doc_live_${documentId}`, {
-            config: {
-                broadcast: { self: false },
-                presence: { key: user.id },
-            },
-        })
-        liveChannelRef.current = channel
-
-        channel
-            .on('broadcast', { event: 'doc-update' }, ({ payload }) => {
-                if (!payload?.content || payload.userId === user.id) return
-                const current = editor.getHTML()
-                if (current === payload.content) return
-                isApplyingRemoteRef.current = true
-                editor.commands.setContent(payload.content, { emitUpdate: false })
-            })
-            .on('broadcast', { event: 'doc-sync-request' }, ({ payload }) => {
-                if (!payload?.requesterId || payload.requesterId === user.id) return
-                sendLiveEvent('doc-update', {
-                    userId: user.id,
-                    content: editor.getHTML(),
-                    updatedAt: Date.now(),
-                })
-            })
-            .on('broadcast', { event: 'pointer-update' }, ({ payload }) => {
-                if (!payload || payload.userId === user.id) return
-                setLiveCursors((prev) => ({
-                    ...prev,
-                    [payload.userId]: {
-                        userId: payload.userId,
-                        name: payload.name || 'Anonymous',
-                        color: payload.color || '#fef08a',
-                        avatarUrl: payload.avatarUrl || undefined,
-                        x: typeof payload.x === 'number' ? payload.x : 0,
-                        y: typeof payload.y === 'number' ? payload.y : 0,
-                        updatedAt: Date.now(),
-                    },
-                }))
-            })
-            .on('presence', { event: 'sync' }, () => {
-                const state = channel.presenceState() as Record<string, any[]>
-                const activeUsers = Object.entries(state)
-                    .filter(([id]) => id !== user.id)
-                    .map(([id, entries]) => {
-                        const first = entries?.[0] || {}
-                        return {
-                            userId: id,
-                            username: first.name || 'Anonymous',
-                            name: first.name || 'Anonymous',
-                            color: { background: first.color || colorFromString(id) },
-                            avatarUrl: first.avatarUrl || null,
-                        }
-                    })
-                if (onCollaboratorsChange) onCollaboratorsChange(activeUsers)
-                setLiveCursors((prev) => {
-                    const next: Record<string, LiveCursor> = {}
-                    activeUsers.forEach((u) => {
-                        if (prev[u.userId]) next[u.userId] = prev[u.userId]
-                    })
-                    return next
-                })
-            })
-
-        channel.subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-                channelSubscribedRef.current = true
-                await channel.track({
-                    id: user.id,
-                    name: user.name || 'Anonymous',
-                    color: colorFromString(user.id || user.email || user.name || 'anonymous'),
-                    avatarUrl: user.image || null,
-                    onlineAt: new Date().toISOString(),
-                })
-                sendLiveEvent('doc-sync-request', {
-                    requesterId: user.id,
-                    sentAt: Date.now(),
-                })
-            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-                channelSubscribedRef.current = false
-            }
-        })
-
-        return () => {
-            channelSubscribedRef.current = false
-            channel.untrack()
-            supabase.removeChannel(channel)
-            if (liveChannelRef.current === channel) liveChannelRef.current = null
-            setLiveCursors({})
-            if (onCollaboratorsChange) onCollaboratorsChange([])
-        }
-    }, [editor, documentId, user?.id, onCollaboratorsChange])
-
-    useEffect(() => {
-        const surface = editorSurfaceRef.current
-        if (!surface || !user?.id) return
-        const sendPointer = (event: PointerEvent) => {
-            const channel = liveChannelRef.current
-            if (!channel) return
-            const rect = surface.getBoundingClientRect()
-            if (rect.width <= 0 || rect.height <= 0) return
-            const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
-            const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))
-            const now = Date.now()
-            if (now - lastPointerBroadcastRef.current < 50) return
-            lastPointerBroadcastRef.current = now
-            sendLiveEvent('pointer-update', {
-                userId: user.id,
-                name: user.name || 'Anonymous',
-                avatarUrl: user.image || null,
-                color: colorFromString(user.id || user.email || user.name || 'anonymous'),
-                x,
-                y,
-            })
-        }
-        surface.addEventListener('pointermove', sendPointer)
-        return () => {
-            surface.removeEventListener('pointermove', sendPointer)
-        }
-    }, [editor, user?.id, sendLiveEvent])
-
-    useEffect(() => {
-        if (!editor || !user?.id) return
-        const sendSelectionPointer = () => {
-            const surface = editorSurfaceRef.current
-            if (!surface) return
-            const selection = window.getSelection()
-            if (!selection || selection.rangeCount === 0) return
-            const rect = selection.getRangeAt(0).getBoundingClientRect()
-            if (rect.width === 0 && rect.height === 0) return
-            const hostRect = surface.getBoundingClientRect()
-            if (hostRect.width <= 0 || hostRect.height <= 0) return
-            const x = Math.max(0, Math.min(1, (rect.left - hostRect.left) / hostRect.width))
-            const y = Math.max(0, Math.min(1, (rect.top - hostRect.top) / hostRect.height))
-            const now = Date.now()
-            if (now - lastPointerBroadcastRef.current < 50) return
-            lastPointerBroadcastRef.current = now
-            sendLiveEvent('pointer-update', {
-                userId: user.id,
-                name: user.name || 'Anonymous',
-                avatarUrl: user.image || null,
-                color: colorFromString(user.id || user.email || user.name || 'anonymous'),
-                x,
-                y,
-            })
-        }
-        editor.on('selectionUpdate', sendSelectionPointer)
-        return () => {
-            editor.off('selectionUpdate', sendSelectionPointer)
-        }
-    }, [editor, user?.id, sendLiveEvent])
-
-    useEffect(() => {
-        const interval = window.setInterval(() => {
-            const now = Date.now()
-            setLiveCursors((prev) => {
-                const next: Record<string, LiveCursor> = {}
-                Object.entries(prev).forEach(([id, cursor]) => {
-                    if (now - cursor.updatedAt < 8000) next[id] = cursor
-                })
-                return next
-            })
-        }, 2000)
-        return () => window.clearInterval(interval)
-    }, [])
-
-    const openMediaToast = useCallback((type: MediaInsertType) => {
-        setMediaToast({ open: true, type, value: '' })
-    }, [])
-
-    const closeMediaToast = useCallback(() => {
-        setMediaToast((prev) => ({ ...prev, open: false, value: '', error: undefined }))
-    }, [])
-
-    const submitMediaToast = useCallback(() => {
-        if (!editor) return
-        const url = mediaToast.value.trim()
-        if (!url) {
-            setMediaToast((prev) => ({ ...prev, error: 'Wklej poprawny URL' }))
-            return
-        }
-        try {
-            new URL(url)
-        } catch {
-            setMediaToast((prev) => ({ ...prev, error: 'URL jest nieprawidłowy' }))
-            return
-        }
-        if (mediaToast.type === 'image') {
-            editor.chain().focus().setImage({ src: url }).run()
-        } else {
-            editor.commands.setYoutubeVideo({ src: url })
-        }
-        closeMediaToast()
-    }, [editor, mediaToast.type, mediaToast.value, closeMediaToast])
-
-    const addImage = useCallback(() => openMediaToast('image'), [openMediaToast])
-    const addVideo = useCallback(() => openMediaToast('video'), [openMediaToast])
-
-    useEffect(() => {
-        if (!editor) return
-
-        const syncOrderedListStarts = () => {
-            const root = editorSurfaceRef.current
-            if (!root) return
-            root.querySelectorAll('ol').forEach((element) => {
-                const ol = element as HTMLOListElement
-                const start = Number(ol.getAttribute('start') || '1')
-                ol.style.setProperty('--list-start', String(start))
-            })
-        }
-
-        const updateHeadings = () => {
-            const nextHeadings: TocHeading[] = []
-            editor.state.doc.descendants((node: any, pos: number) => {
-                if (node.type.name === 'heading') {
-                    const text = node.textContent
-                    if (!text.trim()) return
-                    const id = text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
-                    nextHeadings.push({ level: node.attrs.level, text, id, pos })
-                }
-            })
-            setHeadings(nextHeadings)
-            syncOrderedListStarts()
-        }
-
-        updateHeadings()
-        editor.on('update', updateHeadings)
-        editor.on('transaction', syncOrderedListStarts)
-        return () => {
-            editor.off('update', updateHeadings)
-            editor.off('transaction', syncOrderedListStarts)
-        }
-    }, [editor])
-
-    useEffect(() => {
-        if (!editor || !onEditorActionsChange) return
-        const emit = () => {
-            onEditorActionsChange({
-                canUndo: editor.can().chain().focus().undo().run(),
-                canRedo: editor.can().chain().focus().redo().run(),
-                undo: () => editor.chain().focus().undo().run(),
-                redo: () => editor.chain().focus().redo().run(),
-            })
-        }
-        emit()
-        editor.on('update', emit)
-        editor.on('selectionUpdate', emit)
-        editor.on('focus', emit)
-        return () => {
-            editor.off('update', emit)
-            editor.off('selectionUpdate', emit)
-            editor.off('focus', emit)
-        }
-    }, [editor, onEditorActionsChange])
-
-    useEffect(() => {
-        if (!editor || !onCharacterCountChange) return
-        const count = editor.storage.characterCount?.characters() || 0
-        onCharacterCountChange(count)
-    }, [editor, onCharacterCountChange])
-
-    if (!editor) {
-        return (
-            <div className="flex-1 px-16 py-12 animate-pulse space-y-4">
-                <div className="h-10 bg-muted rounded w-1/3 mb-8" />
-                <div className="h-4 bg-muted rounded w-full" />
-                <div className="h-4 bg-muted rounded w-full" />
-                <div className="h-4 bg-muted rounded w-2/3" />
-            </div>
-        )
-    }
-
-    return (
-        <div className="flex flex-col w-full h-full relative">
-            <div className="flex-1 overflow-auto bg-[var(--app-bg-page)] px-4 md:px-8 py-8 relative">
-                <div className="mx-auto w-full max-w-6xl h-full flex items-start gap-4 xl:gap-8">
-                    {/* Main Editor Container */}
-                    <div className="flex-1 min-w-0 h-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-bg-card)] shadow-[var(--app-shadow-card)] overflow-hidden">
-                        <div className="h-full">
-                            <div ref={editorSurfaceRef} className="flex-1 min-w-0 relative">
-                                <EditorBubbleMenuBar editor={editor} />
-                                <EditorTableOverlayControls editor={editor} />
-                                <EditorFloatingMenuBar editor={editor} onInsertImage={addImage} onInsertVideo={addVideo} />
-                                <EditorContent editor={editor} />
-                                {Object.values(liveCursors).map((cursor) => (
-                                    <div
-                                        key={cursor.userId}
-                                        className="pointer-events-none absolute z-[70]"
-                                        style={{
-                                            left: `${cursor.x * 100}%`,
-                                            top: `${cursor.y * 100}%`,
-                                            transform: 'translate(-6px, -2px)',
-                                        }}
-                                    >
-                                        <div className="w-0 h-0 border-l-[7px] border-r-[7px] border-b-[12px] border-l-transparent border-r-transparent rotate-45 origin-bottom-left" style={{ borderBottomColor: cursor.color }} />
-                                        <div style={{ backgroundColor: cursor.color }} className="w-2 h-2 rounded-full -mt-0.5 ml-0.5" />
-                                        <div
-                                            className="mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold text-black whitespace-nowrap shadow-md"
-                                            style={{ backgroundColor: cursor.color }}
-                                        >
-                                            {cursor.name}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Fixed ToC on the right edge */}
-                    <div
-                        className="hidden lg:flex w-8 xl:w-12 flex-col items-center pt-8 shrink-0 relative z-30"
-                        onMouseEnter={() => setShowTocPreview(true)}
-                        onMouseLeave={() => setShowTocPreview(false)}
-                    >
-                        <div className="space-y-3">
-                            {headings.length === 0 ? (
-                                <div className="space-y-3">
-                                    {Array.from({ length: 8 }).map((_, i) => (
-                                        <div key={i} className="h-[2px] w-6 xl:w-7 rounded bg-[var(--app-text-secondary)]/55" />
-                                    ))}
-                                </div>
-                            ) : (
-                                headings.map((h, i) => (
-                                    <button
-                                        key={`toc-line-${h.id}-${h.pos}-${i}`}
-                                        onClick={() => editor.chain().focus().setTextSelection(h.pos + 1).scrollIntoView().run()}
-                                        className="block mx-auto"
-                                        title={h.text}
-                                    >
-                                        <div
-                                            className="h-[2px] rounded bg-[var(--app-text-secondary)] hover:bg-[var(--app-accent)] transition-colors"
-                                            style={{ width: `${Math.max(12, 28 - (h.level - 1) * 6)}px` }}
-                                        />
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                        {showTocPreview && headings.length > 0 && (
-                            <div className="absolute right-10 xl:right-14 top-8 z-20 w-64 p-1">
-                                <div className="space-y-0.5 rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-card)] shadow-[var(--app-shadow-card)] p-2 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                                    <div className="text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 px-3">
-                                        Spis treści
-                                    </div>
-                                    {headings.map((h, i) => {
-                                        let textSize = 'text-sm font-normal';
-                                        if (h.level === 1) textSize = 'text-sm font-bold text-[var(--app-text-primary)] tracking-tight';
-                                        else if (h.level === 2) textSize = 'text-xs font-semibold text-[var(--app-text-primary)]';
-                                        else if (h.level === 3) textSize = 'text-[11px] font-medium text-[var(--app-text-secondary)]';
-                                        else textSize = 'text-[10px] font-normal text-[var(--app-text-secondary)] opacity-90';
-
-                                        return (
-                                            <button
-                                                key={`toc-preview-${h.id}-${h.pos}-${i}`}
-                                                onClick={() => editor.chain().focus().setTextSelection(h.pos + 1).scrollIntoView().run()}
-                                                className="w-full rounded-md px-3 py-1 text-left hover:bg-[var(--app-bg-elevated)] transition-colors"
-                                                style={{ paddingLeft: `${12 + (h.level - 1) * 8}px` }}
-                                            >
-                                                <span className={`truncate block leading-tight ${textSize}`}>{h.text}</span>
-                                            </button>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-            {mediaToast.open && (
-                <div className="fixed bottom-6 right-6 z-[80] w-[360px] rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-elevated)] p-3 shadow-2xl">
-                    <div className="text-xs font-semibold text-[var(--app-text-primary)] mb-2">
-                        {mediaToast.type === 'image' ? 'Wstaw obrazek z URL' : 'Wstaw wideo YouTube z URL'}
-                    </div>
-                    <input
-                        autoFocus
-                        type="url"
-                        value={mediaToast.value}
-                        onChange={(e) => setMediaToast((prev) => ({ ...prev, value: e.target.value, error: undefined }))}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') submitMediaToast()
-                            if (e.key === 'Escape') closeMediaToast()
-                        }}
-                        placeholder={mediaToast.type === 'image' ? 'https://example.com/image.jpg' : 'https://www.youtube.com/watch?v=...'}
-                        className="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-bg-input)] px-3 py-2 text-sm text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
-                    />
-                    {mediaToast.error && (
-                        <div className="mt-2 text-xs text-red-400">{mediaToast.error}</div>
-                    )}
-                    <div className="mt-3 flex items-center justify-end gap-2">
-                        <button
-                            onClick={closeMediaToast}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] transition-colors"
-                        >
-                            Anuluj
-                        </button>
-                        <button
-                            onClick={submitMediaToast}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--app-accent)] text-[var(--app-accent-text)] hover:opacity-90 transition-opacity"
-                        >
-                            Wstaw
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
     )
 }

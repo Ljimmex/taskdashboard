@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
@@ -9,6 +10,7 @@ interface BrandingSettingsTabProps {
 }
 
 export function BrandingSettingsTab({ workspace }: BrandingSettingsTabProps) {
+    const { t } = useTranslation()
     const { data: session } = useSession()
     const queryClient = useQueryClient()
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -86,54 +88,104 @@ export function BrandingSettingsTab({ workspace }: BrandingSettingsTabProps) {
         <div className="space-y-8">
             {/* Section: Branding */}
             <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Branding</h3>
+                <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">Branding</h3>
 
                 {uploadError && (
-                    <div className="bg-red-500/10 text-red-500 p-3 rounded-lg text-sm">
+                    <div className="bg-red-500/10 text-red-500 p-3 rounded-lg text-sm border border-red-500/20">
                         {uploadError}
                     </div>
                 )}
 
-                <div className="bg-[#1a1a24] rounded-xl p-6 flex items-center gap-6">
+                <div className="bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-8">
                     {/* Logo Preview */}
                     <div className="relative group">
-                        {workspace.logo ? (
-                            <img
-                                src={workspace.logo}
-                                alt="Workspace Logo"
-                                className="w-24 h-24 rounded-xl object-cover bg-black"
-                            />
-                        ) : (
-                            <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white">
-                                {workspace.name?.substring(0, 2).toUpperCase() || 'WT'}
-                            </div>
-                        )}
-                        {isUploading && (
-                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
-                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            </div>
-                        )}
-                    </div>
+                        <div className="w-40 h-40 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-2xl overflow-hidden flex items-center justify-center transition-all group-hover:border-[var(--app-border-hover)]">
+                            {workspace.logo ? (
+                                <img
+                                    src={workspace.logo}
+                                    alt="Workspace Logo"
+                                    className="w-full h-full object-contain"
+                                />
+                            ) : (
+                                <span className="text-4xl font-bold text-[var(--app-text-muted)] group-hover:text-[var(--app-text-secondary)] transition-colors">
+                                    {(workspace.name || 'W').charAt(0).toUpperCase()}
+                                </span>
+                            )}
+                        </div>
 
-                    <div className="flex-1">
-                        <h4 className="text-white font-medium mb-1">Logo Organizacji</h4>
-                        <p className="text-sm text-gray-500 mb-4">Zalecany format: 512x512px, PNG lub SVG. Max 2MB.</p>
-
-                        <input
-                            type="file"
-                            accept="image/*"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            className="hidden"
-                        />
-
+                        {/* Overlay for upload */}
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
-                            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+                            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium rounded-2xl backdrop-blur-sm"
                         >
-                            {isUploading ? 'Przesyłanie...' : 'Zmień logo'}
+                            {isUploading ? 'Wysyłanie...' : 'Zmień logo'}
                         </button>
+                    </div>
+
+                    <div className="flex-1 space-y-4">
+                        <div>
+                            <h4 className="font-semibold text-[var(--app-text-primary)] text-lg">Logo organizacji</h4>
+                            <p className="text-sm text-[var(--app-text-secondary)] mt-1">
+                                To logo będzie wyświetlane w pasku bocznym i na wszystkich stronach związanych z Twoją organizacją.
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                accept="image/*"
+                                className="hidden"
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                className="px-4 py-2 bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-[var(--app-accent-text)] text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                                {isUploading ? t('common.uploading') : t('common.upload_new_photo')}
+                            </button>
+                            {workspace.logo && (
+                                <button
+                                    onClick={() => saveLogo('')}
+                                    className="px-4 py-2 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] text-sm font-medium rounded-lg transition-colors"
+                                >
+                                    Usuń
+                                </button>
+                            )}
+                        </div>
+                        <p className="text-xs text-[var(--app-text-muted)]">
+                            Zalecany format: PNG, JPG lub SVG. Maksymalny rozmiar: 2MB.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Preview Section */}
+            <section className="space-y-4">
+                <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">Podgląd</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Dark Preview */}
+                    <div className="bg-[#0f0f14] border border-gray-800 rounded-2xl p-6">
+                        <p className="text-xs text-gray-500 mb-4 uppercase tracking-wider font-bold">Tryb ciemny</p>
+                        <div className="flex items-center gap-3 bg-[#1a1a24] p-3 rounded-lg border border-gray-800">
+                            <div className="w-8 h-8 rounded shrink-0 overflow-hidden bg-gray-800">
+                                {workspace.logo && <img src={workspace.logo} className="w-full h-full object-contain" />}
+                            </div>
+                            <span className="font-semibold text-gray-200">{workspace.name}</span>
+                        </div>
+                    </div>
+
+                    {/* Light Preview */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                        <p className="text-xs text-gray-400 mb-4 uppercase tracking-wider font-bold">Tryb jasny</p>
+                        <div className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-200">
+                            <div className="w-8 h-8 rounded shrink-0 overflow-hidden bg-gray-100">
+                                {workspace.logo && <img src={workspace.logo} className="w-full h-full object-contain" />}
+                            </div>
+                            <span className="font-semibold text-gray-900">{workspace.name}</span>
+                        </div>
                     </div>
                 </div>
             </section>

@@ -126,14 +126,14 @@ function MyTasksPage() {
 
     if (loading) {
         return (
-            <div className="flex-1 p-8 bg-[#0a0a0f] text-white flex items-center justify-center">
+            <div className="flex-1 p-8 bg-[var(--app-bg-page)] text-white flex items-center justify-center">
                 <div className="text-gray-500">{t('common.loading')}</div>
             </div>
         )
     }
 
     return (
-        <div className="flex-1 p-8 bg-[#0a0a0f] text-white flex flex-col h-full overflow-hidden">
+        <div className="flex-1 p-8 bg-[var(--app-bg-page)] text-white flex flex-col h-full overflow-hidden">
             <header className="flex flex-col gap-4 mb-6 shrink-0">
                 <div className="flex items-center justify-between">
                     <div>
@@ -144,7 +144,7 @@ function MyTasksPage() {
 
             <div className="flex-1 overflow-auto -mx-8 px-8">
                 {listViewTasks.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-64 text-gray-500 mt-12 bg-[#12121a] rounded-2xl border border-gray-800/50 p-8">
+                    <div className="flex flex-col items-center justify-center h-64 text-gray-500 mt-12 bg-[var(--app-bg-card)] rounded-2xl border border-[var(--app-border)] p-8">
                         <List className="w-12 h-12 mb-4 opacity-50 text-gray-400" />
                         <p className="text-lg font-medium text-gray-300">{t('dashboard.myTasks')}</p>
                         <p className="text-sm">{t('dashboard.noFiles') || 'No tasks assigned to you.'}</p>

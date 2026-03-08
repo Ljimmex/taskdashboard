@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetchJson } from '@/lib/api'
-import { Plus, Trash2, Activity, Edit2, Play, FileText, LayoutGrid } from 'lucide-react'
+import { Plus, Trash2, Activity, Edit2, Play, FileText, LayoutGrid, Loader } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { WebhookModal } from '../modals/WebhookModal'
 import { WebhookTestPanel } from '../../webhooks/WebhookTestPanel'
@@ -111,11 +111,14 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold text-white">{t('settings.organization.integrations.title')}</h3>
-                    <p className="text-sm text-gray-500">{t('settings.organization.integrations.subtitle')}</p>
+                    <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">
+                        {t('settings.organization.integrations.title')}
+                    </h3>
+                    <p className="text-sm text-[var(--app-text-muted)]">
+                        {t('settings.organization.integrations.subtitle')}
+                    </p>
                 </div>
                 <button
                     onClick={() => setIsCreateOpen(true)}
@@ -127,69 +130,74 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
             </div>
 
             {isLoading ? (
-                <div className="text-center py-12 text-gray-500">{t('settings.organization.integrations.loading_webhooks')}</div>
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                    <Loader className="w-8 h-8 text-[var(--app-accent)] animate-spin" />
+                    <p className="text-sm text-[var(--app-text-muted)]">
+                        {t('settings.organization.integrations.loading_webhooks')}
+                    </p>
+                </div>
             ) : webhooks.length === 0 ? (
-                <div className="text-center py-16 rounded-2xl bg-[#14141b] border border-gray-800/50">
-                    <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <LayoutGrid className="w-8 h-8 text-amber-500/50" />
+                <div className="flex flex-col items-center justify-center py-16 px-4 bg-[var(--app-bg-card)] border border-dashed border-[var(--app-border)] rounded-2xl text-center">
+                    <div className="w-16 h-16 bg-[var(--app-bg-elevated)] rounded-2xl flex items-center justify-center mb-6 border border-[var(--app-border)] shadow-inner">
+                        <LayoutGrid className="w-8 h-8 text-[var(--app-text-muted)]" />
                     </div>
-                    <h4 className="text-white text-lg font-bold mb-2">{t('settings.organization.integrations.no_integrations_title')}</h4>
-                    <p className="text-gray-500 text-sm mb-8 max-w-sm mx-auto">{t('settings.organization.integrations.no_integrations_subtitle')}</p>
+                    <h4 className="text-lg font-semibold text-[var(--app-text-primary)] mb-2">
+                        {t('settings.organization.integrations.no_integrations_title')}
+                    </h4>
+                    <p className="text-sm text-[var(--app-text-muted)] max-w-sm mb-8 leading-relaxed">
+                        {t('settings.organization.integrations.no_integrations_subtitle')}
+                    </p>
                     <button
                         onClick={() => setIsCreateOpen(true)}
-                        className="px-6 py-2.5 bg-[#1a1a24] hover:bg-[#1f1f2e] text-amber-500 rounded-xl text-sm font-bold transition-all border border-amber-500/20"
+                        className="flex items-center gap-2 px-6 py-3 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-card)] text-[var(--app-text-primary)] border border-[var(--app-border)] rounded-xl font-medium transition-all hover:border-[var(--app-border-hover)] shadow-sm active:scale-95"
                     >
+                        <Plus className="w-4 h-4" />
                         {t('settings.organization.integrations.create_first_webhook_button')}
                     </button>
                 </div>
             ) : (
-                <div className="flex flex-col gap-3">
+                <div className="grid gap-4">
                     {webhooks.map((webhook) => (
                         <div
                             key={webhook.id}
                             className={cn(
-                                "bg-[#14141b] rounded-2xl p-5 transition-all hover:bg-[#1a1a24] border border-gray-800/50 group/card",
+                                "bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl p-5 hover:border-[var(--app-border-hover)] transition-all group/card shadow-sm hover:shadow-md",
                                 !webhook.isActive && "opacity-50 grayscale"
                             )}
                         >
-                            {/* Top Row */}
-                            <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-3">
-                                    {/* Icon */}
-                                    <div className="w-12 h-12 rounded-xl bg-[#1a1a24] flex items-center justify-center flex-shrink-0 border border-gray-800/50 transition-colors group-hover/card:border-amber-500/20">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 bg-[var(--app-bg-elevated)] rounded-xl flex items-center justify-center border border-[var(--app-border)] group-hover/card:scale-110 transition-transform">
                                         {getWebhookIcon(webhook.type)}
                                     </div>
-
-                                    {/* Title + URL */}
-                                    <div>
+                                    <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <h4 className="font-semibold text-white text-[15px]">
+                                            <h4 className="font-semibold text-[var(--app-text-primary)] leading-none text-[15px]">
                                                 {webhook.description || t('settings.organization.integrations.untitled_webhook')}
                                             </h4>
                                             {webhook.silentMode && (
-                                                <span className="px-2 py-0.5 rounded bg-gray-700 text-gray-400 text-[11px] font-medium">
+                                                <span className="px-1.5 py-0.5 bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] text-[10px] font-bold uppercase tracking-wider rounded border border-[var(--app-border)]">
                                                     {t('settings.organization.integrations.silent_badge')}
                                                 </span>
                                             )}
                                         </div>
-                                        <code className="text-gray-500 text-xs font-mono mt-1 block">
-                                            {webhook.url.length > 30 ? webhook.url.slice(0, 30) + '...' : webhook.url}
-                                        </code>
+                                        <div className="flex items-center gap-2 text-xs text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50 px-2 py-1 rounded w-fit border border-[var(--app-border)]/50">
+                                            <span className="font-mono">{webhook.url}</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Action Buttons */}
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => setTestWebhookId(webhook.id)}
-                                        className="p-2 text-gray-500 hover:text-white hover:bg-[#1a1a24] rounded-lg transition-colors border border-transparent hover:border-gray-800"
+                                        className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-accent)] hover:bg-[var(--app-accent)]/10 rounded-lg transition-colors"
                                         title={t('settings.organization.integrations.test_title')}
                                     >
                                         <Play className="w-[18px] h-[18px]" />
                                     </button>
                                     <button
                                         onClick={() => setLogsWebhookId(webhook.id)}
-                                        className="p-2 text-gray-500 hover:text-white hover:bg-[#1a1a24] rounded-lg transition-colors border border-transparent hover:border-gray-800"
+                                        className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                                         title={t('settings.organization.integrations.logs_title')}
                                     >
                                         <FileText className="w-[18px] h-[18px]" />
@@ -199,14 +207,14 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                             setSelectedWebhook(webhook)
                                             setIsCreateOpen(true)
                                         }}
-                                        className="p-2 text-gray-500 hover:text-white hover:bg-[#1a1a24] rounded-lg transition-colors border border-transparent hover:border-gray-800"
+                                        className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
                                         title={t('common.edit')}
                                     >
                                         <Edit2 className="w-[18px] h-[18px]" />
                                     </button>
                                     <button
                                         onClick={() => handleDelete(webhook.id)}
-                                        className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                                        className="p-2 text-[var(--app-text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                                         title={t('common.delete')}
                                     >
                                         <Trash2 className="w-[18px] h-[18px]" />
@@ -214,27 +222,26 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                 </div>
                             </div>
 
-                            {/* Bottom Row - Events and Info */}
-                            <div className="flex justify-between items-center gap-4 mt-3">
-                                {/* Event Tags */}
+                            <div className="flex justify-between items-center gap-4 mt-6 pt-4 border-t border-[var(--app-border)]/50">
                                 <div className="flex items-center gap-1.5 flex-shrink min-w-0">
-                                    {webhook.events.slice(0, 2).map((event: string) => (
-                                        <span key={event} className="px-2.5 py-1 rounded-lg bg-[#1a1a24] text-gray-300 text-[10px] font-bold border border-gray-800/50 whitespace-nowrap">
+                                    <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mr-1">
+                                        {t('settings.organization.integrations.all_events_header')}
+                                    </span>
+                                    {webhook.events.slice(0, 3).map((event: string) => (
+                                        <span key={event} className="px-2.5 py-1 rounded-lg bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] text-[10px] font-bold border border-[var(--app-border)]/50 whitespace-nowrap">
                                             {event}
                                         </span>
                                     ))}
-                                    {webhook.events.length > 2 && (
+                                    {webhook.events.length > 3 && (
                                         <div className="relative group/events">
-                                            <span className="px-2.5 py-1 rounded-lg bg-[#1a1a24] text-gray-400 text-[10px] font-bold border border-gray-800/50 cursor-pointer hover:bg-[#1f1f2e] transition-colors">
-                                                +{webhook.events.length - 2}
+                                            <span className="px-2.5 py-1 rounded-lg bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] text-[10px] font-bold border border-[var(--app-border)]/50 cursor-pointer hover:bg-[var(--app-bg-card)] transition-colors">
+                                                +{webhook.events.length - 3}
                                             </span>
-                                            {/* Hover Dropdown */}
-                                            <div className="absolute left-0 top-full mt-2 hidden group-hover/events:block z-50">
-                                                <div className="bg-[#1a1a24] rounded-xl p-2 shadow-2xl border border-gray-800 min-w-[160px] animate-in fade-in slide-in-from-top-1 duration-200">
-                                                    <p className="text-[10px] text-gray-500 mb-1.5 font-bold px-1 uppercase tracking-wider">{t('settings.organization.integrations.all_events_header')}</p>
+                                            <div className="absolute left-0 bottom-full mb-2 hidden group-hover/events:block z-50">
+                                                <div className="bg-[var(--app-bg-card)] rounded-xl p-2 shadow-2xl border border-[var(--app-border)] min-w-[160px] animate-in fade-in slide-in-from-bottom-1 duration-200">
                                                     <div className="flex flex-col gap-1">
-                                                        {webhook.events.slice(2).map((event: string) => (
-                                                            <span key={event} className="px-2 py-1 rounded-lg bg-[#0f0f14] text-gray-300 text-[10px]">
+                                                        {webhook.events.slice(3).map((event: string) => (
+                                                            <span key={event} className="px-2 py-1 rounded-lg bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] text-[10px]">
                                                                 {event}
                                                             </span>
                                                         ))}
@@ -245,13 +252,22 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                     )}
                                 </div>
 
-                                {/* Stats */}
-                                <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-shrink-0">
+                                <div className="flex items-center gap-3 text-[11px] text-[var(--app-text-muted)] flex-shrink-0">
+                                    {webhook.failureCount > 0 && (
+                                        <div className="flex items-center gap-1.5 text-red-500 font-medium">
+                                            <Activity className="w-3.5 h-3.5" />
+                                            <span>
+                                                {webhook.failureCount === 1
+                                                    ? t('settings.organization.integrations.fails_stat_one', { count: 1 })
+                                                    : t('settings.organization.integrations.fails_stat_other', { count: webhook.failureCount })
+                                                }
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-1.5">
                                         <ClockIcon />
-                                        <span>{t('settings.organization.integrations.fails_stat', { count: webhook.failureCount })}</span>
+                                        <span className="whitespace-nowrap">{t('settings.organization.integrations.created_at_stat', { date: format(new Date(webhook.createdAt), 'd MMM yyyy', { locale: dateLocale }) })}</span>
                                     </div>
-                                    <span className="whitespace-nowrap">{t('settings.organization.integrations.created_at_stat', { date: format(new Date(webhook.createdAt), 'd MMM yyyy', { locale: dateLocale }) })}</span>
                                 </div>
                             </div>
                         </div>

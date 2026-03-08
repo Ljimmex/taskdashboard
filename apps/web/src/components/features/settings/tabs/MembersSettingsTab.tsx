@@ -168,12 +168,12 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-semibold text-white">{t('settings.organization.members.title')}</h3>
-                    <p className="text-sm text-gray-400">{t('settings.organization.members.subtitle')}</p>
+                    <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.organization.members.title')}</h3>
+                    <p className="text-sm text-[var(--app-text-secondary)]">{t('settings.organization.members.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setIsInviteModalOpen(true)}
-                    className="px-4 py-2 bg-[#F2CE88] hover:bg-[#d9b877] text-black font-medium rounded-lg text-sm transition-colors"
+                    className="px-4 py-2 bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-[var(--app-accent-text)] font-medium rounded-lg text-sm transition-colors"
                 >
                     {t('settings.organization.members.invite_button')}
                 </button>
@@ -186,22 +186,22 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                     placeholder={t('settings.organization.members.search_placeholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-[#1a1a24] rounded-lg pl-10 pr-4 py-2 text-white outline-none focus:border-[#F2CE88]"
+                    className="w-full bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg pl-10 pr-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                 />
-                <svg className="w-5 h-5 text-gray-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-[var(--app-text-muted)] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </div>
 
             {/* List */}
             {/* Removed overflow-hidden from container to fix dropdown clipping */}
-            <div className="bg-[#1a1a24] rounded-xl ">
+            <div className="bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-xl ">
                 {isLoading ? (
-                    <div className="p-8 text-center text-gray-500">{t('common.loading')}</div>
+                    <div className="p-8 text-center text-[var(--app-text-muted)]">{t('common.loading')}</div>
                 ) : filteredMembers.length > 0 ? (
-                    <div className="divide-y divide-gray-800">
+                    <div className="divide-y divide-[var(--app-border)]">
                         {/* Header */}
-                        <div className="grid grid-cols-12 gap-4 p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-[#14141b] rounded-t-xl">
+                        <div className="grid grid-cols-12 gap-4 p-4 text-xs font-semibold text-[var(--app-text-secondary)] uppercase tracking-wider bg-[var(--app-bg-elevated)] rounded-t-xl">
                             <div className="col-span-4">{t('settings.organization.members.table.user')}</div>
                             <div className="col-span-3">{t('settings.organization.members.table.role')}</div>
                             <div className="col-span-3">{t('settings.organization.members.table.joined')}</div>
@@ -218,32 +218,32 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                 <div key={member.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-white/5 transition-colors group">
                                     {/* User Info */}
                                     <div className="col-span-4 flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-full bg-gray-700 overflow-hidden flex-shrink-0">
+                                        <div className="w-9 h-9 rounded-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] overflow-hidden flex-shrink-0">
                                             {member.image ? (
                                                 <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-white font-medium text-xs">
+                                                <div className="w-full h-full flex items-center justify-center text-[var(--app-text-primary)] font-medium text-xs">
                                                     {(member.name || member.email || '?').substring(0, 2).toUpperCase()}
                                                 </div>
                                             )}
                                         </div>
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2">
-                                                <h4 className="text-sm font-medium text-white truncate">{member.name || member.email || 'Unknown'}</h4>
+                                                <h4 className="text-sm font-medium text-[var(--app-text-primary)] truncate">{member.name || member.email || 'Unknown'}</h4>
                                                 {member.status === 'suspended' && (
                                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 uppercase tracking-tight">
                                                         {t('settings.organization.members.status.suspended')}
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-xs text-gray-500 truncate">{member.email}</p>
+                                            <p className="text-xs text-[var(--app-text-muted)] truncate">{member.email}</p>
                                         </div>
                                     </div>
 
                                     {/* Role Selector */}
                                     <div className="col-span-3">
                                         {isOwner ? (
-                                            <div className="w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium bg-gray-900/50 text-gray-400 cursor-default">
+                                            <div className="w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium bg-[var(--app-bg-page)] text-[var(--app-text-muted)] cursor-default">
                                                 {t('settings.organization.members.roles.owner')}
                                             </div>
                                         ) : (
@@ -251,9 +251,9 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                 value={displayRole}
                                                 onChange={(e) => handleRoleChange(member.id, e.target.value)}
                                                 disabled={isUpdatingRole || isSelf} // Owner can't demote self easily via this select
-                                                className={`w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium  outline-none transition-colors appearance-none cursor-pointer ${isSelf
-                                                    ? 'bg-gray-800 text-gray-400 cursor-not-allowed opacity-50'
-                                                    : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
+                                                className={`w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium border border-[var(--app-border)] outline-none transition-colors appearance-none cursor-pointer ${isSelf
+                                                    ? 'bg-[var(--app-bg-page)] text-[var(--app-text-muted)] cursor-not-allowed opacity-50'
+                                                    : 'bg-[var(--app-bg-card)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-page)]'
                                                     }`}
                                             >
                                                 <option value="admin">{t('settings.organization.members.roles.admin')}</option>
@@ -266,7 +266,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                     </div>
 
                                     {/* Joined At */}
-                                    <div className="col-span-3 text-sm text-gray-400">
+                                    <div className="col-span-3 text-sm text-[var(--app-text-secondary)]">
                                         {member.joinedAt ? new Date(member.joinedAt).toLocaleDateString() : '-'}
                                     </div>
 
@@ -280,7 +280,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                         e.stopPropagation();
                                                         setOpenMenuId(openMenuId === member.id ? null : member.id);
                                                     }}
-                                                    className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition-colors"
+                                                    className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors"
                                                 >
                                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -289,11 +289,11 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
 
                                                 {/* Dropdown Menu - z-index high, no border, ensure visible */}
                                                 {openMenuId === member.id && (
-                                                    <div className="absolute right-0 top-full mt-1 w-48 bg-[#1a1a24] rounded-lg shadow-xl z-[100] py-1 overflow-visible animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black ring-opacity-5">
+                                                    <div className="absolute right-0 top-full mt-1 w-48 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg shadow-xl z-[100] py-1 overflow-visible animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black ring-opacity-5">
                                                         {!isOwner && (
                                                             <button
                                                                 onClick={() => handleSetOwner(member.id)}
-                                                                className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-colors flex items-center gap-2"
+                                                                className="w-full text-left px-4 py-2.5 text-xs text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors flex items-center gap-2"
                                                             >
                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -305,7 +305,7 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                         <button
                                                             onClick={() => handleToggleStatus(member.id, member.status || 'active')}
                                                             disabled={isUpdatingStatus}
-                                                            className={`w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-colors flex items-center gap-2 ${isUpdatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            className={`w-full text-left px-4 py-2.5 text-xs text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors flex items-center gap-2 ${isUpdatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         >
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -313,12 +313,12 @@ export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
                                                             {member.status === 'suspended' ? t('settings.organization.members.actions.activate') : t('settings.organization.members.actions.suspend')}
                                                         </button>
 
-                                                        <div className="h-px bg-gray-800 my-1" />
+                                                        <div className="h-px bg-[var(--app-border)] my-1" />
 
                                                         <button
                                                             onClick={() => handleRemove(member.id)}
                                                             disabled={isRemoving || isSelf} // Cannot delete self here easily without confirmation of leaving
-                                                            className={`w-full text-left px-4 py-2.5 text-xs transition-colors flex items-center gap-2 ${isSelf ? 'text-gray-600 cursor-not-allowed' : 'text-red-400 hover:bg-red-500/10 hover:text-red-300'
+                                                            className={`w-full text-left px-4 py-2.5 text-xs transition-colors flex items-center gap-2 ${isSelf ? 'text-[var(--app-text-muted)] cursor-not-allowed' : 'text-red-500 hover:bg-red-500/10'
                                                                 }`}
                                                         >
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

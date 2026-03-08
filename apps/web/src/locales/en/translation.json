@@ -392,12 +392,6 @@
                 "subtitle_event": "Schedule a new event",
                 "subtitle_reminder": "Set a reminder"
             },
-            "day_list": {
-                "title": "Daily Events",
-                "count_one": "{{count}} Event",
-                "count_other": "{{count}} Events",
-                "no_events": "No events scheduled for this day."
-            },
             "alerts": {
                 "select_team": "Select team",
                 "select_member": "Select member"
@@ -407,590 +401,1037 @@
                 "meeting": "Meeting",
                 "reminder": "Reminder",
                 "task": "Task"
+            },
+            "export": {
+                "title": "Calendar Export",
+                "desc": "Export your workspace calendar to PDF or iCal format.",
+                "sync_title": "Sync with external apps",
+                "copy_link": "Copy Subscription Link",
+                "link_copied": "Link Copied!",
+                "sync_desc": "Synchronize your schedule with an external calendar – e.g. Google Calendar or Apple Calendar. After adding the link to your chosen calendar, events will update automatically. Keep in mind, however, that changes in the external calendar may be visible with a delay.",
+                "sync_instructions": "Sync Instructions",
+                "google_help": "Google Calendar Help",
+                "apple_iphone": "Apple Calendar (iPhone)",
+                "apple_mac": "Apple Calendar (Mac)"
             }
         },
-        "export": {
-            "title": "Calendar Export",
-            "desc": "Export your workspace calendar to PDF or iCal format.",
-            "sync_title": "Sync with external apps",
-            "copy_link": "Copy Subscription Link",
-            "link_copied": "Link Copied!",
-            "sync_desc": "Synchronize your schedule with an external calendar – e.g. Google Calendar or Apple Calendar. After adding the link to your chosen calendar, events will update automatically. Keep in mind, however, that changes in the external calendar may be visible with a delay.",
-            "sync_instructions": "Sync Instructions",
-            "google_help": "Google Calendar Help",
-            "apple_iphone": "Apple Calendar (iPhone)",
-            "apple_mac": "Apple Calendar (Mac)"
-        }
-    },
-    "register": {
-        "title": "Create your account",
-        "marketingDesc": "Choose a strong password to keep your account safe.",
-        "resend": "Didn't receive code? Resend",
-        "tips": {
-            "title": "💡 Password Tips",
-            "length": "✓ Minimum 8 characters",
-            "complexity": "✓ Use letters, numbers, and symbols",
-            "common": "✓ Avoid common words",
-            "unique": "✓ Don't reuse passwords"
-        },
-        "step1": "Account",
-        "step2": "Personal Info",
-        "step3": "Workspace Setup",
-        "email": "Email",
-        "password": "Password",
-        "confirmPassword": "Confirm Password",
-        "passwordPlaceholder": "8+ characters",
-        "firstName": "First Name",
-        "firstNamePlaceholder": "John",
-        "lastName": "Last Name",
-        "lastNamePlaceholder": "Doe",
-        "birthDate": "Date of Birth",
-        "day": "Day",
-        "month": "Month",
-        "year": "Year",
-        "gender": "Gender",
-        "genderPlaceholder": "Select gender",
-        "genderOptions": {
-            "female": "Female",
-            "male": "Male",
-            "other": "Other",
-            "prefer_not_to_say": "Prefer not to say"
-        },
-        "position": "Position",
-        "positionPlaceholder": "Select position",
-        "workspaceName": "Workspace Name",
-        "workspacePlaceholder": "My Company",
-        "teamSize": "Team Size",
-        "teamSizePlaceholder": "Select team size",
-        "teamSizeOptions": {
-            "1-10": "1-10 people",
-            "11-50": "11-50 people",
-            "51-200": "51-200 people",
-            "200+": "200+ people"
-        },
-        "industry": "Industry",
-        "industryPlaceholder": "Select industry",
-        "industryOptions": {
-            "Technology": "Technology / IT",
-            "Gamedev": "Gamedev / Games",
-            "Marketing": "Marketing / Agency",
-            "Finance": "Finance",
-            "Education": "Education",
-            "Health": "Health",
-            "E-commerce": "E-commerce",
-            "Other": "Other"
-        },
-        "next": "Next →",
-        "back": "← Back",
-        "start": "Start",
-        "verifying": "Configuring...",
-        "haveAccount": "Already have an account?",
-        "login": "Log in",
-        "registerWith": "Register with",
-        "error": {
-            "passwordLength": "Password must be at least 8 characters",
-            "passwordMismatch": "Passwords do not match",
-            "registration": "Registration error",
-            "loginAfterRegister": "Account created, but login failed. Please try logging in.",
-            "unexpected": "An unexpected error occurred during registration",
-            "provider": "Registration error via {{provider}}"
-        },
-        "success": {
-            "title": "Registration successful!",
-            "message": "We have sent a verification link to {{email}}. Please verify your email address to log in.",
-            "backToLogin": "Back to Login"
-        }
-    },
-    "landing": {
-        "nav": {
-            "features": "Features",
-            "pricing": "Pricing",
-            "faq": "FAQ",
-            "login": "Log in",
-            "startFree": "Start for free"
-        },
-        "hero": {
-            "newVersion": "New version available",
-            "title": "Comprehensive",
-            "titleHighlight": "management",
-            "title2": "projects",
-            "desc": "Simplify meetings, manage projects efficiently and optimize workflow - all in one place.",
+        "register": {
+            "title": "Create your account",
+            "marketingDesc": "Choose a strong password to keep your account safe.",
+            "resend": "Didn't receive code? Resend",
+            "tips": {
+                "title": "💡 Password Tips",
+                "length": "✓ Minimum 8 characters",
+                "complexity": "✓ Use letters, numbers, and symbols",
+                "common": "✓ Avoid common words",
+                "unique": "✓ Don't reuse passwords"
+            },
+            "step1": "Account",
+            "step2": "Personal Info",
+            "step3": "Workspace Setup",
+            "email": "Email",
+            "password": "Password",
+            "confirmPassword": "Confirm Password",
+            "passwordPlaceholder": "8+ characters",
+            "firstName": "First Name",
+            "firstNamePlaceholder": "John",
+            "lastName": "Last Name",
+            "lastNamePlaceholder": "Doe",
+            "birthDate": "Date of Birth",
+            "day": "Day",
+            "month": "Month",
+            "year": "Year",
+            "gender": "Gender",
+            "genderPlaceholder": "Select gender",
+            "genderOptions": {
+                "female": "Female",
+                "male": "Male",
+                "other": "Other",
+                "prefer_not_to_say": "Prefer not to say"
+            },
+            "position": "Position",
+            "positionPlaceholder": "Select position",
+            "workspaceName": "Workspace Name",
+            "workspacePlaceholder": "My Company",
+            "teamSize": "Team Size",
+            "teamSizePlaceholder": "Select team size",
+            "teamSizeOptions": {
+                "1-10": "1-10 people",
+                "11-50": "11-50 people",
+                "51-200": "51-200 people",
+                "200+": "200+ people"
+            },
+            "industry": "Industry",
+            "industryPlaceholder": "Select industry",
+            "industryOptions": {
+                "Technology": "Technology / IT",
+                "Gamedev": "Gamedev / Games",
+                "Marketing": "Marketing / Agency",
+                "Finance": "Finance",
+                "Education": "Education",
+                "Health": "Health",
+                "E-commerce": "E-commerce",
+                "Other": "Other"
+            },
+            "next": "Next →",
+            "back": "← Back",
             "start": "Start",
-            "viewFeatures": "View features"
-        },
-        "features": {
-            "tasks": {
-                "title": "Efficient task management",
-                "desc": "Organize, prioritize and track progress with precise tools.",
-                "item1": "Market Analysis",
-                "item2": "UI Design",
-                "item3": "Logo Review"
+            "verifying": "Configuring...",
+            "haveAccount": "Already have an account?",
+            "login": "Log in",
+            "registerWith": "Register with",
+            "error": {
+                "passwordLength": "Password must be at least 8 characters",
+                "passwordMismatch": "Passwords do not match",
+                "registration": "Registration error",
+                "loginAfterRegister": "Account created, but login failed. Please try logging in.",
+                "unexpected": "An unexpected error occurred during registration",
+                "provider": "Registration error via {{provider}}"
             },
-            "calendar": {
-                "title": "Stay up to date",
-                "month": "MAY 2024",
-                "projects": "45 Projects",
-                "subtitle": "Stay up to date",
-                "desc": "Sync with calendar to never miss a deadline."
-            },
-            "analytics": {
-                "title": "Insightful Analytics",
-                "desc": "Detailed reports help measure performance and optimize productivity."
+            "success": {
+                "title": "Registration successful!",
+                "message": "We have sent a verification link to {{email}}. Please verify your email address to log in.",
+                "backToLogin": "Back to Login"
             }
         },
-        "efficiency": {
-            "title": "Unleash efficiency in",
-            "title2": "project management",
-            "desc": "Plan and organize the entire project from start to finish. Communicate and collaborate with your team.",
-            "workflow": {
-                "title": "Improve Workflow",
-                "desc": "Simplify project management with intuitive tools."
+        "landing": {
+            "nav": {
+                "features": "Features",
+                "pricing": "Pricing",
+                "faq": "FAQ",
+                "login": "Log in",
+                "startFree": "Start for free"
             },
-            "collaboration": {
-                "title": "Seamless collaboration",
-                "desc": "Real-time updates and communication tools."
+            "hero": {
+                "newVersion": "New version available",
+                "title": "Comprehensive",
+                "titleHighlight": "management",
+                "title2": "projects",
+                "desc": "Simplify meetings, manage projects efficiently and optimize workflow - all in one place.",
+                "start": "Start",
+                "viewFeatures": "View features"
             },
-            "management": {
-                "title": "Optimize management",
-                "desc": "Prioritize tasks and ensure timely delivery."
+            "features": {
+                "tasks": {
+                    "title": "Efficient task management",
+                    "desc": "Organize, prioritize and track progress with precise tools.",
+                    "item1": "Market Analysis",
+                    "item2": "UI Design",
+                    "item3": "Logo Review"
+                },
+                "calendar": {
+                    "title": "Stay up to date",
+                    "month": "MAY 2024",
+                    "projects": "45 Projects",
+                    "subtitle": "Stay up to date",
+                    "desc": "Sync with calendar to never miss a deadline."
+                },
+                "analytics": {
+                    "title": "Insightful Analytics",
+                    "desc": "Detailed reports help measure performance and optimize productivity."
+                }
             },
-            "team": {
-                "title": "Increase team efficiency",
-                "desc": "Clear goals, streamlined processes and insightful analytics."
+            "efficiency": {
+                "title": "Unleash efficiency in",
+                "title2": "project management",
+                "desc": "Plan and organize the entire project from start to finish. Communicate and collaborate with your team.",
+                "workflow": {
+                    "title": "Improve Workflow",
+                    "desc": "Simplify project management with intuitive tools."
+                },
+                "collaboration": {
+                    "title": "Seamless collaboration",
+                    "desc": "Real-time updates and communication tools."
+                },
+                "management": {
+                    "title": "Optimize management",
+                    "desc": "Prioritize tasks and ensure timely delivery."
+                },
+                "team": {
+                    "title": "Increase team efficiency",
+                    "desc": "Clear goals, streamlined processes and insightful analytics."
+                },
+                "progress": {
+                    "title": "Monitor progress",
+                    "desc": "Track project progress in real time."
+                }
             },
-            "progress": {
-                "title": "Monitor progress",
-                "desc": "Track project progress in real time."
+            "pricing": {
+                "title": "Choose the perfect plan",
+                "title2": "for your workflow",
+                "desc": "Whether you are a freelancer, startup or enterprise - we have a plan for you.",
+                "free": {
+                    "name": "Free",
+                    "price": "$0",
+                    "period": "forever",
+                    "desc": "Perfect for small teams to start",
+                    "features": [
+                        "Up to 5 projects",
+                        "Up to 3 team members",
+                        "Basic analytics",
+                        "Email support"
+                    ]
+                },
+                "pro": {
+                    "name": "Pro",
+                    "price": "$49",
+                    "period": "monthly",
+                    "desc": "For growing teams and startups",
+                    "features": [
+                        "Unlimited projects",
+                        "Up to 50 team members",
+                        "Advanced analytics",
+                        "Priority support",
+                        "API integrations"
+                    ]
+                },
+                "enterprise": {
+                    "name": "Enterprise",
+                    "price": "Contact",
+                    "period": "",
+                    "desc": "For large organizations",
+                    "features": [
+                        "Everything in Pro",
+                        "Unlimited users",
+                        "SSO / SAML",
+                        "Dedicated manager",
+                        "SLA 99.99%"
+                    ],
+                    "contact": "Contact us"
+                },
+                "popular": "Most popular"
+            },
+            "faq": {
+                "title": "Have questions?",
+                "title2": "We have answers.",
+                "desc": "If you don't find the answer to your question, write to us - we'll be happy to help.",
+                "contact": "Contact us →",
+                "q1": {
+                    "question": "Can I cancel my subscription at any time?",
+                    "answer": "Yes, you can cancel your subscription at any time. There are no hidden fees or penalties for early termination."
+                },
+                "q2": {
+                    "question": "How to install the software?",
+                    "answer": "Zadano.app works in the browser - just register and you can start using it right away. No installation required."
+                },
+                "q3": {
+                    "question": "Can I start for free?",
+                    "answer": "Absolutely! Our Free plan is free forever and includes all the basic features needed for project management."
+                },
+                "q4": {
+                    "question": "What integrations are available?",
+                    "answer": "We support integrations with over 50 tools, including Slack, GitHub, Jira, Notion, Google Drive and much more."
+                }
+            },
+            "cta": {
+                "title": "Simplify your workflow with",
+                "desc": "Start for free and see why thousands of teams chose Zadano.app as their project management tool.",
+                "button": "Start for free →"
+            },
+            "footer": {
+                "desc": "Manage projects more efficiently with tools designed for your team.",
+                "overview": "Overview",
+                "resources": "Resources",
+                "blog": "Blog",
+                "support": "Support",
+                "newsletter": "Newsletter",
+                "newsletterDesc": "Get the latest news and tips.",
+                "subscribe": "Sub",
+                "rights": "© 2024 Zadano.app. All rights reserved."
             }
         },
-        "pricing": {
-            "title": "Choose the perfect plan",
-            "title2": "for your workflow",
-            "desc": "Whether you are a freelancer, startup or enterprise - we have a plan for you.",
-            "free": {
-                "name": "Free",
-                "price": "$0",
-                "period": "forever",
-                "desc": "Perfect for small teams to start",
-                "features": [
-                    "Up to 5 projects",
-                    "Up to 3 team members",
-                    "Basic analytics",
-                    "Email support"
-                ]
-            },
-            "pro": {
-                "name": "Pro",
-                "price": "$49",
-                "period": "monthly",
-                "desc": "For growing teams and startups",
-                "features": [
-                    "Unlimited projects",
-                    "Up to 50 team members",
-                    "Advanced analytics",
-                    "Priority support",
-                    "API integrations"
-                ]
-            },
-            "enterprise": {
-                "name": "Enterprise",
-                "price": "Contact",
-                "period": "",
-                "desc": "For large organizations",
-                "features": [
-                    "Everything in Pro",
-                    "Unlimited users",
-                    "SSO / SAML",
-                    "Dedicated manager",
-                    "SLA 99.99%"
-                ],
-                "contact": "Contact us"
-            },
-            "popular": "Most popular"
-        },
-        "faq": {
-            "title": "Have questions?",
-            "title2": "We have answers.",
-            "desc": "If you don't find the answer to your question, write to us - we'll be happy to help.",
-            "contact": "Contact us →",
-            "q1": {
-                "question": "Can I cancel my subscription at any time?",
-                "answer": "Yes, you can cancel your subscription at any time. There are no hidden fees or penalties for early termination."
-            },
-            "q2": {
-                "question": "How to install the software?",
-                "answer": "Zadano.app works in the browser - just register and you can start using it right away. No installation required."
-            },
-            "q3": {
-                "question": "Can I start for free?",
-                "answer": "Absolutely! Our Free plan is free forever and includes all the basic features needed for project management."
-            },
-            "q4": {
-                "question": "What integrations are available?",
-                "answer": "We support integrations with over 50 tools, including Slack, GitHub, Jira, Notion, Google Drive and much more."
-            }
-        },
-        "cta": {
-            "title": "Simplify your workflow with",
-            "desc": "Start for free and see why thousands of teams chose Zadano.app as their project management tool.",
-            "button": "Start for free →"
-        },
-        "footer": {
-            "desc": "Manage projects more efficiently with tools designed for your team.",
-            "overview": "Overview",
-            "resources": "Resources",
-            "blog": "Blog",
-            "support": "Support",
-            "newsletter": "Newsletter",
-            "newsletterDesc": "Get the latest news and tips.",
-            "subscribe": "Sub",
-            "rights": "© 2024 Zadano.app. All rights reserved."
-        }
-    },
-    "settings": {
-        "organization": {
-            "edit_panel": {
-                "select_teams": "Select teams...",
-                "no_teams_found": "No teams found"
-            },
-            "labels": {
-                "title": "Labels",
-                "subtitle": "Manage workspace labels",
-                "loading": "Loading labels...",
-                "no_labels": "No labels found",
-                "add_button": "Add Label",
-                "name_placeholder": "Label name",
-                "new_name_placeholder": "New label name",
-                "create_tooltip": "Create new label",
-                "color_picker_tooltip": "Pick a color",
-                "tip_header": "Pro Tip",
-                "tip_content": "Use consistent colors for similar categories."
-            },
-            "integrations": {
-                "title": "Integrations",
-                "subtitle": "Manage webhooks and external services",
-                "loading_webhooks": "Loading webhooks...",
-                "new_webhook_button": "New Webhook",
-                "no_integrations_title": "No integrations yet",
-                "no_integrations_subtitle": "Add a webhook to get started",
-                "create_first_webhook_button": "Create Webhook",
-                "delete_webhook_confirm": "Are you sure you want to delete this webhook?",
-                "untitled_webhook": "Untitled Webhook",
-                "silent_badge": "Silent",
-                "test_title": "Test Webhook",
-                "logs_title": "Delivery Logs",
-                "all_events_header": "All Events",
-                "webhook_modal": {
-                    "add_webhook": "Add Webhook",
-                    "edit_webhook": "Edit Webhook",
-                    "url_label": "Webhook URL",
-                    "description_label": "Description",
-                    "optional": "(optional)",
-                    "description_placeholder_discord": "e.g. Discord Alerts Channel",
-                    "description_placeholder_slack": "e.g. Slack Notifications",
-                    "description_placeholder_generic": "e.g. Production Server Webhook",
-                    "events_label": "Trigger Events",
-                    "platform": "Platform",
-                    "other": "Other",
-                    "silent_mode_title": "Silent Mode",
-                    "silent_mode_description": "Don't send failure notifications",
-                    "error_saving": "Failed to save webhook",
-                    "error_url_required": "URL is required",
-                    "error_no_events": "Select at least one event",
-                    "groups": {
-                        "tasks": "Tasks",
-                        "subtasks": "Subtasks",
-                        "comments": "Comments",
-                        "files": "Files",
-                        "calendar": "Calendar",
-                        "members": "Members"
+        "settings": {
+            "organization": {
+                "branding": {
+                    "title": "Branding",
+                    "description": "Customize your organization appearance and brand color.",
+                    "brand_color": "Brand Color",
+                    "brand_color_description": "This color will be used for buttons, links and accent elements.",
+                    "logo_heading": "Organization Logo",
+                    "logo_description": "This logo will be displayed in the sidebar and across all pages related to your organization.",
+                    "change_logo": "Change logo",
+                    "preview_title": "Preview",
+                    "preview_light": "Light Mode",
+                    "workspace_ready": "Workspace is ready",
+                    "action_button": "Action button"
+                },
+                "edit_panel": {
+                    "select_teams": "Select teams...",
+                    "no_teams_found": "No teams found"
+                },
+                "labels": {
+                    "title": "Labels",
+                    "subtitle": "Manage workspace labels",
+                    "loading": "Loading labels...",
+                    "no_labels": "No labels found",
+                    "add_button": "Add Label",
+                    "name_placeholder": "Label name",
+                    "new_name_placeholder": "New label name",
+                    "create_tooltip": "Create new label",
+                    "color_picker_tooltip": "Pick a color",
+                    "tip_header": "Pro Tip",
+                    "tip_content": "Use consistent colors for similar categories."
+                },
+                "integrations": {
+                    "title": "Integrations & Webhooks",
+                    "subtitle": "Manage external integrations and webhook events",
+                    "new_webhook_button": "New Webhook",
+                    "loading_webhooks": "Loading webhooks...",
+                    "no_integrations_title": "No integrations yet",
+                    "no_integrations_subtitle": "Connect your workspace with external tools like Discord or Slack to automate your workflow.",
+                    "create_first_webhook_button": "Create your first webhook",
+                    "untitled_webhook": "Untitled Webhook",
+                    "silent_badge": "Silent",
+                    "delete_webhook_confirm": "Are you sure you want to delete this webhook?",
+                    "all_events_header": "All events:",
+                    "test_title": "Test",
+                    "logs_title": "Logs",
+                    "fails_stat_one": "{{count}} error",
+                    "fails_stat_other": "{{count}} errors",
+                    "delivery_logs": {
+                        "title": "Delivery Logs",
+                        "subtitle": "History of the last 50 delivery attempts",
+                        "loading": "Loading logs...",
+                        "empty": "No delivery history found for this webhook",
+                        "table": {
+                            "status": "Status",
+                            "event": "Event",
+                            "response": "Response",
+                            "time": "Time",
+                            "date": "Date"
+                        }
                     },
-                    "events": {
-                        "task_created": "Task Created",
-                        "task_updated": "Task Updated",
-                        "task_status_changed": "Status Changed",
-                        "task_priority_changed": "Priority Changed",
-                        "task_assigned": "Task Assigned",
-                        "task_due_date_changed": "Due Date Changed",
-                        "task_deleted": "Task Deleted",
-                        "subtask_created": "Subtask Created",
-                        "subtask_updated": "Subtask Updated",
-                        "subtask_completed": "Subtask Completed",
-                        "comment_added": "Comment Added",
-                        "file_uploaded": "File Uploaded",
-                        "file_deleted": "File Deleted",
-                        "calendar_created": "Event Created",
-                        "calendar_updated": "Event Updated",
-                        "calendar_deleted": "Event Deleted",
-                        "member_added": "Member Added",
-                        "member_removed": "Member Removed"
+                    "test_panel": {
+                        "title": "Test Webhook",
+                        "subtitle": "Send sample event",
+                        "description": "This tool will send a test event <1>webhook.test</1> to the configured URL. This allows you to verify if your server correctly receives and processes requests.",
+                        "payload_preview": "PAYLOAD PREVIEW",
+                        "success_title": "Sent successfully",
+                        "error_title": "Send error",
+                        "close": "Close",
+                        "send_test": "Send test",
+                        "sending": "Sending..."
+                    },
+                    "created_at_stat": "Created {{date}}",
+                    "webhook_modal": {
+                        "edit_webhook": "Edit Webhook",
+                        "add_webhook": "Add Webhook",
+                        "platform": "Platform",
+                        "other": "Other",
+                        "url_label": "Webhook URL",
+                        "description_label": "Description",
+                        "optional": "optional",
+                        "description_placeholder_discord": "e.g., Discord Notifications #general",
+                        "description_placeholder_slack": "e.g., Slack #alerts",
+                        "description_placeholder_generic": "e.g., CRM Integration",
+                        "silent_mode_title": "Silent mode (@silent)",
+                        "silent_mode_description": "Messages will not send push notifications",
+                        "events_label": "Events",
+                        "error_saving": "Error while saving webhook",
+                        "error_url_required": "URL is required",
+                        "error_no_events": "Select at least one event",
+                        "groups": {
+                            "tasks": "TASKS",
+                            "subtasks": "SUBTASKS",
+                            "comments": "COMMENTS",
+                            "files": "FILES",
+                            "calendar": "CALENDAR",
+                            "members": "MEMBERS"
+                        },
+                        "events": {
+                            "task_created": "Task created",
+                            "task_updated": "Task updated (title, description)",
+                            "task_status_changed": "Task status changed",
+                            "task_priority_changed": "Task priority changed",
+                            "task_assigned": "User assigned",
+                            "task_due_date_changed": "Due date changed",
+                            "task_deleted": "Task deleted",
+                            "subtask_created": "Subtask created",
+                            "subtask_updated": "Subtask updated",
+                            "subtask_completed": "Subtask completed",
+                            "comment_added": "Comment added",
+                            "file_uploaded": "File uploaded",
+                            "file_deleted": "File deleted",
+                            "calendar_created": "Event added",
+                            "calendar_updated": "Event updated",
+                            "calendar_deleted": "Event deleted",
+                            "member_added": "New member joined",
+                            "member_removed": "Member removed"
+                        }
+                    }
+                },
+                "defaults": {
+                    "priorities_title": "Task Priorities",
+                    "priorities_subtitle": "Customize priority levels for tasks in the workspace",
+                    "loading_priorities": "Loading priorities...",
+                    "priority_name_placeholder": "Priority name...",
+                    "add_priority_button": "Add priority",
+                    "delete_priority_confirm": "Are you sure you want to delete this priority?",
+                    "priority_names": {
+                        "low": "Low",
+                        "medium": "Medium",
+                        "high": "High",
+                        "urgent": "Urgent"
+                    },
+                    "default_template_title": "Default Project Template",
+                    "default_template_subtitle": "Choose primary industry template for new projects",
+                    "no_default_template": "No default (manual selection)",
+                    "select_default_template": "Select Default Template",
+                    "no_template": "No template",
+                    "industry_template_hint": "New projects will use this template by default unless another one is selected.",
+                    "pro_tip_title": "Pro Tip",
+                    "pro_tip_content": "Use custom priorities to align task management with your team's workflow and urgency levels."
+                },
+                "security": {
+                    "title": "Workspace Security",
+                    "subtitle": "Manage encryption and security keys.",
+                    "encryptionTitle": "End-to-End Encryption",
+                    "encryptionDesc": "Messages in this workspace are encrypted with RSA/AES keys. Key rotation increases security without losing access to history.",
+                    "statusExpired": "Keys expired",
+                    "statusActive": "Keys active",
+                    "rotateButton": "Rotate keys and re-encrypt messages",
+                    "rotating": "Rotating and re-encrypting...",
+                    "success": "Successfully rotated keys and re-encrypted {{count}} messages.",
+                    "confirmRotate": "Are you sure you want to rotate keys? All messages will be re-encrypted with a new key. This may take a moment depending on the number of messages."
+                },
+                "general": {
+                    "success": "Settings saved successfully",
+                    "error": "Error while saving",
+                    "logo_save_error": "Failed to save logo in database.",
+                    "logo_type_error": "Please select an image file (PNG, JPG, SVG).",
+                    "logo_size_error": "Maximum file size is 2MB.",
+                    "upload_error": "An error occurred while uploading the file.",
+                    "logo_title": "Logo",
+                    "change_logo": "Change logo",
+                    "logo_hint": "Recommended format: 512x512px, PNG or SVG. Max 2MB.",
+                    "profile_title": "Organization Profile",
+                    "name_label": "Organization name",
+                    "name_placeholder": "My Organization",
+                    "slug_label": "Workspace URL",
+                    "description_label": "Description",
+                    "description_placeholder": "Brief description of the organization...",
+                    "location_title": "Location",
+                    "timezone_label": "Timezone",
+                    "timezone_hint": "Your current system-detected timezone: {{tz}}",
+                    "delete_workspace": "Delete organization"
+                },
+                "members": {
+                    "title": "Members",
+                    "subtitle": "Manage access to organization",
+                    "invite_button": "Invite member",
+                    "search_placeholder": "Search members...",
+                    "no_members": "No members found",
+                    "remove_confirm": "Are you sure you want to remove this member from organization?",
+                    "set_owner_confirm": "Are you sure you want to hand over the Owner role? This action is irreversible.",
+                    "suspend_confirm": "Are you sure you want to suspend this member?",
+                    "activate_confirm": "Are you sure you want to activate this member?",
+                    "remove_error": "Failed to remove member",
+                    "update_role_error": "Failed to update role",
+                    "update_status_error": "Failed to update status",
+                    "table": {
+                        "user": "User",
+                        "role": "Role",
+                        "joined": "Joined",
+                        "actions": "Actions"
+                    },
+                    "status": {
+                        "suspended": "Suspended"
+                    },
+                    "roles": {
+                        "owner": "Owner",
+                        "admin": "Admin",
+                        "project_manager": "Project Manager",
+                        "hr_manager": "HR Manager",
+                        "member": "Member",
+                        "guest": "Guest"
+                    },
+                    "actions": {
+                        "set_owner": "Set as Owner",
+                        "suspend": "Suspend",
+                        "activate": "Activate",
+                        "remove": "Remove from organization"
+                    },
+                    "invite_panel": {
+                        "title": "Invite to {{name}}",
+                        "subtitle": "Add members to your organization",
+                        "tab_email": "Invite with email",
+                        "tab_link": "Invite with link",
+                        "email_label": "Email Address",
+                        "email_placeholder": "name@company.com",
+                        "newly_generated": "✨ Newly Generated Link",
+                        "copy_link_title": "Copy Link",
+                        "generating": "Generating...",
+                        "generate_button": "+ Generate New Link",
+                        "loading_invites": "Loading invites...",
+                        "active_invites_count": "Active Invite Links ({{count}})",
+                        "role_label_with_value": "Role: {{value}}",
+                        "status_expired": "Expired",
+                        "expires_label": "Expires: {{date}}",
+                        "no_active_invites": "No active invites yet",
+                        "assigned_role_label": "Assigned Role",
+                        "expiration_label": "Expiration",
+                        "expire_options": {
+                            "1_day": "1 day",
+                            "7_days": "7 days",
+                            "30_days": "30 days",
+                            "never": "Never (not recommended)"
+                        },
+                        "cancel": "Cancel",
+                        "sending": "Sending...",
+                        "send_button": "Send Invitation",
+                        "done_button": "Done",
+                        "create_error": "Failed to create invitation: {{error}}"
                     }
                 }
             },
-            "security": {
-                "title": "Workspace Security",
-                "subtitle": "Manage encryption and security keys.",
-                "encryptionTitle": "End-to-End Encryption",
-                "encryptionDesc": "Messages in this workspace are encrypted with RSA/AES keys. Key rotation increases security without losing access to history.",
-                "statusExpired": "Keys expired",
-                "statusActive": "Keys active",
-                "rotateButton": "Rotate keys and re-encrypt messages",
-                "rotating": "Rotating and re-encrypting...",
-                "success": "Successfully rotated keys and re-encrypted {{count}} messages.",
-                "confirmRotate": "Are you sure you want to rotate keys? All messages will be re-encrypted with a new key. This may take a moment depending on the number of messages."
+            "title": "User Settings",
+            "subtitle": "Manage your personal preferences",
+            "tabs": {
+                "account": "Account",
+                "notification": "Notification",
+                "privacy": "Privacy & Security",
+                "security": "Security"
             },
-            "general": {
-                "success": "Settings saved successfully",
-                "error": "Error while saving",
-                "logo_save_error": "Failed to save logo in database.",
-                "logo_type_error": "Please select an image file (PNG, JPG, SVG).",
-                "logo_size_error": "Maximum file size is 2MB.",
-                "upload_error": "An error occurred while uploading the file.",
-                "logo_title": "Logo",
-                "change_logo": "Change logo",
-                "logo_hint": "Recommended format: 512x512px, PNG or SVG. Max 2MB.",
-                "profile_title": "Organization Profile",
-                "name_label": "Organization name",
-                "name_placeholder": "My Organization",
-                "slug_label": "Workspace URL",
-                "description_label": "Description",
-                "description_placeholder": "Brief description of the organization...",
-                "location_title": "Location",
-                "timezone_label": "Timezone",
-                "timezone_hint": "Your current system-detected timezone: {{tz}}",
-                "delete_workspace": "Delete organization"
-            },
-            "members": {
-                "title": "Members",
-                "subtitle": "Manage access to organization",
-                "invite_button": "Invite member",
-                "search_placeholder": "Search members...",
-                "no_members": "No members found",
-                "remove_confirm": "Are you sure you want to remove this member from organization?",
-                "set_owner_confirm": "Are you sure you want to hand over the Owner role? This action is irreversible.",
-                "suspend_confirm": "Are you sure you want to suspend this member?",
-                "activate_confirm": "Are you sure you want to activate this member?",
-                "remove_error": "Failed to remove member",
-                "update_role_error": "Failed to update role",
-                "update_status_error": "Failed to update status",
-                "table": {
-                    "user": "User",
-                    "role": "Role",
-                    "joined": "Joined",
-                    "actions": "Actions"
+            "edit_panel": {
+                "title": "Edit Member",
+                "photo": "Photo",
+                "change_photo": "Change photo",
+                "remove_photo": "Remove photo",
+                "photo_help": "Recommended: JPG or PNG, max 2MB.",
+                "first_name": "First Name",
+                "last_name": "Last Name",
+                "job_title": "Job Title",
+                "job_title_placeholder": "e.g. Senior Developer",
+                "team_level": "Team Level",
+                "select_level": "Select level",
+                "city": "City",
+                "city_placeholder": "e.g. London",
+                "country": "Country",
+                "country_placeholder": "e.g. United Kingdom",
+                "email": "Email Address",
+                "change_email": "Change email",
+                "team_groups": "Team Groups",
+                "select_teams": "Select teams",
+                "no_teams_found": "No teams found",
+                "projects": "Projects",
+                "select_projects": "Select projects",
+                "no_projects_found": "No projects found",
+                "delete_member": "Delete Member",
+                "save_changes": "Save Changes",
+                "saving": "Saving...",
+                "delete_confirmation": "Are you sure you want to remove {{name}}? This action cannot be undone.",
+                "deleting": "Deleting...",
+                "labels": {
+                    "title": "Labels",
+                    "subtitle": "Manage labels for the entire workspace. Changes will be visible globally.",
+                    "loading": "Loading labels...",
+                    "no_labels": "No labels. Create the first label below.",
+                    "delete_confirm": "Are you sure you want to delete label \"{{name}}\"?\n\nNote: Deleting a label will not remove it from existing tasks.",
+                    "name_placeholder": "Label name",
+                    "new_name_placeholder": "New label name",
+                    "create_tooltip": "Create",
+                    "add_button": "Add new label",
+                    "tip_header": "Tip",
+                    "tip_content": "Changes to label colors and names will be immediately visible across all tasks and projects using these labels.",
+                    "color_picker_tooltip": "Choose color",
+                    "add_labels": "Add labels"
+                },
+                "defaults": {
+                    "priorities_title": "Task Priorities",
+                    "priorities_subtitle": "Customize priority levels for tasks in the workspace",
+                    "loading_priorities": "Loading priorities...",
+                    "priority_name_placeholder": "Priority name...",
+                    "add_priority_button": "Add priority",
+                    "delete_priority_confirm": "Are you sure you want to delete this priority?",
+                    "priority_names": {
+                        "low": "Low",
+                        "medium": "Medium",
+                        "high": "High",
+                        "urgent": "Urgent"
+                    },
+                    "default_template_title": "Default Project Template",
+                    "default_template_subtitle": "Choose primary industry template for new projects",
+                    "no_default_template": "No default (manual selection)"
+                },
+                "integrations": {
+                    "title": "Integrations & Webhooks",
+                    "subtitle": "Manage external integrations and webhook events",
+                    "new_webhook_button": "New Webhook",
+                    "loading_webhooks": "Loading webhooks...",
+                    "no_integrations_title": "No integrations",
+                    "no_integrations_subtitle": "Connect your workspace with external tools like Discord or Slack to automate your workflow.",
+                    "create_first_webhook_button": "Create your first webhook",
+                    "untitled_webhook": "Untitled Webhook",
+                    "silent_badge": "Silent",
+                    "delete_webhook_confirm": "Are you sure you want to delete this webhook?",
+                    "all_events_header": "All events:",
+                    "test_title": "Test",
+                    "logs_title": "Logs",
+                    "fails_stat_one": "{{count}} error",
+                    "fails_stat_other": "{{count}} errors",
+                    "delivery_logs": {
+                        "title": "Delivery Logs",
+                        "subtitle": "History of the last 50 delivery attempts",
+                        "loading": "Loading logs...",
+                        "empty": "No delivery history found for this webhook",
+                        "table": {
+                            "status": "Status",
+                            "event": "Event",
+                            "response": "Response",
+                            "time": "Time",
+                            "date": "Date"
+                        }
+                    },
+                    "test_panel": {
+                        "title": "Test Webhook",
+                        "subtitle": "Send sample event",
+                        "description": "This tool will send a test event <1>webhook.test</1> to the configured URL. This allows you to verify if your server correctly receives and processes requests.",
+                        "payload_preview": "PAYLOAD PREVIEW",
+                        "success_title": "Sent successfully",
+                        "error_title": "Send error",
+                        "close": "Close",
+                        "send_test": "Send test",
+                        "sending": "Sending..."
+                    },
+                    "created_at_stat": "Created {{date}}",
+                    "webhook_modal": {
+                        "edit_webhook": "Edit Webhook",
+                        "add_webhook": "Add Webhook",
+                        "platform": "Platform",
+                        "other": "Other",
+                        "url_label": "Webhook URL",
+                        "description_label": "Description",
+                        "optional": "optional",
+                        "description_placeholder_discord": "e.g., Discord Notifications #general",
+                        "description_placeholder_slack": "e.g., Slack #alerts",
+                        "description_placeholder_generic": "e.g., CRM Integration",
+                        "silent_mode_title": "Silent mode (@silent)",
+                        "silent_mode_description": "Messages will not send push notifications",
+                        "events_label": "Events",
+                        "error_saving": "Error while saving webhook",
+                        "error_url_required": "URL is required",
+                        "error_no_events": "Select at least one event",
+                        "groups": {
+                            "tasks": "TASKS",
+                            "subtasks": "SUBTASKS",
+                            "comments": "COMMENTS",
+                            "files": "FILES",
+                            "calendar": "CALENDAR",
+                            "members": "MEMBERS"
+                        },
+                        "events": {
+                            "task_created": "Task created",
+                            "task_updated": "Task updated (title, description)",
+                            "task_status_changed": "Task status changed",
+                            "task_priority_changed": "Task priority changed",
+                            "task_assigned": "User assigned",
+                            "task_due_date_changed": "Due date changed",
+                            "task_deleted": "Task deleted",
+                            "subtask_created": "Subtask created",
+                            "subtask_updated": "Subtask updated",
+                            "subtask_completed": "Subtask completed",
+                            "comment_added": "Comment added",
+                            "file_uploaded": "File uploaded",
+                            "file_deleted": "File deleted",
+                            "calendar_created": "Event added",
+                            "calendar_updated": "Event updated",
+                            "calendar_deleted": "Event deleted",
+                            "member_added": "New member joined",
+                            "member_removed": "Member removed"
+                        }
+                    }
                 },
                 "status": {
-                    "suspended": "Suspended"
+                    "todo": "To Do",
+                    "in_progress": "In Progress",
+                    "review": "Review",
+                    "done": "Done"
                 },
-                "roles": {
-                    "owner": "Owner",
-                    "admin": "Admin",
-                    "project_manager": "Project Manager",
-                    "hr_manager": "HR Manager",
-                    "member": "Member",
-                    "guest": "Guest"
-                },
-                "actions": {
-                    "set_owner": "Set as Owner",
-                    "suspend": "Suspend",
-                    "activate": "Activate",
-                    "remove": "Remove from organization"
-                },
-                "invite_panel": {
-                    "title": "Invite to {{name}}",
-                    "subtitle": "Add members to your organization",
-                    "tab_email": "Invite with email",
-                    "tab_link": "Invite with link",
-                    "email_label": "Email Address",
-                    "email_placeholder": "name@company.com",
-                    "newly_generated": "✨ Newly Generated Link",
-                    "copy_link_title": "Copy Link",
-                    "generating": "Generating...",
-                    "generate_button": "+ Generate New Link",
-                    "loading_invites": "Loading invites...",
-                    "active_invites_count": "Active Invite Links ({{count}})",
-                    "role_label_with_value": "Role: {{value}}",
-                    "status_expired": "Expired",
-                    "expires_label": "Expires: {{date}}",
-                    "no_active_invites": "No active invites yet",
-                    "assigned_role_label": "Assigned Role",
-                    "expiration_label": "Expiration",
-                    "expire_options": {
-                        "1_day": "1 day",
-                        "7_days": "7 days",
-                        "30_days": "30 days",
-                        "never": "Never (not recommended)"
-                    },
-                    "cancel": "Cancel",
-                    "sending": "Sending...",
-                    "send_button": "Send Invitation",
-                    "done_button": "Done",
-                    "create_error": "Failed to create invitation: {{error}}"
-                }
-            }
-        },
-        "title": "User Settings",
-        "subtitle": "Manage your personal preferences",
-        "tabs": {
-            "account": "Account",
-            "notification": "Notification",
-            "privacy": "Privacy & Security",
-            "security": "Security"
-        },
-        "edit_panel": {
-            "title": "Edit Member",
-            "photo": "Photo",
-            "change_photo": "Change photo",
-            "remove_photo": "Remove photo",
-            "photo_help": "Recommended: JPG or PNG, max 2MB.",
-            "first_name": "First Name",
-            "last_name": "Last Name",
-            "job_title": "Job Title",
-            "job_title_placeholder": "e.g. Senior Developer",
-            "team_level": "Team Level",
-            "select_level": "Select level",
-            "city": "City",
-            "city_placeholder": "e.g. London",
-            "country": "Country",
-            "country_placeholder": "e.g. United Kingdom",
-            "email": "Email Address",
-            "change_email": "Change email",
-            "team_groups": "Team Groups",
-            "select_teams": "Select teams",
-            "no_teams_found": "No teams found",
-            "projects": "Projects",
-            "select_projects": "Select projects",
-            "no_projects_found": "No projects found",
-            "delete_member": "Delete Member",
-            "save_changes": "Save Changes",
-            "saving": "Saving...",
-            "delete_confirmation": "Are you sure you want to remove {{name}}? This action cannot be undone.",
-            "deleting": "Deleting...",
-            "labels": {
-                "title": "Labels",
-                "subtitle": "Manage labels for the entire workspace. Changes will be visible globally.",
-                "loading": "Loading labels...",
-                "no_labels": "No labels. Create the first label below.",
-                "delete_confirm": "Are you sure you want to delete label \"{{name}}\"?\n\nNote: Deleting a label will not remove it from existing tasks.",
-                "name_placeholder": "Label name",
-                "new_name_placeholder": "New label name",
-                "create_tooltip": "Create",
-                "add_button": "Add new label",
-                "tip_header": "Tip",
-                "tip_content": "Changes to label colors and names will be immediately visible across all tasks and projects using these labels.",
-                "color_picker_tooltip": "Choose color",
-                "add_labels": "Add labels"
-            },
-            "defaults": {
-                "priorities_title": "Task Priorities",
-                "priorities_subtitle": "Customize priority levels for tasks in the workspace",
-                "loading_priorities": "Loading priorities...",
-                "priority_name_placeholder": "Priority name...",
-                "add_priority_button": "Add priority",
-                "delete_priority_confirm": "Are you sure you want to delete this priority?",
-                "priority_names": {
+                "priority": {
                     "low": "Low",
                     "medium": "Medium",
                     "high": "High",
                     "urgent": "Urgent"
                 },
-                "default_template_title": "Default Project Template",
-                "default_template_subtitle": "Choose primary industry template for new projects",
-                "no_default_template": "No default (manual selection)"
-            },
-            "integrations": {
-                "title": "Integrations & Webhooks",
-                "subtitle": "Manage external integrations and webhook events",
-                "new_webhook_button": "New Webhook",
-                "loading_webhooks": "Loading webhooks...",
-                "no_integrations_title": "No integrations",
-                "no_integrations_subtitle": "Connect your workspace with external tools like Discord or Slack to automate your workflow.",
-                "create_first_webhook_button": "Create your first webhook",
-                "untitled_webhook": "Untitled Webhook",
-                "silent_badge": "Silent",
-                "delete_webhook_confirm": "Are you sure you want to delete this webhook?",
-                "all_events_header": "All events:",
-                "test_title": "Test",
-                "logs_title": "Logs",
-                "fails_stat_one": "{{count}} error",
-                "fails_stat_other": "{{count}} errors",
-                "delivery_logs": {
-                    "title": "Delivery Logs",
-                    "subtitle": "History of the last 50 delivery attempts",
-                    "loading": "Loading logs...",
-                    "empty": "No delivery history found for this webhook",
-                    "table": {
-                        "status": "Status",
-                        "event": "Event",
-                        "response": "Response",
-                        "time": "Time",
-                        "date": "Date"
+                "assignee": {
+                    "placeholder": "Assign person...",
+                    "no_results": "No people found",
+                    "none": "No assignees"
+                },
+                "card": {
+                    "add_task": "Add new task",
+                    "menu": {
+                        "edit": "Edit task",
+                        "duplicate": "Duplicate",
+                        "archive": "Archive",
+                        "delete": "Delete"
                     }
                 },
-                "test_panel": {
-                    "title": "Test Webhook",
-                    "subtitle": "Send sample event",
-                    "description": "This tool will send a test event <1>webhook.test</1> to the configured URL. This allows you to verify if your server correctly receives and processes requests.",
-                    "payload_preview": "PAYLOAD PREVIEW",
-                    "success_title": "Sent successfully",
-                    "error_title": "Send error",
-                    "close": "Close",
-                    "send_test": "Send test",
-                    "sending": "Sending..."
-                },
-                "created_at_stat": "Created {{date}}",
-                "webhook_modal": {
-                    "edit_webhook": "Edit Webhook",
-                    "add_webhook": "Add Webhook",
-                    "platform": "Platform",
-                    "other": "Other",
-                    "url_label": "Webhook URL",
-                    "description_label": "Description",
-                    "optional": "optional",
-                    "description_placeholder_discord": "e.g., Discord Notifications #general",
-                    "description_placeholder_slack": "e.g., Slack #alerts",
-                    "description_placeholder_generic": "e.g., CRM Integration",
-                    "silent_mode_title": "Silent mode (@silent)",
-                    "silent_mode_description": "Messages will not send push notifications",
-                    "events_label": "Events",
-                    "error_saving": "Error while saving webhook",
-                    "error_url_required": "URL is required",
-                    "error_no_events": "Select at least one event",
-                    "groups": {
-                        "tasks": "TASKS",
-                        "subtasks": "SUBTASKS",
-                        "comments": "COMMENTS",
-                        "files": "FILES",
-                        "calendar": "CALENDAR",
-                        "members": "MEMBERS"
+                "edit": {
+                    "title": "Edit Task",
+                    "edit_mode": "Edit mode",
+                    "click_to_edit": "Click to edit",
+                    "title_label": "Task Title",
+                    "select_status": "Select status",
+                    "select_date": "Select date...",
+                    "description": "Description",
+                    "description_placeholder": "Add description...",
+                    "click_to_add_description": "Click to add description...",
+                    "subtasks_header": "Subtasks",
+                    "files_header": "Files",
+                    "add_file": "+ Add file",
+                    "no_attachments": "No attachments",
+                    "no_attachments_hint": "Click button above to add files",
+                    "links_header": "Links",
+                    "add_link": "+ Add link",
+                    "cancel": "Cancel",
+                    "save": "Save changes",
+                    "meta": {
+                        "project": "Project",
+                        "assignee": "Assignee",
+                        "status": "Status",
+                        "end_date": "End Date",
+                        "priority": "Priority",
+                        "labels": "Labels"
                     },
-                    "events": {
-                        "task_created": "Task created",
-                        "task_updated": "Task updated (title, description)",
-                        "task_status_changed": "Task status changed",
-                        "task_priority_changed": "Task priority changed",
-                        "task_assigned": "User assigned",
-                        "task_due_date_changed": "Due date changed",
-                        "task_deleted": "Task deleted",
-                        "subtask_created": "Subtask created",
-                        "subtask_updated": "Subtask updated",
-                        "subtask_completed": "Subtask completed",
-                        "comment_added": "Comment added",
-                        "file_uploaded": "File uploaded",
-                        "file_deleted": "File deleted",
-                        "calendar_created": "Event added",
-                        "calendar_updated": "Event updated",
-                        "calendar_deleted": "Event deleted",
-                        "member_added": "New member joined",
-                        "member_removed": "Member removed"
+                    "tabs": {
+                        "subtasks": "Subtasks",
+                        "files": "Files",
+                        "links": "Links"
+                    }
+                },
+                "create": {
+                    "title": "New Task",
+                    "select_project": "Select project",
+                    "task_title": "Task title",
+                    "task_title_placeholder": "What needs to be done?",
+                    "description": "Description",
+                    "description_placeholder": "Add task description... (supports Markdown)",
+                    "markdown_hint": "Tip: Use **bold**, *italics*, - lists",
+                    "assignee": "Assignee",
+                    "assignee_placeholder": "Assign person...",
+                    "start_date": "Start",
+                    "end_date": "End",
+                    "due_date_placeholder": "Due date",
+                    "more_options": "More options",
+                    "less_options": "Less options",
+                    "subtasks": "Subtasks",
+                    "add_subtask_placeholder": "Add subtask...",
+                    "add_subtask_button": "+ Add",
+                    "attachments": "Attachments",
+                    "dropzone_active": "Drop files here...",
+                    "dropzone_inactive": "Drag files or click to add",
+                    "file_type_hint": "PNG, JPG, PDF, DOCX up to 100MB",
+                    "file_size_error": "The following files are too large (max 100MB):",
+                    "upload_error": "Failed to upload some files. Check console.",
+                    "create_another": "Create another",
+                    "cancel": "Cancel",
+                    "create_button": "Create task",
+                    "priority": "Priority",
+                    "status": "Status",
+                    "labels": "Labels",
+                    "mock_projects": {
+                        "marketing": "Marketing",
+                        "development": "Development",
+                        "design_system": "Design System"
                     }
                 }
             },
-            "status": {
-                "todo": "To Do",
-                "in_progress": "In Progress",
-                "review": "Review",
+            "account": {
+                "title": "Account Settings",
+                "subtitle": "Manage your profile and account preferences.",
+                "photo": {
+                    "title": "Photo",
+                    "change": "Change photo",
+                    "remove": "Remove photo",
+                    "uploading": "Uploading...",
+                    "hint": "Pick a photo up to 4MB.",
+                    "confirmRemove": "Are you sure you want to remove your profile picture?"
+                },
+                "personalInfo": {
+                    "title": "Personal Information",
+                    "save": "Save Changes",
+                    "saving": "Saving...",
+                    "firstName": "First Name",
+                    "firstNamePlaceholder": "John",
+                    "lastName": "Last Name",
+                    "lastNamePlaceholder": "Doe",
+                    "birthDate": "Date of Birth",
+                    "pickDate": "Pick a date",
+                    "gender": "Gender",
+                    "selectGender": "Select Gender",
+                    "genders": {
+                        "male": "Male",
+                        "female": "Female",
+                        "other": "Other",
+                        "prefer_not_to_say": "Prefer not to say"
+                    }
+                },
+                "professional": {
+                    "title": "Professional Details",
+                    "position": "Position",
+                    "positionPlaceholder": "e.g. Product Designer",
+                    "description": "Description",
+                    "descriptionPlaceholder": "Tell us a bit about yourself..."
+                },
+                "location": {
+                    "title": "Location & Preferences",
+                    "country": "Country",
+                    "countryPlaceholder": "e.g. Poland",
+                    "city": "City",
+                    "cityPlaceholder": "e.g. Warsaw",
+                    "timezone": "Timezone"
+                },
+                "danger": {
+                    "deleteAccount": "Delete my account",
+                    "confirmDelete": "Are you absolutely sure you want to delete your account? This action cannot be undone."
+                },
+                "toast": {
+                    "success": "Profile updated successfully",
+                    "error": "Failed to update profile",
+                    "avatarError": "Failed to upload avatar"
+                }
+            },
+            "notification": {
+                "title": "Notification Preferences",
+                "subtitle": "Choose how you want to be notified."
+            },
+            "privacy": {
+                "title": "Security",
+                "subtitle": "Manage your security settings",
+                "loginPreferences": "Log In Preferences",
+                "password": "Password",
+                "email": "Email",
+                "emailPlaceholder": "Email",
+                "phoneNumber": "Phone Number",
+                "phonePlaceholder": "000 000 000",
+                "save": "Save",
+                "cancel": "Cancel",
+                "updating": "Updating...",
+                "changePassword": "Change Password",
+                "currentPassword": "Current Password",
+                "newPassword": "New Password",
+                "confirmNewPassword": "Confirm New Password",
+                "updatePassword": "Update Password",
+                "twoFactor": {
+                    "title": "Two-Factor Authentication",
+                    "securityTitle": "2FA Security",
+                    "securityDescription": "Add an extra layer of security to your account.",
+                    "disableTitle": "Disable 2FA",
+                    "disableDescription": "Enter your password to disable two-factor authentication.",
+                    "passwordPlaceholder": "Your Password",
+                    "enabledTitle": "Enabled",
+                    "enabledDescription": "Your account is secured.",
+                    "turnOff": "Turn off",
+                    "confirmPasswordTitle": "Confirm Password",
+                    "confirmPasswordDescription": "Please enter your password to enable 2FA.",
+                    "continue": "Continue",
+                    "authenticatorAppTitle": "Authenticator App",
+                    "authenticatorAppDescription": "Secure your account with Google Authenticator or Authy.",
+                    "enable": "Enable 2FA",
+                    "disable": "Disable 2FA",
+                    "scanCode": "Scan the QR code below with your authenticator app",
+                    "enterCode": "Enter the code from your app",
+                    "codePlaceholder": "000 000",
+                    "backupCodes": "Backup Codes",
+                    "backupCodesDesc": "Keep these codes safe. You can use them to recover access to your account.",
+                    "verify": "Verify",
+                    "verifying": "Verifying..."
+                },
+                "sessions": {
+                    "title": "Active Sessions",
+                    "description": "See which devices are used for logging in.",
+                    "current": "Current session",
+                    "lastActive": "Last active",
+                    "revoke": "Log Out",
+                    "revokeAll": "Log out from all devices",
+                    "confirmRevokeAll": "Are you sure you want to log out from all devices including this one?",
+                    "noActive": "No active sessions found.",
+                    "device": {
+                        "mobile": "Mobile",
+                        "desktop": "Desktop",
+                        "browser": "Unknown Browser",
+                        "os": "Unknown OS"
+                    }
+                },
+                "toast": {
+                    "passwordSuccess": "Password updated successfully",
+                    "passwordError": "Failed to update password",
+                    "2faEnabled": "Two-factor authentication enabled",
+                    "2faDisabled": "Two-factor authentication disabled",
+                    "revokeAllSuccess": "All sessions terminated"
+                }
+            }
+        },
+        "teams": {
+            "title": "Teams",
+            "search_placeholder": "Search members...",
+            "add_team": "Add Team",
+            "filters": {
+                "label": "Filters",
+                "clear_all": "Clear All Filters",
+                "role_and_team": "Role & Team",
+                "job_title": "Job Title",
+                "no_roles": "No roles available",
+                "team": "Team",
+                "status_and_availability": "Status & Availability",
+                "account_status": "Account Status",
+                "availability": "Availability",
+                "work_context": "Work Context",
+                "assigned_project": "Assigned to Project",
+                "status": {
+                    "active": "Active",
+                    "inactive": "Inactive",
+                    "pending": "Invited / Pending"
+                },
+                "availability_status": {
+                    "available": "Available",
+                    "busy": "Busy",
+                    "overloaded": "Overloaded"
+                }
+            },
+            "sort": {
+                "name": "Name",
+                "last_active": "Last Active",
+                "date_added": "Date Added",
+                "project_count": "Project Count",
+                "job_title": "Job Title",
+                "directions": {
+                    "az": "A → Z",
+                    "za": "Z → A",
+                    "oldest": "Oldest",
+                    "newest": "Newest",
+                    "low_high": "Low → High",
+                    "high_low": "High → Low"
+                }
+            },
+            "table": {
+                "selected": "selected",
+                "delete": "Delete",
+                "move_to": "Move to...",
+                "name": "Name",
+                "email": "Email",
+                "job_title": "Job Title",
+                "current_projects": "Current Projects",
+                "date_added": "Date Added",
+                "last_active": "Last Active",
+                "empty_state": "No members in this team yet.",
+                "menu": {
+                    "edit_team": "Edit team details",
+                    "export_members": "Export Members",
+                    "delete_team": "Delete team"
+                },
+                "actions": {
+                    "view_profile": "View Profile",
+                    "edit_member": "Edit Member",
+                    "remove_member": "Remove Member",
+                    "confirm_remove": "Are you sure you want to remove {{name}} from this team?"
+                }
+            },
+            "create_panel": {
+                "title": "Create New Team",
+                "team_name": "Team Name",
+                "team_name_placeholder": "e.g., Design System, Marketing",
+                "description": "Description",
+                "description_placeholder": "What is this team responsible for?",
+                "team_color": "Team Color",
+                "members": "Members",
+                "search_placeholder": "Add members by name or email",
+                "no_users_found": "No users found",
+                "cancel": "Cancel",
+                "create_button": "Create Team"
+            },
+            "invite_panel": {
+                "title": "Invite to {{teamName}}",
+                "subtitle": "Add members to collaborate",
+                "tabs": {
+                    "email": "Invite with email",
+                    "link": "Invite with link"
+                },
+                "search_label": "Search Workspace Member",
+                "search_placeholder": "Type name or email...",
+                "no_member_found": "No member found",
+                "role_label": "Role in Team",
+                "link_label": "Invite Link",
+                "anyone_with_link": "Anyone with this link can join as a",
+                "member_role": "Member",
+                "generate_new_link": "Generate new link",
+                "add_to_team": "Add to Team",
                 "done": "Done"
+            },
+            "edit_panel": {
+                "title": "Edit Team",
+                "photo": "Photo",
+                "change_photo": "Change photo",
+                "remove_photo": "Remove photo",
+                "photo_help": "Pick a photo up to 4MB.",
+                "first_name": "First Name",
+                "last_name": "Last Name",
+                "job_title": "Job title",
+                "job_title_placeholder": "e.g. Product Designer",
+                "team_level": "Team Level",
+                "select_level": "Select level...",
+                "city": "City",
+                "city_placeholder": "e.g. Warsaw",
+                "country": "Country",
+                "country_placeholder": "e.g. Poland",
+                "email": "Email Address",
+                "change_email": "Change email",
+                "team_groups": "Team Groups",
+                "select_teams": "Select teams...",
+                "no_teams_found": "No teams found",
+                "projects": "Projects",
+                "select_projects": "Select projects...",
+                "no_projects_found": "No projects found",
+                "save_changes": "Save Changes",
+                "saving": "Saving...",
+                "delete_member": "Delete Member",
+                "delete_confirmation": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+                "deleting": "Deleting...",
+                "team_name": "Team Name",
+                "team_name_placeholder": "e.g. Marketing",
+                "description": "Description",
+                "description_placeholder": "Add a brief description that explains the team's purpose.",
+                "team_color": "Team Color",
+                "cancel": "Cancel",
+                "save_button": "Save Changes"
+            },
+            "view_panel": {
+                "member_since": "Member Since",
+                "location": "Location",
+                "current_workload": "Current Workload",
+                "tasks_count": "{{completed}}/{{total}} tasks",
+                "capacity_used": "{{percentage}}% capacity used",
+                "quick_actions": {
+                    "assign_task": "Assign Task",
+                    "message": "Message",
+                    "view_tasks": "View Tasks"
+                },
+                "teams": "Teams",
+                "no_teams": "No teams",
+                "active_projects": "Active Projects",
+                "no_projects": "No active projects"
+            },
+            "roles": {
+                "team_lead": "Team Lead",
+                "senior": "Senior",
+                "mid": "Mid-level",
+                "junior": "Junior",
+                "intern": "Intern",
+                "member": "Member"
+            },
+            "loading": "Loading teams...",
+            "error_loading": "Failed to load teams",
+            "retry": "Retry"
+        },
+        "tasks": {
+            "blocked_by_dependencies": "Blocked by dependencies",
+            "header": {
+                "search": "Search tasks...",
+                "search_members": "Search people...",
+                "filter": "Filter",
+                "sort": "Sort",
+                "new_task": "New Task"
             },
             "priority": {
                 "low": "Low",
@@ -999,21 +1440,71 @@
                 "urgent": "Urgent"
             },
             "assignee": {
-                "placeholder": "Assign person...",
-                "no_results": "No people found",
-                "none": "No assignees"
+                "placeholder": "Assign people...",
+                "no_results": "No results found",
+                "none": "None assigned"
+            },
+            "details": {
+                "title": "Task Details",
+                "description": "Description",
+                "status": "Status",
+                "priority": "Priority",
+                "assignees": "Assignees",
+                "due_date": "Due date",
+                "mark_complete": "Mark as complete",
+                "mark_incomplete": "Mark as incomplete",
+                "maximize": "Maximize panel",
+                "minimize": "Minimize panel",
+                "copy_link": "Copy link",
+                "attachments": "Attachments",
+                "more_options": "More options",
+                "edit": "Edit",
+                "delete": "Delete",
+                "dependencies_more": "+{{count}} more"
+            },
+            "status": {
+                "todo": "To-Do",
+                "in_progress": "In Progress",
+                "review": "Review",
+                "done": "Done"
             },
             "card": {
                 "add_task": "Add new task",
                 "menu": {
-                    "edit": "Edit task",
+                    "edit": "Edit",
                     "duplicate": "Duplicate",
                     "archive": "Archive",
-                    "delete": "Delete"
+                    "delete": "Delete",
+                    "assign_to_me": "Assign to me"
                 }
+            },
+            "labels": {
+                "task_singular": "Task",
+                "task_plural": "Tasks",
+                "add_labels": "Add Labels",
+                "search": "Search labels...",
+                "create_new": "Create new label",
+                "no_results": "No labels found",
+                "create_header": "Create Label",
+                "name": "Name",
+                "color": "Color",
+                "preview": "Preview",
+                "add": "Create",
+                "cancel": "Cancel",
+                "placeholder": "e.g. Bug, Feature, Design"
+            },
+            "datepicker": {
+                "select_date": "Select date",
+                "time": "Time",
+                "done": "Done",
+                "today": "Today",
+                "tomorrow": "Tomorrow",
+                "next_week": "Next Week"
             },
             "edit": {
                 "title": "Edit Task",
+                "mark_complete": "Mark as Done",
+                "mark_incomplete": "Mark as Undone",
                 "edit_mode": "Edit mode",
                 "click_to_edit": "Click to edit",
                 "title_label": "Task Title",
@@ -1060,7 +1551,13 @@
                 "due_date_placeholder": "Due date",
                 "more_options": "More options",
                 "less_options": "Less options",
+                "dependencies": "Dependencies",
                 "subtasks": "Subtasks",
+                "subtasks_edit_details": "Edit details",
+                "subtasks_description_label": "Description",
+                "subtasks_description_placeholder": "Add subtask description...",
+                "subtasks_assignee_label": "Assignee",
+                "subtasks_assignee_placeholder": "Assign...",
                 "add_subtask_placeholder": "Add subtask...",
                 "add_subtask_button": "+ Add",
                 "attachments": "Attachments",
@@ -1072,6 +1569,9 @@
                 "create_another": "Create another",
                 "cancel": "Cancel",
                 "create_button": "Create task",
+                "dependencies_placeholder": "Select tasks...",
+                "dependencies_count": "{{count}} tasks",
+                "no_tasks_available": "No other tasks available",
                 "priority": "Priority",
                 "status": "Status",
                 "labels": "Labels",
@@ -1082,351 +1582,236 @@
                 }
             }
         },
-        "account": {
-            "title": "Account Settings",
-            "subtitle": "Manage your profile and account preferences.",
-            "photo": {
-                "title": "Photo",
-                "change": "Change photo",
-                "remove": "Remove photo",
-                "uploading": "Uploading...",
-                "hint": "Pick a photo up to 4MB.",
-                "confirmRemove": "Are you sure you want to remove your profile picture?"
+        "projects": {
+            "noProjectsFound": "No projects found",
+            "createFirstProject": "Create your first project",
+            "gantt": {
+                "task_name": "Task Name",
+                "start_date": "Start Date",
+                "end_date": "End Date",
+                "status": "Status",
+                "subtasks": "Subtasks",
+                "assignee": "Assignee",
+                "no_tasks": "No tasks in this project"
             },
-            "personalInfo": {
-                "title": "Personal Information",
-                "save": "Save Changes",
-                "saving": "Saving...",
-                "firstName": "First Name",
-                "firstNamePlaceholder": "John",
-                "lastName": "Last Name",
-                "lastNamePlaceholder": "Doe",
-                "birthDate": "Date of Birth",
-                "pickDate": "Pick a date",
-                "gender": "Gender",
-                "selectGender": "Select Gender",
-                "genders": {
-                    "male": "Male",
-                    "female": "Female",
-                    "other": "Other",
-                    "prefer_not_to_say": "Prefer not to say"
-                }
+            "timeline": {
+                "title": "Timeline",
+                "task_abbr": "t",
+                "day": "Day",
+                "week": "Week",
+                "month": "Month",
+                "now": "Now",
+                "add_task": "Add task",
+                "no_tasks_day": "No tasks for this day"
             },
-            "professional": {
-                "title": "Professional Details",
-                "position": "Position",
-                "positionPlaceholder": "e.g. Product Designer",
+            "header": {
+                "gantt": "Gantt",
+                "timeline": "Timeline",
+                "search": "Search projects...",
+                "filters": "Filters",
+                "sort": "Sort By",
+                "new_project": "New Project"
+            },
+            "create": {
+                "title": "Create New Project",
+                "subtitle": "Add a new project to organize your tasks",
+                "name": "Project Name",
+                "name_placeholder": "e.g., Website Redesign",
                 "description": "Description",
-                "descriptionPlaceholder": "Tell us a bit about yourself..."
+                "description_placeholder": "Brief description of the project...",
+                "team": "Team",
+                "select_team": "Select a team",
+                "no_teams": "No teams available. Create a team first.",
+                "template": "Industry Template",
+                "select_template": "Select template",
+                "no_template": "No template (custom stages)",
+                "template_help": "Templates provide predefined stages for your workflow",
+                "color": "Project Color",
+                "start_date": "Start Date",
+                "deadline": "Deadline",
+                "cancel": "Cancel",
+                "submit": "Create Project",
+                "creating": "Creating..."
             },
-            "location": {
-                "title": "Location & Preferences",
-                "country": "Country",
-                "countryPlaceholder": "e.g. Poland",
-                "city": "City",
-                "cityPlaceholder": "e.g. Warsaw",
-                "timezone": "Timezone"
-            },
-            "danger": {
-                "deleteAccount": "Delete my account",
-                "confirmDelete": "Are you absolutely sure you want to delete your account? This action cannot be undone."
-            },
-            "toast": {
-                "success": "Profile updated successfully",
-                "error": "Failed to update profile",
-                "avatarError": "Failed to upload avatar"
-            }
-        },
-        "notification": {
-            "title": "Notification Preferences",
-            "subtitle": "Choose how you want to be notified."
-        },
-        "privacy": {
-            "title": "Security",
-            "subtitle": "Manage your security settings",
-            "loginPreferences": "Log In Preferences",
-            "password": "Password",
-            "email": "Email",
-            "emailPlaceholder": "Email",
-            "phoneNumber": "Phone Number",
-            "phonePlaceholder": "000 000 000",
-            "save": "Save",
-            "cancel": "Cancel",
-            "updating": "Updating...",
-            "changePassword": "Change Password",
-            "currentPassword": "Current Password",
-            "newPassword": "New Password",
-            "confirmNewPassword": "Confirm New Password",
-            "updatePassword": "Update Password",
-            "twoFactor": {
-                "title": "Two-Factor Authentication",
-                "securityTitle": "2FA Security",
-                "securityDescription": "Add an extra layer of security to your account.",
-                "disableTitle": "Disable 2FA",
-                "disableDescription": "Enter your password to disable two-factor authentication.",
-                "passwordPlaceholder": "Your Password",
-                "enabledTitle": "Enabled",
-                "enabledDescription": "Your account is secured.",
-                "turnOff": "Turn off",
-                "confirmPasswordTitle": "Confirm Password",
-                "confirmPasswordDescription": "Please enter your password to enable 2FA.",
-                "continue": "Continue",
-                "authenticatorAppTitle": "Authenticator App",
-                "authenticatorAppDescription": "Secure your account with Google Authenticator or Authy.",
-                "enable": "Enable 2FA",
-                "disable": "Disable 2FA",
-                "scanCode": "Scan the QR code below with your authenticator app",
-                "enterCode": "Enter the code from your app",
-                "codePlaceholder": "000 000",
-                "backupCodes": "Backup Codes",
-                "backupCodesDesc": "Keep these codes safe. You can use them to recover access to your account.",
-                "verify": "Verify",
-                "verifying": "Verifying..."
-            },
-            "sessions": {
-                "title": "Active Sessions",
-                "description": "See which devices are used for logging in.",
-                "current": "Current session",
-                "lastActive": "Last active",
-                "revoke": "Log Out",
-                "revokeAll": "Log out from all devices",
-                "confirmRevokeAll": "Are you sure you want to log out from all devices including this one?",
-                "noActive": "No active sessions found.",
-                "device": {
-                    "mobile": "Mobile",
-                    "desktop": "Desktop",
-                    "browser": "Unknown Browser",
-                    "os": "Unknown OS"
+            "details": {
+                "close": "Close",
+                "archive": "Archive task",
+                "no_assignees": "No assignees",
+                "no_labels": "No labels",
+                "description": "Description",
+                "meta": {
+                    "project": "Project",
+                    "assignee": "Assignee",
+                    "status": "Status",
+                    "end_date": "End Date",
+                    "priority": "Priority",
+                    "labels": "Labels"
+                },
+                "tabs": {
+                    "subtasks": "Subtasks",
+                    "comments": "Comments",
+                    "shared": "Shared",
+                    "activity": "Activity"
+                },
+                "subtasks": {
+                    "title": "Subtasks"
+                },
+                "discussion": {
+                    "title": "Discussion"
+                },
+                "shared": {
+                    "files": "Files",
+                    "links": "Links",
+                    "name": "Name",
+                    "shared_by": "Shared by",
+                    "date": "Date"
+                },
+                "activity": {
+                    "title": "Activity"
                 }
             },
-            "toast": {
-                "passwordSuccess": "Password updated successfully",
-                "passwordError": "Failed to update password",
-                "2faEnabled": "Two-factor authentication enabled",
-                "2faDisabled": "Two-factor authentication disabled",
-                "revokeAllSuccess": "All sessions terminated"
-            }
-        }
-    },
-    "teams": {
-        "title": "Teams",
-        "search_placeholder": "Search members...",
-        "add_team": "Add Team",
-        "filters": {
-            "label": "Filters",
-            "clear_all": "Clear All Filters",
-            "role_and_team": "Role & Team",
-            "job_title": "Job Title",
-            "no_roles": "No roles available",
-            "team": "Team",
-            "status_and_availability": "Status & Availability",
-            "account_status": "Account Status",
-            "availability": "Availability",
-            "work_context": "Work Context",
-            "assigned_project": "Assigned to Project",
-            "status": {
-                "active": "Active",
-                "inactive": "Inactive",
-                "pending": "Invited / Pending"
+            "day_list": {
+                "title": "Daily Tasks",
+                "no_tasks": "No tasks scheduled for this day."
             },
-            "availability_status": {
-                "available": "Available",
-                "busy": "Busy",
-                "overloaded": "Overloaded"
-            }
-        },
-        "sort": {
-            "name": "Name",
-            "last_active": "Last Active",
-            "date_added": "Date Added",
-            "project_count": "Project Count",
-            "job_title": "Job Title",
-            "directions": {
-                "az": "A → Z",
-                "za": "Z → A",
-                "oldest": "Oldest",
-                "newest": "Newest",
-                "low_high": "Low → High",
-                "high_low": "High → Low"
-            }
-        },
-        "table": {
-            "selected": "selected",
-            "delete": "Delete",
-            "move_to": "Move to...",
-            "name": "Name",
-            "email": "Email",
-            "job_title": "Job Title",
-            "current_projects": "Current Projects",
-            "date_added": "Date Added",
-            "last_active": "Last Active",
-            "empty_state": "No members in this team yet.",
+            "list": {
+                "columns": {
+                    "name": "Task Name",
+                    "subtasks": "Subtasks",
+                    "status": "Status",
+                    "priority": "Priority",
+                    "start_date": "Start Date",
+                    "end_date": "End Date",
+                    "assignee": "Assignee"
+                },
+                "no_tasks": "No tasks found"
+            },
+            "calendar": {
+                "today": "Today",
+                "month": "Month",
+                "week": "Week",
+                "add_task": "Add task",
+                "more_tasks": "+{{count}} more"
+            },
             "menu": {
-                "edit_team": "Edit team details",
-                "export_members": "Export Members",
-                "delete_team": "Delete team"
+                "edit_project": "Edit project",
+                "delete_project": "Delete project"
             },
-            "actions": {
-                "view_profile": "View Profile",
-                "edit_member": "Edit Member",
-                "remove_member": "Remove Member",
-                "confirm_remove": "Are you sure you want to remove {{name}} from this team?"
+            "edit_panel": {
+                "title": "Edit Project",
+                "subtitle": "Update project information.",
+                "name": "Project Name",
+                "name_placeholder": "e.g. Website Redesign",
+                "description": "Description",
+                "description_placeholder": "Briefly describe your project...",
+                "color": "Project Color",
+                "deadline": "Deadline",
+                "cancel": "Cancel",
+                "saving": "Saving...",
+                "submit": "Save Changes"
             }
         },
-        "create_panel": {
-            "title": "Create New Team",
-            "team_name": "Team Name",
-            "team_name_placeholder": "e.g., Design System, Marketing",
-            "description": "Description",
-            "description_placeholder": "What is this team responsible for?",
-            "team_color": "Team Color",
-            "members": "Members",
-            "search_placeholder": "Add members by name or email",
-            "no_users_found": "No users found",
-            "cancel": "Cancel",
-            "create_button": "Create Team"
-        },
-        "invite_panel": {
-            "title": "Invite to {{teamName}}",
-            "subtitle": "Add members to collaborate",
-            "tabs": {
-                "email": "Invite with email",
-                "link": "Invite with link"
+        "board": {
+            "column": {
+                "quick_add": {
+                    "placeholder": "Type task name",
+                    "priority": "Priority",
+                    "assign_to": "Assign to",
+                    "today": "Today",
+                    "tomorrow": "Tomorrow",
+                    "save": "Save"
+                },
+                "quick_edit": {
+                    "assignee_placeholder": "Assign someone...",
+                    "date_placeholder": "Due date",
+                    "save": "Save"
+                },
+                "menu": {
+                    "config": "Configuration",
+                    "rename": "Rename",
+                    "wip_limit": "Set WIP limit",
+                    "change_color": "Change color",
+                    "sort_title": "Sorting",
+                    "sort_by": "Sort by...",
+                    "watch": "Watch list",
+                    "bulk_title": "Bulk Actions",
+                    "move_all": "Move all...",
+                    "archive_all": "Archive all",
+                    "expand_all": "Expand all cards",
+                    "collapse_all": "Collapse all cards",
+                    "auto_title": "Automations",
+                    "add_rule": "Add rule",
+                    "delete_column": "Delete column",
+                    "select_color": "Select Color",
+                    "collapse": "Collapse column"
+                }
             },
-            "search_label": "Search Workspace Member",
-            "search_placeholder": "Type name or email...",
-            "no_member_found": "No member found",
-            "role_label": "Role in Team",
-            "link_label": "Invite Link",
-            "anyone_with_link": "Anyone with this link can join as a",
-            "member_role": "Member",
-            "generate_new_link": "Generate new link",
-            "add_to_team": "Add to Team",
-            "done": "Done"
-        },
-        "edit_panel": {
-            "title": "Edit Team",
-            "photo": "Photo",
-            "change_photo": "Change photo",
-            "remove_photo": "Remove photo",
-            "photo_help": "Pick a photo up to 4MB.",
-            "first_name": "First Name",
-            "last_name": "Last Name",
-            "job_title": "Job title",
-            "job_title_placeholder": "e.g. Product Designer",
-            "team_level": "Team Level",
-            "select_level": "Select level...",
-            "city": "City",
-            "city_placeholder": "e.g. Warsaw",
-            "country": "Country",
-            "country_placeholder": "e.g. Poland",
-            "email": "Email Address",
-            "change_email": "Change email",
-            "team_groups": "Team Groups",
-            "select_teams": "Select teams...",
-            "no_teams_found": "No teams found",
-            "projects": "Projects",
-            "select_projects": "Select projects...",
-            "no_projects_found": "No projects found",
-            "save_changes": "Save Changes",
-            "saving": "Saving...",
-            "delete_member": "Delete Member",
-            "delete_confirmation": "Are you sure you want to delete {{name}}? This action cannot be undone.",
-            "deleting": "Deleting...",
-            "team_name": "Team Name",
-            "team_name_placeholder": "e.g. Marketing",
-            "description": "Description",
-            "description_placeholder": "Add a brief description that explains the team's purpose.",
-            "team_color": "Team Color",
-            "cancel": "Cancel",
-            "save_button": "Save Changes"
-        },
-        "view_panel": {
-            "member_since": "Member Since",
-            "location": "Location",
-            "current_workload": "Current Workload",
-            "tasks_count": "{{completed}}/{{total}} tasks",
-            "capacity_used": "{{percentage}}% capacity used",
-            "quick_actions": {
-                "assign_task": "Assign Task",
-                "message": "Message",
-                "view_tasks": "View Tasks"
+            "add_column": {
+                "title": "New Column",
+                "button": "Add Column",
+                "placeholder": "e.g. Verification",
+                "label": "Column Name",
+                "color_label": "Color",
+                "empty_button": "Add Column"
             },
-            "teams": "Teams",
-            "no_teams": "No teams",
-            "active_projects": "Active Projects",
-            "no_projects": "No active projects"
-        },
-        "roles": {
-            "team_lead": "Team Lead",
-            "senior": "Senior",
-            "mid": "Mid-level",
-            "junior": "Junior",
-            "intern": "Intern",
-            "member": "Member"
-        },
-        "loading": "Loading teams...",
-        "error_loading": "Failed to load teams",
-        "retry": "Retry"
-    },
-    "tasks": {
-        "blocked_by_dependencies": "Blocked by dependencies",
-        "header": {
-            "search": "Search tasks...",
-            "search_members": "Search people...",
-            "filter": "Filter",
-            "sort": "Sort",
-            "new_task": "New Task"
-        },
-        "priority": {
-            "low": "Low",
-            "medium": "Medium",
-            "high": "High",
-            "urgent": "Urgent"
-        },
-        "assignee": {
-            "placeholder": "Assign people...",
-            "no_results": "No results found",
-            "none": "None assigned"
-        },
-        "details": {
-            "title": "Task Details",
-            "description": "Description",
-            "status": "Status",
-            "priority": "Priority",
-            "assignees": "Assignees",
-            "due_date": "Due date",
-            "mark_complete": "Mark as complete",
-            "mark_incomplete": "Mark as incomplete",
-            "maximize": "Maximize panel",
-            "minimize": "Minimize panel",
-            "copy_link": "Copy link",
-            "attachments": "Attachments",
-            "more_options": "More options",
-            "edit": "Edit",
-            "delete": "Delete",
-            "dependencies_more": "+{{count}} more"
-        },
-        "status": {
-            "todo": "To-Do",
-            "in_progress": "In Progress",
-            "review": "Review",
-            "done": "Done"
+            "header": {
+                "search": "Search tasks...",
+                "filters": "Filters",
+                "sort": "Sort By",
+                "new_task": "New Task",
+                "kanban": "Kanban",
+                "list": "List",
+                "calendar": "Calendar",
+                "timeline": "Timeline"
+            },
+            "filters": {
+                "title": "Filters",
+                "quick": {
+                    "title": "Quick Filters",
+                    "assigned_to_me": "Assigned to me",
+                    "overdue": "Overdue",
+                    "today": "Today",
+                    "this_week": "This week"
+                },
+                "assignees": "Assignees",
+                "priorities": "Priorities",
+                "labels": "Labels & Tags",
+                "status": "Status",
+                "no_members": "No team members",
+                "no_labels": "No labels found",
+                "clear": "Clear filters"
+            },
+            "sort": {
+                "title": "Sort By",
+                "direction": "Order",
+                "asc": "Ascending",
+                "desc": "Descending",
+                "options": {
+                    "priority": "Priority",
+                    "due_date": "Due Date",
+                    "created_at": "Created At",
+                    "updated_at": "Last Updated"
+                }
+            },
+            "messages": {
+                "loading": "Loading project...",
+                "not_found": "Project not found",
+                "delete_column_confirm": "Are you sure you want to delete this column? All tasks in it will be deleted.",
+                "delete_tasks_confirm": "Are you sure you want to delete {{count}} task(s)?"
+            }
         },
         "card": {
-            "add_task": "Add new task",
             "menu": {
                 "edit": "Edit",
                 "duplicate": "Duplicate",
                 "archive": "Archive",
-                "delete": "Delete",
-                "assign_to_me": "Assign to me"
-            }
+                "delete": "Delete"
+            },
+            "add_task": "Add New Task"
         },
         "labels": {
             "task_singular": "Task",
             "task_plural": "Tasks",
-            "add_labels": "Add Labels",
             "search": "Search labels...",
             "create_new": "Create new label",
             "no_results": "No labels found",
@@ -1436,681 +1821,352 @@
             "preview": "Preview",
             "add": "Create",
             "cancel": "Cancel",
-            "placeholder": "e.g. Bug, Feature, Design"
-        },
-        "datepicker": {
-            "select_date": "Select date",
-            "time": "Time",
-            "done": "Done",
-            "today": "Today",
-            "tomorrow": "Tomorrow",
-            "next_week": "Next Week"
-        },
-        "edit": {
-            "title": "Edit Task",
-            "mark_complete": "Mark as Done",
-            "mark_incomplete": "Mark as Undone",
-            "edit_mode": "Edit mode",
-            "click_to_edit": "Click to edit",
-            "title_label": "Task Title",
-            "select_status": "Select status",
-            "select_date": "Select date...",
-            "description": "Description",
-            "description_placeholder": "Add description...",
-            "click_to_add_description": "Click to add description...",
-            "subtasks_header": "Subtasks",
-            "files_header": "Files",
-            "add_file": "+ Add file",
-            "no_attachments": "No attachments",
-            "no_attachments_hint": "Click button above to add files",
-            "links_header": "Links",
-            "add_link": "+ Add link",
-            "cancel": "Cancel",
-            "save": "Save changes",
-            "meta": {
-                "project": "Project",
-                "assignee": "Assignee",
-                "status": "Status",
-                "end_date": "End Date",
-                "priority": "Priority",
-                "labels": "Labels"
-            },
-            "tabs": {
-                "subtasks": "Subtasks",
-                "files": "Files",
-                "links": "Links"
-            }
-        },
-        "create": {
-            "title": "New Task",
-            "select_project": "Select project",
-            "task_title": "Task title",
-            "task_title_placeholder": "What needs to be done?",
-            "description": "Description",
-            "description_placeholder": "Add task description... (supports Markdown)",
-            "markdown_hint": "Tip: Use **bold**, *italics*, - lists",
-            "assignee": "Assignee",
-            "assignee_placeholder": "Assign person...",
-            "start_date": "Start",
-            "end_date": "End",
-            "due_date_placeholder": "Due date",
-            "more_options": "More options",
-            "less_options": "Less options",
-            "dependencies": "Dependencies",
-            "subtasks": "Subtasks",
-            "subtasks_edit_details": "Edit details",
-            "subtasks_description_label": "Description",
-            "subtasks_description_placeholder": "Add subtask description...",
-            "subtasks_assignee_label": "Assignee",
-            "subtasks_assignee_placeholder": "Assign...",
-            "add_subtask_placeholder": "Add subtask...",
-            "add_subtask_button": "+ Add",
-            "attachments": "Attachments",
-            "dropzone_active": "Drop files here...",
-            "dropzone_inactive": "Drag files or click to add",
-            "file_type_hint": "PNG, JPG, PDF, DOCX up to 100MB",
-            "file_size_error": "The following files are too large (max 100MB):",
-            "upload_error": "Failed to upload some files. Check console.",
-            "create_another": "Create another",
-            "cancel": "Cancel",
-            "create_button": "Create task",
-            "dependencies_placeholder": "Select tasks...",
-            "dependencies_count": "{{count}} tasks",
-            "no_tasks_available": "No other tasks available",
-            "priority": "Priority",
-            "status": "Status",
-            "labels": "Labels",
-            "mock_projects": {
-                "marketing": "Marketing",
-                "development": "Development",
-                "design_system": "Design System"
-            }
-        }
-    },
-    "projects": {
-        "noProjectsFound": "No projects found",
-        "createFirstProject": "Create your first project",
-        "gantt": {
-            "task_name": "Task Name",
-            "start_date": "Start Date",
-            "end_date": "End Date",
-            "status": "Status",
-            "subtasks": "Subtasks",
-            "assignee": "Assignee",
-            "no_tasks": "No tasks in this project"
-        },
-        "timeline": {
-            "title": "Timeline",
-            "task_abbr": "t",
-            "day": "Day",
-            "week": "Week",
-            "month": "Month",
-            "now": "Now",
-            "add_task": "Add task",
-            "no_tasks_day": "No tasks for this day"
-        },
-        "header": {
-            "gantt": "Gantt",
-            "timeline": "Timeline",
-            "search": "Search projects...",
-            "filters": "Filters",
-            "sort": "Sort By",
-            "new_project": "New Project"
-        },
-        "create": {
-            "title": "Create New Project",
-            "subtitle": "Add a new project to organize your tasks",
-            "name": "Project Name",
-            "name_placeholder": "e.g., Website Redesign",
-            "description": "Description",
-            "description_placeholder": "Brief description of the project...",
-            "team": "Team",
-            "select_team": "Select a team",
-            "no_teams": "No teams available. Create a team first.",
-            "template": "Industry Template",
-            "select_template": "Select template",
-            "no_template": "No template (custom stages)",
-            "template_help": "Templates provide predefined stages for your workflow",
-            "color": "Project Color",
-            "start_date": "Start Date",
-            "deadline": "Deadline",
-            "cancel": "Cancel",
-            "submit": "Create Project",
-            "creating": "Creating..."
-        },
-        "details": {
-            "close": "Close",
-            "archive": "Archive task",
-            "no_assignees": "No assignees",
-            "no_labels": "No labels",
-            "description": "Description",
-            "meta": {
-                "project": "Project",
-                "assignee": "Assignee",
-                "status": "Status",
-                "end_date": "End Date",
-                "priority": "Priority",
-                "labels": "Labels"
-            },
-            "tabs": {
-                "subtasks": "Subtasks",
-                "comments": "Comments",
-                "shared": "Shared",
-                "activity": "Activity"
-            },
-            "subtasks": {
-                "title": "Subtasks"
-            },
-            "discussion": {
-                "title": "Discussion"
-            },
-            "shared": {
-                "files": "Files",
-                "links": "Links",
-                "name": "Name",
-                "shared_by": "Shared by",
-                "date": "Date"
-            },
-            "activity": {
-                "title": "Activity"
-            }
-        },
-        "day_list": {
-            "title": "Daily Tasks",
-            "no_tasks": "No tasks scheduled for this day."
-        },
-        "list": {
-            "columns": {
-                "name": "Task Name",
-                "subtasks": "Subtasks",
-                "status": "Status",
-                "priority": "Priority",
-                "start_date": "Start Date",
-                "end_date": "End Date",
-                "assignee": "Assignee"
-            },
-            "no_tasks": "No tasks found"
-        },
-        "calendar": {
-            "today": "Today",
-            "month": "Month",
-            "week": "Week",
-            "add_task": "Add task",
-            "more_tasks": "+{{count}} more"
-        },
-        "menu": {
-            "edit_project": "Edit project",
-            "delete_project": "Delete project"
-        },
-        "edit_panel": {
-            "title": "Edit Project",
-            "subtitle": "Update project information.",
-            "name": "Project Name",
-            "name_placeholder": "e.g. Website Redesign",
-            "description": "Description",
-            "description_placeholder": "Briefly describe your project...",
-            "color": "Project Color",
-            "deadline": "Deadline",
-            "cancel": "Cancel",
-            "saving": "Saving...",
-            "submit": "Save Changes"
-        }
-    },
-    "board": {
-        "column": {
-            "quick_add": {
-                "placeholder": "Type task name",
-                "priority": "Priority",
-                "assign_to": "Assign to",
-                "today": "Today",
-                "tomorrow": "Tomorrow",
-                "save": "Save"
-            },
-            "quick_edit": {
-                "assignee_placeholder": "Assign someone...",
-                "date_placeholder": "Due date",
-                "save": "Save"
-            },
-            "menu": {
-                "config": "Configuration",
-                "rename": "Rename",
-                "wip_limit": "Set WIP limit",
-                "change_color": "Change color",
-                "sort_title": "Sorting",
-                "sort_by": "Sort by...",
-                "watch": "Watch list",
-                "bulk_title": "Bulk Actions",
-                "move_all": "Move all...",
-                "archive_all": "Archive all",
-                "expand_all": "Expand all cards",
-                "collapse_all": "Collapse all cards",
-                "auto_title": "Automations",
-                "add_rule": "Add rule",
-                "delete_column": "Delete column",
-                "select_color": "Select Color",
-                "collapse": "Collapse column"
-            }
-        },
-        "add_column": {
-            "title": "New Column",
-            "button": "Add Column",
-            "placeholder": "e.g. Verification",
-            "label": "Column Name",
-            "color_label": "Color",
-            "empty_button": "Add Column"
-        },
-        "header": {
-            "search": "Search tasks...",
-            "filters": "Filters",
-            "sort": "Sort By",
-            "new_task": "New Task",
-            "kanban": "Kanban",
-            "list": "List",
-            "calendar": "Calendar",
-            "timeline": "Timeline"
-        },
-        "filters": {
-            "title": "Filters",
-            "quick": {
-                "title": "Quick Filters",
-                "assigned_to_me": "Assigned to me",
-                "overdue": "Overdue",
-                "today": "Today",
-                "this_week": "This week"
-            },
-            "assignees": "Assignees",
-            "priorities": "Priorities",
-            "labels": "Labels & Tags",
-            "status": "Status",
-            "no_members": "No team members",
-            "no_labels": "No labels found",
-            "clear": "Clear filters"
-        },
-        "sort": {
-            "title": "Sort By",
-            "direction": "Order",
-            "asc": "Ascending",
-            "desc": "Descending",
-            "options": {
-                "priority": "Priority",
-                "due_date": "Due Date",
-                "created_at": "Created At",
-                "updated_at": "Last Updated"
-            }
+            "placeholder": "e.g., Bug, Feature, Design",
+            "add_labels": "Add labels"
         },
         "messages": {
-            "loading": "Loading project...",
-            "not_found": "Project not found",
-            "delete_column_confirm": "Are you sure you want to delete this column? All tasks in it will be deleted.",
-            "delete_tasks_confirm": "Are you sure you want to delete {{count}} task(s)?"
-        }
-    },
-    "card": {
-        "menu": {
-            "edit": "Edit",
-            "duplicate": "Duplicate",
-            "archive": "Archive",
-            "delete": "Delete"
-        },
-        "add_task": "Add New Task"
-    },
-    "labels": {
-        "task_singular": "Task",
-        "task_plural": "Tasks",
-        "search": "Search labels...",
-        "create_new": "Create new label",
-        "no_results": "No labels found",
-        "create_header": "Create Label",
-        "name": "Name",
-        "color": "Color",
-        "preview": "Preview",
-        "add": "Create",
-        "cancel": "Cancel",
-        "placeholder": "e.g., Bug, Feature, Design",
-        "add_labels": "Add labels"
-    },
-    "messages": {
-        "save": "Save",
-        "decryptionError": "Message decryption error",
-        "selectMember": "Select a team member to start chatting",
-        "search": "Search messages...",
-        "unknownUser": "Unknown User",
-        "pinnedOnly": "Pinned Only",
-        "online": "Online",
-        "offline": "Offline",
-        "searchInChat": "Search in chat",
-        "filesAndMedia": "Files & Media",
-        "mute": "Mute notifications",
-        "pinnedMessages": "Pinned messages",
-        "showAllMessages": "Show all messages",
-        "noMessagesFound": "No messages found matching",
-        "you": "You",
-        "system": "System",
-        "user": "User",
-        "startConversation": "Start your conversation with",
-        "noPinnedMessages": "No pinned messages",
-        "noMessagesYet": "No messages yet",
-        "startConversationCta": "Start the conversation!",
-        "typeMessage": "Type a message...",
-        "editingMessage": "Editing message",
-        "replyingTo": "Replying to",
-        "sortBy": "Sort by",
-        "date": "Date",
-        "name": "Name",
-        "searchTeam": "Search team...",
-        "loadingMembers": "Loading team members...",
-        "noMembersFound": "No members found",
-        "noTeamMembers": "No team members yet",
-        "startConversationList": "Start a conversation",
-        "seenNow": "Seen now",
-        "seen": "Seen",
-        "sentMessage": "Sent message",
-        "newMessage": "New message",
-        "sentAMessage": "Sent a message",
-        "failedToSend": "Failed to send message",
-        "confirmDelete": "Are you sure you want to delete this message?",
-        "failedToDelete": "Failed to delete message",
-        "settings": "Settings",
-        "basicInfo": "Basic Information",
-        "saveChanges": "Save Changes",
-        "saving": "Saving...",
-        "saved": "Settings saved",
-        "failedToSave": "Failed to save settings",
-        "security": "Security",
-        "e2e": "End-to-end encrypted",
-        "e2eDescription": "All messages in this conversation are encrypted and can only be read by participants.",
-        "members": "Members",
-        "memberManagementComingSoon": "Member management coming soon...",
-        "dangerZone": "Danger Zone",
-        "deleteConversation": "Delete Conversation",
-        "confirmDeleteConversation": "Are you sure you want to delete this conversation? This cannot be undone.",
-        "createConversation": "Create Conversation",
-        "description": "Description",
-        "descriptionPlaceholder": "What is this conversation about?",
-        "type": "Type",
-        "directMessage": "Direct Message",
-        "groupChat": "Group Chat",
-        "channel": "Channel",
-        "private": "Private (invite only)",
-        "cancel": "Cancel",
-        "create": "Create",
-        "creating": "Creating...",
-        "failedToCreate": "Failed to create conversation",
-        "unnamedConversation": "Unnamed Conversation",
-        "messageDeleted": "Message deleted",
-        "pinnedAction": "pinned a message.",
-        "unpinnedAction": "unpinned a message.",
-        "viewAll": "View all",
-        "replyingToLabel": "Replying to:",
-        "originalMessage": "original message",
-        "edited": "(edited)",
-        "isTyping": "is typing...",
-        "and": "and",
-        "areTyping": "are typing...",
-        "othersAreTyping": "others are typing...",
-        "emojiCategories": {
-            "smileys": "Smileys",
-            "gestures": "Gestures",
-            "animals": "Animals",
-            "food": "Food",
-            "activities": "Activities",
-            "travel": "Travel",
-            "objects": "Objects",
-            "symbols": "Symbols",
-            "flags": "Flags"
-        }
-    },
-    "toasts": {
-        "password_updated": "Password updated successfully",
-        "verification_sent": "Verification email sent to new address",
-        "phone_saved": "Phone number saved",
-        "2fa_enabled": "2FA Enabled Successfully",
-        "2fa_disabled": "2FA Disabled",
-        "failed_create_item": "Failed to create item",
-        "failed_update_event": "Failed to update event",
-        "duplicate_not_implemented": "Duplicate is not yet implemented on the server"
-    },
-    "files": {
-        "viewer": {
-            "undo": "Undo",
-            "redo": "Redo",
-            "select": "Select",
-            "pan": "Pan",
-            "text": "Text",
-            "edit_text": "Edit text",
-            "comment": "Comment",
-            "draw": "Draw",
-            "eraser": "Eraser",
-            "draw_high": "Draw High",
-            "text_high": "Text High",
-            "link": "Link",
-            "single_page": "Single page",
-            "two_pages": "Two pages",
-            "color": "Color",
-            "width": "Width",
-            "opacity": "Opacity",
-            "blend": "Blend",
-            "size": "Size",
-            "blend_normal": "Normal",
-            "blend_multiply": "Multiply",
-            "blend_screen": "Screen",
-            "blend_overlay": "Overlay",
-            "save_changes": "Save Changes",
-            "link_settings": "Link Settings",
-            "link_to": "Link To",
-            "website": "Website",
-            "page": "Page",
-            "url_link": "URL Link",
-            "page_number": "Page Number",
-            "cancel": "Cancel",
-            "save_link": "Save Link",
-            "select_text_to_link": "Select text to add link",
-            "select_text_to_high": "Select text to highlight",
-            "select_native_text": "(Select Native Text & Apply)",
-            "save_close": "Save & Close",
-            "url_placeholder": "www.example.com",
-            "page_placeholder": "e.g. 2",
-            "loading": "Loading...",
-            "thumbnails": "Thumbnails",
-            "comments": "Comments",
-            "no_comments": "No comments yet."
-        },
-        "header": {
-            "title": "Files",
-            "folders": "Folders",
-            "files": "Files",
-            "upload": "Drag and drop or Browse upload",
-            "sort_by": "Sort by: {{value}}",
-            "view_grid": "Grid",
-            "view_list": "List",
-            "filter_type": "Filter by type",
-            "filter_date": "Filter by date",
-            "all_types": "All types",
-            "select_date": "Select date range"
-        },
-        "sort": {
+            "save": "Save",
+            "decryptionError": "Message decryption error",
+            "selectMember": "Select a team member to start chatting",
+            "search": "Search messages...",
+            "unknownUser": "Unknown User",
+            "pinnedOnly": "Pinned Only",
+            "online": "Online",
+            "offline": "Offline",
+            "searchInChat": "Search in chat",
+            "filesAndMedia": "Files & Media",
+            "mute": "Mute notifications",
+            "pinnedMessages": "Pinned messages",
+            "showAllMessages": "Show all messages",
+            "noMessagesFound": "No messages found matching",
+            "you": "You",
+            "system": "System",
+            "user": "User",
+            "startConversation": "Start your conversation with",
+            "noPinnedMessages": "No pinned messages",
+            "noMessagesYet": "No messages yet",
+            "startConversationCta": "Start the conversation!",
+            "typeMessage": "Type a message...",
+            "editingMessage": "Editing message",
+            "replyingTo": "Replying to",
+            "sortBy": "Sort by",
             "date": "Date",
             "name": "Name",
-            "size": "Size",
-            "type": "Type"
-        },
-        "types": {
-            "all": "All types",
-            "pdf": "PDF",
-            "document": "DOC",
-            "spreadsheet": "XLS",
-            "image": "Images",
-            "video": "Videos",
-            "audio": "Audio",
-            "archive": "Archive",
-            "unknown": "Unknown type",
-            "folder": "Folder",
-            "powerpoint": "PowerPoint",
-            "json": "JSON",
-            "text": "Text",
-            "word": "Word Document",
-            "excel": "Excel Spreadsheet",
-            "zip": "ZIP Archive",
-            "rar": "RAR Archive",
-            "7z": "7-Zip Archive",
-            "gzip": "GZip Archive",
-            "tar": "TAR Archive",
-            "html": "HTML",
-            "css": "CSS",
-            "javascript": "JavaScript",
-            "typescript": "TypeScript",
-            "xml": "XML"
-        },
-        "actions": {
-            "upload": "Upload Files",
-            "new_folder": "New Folder",
-            "download": "Download",
-            "rename": "Rename",
-            "move": "Move to...",
-            "delete": "Delete",
-            "archive": "Archive",
-            "duplicate": "Duplicate",
-            "info": "Info",
-            "edit": "Edit",
-            "manage": "Manage",
-            "open": "Open",
-            "select_files": "Select Files",
-            "select_folder": "Select Folder",
-            "clear_all": "Clear All",
-            "download_view": "Download to view"
-        },
-        "modals": {
-            "create_folder": {
-                "title": "Create New Folder",
-                "label": "Folder Name",
-                "placeholder": "Enter folder name...",
-                "submit": "Create Folder",
-                "submit_loading": "Creating...",
-                "cancel": "Cancel"
-            },
-            "rename": {
-                "title_file": "Rename File",
-                "title_folder": "Rename Folder",
-                "label": "New Name",
-                "placeholder": "Enter new name...",
-                "submit": "Rename",
-                "submit_loading": "Renaming...",
-                "cancel": "Cancel"
-            },
-            "move": {
-                "title": "Move to Folder",
-                "root": "Root (Files)",
-                "no_folders": "No folders available. Create a folder first.",
-                "move_here": "Move Here",
-                "submit_loading": "Moving...",
-                "current": "Current",
-                "cancel": "Cancel"
-            },
-            "preview": {
-                "download_to_view": "Download to view",
-                "not_available": "Preview not available",
-                "download_hint": "Download the file to view its contents"
+            "searchTeam": "Search team...",
+            "loadingMembers": "Loading team members...",
+            "noMembersFound": "No members found",
+            "noTeamMembers": "No team members yet",
+            "startConversationList": "Start a conversation",
+            "seenNow": "Seen now",
+            "seen": "Seen",
+            "sentMessage": "Sent message",
+            "newMessage": "New message",
+            "sentAMessage": "Sent a message",
+            "failedToSend": "Failed to send message",
+            "confirmDelete": "Are you sure you want to delete this message?",
+            "failedToDelete": "Failed to delete message",
+            "settings": "Settings",
+            "basicInfo": "Basic Information",
+            "saveChanges": "Save Changes",
+            "saving": "Saving...",
+            "saved": "Settings saved",
+            "failedToSave": "Failed to save settings",
+            "security": "Security",
+            "e2e": "End-to-end encrypted",
+            "e2eDescription": "All messages in this conversation are encrypted and can only be read by participants.",
+            "members": "Members",
+            "memberManagementComingSoon": "Member management coming soon...",
+            "dangerZone": "Danger Zone",
+            "deleteConversation": "Delete Conversation",
+            "confirmDeleteConversation": "Are you sure you want to delete this conversation? This cannot be undone.",
+            "createConversation": "Create Conversation",
+            "description": "Description",
+            "descriptionPlaceholder": "What is this conversation about?",
+            "type": "Type",
+            "directMessage": "Direct Message",
+            "groupChat": "Group Chat",
+            "channel": "Channel",
+            "private": "Private (invite only)",
+            "cancel": "Cancel",
+            "create": "Create",
+            "creating": "Creating...",
+            "failedToCreate": "Failed to create conversation",
+            "unnamedConversation": "Unnamed Conversation",
+            "messageDeleted": "Message deleted",
+            "pinnedAction": "pinned a message.",
+            "unpinnedAction": "unpinned a message.",
+            "viewAll": "View all",
+            "replyingToLabel": "Replying to:",
+            "originalMessage": "original message",
+            "edited": "(edited)",
+            "isTyping": "is typing...",
+            "and": "and",
+            "areTyping": "are typing...",
+            "othersAreTyping": "others are typing...",
+            "emojiCategories": {
+                "smileys": "Smileys",
+                "gestures": "Gestures",
+                "animals": "Animals",
+                "food": "Food",
+                "activities": "Activities",
+                "travel": "Travel",
+                "objects": "Objects",
+                "symbols": "Symbols",
+                "flags": "Flags"
             }
         },
-        "picker": {
-            "title": "Add Files",
-            "select_mode": "Select from workspace",
-            "upload_mode": "Upload new",
-            "search_placeholder": "Search files...",
-            "no_files": "No files found",
-            "no_files_workspace": "No files in workspace",
-            "selected": "Selected: {{count}}",
-            "cancel": "Cancel",
-            "select": "Select",
-            "select_plural": "Select ({{count}})",
-            "adjust_search_query": "Try adjusting your search query",
-            "drag_drop": "Drag files here or",
-            "click_to_select": "Click to select",
-            "uploading": "Uploading...",
-            "upload_count": "Upload ({{count}})"
+        "toasts": {
+            "password_updated": "Password updated successfully",
+            "verification_sent": "Verification email sent to new address",
+            "phone_saved": "Phone number saved",
+            "2fa_enabled": "2FA Enabled Successfully",
+            "2fa_disabled": "2FA Disabled",
+            "failed_create_item": "Failed to create item",
+            "failed_update_event": "Failed to update event",
+            "duplicate_not_implemented": "Duplicate is not yet implemented on the server"
         },
-        "messages": {
-            "upload_files": "Upload Files",
-            "add_files_desc": "Add files to your workspace",
-            "drag_drop_desc": "Drag and drop or Browse to upload",
-            "drag_drop_files_folders": "Drag and drop files or folders here",
-            "click_to_browse": "or click to browse",
-            "select_mode": "Select from workspace",
-            "upload_mode": "Upload new",
-            "search_placeholder": "Search files...",
-            "click_to_select": "Click to select",
-            "drag_drop": "Drag files here or",
-            "selected": "Selected: {{count}}",
-            "select": "Select {{count}}",
-            "cancel": "Cancel",
-            "title": "Select Files",
-            "uploading_count": "Uploading {{count}} file(s)",
-            "upload_status": "Upload ({{count}})",
-            "getting_ready": "Getting ready...",
-            "upload_failed": "Upload failed",
-            "no_files": "No files yet",
-            "preview_not_available": "Preview not available",
-            "download_to_view": "Download the file to view its contents",
-            "in_folder": "In folder",
-            "root": "Root"
+        "files": {
+            "viewer": {
+                "undo": "Undo",
+                "redo": "Redo",
+                "select": "Select",
+                "pan": "Pan",
+                "text": "Text",
+                "edit_text": "Edit text",
+                "comment": "Comment",
+                "draw": "Draw",
+                "eraser": "Eraser",
+                "draw_high": "Draw High",
+                "text_high": "Text High",
+                "link": "Link",
+                "single_page": "Single page",
+                "two_pages": "Two pages",
+                "color": "Color",
+                "width": "Width",
+                "opacity": "Opacity",
+                "blend": "Blend",
+                "size": "Size",
+                "blend_normal": "Normal",
+                "blend_multiply": "Multiply",
+                "blend_screen": "Screen",
+                "blend_overlay": "Overlay",
+                "save_changes": "Save Changes",
+                "link_settings": "Link Settings",
+                "link_to": "Link To",
+                "website": "Website",
+                "page": "Page",
+                "url_link": "URL Link",
+                "page_number": "Page Number",
+                "cancel": "Cancel",
+                "save_link": "Save Link",
+                "select_text_to_link": "Select text to add link",
+                "select_text_to_high": "Select text to highlight",
+                "select_native_text": "(Select Native Text & Apply)",
+                "save_close": "Save & Close",
+                "url_placeholder": "www.example.com",
+                "page_placeholder": "e.g. 2",
+                "loading": "Loading...",
+                "thumbnails": "Thumbnails",
+                "comments": "Comments",
+                "no_comments": "No comments yet."
+            },
+            "header": {
+                "title": "Files",
+                "folders": "Folders",
+                "files": "Files",
+                "upload": "Drag and drop or Browse upload",
+                "sort_by": "Sort by: {{value}}",
+                "view_grid": "Grid",
+                "view_list": "List",
+                "filter_type": "Filter by type",
+                "filter_date": "Filter by date",
+                "all_types": "All types",
+                "select_date": "Select date range"
+            },
+            "sort": {
+                "date": "Date",
+                "name": "Name",
+                "size": "Size",
+                "type": "Type"
+            },
+            "types": {
+                "all": "All types",
+                "pdf": "PDF",
+                "document": "DOC",
+                "spreadsheet": "XLS",
+                "image": "Images",
+                "video": "Videos",
+                "audio": "Audio",
+                "archive": "Archive",
+                "unknown": "Unknown type",
+                "folder": "Folder",
+                "powerpoint": "PowerPoint",
+                "json": "JSON",
+                "text": "Text",
+                "word": "Word Document",
+                "excel": "Excel Spreadsheet",
+                "zip": "ZIP Archive",
+                "rar": "RAR Archive",
+                "7z": "7-Zip Archive",
+                "gzip": "GZip Archive",
+                "tar": "TAR Archive",
+                "html": "HTML",
+                "css": "CSS",
+                "javascript": "JavaScript",
+                "typescript": "TypeScript",
+                "xml": "XML"
+            },
+            "actions": {
+                "upload": "Upload Files",
+                "new_folder": "New Folder",
+                "download": "Download",
+                "rename": "Rename",
+                "move": "Move to...",
+                "delete": "Delete",
+                "archive": "Archive",
+                "duplicate": "Duplicate",
+                "info": "Info",
+                "edit": "Edit",
+                "manage": "Manage",
+                "open": "Open",
+                "select_files": "Select Files",
+                "select_folder": "Select Folder",
+                "clear_all": "Clear All",
+                "download_view": "Download to view"
+            },
+            "modals": {
+                "create_folder": {
+                    "title": "Create New Folder",
+                    "label": "Folder Name",
+                    "placeholder": "Enter folder name...",
+                    "submit": "Create Folder",
+                    "submit_loading": "Creating...",
+                    "cancel": "Cancel"
+                },
+                "rename": {
+                    "title_file": "Rename File",
+                    "title_folder": "Rename Folder",
+                    "label": "New Name",
+                    "placeholder": "Enter new name...",
+                    "submit": "Rename",
+                    "submit_loading": "Renaming...",
+                    "cancel": "Cancel"
+                },
+                "move": {
+                    "title": "Move to Folder",
+                    "root": "Root (Files)",
+                    "no_folders": "No folders available. Create a folder first.",
+                    "move_here": "Move Here",
+                    "submit_loading": "Moving...",
+                    "current": "Current",
+                    "cancel": "Cancel"
+                },
+                "preview": {
+                    "download_to_view": "Download to view",
+                    "not_available": "Preview not available",
+                    "download_hint": "Download the file to view its contents"
+                }
+            },
+            "picker": {
+                "title": "Add Files",
+                "select_mode": "Select from workspace",
+                "upload_mode": "Upload new",
+                "search_placeholder": "Search files...",
+                "no_files": "No files found",
+                "no_files_workspace": "No files in workspace",
+                "selected": "Selected: {{count}}",
+                "cancel": "Cancel",
+                "select": "Select",
+                "select_plural": "Select ({{count}})",
+                "adjust_search_query": "Try adjusting your search query",
+                "drag_drop": "Drag files here or",
+                "click_to_select": "Click to select",
+                "uploading": "Uploading...",
+                "upload_count": "Upload ({{count}})"
+            },
+            "messages": {
+                "upload_files": "Upload Files",
+                "add_files_desc": "Add files to your workspace",
+                "drag_drop_desc": "Drag and drop or Browse to upload",
+                "drag_drop_files_folders": "Drag and drop files or folders here",
+                "click_to_browse": "or click to browse",
+                "select_mode": "Select from workspace",
+                "upload_mode": "Upload new",
+                "search_placeholder": "Search files...",
+                "click_to_select": "Click to select",
+                "drag_drop": "Drag files here or",
+                "selected": "Selected: {{count}}",
+                "select": "Select {{count}}",
+                "cancel": "Cancel",
+                "title": "Select Files",
+                "uploading_count": "Uploading {{count}} file(s)",
+                "upload_status": "Upload ({{count}})",
+                "getting_ready": "Getting ready...",
+                "upload_failed": "Upload failed",
+                "no_files": "No files yet",
+                "preview_not_available": "Preview not available",
+                "download_to_view": "Download the file to view its contents",
+                "in_folder": "In folder",
+                "root": "Root"
+            },
+            "delete_file_confirm": "Delete \"{{name}}\"?",
+            "delete_folder_confirm": "Delete folder \"{{name}}\" and all its contents?",
+            "move_failed": "Failed to move file:",
+            "download_failed": "Download failed:",
+            "empty_folder": "This folder is empty",
+            "properties": {
+                "size": "Size",
+                "type": "Type",
+                "created": "Created",
+                "location": "Location",
+                "team": "Team",
+                "id": "ID",
+                "details": "File Details",
+                "modified": "Last Modified",
+                "shared_with": "Shared with",
+                "owner": "Owner",
+                "section_title": "Properties"
+            }
         },
-        "delete_file_confirm": "Delete \"{{name}}\"?",
-        "delete_folder_confirm": "Delete folder \"{{name}}\" and all its contents?",
-        "move_failed": "Failed to move file:",
-        "download_failed": "Download failed:",
-        "empty_folder": "This folder is empty",
-        "properties": {
-            "size": "Size",
-            "type": "Type",
-            "created": "Created",
-            "location": "Location",
-            "team": "Team",
-            "id": "ID",
-            "details": "File Details",
-            "modified": "Last Modified",
-            "shared_with": "Shared with",
-            "owner": "Owner",
-            "section_title": "Properties"
-        }
-    },
-    "project_edit": {
-        "menu": {
-            "edit_project": "Edit project",
-            "delete_project": "Delete project",
-            "export_tasks": "Export tasks"
+        "project_edit": {
+            "menu": {
+                "edit_project": "Edit project",
+                "delete_project": "Delete project",
+                "export_tasks": "Export tasks"
+            },
+            "panel": {
+                "title": "Edit Project",
+                "subtitle": "Update project information.",
+                "name": "Project Name",
+                "name_placeholder": "e.g. Website Redesign",
+                "description": "Description",
+                "description_placeholder": "Briefly describe your project...",
+                "color": "Project Color",
+                "deadline": "Deadline",
+                "cancel": "Cancel",
+                "saving": "Saving...",
+                "submit": "Save Changes",
+                "team": "Select Team",
+                "no_teams": "No teams available",
+                "multi_team_help": "You can select multiple teams"
+            }
         },
-        "panel": {
-            "title": "Edit Project",
-            "subtitle": "Update project information.",
-            "name": "Project Name",
-            "name_placeholder": "e.g. Website Redesign",
-            "description": "Description",
-            "description_placeholder": "Briefly describe your project...",
-            "color": "Project Color",
-            "deadline": "Deadline",
-            "cancel": "Cancel",
-            "saving": "Saving...",
-            "submit": "Save Changes",
-            "team": "Select Team",
-            "no_teams": "No teams available",
-            "multi_team_help": "You can select multiple teams"
-        }
-    },
-    "team_edit": {
-        "menu": {
-            "edit_team": "Edit team details",
-            "delete_team": "Delete team",
-            "export_members": "Export Members"
-        },
-        "panel": {
-            "title": "Edit Team",
-            "team_name": "Team Name",
-            "team_name_placeholder": "e.g. Marketing",
-            "description": "Description",
-            "description_placeholder": "Add a brief description that explains the team's purpose.",
-            "team_color": "Team Color",
-            "cancel": "Cancel",
-            "save_button": "Save Changes"
+        "team_edit": {
+            "menu": {
+                "edit_team": "Edit team details",
+                "delete_team": "Delete team",
+                "export_members": "Export Members"
+            },
+            "panel": {
+                "title": "Edit Team",
+                "team_name": "Team Name",
+                "team_name_placeholder": "e.g. Marketing",
+                "description": "Description",
+                "description_placeholder": "Add a brief description that explains the team's purpose.",
+                "team_color": "Team Color",
+                "cancel": "Cancel",
+                "save_button": "Save Changes"
+            }
         }
     }
 }
