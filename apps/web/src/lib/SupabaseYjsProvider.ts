@@ -9,7 +9,29 @@ export class SupabaseYjsProvider {
     private channel: RealtimeChannel
     private supabase: SupabaseClient
     private isConnected: boolean = false
+    private isDestroyed: boolean = false
     private user: any = null
+
+    private broadcastFullState = () => {
+        if (this.isDestroyed || !this.channel) return
+
+        const state = Y.encodeStateAsUpdate(this.doc)
+        this.channel.send({
+            type: 'broadcast',
+            event: 'yjs-update',
+            payload: { update: Array.from(state) },
+        })
+
+        const awarenessState = awarenessProtocol.encodeAwarenessUpdate(
+            this.awareness,
+            [this.doc.clientID]
+        )
+        this.channel.send({
+            type: 'broadcast',
+            event: 'yjs-awareness',
+            payload: { update: Array.from(awarenessState) },
+        })
+    }
 
     constructor(doc: Y.Doc, supabase: SupabaseClient, roomName: string, user: any) {
         this.doc = doc
@@ -63,6 +85,12 @@ export class SupabaseYjsProvider {
             // For now, Tiptap handles removing stale cursors after 10 seconds.
         })
 
+        this.channel.on('presence', { event: 'join' }, ({ key }: any) => {
+            if (!this.isConnected) return
+            if (!key || key === this.user.id) return
+            setTimeout(() => this.broadcastFullState(), 100)
+        })
+
         // When we make changes, broadcast them
         this.doc.on('update', this.handleDocUpdate)
         this.awareness.on('update', this.handleAwarenessUpdate)
@@ -80,28 +108,35 @@ export class SupabaseYjsProvider {
     }
 
     private handleDocUpdate = (update: Uint8Array, origin: any) => {
-        if (origin === this) {
+        if (origin === this || this.isDestroyed || !this.isConnected) {
             // Don't broadcast changes we just received from the network
+            // or if we are already disconnected
             return
         }
-        this.channel.send({
-            type: 'broadcast',
-            event: 'yjs-update',
-            payload: { update: Array.from(update) },
-        })
+
+        // Only send if channel is joined
+        if (this.channel.state === 'joined') {
+            this.channel.send({
+                type: 'broadcast',
+                event: 'yjs-update',
+                payload: { update: Array.from(update) },
+            })
+        }
     }
 
     private handleAwarenessUpdate = ({ added, updated, removed }: any, origin: any) => {
-        if (origin === this) return
+        if (origin === this || this.isDestroyed || !this.isConnected) return
 
         const changedClients = added.concat(updated, removed)
         const update = awarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients)
 
-        this.channel.send({
-            type: 'broadcast',
-            event: 'yjs-awareness',
-            payload: { update: Array.from(update) },
-        })
+        if (this.channel.state === 'joined') {
+            this.channel.send({
+                type: 'broadcast',
+                event: 'yjs-awareness',
+                payload: { update: Array.from(update) },
+            })
+        }
     }
 
     public async connect() {
@@ -124,22 +159,7 @@ export class SupabaseYjsProvider {
                     // Broadcast our complete state so new peers know it
                     // Small timeout allows channel fully bind
                     setTimeout(() => {
-                        const state = Y.encodeStateAsUpdate(this.doc)
-                        this.channel.send({
-                            type: 'broadcast',
-                            event: 'yjs-update',
-                            payload: { update: Array.from(state) },
-                        })
-
-                        const awarenessState = awarenessProtocol.encodeAwarenessUpdate(
-                            this.awareness,
-                            [this.doc.clientID]
-                        )
-                        this.channel.send({
-                            type: 'broadcast',
-                            event: 'yjs-awareness',
-                            payload: { update: Array.from(awarenessState) },
-                        })
+                        this.broadcastFullState()
                     }, 500)
 
                     resolve()
@@ -152,11 +172,15 @@ export class SupabaseYjsProvider {
     }
 
     public disconnect() {
-        if (!this.isConnected) return
+        this.isDestroyed = true
         this.doc.off('update', this.handleDocUpdate)
         this.awareness.off('update', this.handleAwarenessUpdate)
-        this.channel.untrack()
-        this.supabase.removeChannel(this.channel)
+
+        if (this.channel) {
+            this.channel.untrack()
+            this.supabase.removeChannel(this.channel)
+        }
+
         this.isConnected = false
     }
 }

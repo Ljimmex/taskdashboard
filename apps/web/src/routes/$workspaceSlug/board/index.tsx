@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Plus, FileText, Palette, Search, Trash2, ArrowLeft, Share2, Undo2, Redo2, MessageSquare, MoreVertical } from 'lucide-react'
 import { useWhiteboards, useCreateBoard, useDeleteBoard, useUpdateBoard } from '@/hooks/useWhiteboards'
 import { useDocuments, useCreateDocument, useDeleteDocument, useUpdateDocument } from '@/hooks/useDocuments'
-import { ExcalidrawBoard } from '@/components/features/whiteboards/ExcalidrawBoard'
+import { MiroBoard } from '@/components/features/whiteboards/Miroboard'
 import { TiptapEditor } from '@/components/features/docs/TiptapEditor'
 import { CreationSidePanel } from '@/components/features/shared/CreationSidePanel'
 import { useSession } from '@/lib/auth'
@@ -223,7 +223,7 @@ function BoardPage() {
                                 {activeCollaborators.slice(0, 5).map((collab) => (
                                     <div
                                         key={collab.userId || collab.name}
-                                        className="w-8 h-8 rounded-full border-2 border-[var(--app-bg-sidebar)] bg-gray-600 overflow-hidden flex items-center justify-center text-[10px] font-bold text-white relative group"
+                                        className="w-8 h-8 rounded-full border-2 border-[var(--app-bg-sidebar)] bg-gray-600 overflow-hidden flex items-center justify-center text-[10px] font-bold text-white relative"
                                         style={{ backgroundColor: collab.color?.background || collab.color }}
                                         title={collab.username || collab.name}
                                     >
@@ -234,21 +234,6 @@ function BoardPage() {
                                         )}
                                     </div>
                                 ))}
-                                {activeCollaborators.length > 5 && (
-                                    <div className="relative group">
-                                        <div className="w-8 h-8 rounded-full border-2 border-[var(--app-bg-sidebar)] bg-[var(--app-bg-card)] flex items-center justify-center text-[10px] font-bold text-[var(--app-text-secondary)]">
-                                            +{activeCollaborators.length - 5}
-                                        </div>
-                                        <div className="absolute top-full right-0 mt-2 p-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 flex flex-col gap-1">
-                                            {activeCollaborators.slice(5).map(c => (
-                                                <div key={c.userId || c.name} className="text-xs text-[var(--app-text-primary)] flex items-center gap-2">
-                                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: c.color?.background || c.color }} />
-                                                    {c.username || c.name}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                                 {activeCollaborators.length === 0 && (
                                     <div className="w-8 h-8 rounded-full border-2 border-dashed border-[var(--app-border)] bg-transparent ml-1" />
                                 )}
@@ -302,12 +287,12 @@ function BoardPage() {
                 </div>
                 <div className="flex-1 relative overflow-hidden">
                     {selectedResource.type === 'whiteboard' ? (
-                        <ExcalidrawBoard
+                        <MiroBoard
                             key={selectedResource.id}
                             boardId={selectedResource.id}
                             initialData={selectedResource.data}
                             onSave={(data) => debouncedUpdateBoard(selectedResource.id, { data })}
-                            onCollaboratorsChange={setActiveCollaborators}
+                            boardName={selectedResource.name}
                         />
                     ) : (
                         <>

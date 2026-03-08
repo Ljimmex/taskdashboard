@@ -7,16 +7,23 @@ import {
     Loader2,
     MousePointer2,
     Square,
+    Circle,
+    Minus,
     ArrowRight,
     Type,
     StickyNote,
     Pencil,
     Eraser,
     Smile,
+    Hexagon,
     ImageIcon,
     Frame,
-    Hand,
-    MoreHorizontal
+    Star,
+    Triangle,
+    MessageSquare,
+    Monitor,
+    Smartphone,
+    Tablet
 } from "lucide-react";
 import { useSession } from "@/lib/auth";
 import { RealtimeChannel } from "@supabase/supabase-js";
@@ -54,6 +61,7 @@ export const ExcalidrawBoard = ({ boardId, initialData, onSave, readOnly = false
     const [collaborators, setCollaborators] = useState<Map<string, any>>(new Map());
 
     const [activeTool, setActiveTool] = useState("selection");
+    const [isShapesOpen, setIsShapesOpen] = useState(false);
     const [isStickyOpen, setIsStickyOpen] = useState(false);
     const [isFramesOpen, setIsFramesOpen] = useState(false);
     const [isEmojisOpen, setIsEmojisOpen] = useState(false);
@@ -69,12 +77,25 @@ export const ExcalidrawBoard = ({ boardId, initialData, onSave, readOnly = false
         '#d9f99d', '#a3e635', '#ffffff', '#1e293b'
     ];
 
+    const frameOptions = [
+        { label: "Custom", width: 400, height: 400, icon: <Frame size={18} /> },
+        { label: "A4", width: 794, height: 1123, icon: <Square size={18} /> },
+        { label: "Letter", width: 816, height: 1056, icon: <Square size={18} /> },
+        { label: "16:9", width: 1920, height: 1080, icon: <Monitor size={18} /> },
+        { label: "4:3", width: 1024, height: 768, icon: <Monitor size={18} /> },
+        { label: "1:1", width: 1080, height: 1080, icon: <Square size={18} /> },
+        { label: "Mobile", width: 390, height: 844, icon: <Smartphone size={18} /> },
+        { label: "Tablet", width: 820, height: 1180, icon: <Tablet size={18} /> },
+        { label: "Desktop", width: 1440, height: 900, icon: <Monitor size={18} /> },
+    ];
+
     const emojiOptions = ["😀", "😂", "🥰", "😎", "🤔", "🎉", "🔥", "✨", "💯", "🚀", "💡", "✅"];
 
     const setTool = (type: string) => {
         if (!excalidrawAPI) return;
         excalidrawAPI.updateScene({ appState: { activeTool: { type } } });
         setActiveTool(type);
+        setIsShapesOpen(false);
         setIsStickyOpen(false);
         setIsFramesOpen(false);
         setIsEmojisOpen(false);
@@ -135,6 +156,50 @@ export const ExcalidrawBoard = ({ boardId, initialData, onSave, readOnly = false
         setIsStickyOpen(false);
     };
 
+    const insertStickyStack = () => {
+        if (!excalidrawAPI) return;
+        const elements = excalidrawAPI.getSceneElements();
+        const appState = excalidrawAPI.getAppState();
+
+        const viewportWidth = appState.width / appState.zoom.value;
+        const viewportHeight = appState.height / appState.zoom.value;
+        const startX = -appState.scrollX + (viewportWidth - 300) / 2; // 300 is rough width of 2 stickies with gap
+        const startY = -appState.scrollY + (viewportHeight - 300) / 2;
+
+        const newElements = [];
+        for (let i = 0; i < 4; i++) {
+            newElements.push({
+                type: "rectangle",
+                version: 1,
+                versionNonce: Math.random(),
+                isDeleted: false,
+                id: `sticky-${Date.now()}-${i}`,
+                fillStyle: "solid",
+                strokeWidth: 1,
+                strokeStyle: "solid",
+                roughness: 0,
+                opacity: 100,
+                angle: (Math.random() - 0.5) * 0.1,
+                x: startX + (i % 2) * 160,
+                y: startY + Math.floor(i / 2) * 160,
+                strokeColor: "#000000",
+                backgroundColor: stickyColor,
+                width: 140,
+                height: 140,
+                seed: Math.random() * 1000,
+                strokeSharpness: "sharp",
+                groupIds: [],
+                boundElements: null,
+                updated: Date.now(),
+                link: null,
+                locked: false
+            });
+        }
+
+        excalidrawAPI.updateScene({ elements: [...elements, ...newElements] });
+        setIsStickyOpen(false);
+    };
+
     const insertFrame = (width: number, height: number, isCustom = false) => {
         if (!excalidrawAPI) return;
         if (isCustom) {
@@ -180,6 +245,59 @@ export const ExcalidrawBoard = ({ boardId, initialData, onSave, readOnly = false
             setActiveTool("selection");
         }
         setIsFramesOpen(false);
+    };
+
+    const insertMacroShape = (shapeType: string) => {
+        if (!excalidrawAPI) return;
+        const elements = excalidrawAPI.getSceneElements();
+        const appState = excalidrawAPI.getAppState();
+        const viewportWidth = appState.width / appState.zoom.value;
+        const viewportHeight = appState.height / appState.zoom.value;
+        const startX = -appState.scrollX + (viewportWidth - 100) / 2;
+        const startY = -appState.scrollY + (viewportHeight - 100) / 2;
+
+        const newId = `macro-${Date.now()}`;
+        let points: [number, number][] = [];
+
+        if (shapeType === 'triangle') {
+            points = [[50, 0], [100, 100], [0, 100], [50, 0]];
+        } else if (shapeType === 'star') {
+            points = [[50, 0], [61, 35], [98, 35], [68, 57], [79, 91], [50, 70], [21, 91], [32, 57], [2, 35], [39, 35], [50, 0]];
+        } else if (shapeType === 'message') {
+            points = [[0, 0], [100, 0], [100, 80], [60, 80], [40, 100], [40, 80], [0, 80], [0, 0]];
+        }
+
+        const newShape = {
+            type: "line",
+            version: 1,
+            versionNonce: Math.random(),
+            isDeleted: false,
+            id: newId,
+            fillStyle: "hachure",
+            fillColor: "transparent",
+            strokeWidth: 2,
+            strokeStyle: "solid",
+            roughness: 0,
+            opacity: 100,
+            x: startX,
+            y: startY,
+            strokeColor: "#000000",
+            backgroundColor: "transparent",
+            points,
+            groupIds: [],
+            boundElements: null,
+            updated: Date.now(),
+            link: null,
+            locked: false
+        };
+
+        excalidrawAPI.updateScene({
+            elements: [...elements, newShape],
+            appState: { selectedElementIds: { [newId]: true } }
+        });
+
+        setIsShapesOpen(false);
+        setActiveTool("selection");
     };
 
     const insertEmoji = (emoji: string) => {
@@ -243,7 +361,7 @@ export const ExcalidrawBoard = ({ boardId, initialData, onSave, readOnly = false
                 ...appState,
                 // Force subtle grid for professional look
                 gridSize: 20,
-                viewBackgroundColor: theme === 'dark' ? '#1a1a2e' : '#f8f9fa',
+                viewBackgroundColor: theme === 'dark' ? '#121212' : '#ffffff',
             },
             scrollToContent: true,
         };
@@ -442,7 +560,7 @@ export const ExcalidrawBoard = ({ boardId, initialData, onSave, readOnly = false
         if (excalidrawAPI) {
             excalidrawAPI.updateScene({
                 appState: {
-                    viewBackgroundColor: theme === 'dark' ? '#1a1a2e' : '#f8f9fa',
+                    viewBackgroundColor: theme === 'dark' ? '#121212' : '#ffffff',
                 }
             });
         }
@@ -462,12 +580,7 @@ export const ExcalidrawBoard = ({ boardId, initialData, onSave, readOnly = false
             {/* Contextual Properties Panel for Selected Elements */}
             {selectedElement && (
                 <div
-                    className={clsx(
-                        "absolute z-[60] flex items-center gap-1.5 p-1.5 backdrop-blur-xl rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-200",
-                        theme === 'dark'
-                            ? "bg-[#2d2d44] border border-white/10"
-                            : "bg-white border border-black/5"
-                    )}
+                    className="absolute z-[60] flex items-center gap-1.5 p-1.5 bg-[var(--app-bg-card)]/90 backdrop-blur-xl border border-[var(--app-border)] rounded-xl shadow-xl animate-in fade-in zoom-in-95 duration-200"
                     style={{
                         left: Math.max(120, Math.min(typeof window !== 'undefined' ? window.innerWidth - 120 : 1000, popupCoords.x)),
                         top: Math.max(60, popupCoords.y - 70), /* Show above the element */
@@ -513,84 +626,156 @@ export const ExcalidrawBoard = ({ boardId, initialData, onSave, readOnly = false
             )}
 
             {/* Custom Floating Toolbar */}
-            <div className={clsx(
-                "absolute left-4 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center gap-1 p-2 rounded-2xl shadow-xl backdrop-blur-xl",
-                theme === 'dark'
-                    ? "bg-[#2d2d44]/90 border border-white/10"
-                    : "bg-white/95 border border-black/5"
-            )}>
-                <ToolButton active={activeTool === 'selection'} onClick={() => setTool('selection')} icon={<MousePointer2 size={18} />} title="Select" />
-                <ToolButton active={activeTool === 'hand'} onClick={() => setTool('hand')} icon={<Hand size={18} />} title="Hand" />
-                <div className="w-full h-px bg-[var(--app-border)] my-1" />
-                <ToolButton active={activeTool === 'frame'} onClick={() => setTool('frame')} icon={<Frame size={18} />} title="Frame" />
-                <ToolButton active={activeTool === 'rectangle'} onClick={() => setTool('rectangle')} icon={<Square size={18} />} title="Rectangle" />
-                <ToolButton active={activeTool === 'arrow'} onClick={() => setTool('arrow')} icon={<ArrowRight size={18} />} title="Arrow" />
-                <ToolButton active={activeTool === 'freedraw'} onClick={() => setTool('freedraw')} icon={<Pencil size={18} />} title="Draw" />
-                <ToolButton active={activeTool === 'text'} onClick={() => setTool('text')} icon={<Type size={18} />} title="Text" />
-                <ToolButton active={activeTool === 'eraser'} onClick={() => setTool('eraser')} icon={<Eraser size={18} />} title="Eraser" />
-                <div className="w-full h-px bg-[var(--app-border)] my-1" />
-                <ToolButton onClick={() => setIsEmojisOpen(!isEmojisOpen)} icon={<Smile size={18} />} title="Emoji" />
-                <ToolButton active={activeTool === 'image'} onClick={() => setTool('image')} icon={<ImageIcon size={18} />} title="Image" />
-                <ToolButton onClick={() => setIsStickyOpen(!isStickyOpen)} icon={<StickyNote size={18} />} title="Sticky" />
-                <ToolButton onClick={() => setIsFramesOpen(!isFramesOpen)} icon={<MoreHorizontal size={18} />} title="More" />
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 p-2 bg-[var(--app-bg-card)]/80 backdrop-blur-xl border border-[var(--app-border)] rounded-2xl shadow-xl">
+                {/* Drawing Tools Properties (Pen/Eraser) */}
+                {(activeTool === 'freedraw' || activeTool === 'eraser' || activeTool === 'line') && (
+                    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 p-1.5 bg-[var(--app-bg-card)]/90 backdrop-blur-xl border border-[var(--app-border)] rounded-xl shadow-xl animate-in slide-in-from-bottom-2">
+                        <div className="text-[10px] font-semibold text-[var(--app-text-muted)] uppercase tracking-wider px-2">Grubość:</div>
+                        <div className="flex gap-1">
+                            <button onClick={() => { if (excalidrawAPI) { excalidrawAPI.updateScene({ appState: { currentItemStrokeWidth: 1 } }); updateSelected({ strokeWidth: 1 }); } }} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--app-bg-elevated)] transition-colors text-[var(--app-text-primary)]">
+                                <div className="w-4 h-[2px] bg-current rounded-full" />
+                            </button>
+                            <button onClick={() => { if (excalidrawAPI) { excalidrawAPI.updateScene({ appState: { currentItemStrokeWidth: 2 } }); updateSelected({ strokeWidth: 2 }); } }} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--app-bg-elevated)] transition-colors text-[var(--app-text-primary)]">
+                                <div className="w-4 h-[4px] bg-current rounded-full" />
+                            </button>
+                            <button onClick={() => { if (excalidrawAPI) { excalidrawAPI.updateScene({ appState: { currentItemStrokeWidth: 4 } }); updateSelected({ strokeWidth: 4 }); } }} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--app-bg-elevated)] transition-colors text-[var(--app-text-primary)]">
+                                <div className="w-4 h-[6px] bg-current rounded-full" />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
-                {isEmojisOpen && (
-                    <div className={clsx(
-                        "absolute left-full ml-3 top-[70%] -translate-y-1/2 p-3 w-64 rounded-2xl shadow-xl animate-in slide-in-from-left-2",
-                        theme === 'dark'
-                            ? "bg-[#2d2d44] border border-white/10"
-                            : "bg-white border border-black/5"
-                    )}>
-                        <div className="grid grid-cols-4 gap-2">
-                            {emojiOptions.map(emoji => (
+                <ToolButton active={activeTool === 'selection'} onClick={() => setTool('selection')} icon={<MousePointer2 size={18} />} title="Wybierz" />
+                <ToolButton active={activeTool === 'freedraw'} onClick={() => setTool('freedraw')} icon={<Pencil size={18} />} title="Rysuj" />
+                <ToolButton active={activeTool === 'text'} onClick={() => setTool('text')} icon={<Type size={18} />} title="Tekst" />
+
+                <div className="relative">
+                    <ToolButton
+                        active={['rectangle', 'diamond', 'ellipse', 'arrow', 'line', 'triangle', 'star', 'message'].includes(activeTool)}
+                        onClick={() => setIsShapesOpen(!isShapesOpen)}
+                        icon={<Square size={18} />}
+                        title="Kształty i linie"
+                    />
+                    {isShapesOpen && (
+                        <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 p-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl shadow-xl animate-in slide-in-from-bottom-2 w-[160px]">
+                            <div className="grid grid-cols-4 gap-1 mb-1">
+                                <ToolButton active={activeTool === 'line'} onClick={() => setTool('line')} icon={<Minus size={18} />} title="Linia" />
+                                <ToolButton active={activeTool === 'arrow'} onClick={() => setTool('arrow')} icon={<ArrowRight size={18} />} title="Strzałka" />
+                                {/* Emulate curved arrow/line with native path if needed, but skipping complex curves for now */}
+                                <div className="col-span-2" />
+                            </div>
+                            <div className="w-full h-px bg-[var(--app-border)] my-1" />
+                            <div className="grid grid-cols-4 gap-1 mb-1">
+                                <ToolButton active={activeTool === 'rectangle'} onClick={() => setTool('rectangle')} icon={<Square size={18} />} title="Prostokąt" />
+                                <ToolButton active={activeTool === 'ellipse'} onClick={() => setTool('ellipse')} icon={<Circle size={18} />} title="Koło" />
+                                <ToolButton active={activeTool === 'diamond'} onClick={() => setTool('diamond')} icon={<Hexagon size={18} />} title="Romb" />
+                                <ToolButton active={activeTool === 'triangle'} onClick={() => insertMacroShape('triangle')} icon={<Triangle size={18} />} title="Trójkąt" />
+                            </div>
+                            <div className="grid grid-cols-4 gap-1">
+                                <ToolButton active={activeTool === 'star'} onClick={() => insertMacroShape('star')} icon={<Star size={18} />} title="Gwiazda" />
+                                <ToolButton active={activeTool === 'message'} onClick={() => insertMacroShape('message')} icon={<MessageSquare size={18} />} title="Dymek" />
+                                <div className="col-span-2" />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="relative">
+                    <ToolButton
+                        active={activeTool === 'sticky'}
+                        onClick={() => setIsStickyOpen(!isStickyOpen)}
+                        icon={<StickyNote size={18} />}
+                        title="Sticky Notes"
+                    />
+                    {isStickyOpen && (
+                        <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 p-3 w-48 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl shadow-xl animate-in slide-in-from-bottom-2">
+                            <div className="grid grid-cols-4 gap-2 mb-3">
+                                {stickyColors.map(color => (
+                                    <button
+                                        key={color}
+                                        onClick={() => insertSticky(color)}
+                                        className={clsx(
+                                            "w-full aspect-square rounded shadow-sm border border-black/10 transition-transform hover:scale-110",
+                                            stickyColor === color && "ring-2 ring-offset-2 ring-offset-[var(--app-bg-card)] ring-[var(--app-accent)]"
+                                        )}
+                                        style={{ backgroundColor: color }}
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex flex-col gap-1.5">
                                 <button
-                                    key={emoji}
-                                    onClick={() => insertEmoji(emoji)}
-                                    className="w-full aspect-square text-2xl flex items-center justify-center rounded-xl bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-deepest)] transition-transform hover:scale-110 shadow-sm border border-black/5"
+                                    onClick={() => insertSticky(stickyColor)}
+                                    className="w-full py-1.5 px-3 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-deepest)] border border-[var(--app-border)] rounded-lg text-xs font-semibold text-[var(--app-text-primary)] transition-colors"
                                 >
-                                    {emoji}
+                                    ✦ Pojedyncza
                                 </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-                {isStickyOpen && (
-                    <div className={clsx(
-                        "absolute left-full ml-3 top-[82%] -translate-y-1/2 p-3 w-48 rounded-2xl shadow-xl animate-in slide-in-from-left-2",
-                        theme === 'dark'
-                            ? "bg-[#2d2d44] border border-white/10"
-                            : "bg-white border border-black/5"
-                    )}>
-                        <div className="grid grid-cols-4 gap-2 mb-3">
-                            {stickyColors.slice(0, 8).map(color => (
                                 <button
-                                    key={color}
-                                    onClick={() => insertSticky(color)}
-                                    className="w-full aspect-square rounded shadow-sm border border-black/10 transition-transform hover:scale-110"
-                                    style={{ backgroundColor: color }}
-                                />
-                            ))}
+                                    onClick={insertStickyStack}
+                                    className="w-full py-1.5 px-3 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-deepest)] border border-[var(--app-border)] rounded-lg text-xs font-semibold text-[var(--app-text-primary)] transition-colors flex items-center justify-center gap-1.5"
+                                >
+                                    <StickyNote size={12} /> Układ (x4)
+                                </button>
+                            </div>
                         </div>
-                        <button onClick={() => insertSticky(stickyColor)} className="w-full py-1.5 px-3 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-deepest)] border border-[var(--app-border)] rounded-lg text-xs font-semibold text-[var(--app-text-primary)] transition-colors">Add note</button>
-                    </div>
-                )}
-                {isFramesOpen && (
-                    <div className={clsx(
-                        "absolute left-full ml-3 top-[92%] -translate-y-full p-2 rounded-2xl shadow-xl animate-in slide-in-from-left-2 w-[180px]",
-                        theme === 'dark'
-                            ? "bg-[#2d2d44] border border-white/10"
-                            : "bg-white border border-black/5"
-                    )}>
-                        <button onClick={() => insertFrame(400, 400, false)} className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-[var(--app-bg-elevated)]">Frame 1:1</button>
-                        <button onClick={() => insertFrame(1920, 1080, false)} className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-[var(--app-bg-elevated)]">Frame 16:9</button>
-                        <button onClick={() => insertFrame(390, 844, false)} className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-[var(--app-bg-elevated)]">Frame Mobile</button>
-                    </div>
-                )}
-                {showImageHint && (
-                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[var(--app-accent)] text-[var(--app-bg-deepest)] rounded-lg text-xs font-bold shadow-lg animate-in fade-in slide-in-from-left-1 whitespace-nowrap">
-                        Kliknij na canvas aby dodać obraz
-                    </div>
-                )}
+                    )}
+                </div>
+
+                <ToolButton active={activeTool === 'eraser'} onClick={() => setTool('eraser')} icon={<Eraser size={18} />} title="Gumka" />
+
+                <div className="relative">
+                    <ToolButton
+                        active={activeTool === 'frame'}
+                        onClick={() => setIsFramesOpen(!isFramesOpen)}
+                        icon={<Frame size={18} />}
+                        title="Ramki (Frames)"
+                    />
+                    {isFramesOpen && (
+                        <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 p-3 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl shadow-xl animate-in slide-in-from-bottom-2 w-[240px]">
+                            <div className="grid grid-cols-3 gap-2">
+                                {frameOptions.map(opt => (
+                                    <button
+                                        key={opt.label}
+                                        onClick={() => insertFrame(opt.width, opt.height, opt.label === "Custom")}
+                                        className="flex flex-col items-center justify-center p-2 rounded-xl text-xs font-medium text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)] transition-colors gap-1.5"
+                                    >
+                                        <div className="text-[var(--app-text-primary)] opacity-80">{opt.icon}</div>
+                                        <span>{opt.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="w-px h-6 bg-[var(--app-border)] mx-1" />
+
+                <div className="relative">
+                    <ToolButton onClick={() => setIsEmojisOpen(!isEmojisOpen)} icon={<Smile size={18} />} title="Emoji" />
+                    {isEmojisOpen && (
+                        <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 p-3 w-64 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl shadow-xl animate-in slide-in-from-bottom-2">
+                            <div className="grid grid-cols-4 gap-2">
+                                {emojiOptions.map(emoji => (
+                                    <button
+                                        key={emoji}
+                                        onClick={() => insertEmoji(emoji)}
+                                        className="w-full aspect-square text-2xl flex items-center justify-center rounded-xl bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-deepest)] transition-transform hover:scale-110 shadow-sm border border-black/5"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="relative">
+                    <ToolButton active={activeTool === 'image'} onClick={() => setTool('image')} icon={<ImageIcon size={18} />} title="Wstaw obraz" />
+                    {showImageHint && (
+                        <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-[var(--app-accent)] text-[var(--app-bg-deepest)] rounded-lg text-xs font-bold shadow-lg animate-in fade-in slide-in-from-bottom-1 whitespace-nowrap">
+                            Kliknij w dowolnym miejscu tablicy, by upuścić i wybrać obraz!
+                        </div>
+                    )}
+                </div>
             </div>
 
             <Excalidraw

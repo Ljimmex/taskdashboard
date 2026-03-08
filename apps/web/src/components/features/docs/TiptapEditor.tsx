@@ -2,12 +2,11 @@
 
 import { useEditor, EditorContent } from '@tiptap/react'
 import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus'
+import { Mark, mergeAttributes } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
-import Link from '@tiptap/extension-link'
-import Underline from '@tiptap/extension-underline'
 import Highlight from '@tiptap/extension-highlight'
 import TextAlign from '@tiptap/extension-text-align'
 import CharacterCount from '@tiptap/extension-character-count'
@@ -23,11 +22,8 @@ import SubscriptExtension from '@tiptap/extension-subscript'
 import DragHandle from '@tiptap/extension-drag-handle'
 import { common, createLowlight } from 'lowlight'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import * as Y from 'yjs'
-import Collaboration from '@tiptap/extension-collaboration'
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import { supabase } from '@/lib/supabase'
-import { SupabaseYjsProvider } from '@/lib/SupabaseYjsProvider'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import {
     Bold,
     Italic,
@@ -60,9 +56,53 @@ import {
     Palette,
     Layout,
     ChevronRight,
+    Square,
 } from 'lucide-react'
 
 const lowlight = createLowlight(common)
+
+const TextColorMark = Mark.create({
+    name: 'textColorMark',
+    addAttributes() {
+        return {
+            color: {
+                default: null,
+                parseHTML: (element) => element.style.color || null,
+                renderHTML: (attributes) => {
+                    if (!attributes.color) return {}
+                    return { style: `color: ${attributes.color}` }
+                },
+            },
+        }
+    },
+    parseHTML() {
+        return [{ tag: 'span[style*=color]' }]
+    },
+    renderHTML({ HTMLAttributes }) {
+        return ['span', mergeAttributes(HTMLAttributes), 0]
+    },
+    addCommands() {
+        return {
+            setTextColor:
+                (color: string) =>
+                    ({ chain }: any) =>
+                        chain().setMark(this.name, { color }).run(),
+            unsetTextColor:
+                () =>
+                    ({ chain }: any) =>
+                        chain().unsetMark(this.name).run(),
+        } as any
+    },
+})
+
+const colorFromString = (value: string) => {
+    let hash = 0
+    for (let i = 0; i < value.length; i++) {
+        hash = value.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    const hue = Math.abs(hash) % 360
+    return `hsl(${hue} 85% 60%)`
+}
 
 interface TiptapEditorProps {
     content?: string
@@ -74,6 +114,16 @@ interface TiptapEditorProps {
     documentId?: string
     user?: any
     onCollaboratorsChange?: (collaborators: any[]) => void
+}
+
+type LiveCursor = {
+    userId: string
+    name: string
+    color: string
+    avatarUrl?: string
+    x: number
+    y: number
+    updatedAt: number
 }
 
 type MediaInsertType = 'image' | 'video'
@@ -235,6 +285,29 @@ const BubbleMenuBar = ({ editor }: { editor: any }) => {
                 className="w-5 h-5 rounded-full border border-[var(--app-border)] bg-[#bbf7d0]"
                 title="Kolor zielony"
             />
+            <div className="w-px h-4 bg-border mx-1" />
+            <button
+                onClick={() => editor.chain().focus().setTextColor('#f87171').run()}
+                className={`w-5 h-5 rounded-full border border-[var(--app-border)] bg-[#f87171] ${editor.isActive('textColorMark', { color: '#f87171' }) ? 'ring-2 ring-white/60' : ''}`}
+                title="Czerwony tekst"
+            />
+            <button
+                onClick={() => editor.chain().focus().setTextColor('#60a5fa').run()}
+                className={`w-5 h-5 rounded-full border border-[var(--app-border)] bg-[#60a5fa] ${editor.isActive('textColorMark', { color: '#60a5fa' }) ? 'ring-2 ring-white/60' : ''}`}
+                title="Niebieski tekst"
+            />
+            <button
+                onClick={() => editor.chain().focus().setTextColor('#4ade80').run()}
+                className={`w-5 h-5 rounded-full border border-[var(--app-border)] bg-[#4ade80] ${editor.isActive('textColorMark', { color: '#4ade80' }) ? 'ring-2 ring-white/60' : ''}`}
+                title="Zielony tekst"
+            />
+            <button
+                onClick={() => editor.chain().focus().unsetTextColor().run()}
+                className="p-1.5 rounded-md transition-colors hover:bg-[var(--app-bg-card)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)]"
+                title="Usuń kolor tekstu"
+            >
+                <Eraser size={14} />
+            </button>
             <button
                 onClick={() => editor.chain().focus().toggleSubscript().run()}
                 className={`p-1.5 rounded-md transition-colors ${editor.isActive('subscript') ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)]' : 'hover:bg-[var(--app-bg-card)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)]'}`}
@@ -532,12 +605,14 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
         })
     }
 
+    const nodeChildrenToArray = (node: any) => Array.from({ length: node.childCount }, (_, idx) => node.child(idx))
+
     const mapCells = (mapper: (cellNode: any, rowIndex: number, colIndex: number, schema: any) => any) => {
         const ctx = getContext()
         if (!ctx) return
-        const rows = ctx.tableNode.content.toArray()
+        const rows = nodeChildrenToArray(ctx.tableNode)
         const nextRows = rows.map((rowNode: any, rIdx: number) => {
-            const cells = rowNode.content.toArray()
+            const cells = nodeChildrenToArray(rowNode)
             const nextCells = cells.map((cellNode: any, cIdx: number) => {
                 const inScope = menuType === 'column'
                     ? cIdx === ctx.colIndex
@@ -572,7 +647,7 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
     const duplicateRow = () => {
         const ctx = getContext()
         if (!ctx) return
-        const rows = ctx.tableNode.content.toArray()
+        const rows = nodeChildrenToArray(ctx.tableNode)
         const clone = rows[ctx.rowIndex].type.create(rows[ctx.rowIndex].attrs, rows[ctx.rowIndex].content, rows[ctx.rowIndex].marks)
         rows.splice(ctx.rowIndex + 1, 0, clone)
         const newTable = ctx.tableNode.type.create(ctx.tableNode.attrs, rows)
@@ -583,9 +658,9 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
     const duplicateColumn = () => {
         const ctx = getContext()
         if (!ctx) return
-        const rows = ctx.tableNode.content.toArray()
+        const rows = nodeChildrenToArray(ctx.tableNode)
         const nextRows = rows.map((rowNode: any) => {
-            const cells = rowNode.content.toArray()
+            const cells = nodeChildrenToArray(rowNode)
             const idx = Math.min(ctx.colIndex, Math.max(0, cells.length - 1))
             const source = cells[idx]
             const clone = source.type.create(source.attrs, source.content, source.marks)
@@ -600,7 +675,7 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
     const sortColumn = (desc = false) => {
         const ctx = getContext()
         if (!ctx) return
-        const rows = ctx.tableNode.content.toArray()
+        const rows = nodeChildrenToArray(ctx.tableNode)
         const hasHeaderRow = rows.length > 0 && rows[0].firstChild?.type.name === 'tableHeader'
         const headerRows = hasHeaderRow ? [rows[0]] : []
         const bodyRows = hasHeaderRow ? rows.slice(1) : rows.slice()
@@ -618,9 +693,9 @@ const TableOverlayControls = ({ editor }: { editor: any }) => {
     const sortRow = (desc = false) => {
         const ctx = getContext()
         if (!ctx) return
-        const rows = ctx.tableNode.content.toArray()
+        const rows = nodeChildrenToArray(ctx.tableNode)
         const currentRow = rows[ctx.rowIndex]
-        const cells = currentRow.content.toArray()
+        const cells = nodeChildrenToArray(currentRow)
         const sortedCells = [...cells].sort((a: any, b: any) => {
             const cmp = a.textContent.localeCompare(b.textContent, 'pl', { sensitivity: 'base', numeric: true })
             return desc ? -cmp : cmp
@@ -980,6 +1055,15 @@ const FloatingMenuBar = ({
 
     const addVideo = () => onInsertVideo()
 
+    const insertColoredPanel = () => {
+        const picked = window.prompt('Podaj kolor prostokąta (hex), np. #0f172a', '#0f172a')
+        if (!picked) return
+        const value = picked.trim()
+        const isHex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value)
+        const color = isHex ? value : '#0f172a'
+        editor.chain().focus().insertTable({ rows: 1, cols: 1, withHeaderRow: false }).setCellAttribute('backgroundColor', color).run()
+    }
+
     const insertCodeBlockSmart = () => {
         const inTaskList = editor.isActive('taskList')
         const inAnyList = inTaskList || editor.isActive('orderedList') || editor.isActive('bulletList')
@@ -987,11 +1071,20 @@ const FloatingMenuBar = ({
             editor.chain().focus().setCodeBlock().run()
             return
         }
-        const itemType = inTaskList ? 'taskItem' : 'listItem'
-        const splitAndLiftDone = editor.chain().focus().splitListItem(itemType).liftListItem(itemType).setCodeBlock().run()
-        if (!splitAndLiftDone) {
-            editor.chain().focus().liftListItem(itemType).setCodeBlock().run()
+        editor.chain().focus().insertContent({ type: 'codeBlock' }).run()
+    }
+
+    const insertQuoteSmart = () => {
+        const inTaskList = editor.isActive('taskList')
+        const inAnyList = inTaskList || editor.isActive('orderedList') || editor.isActive('bulletList')
+        if (!inAnyList) {
+            editor.chain().focus().toggleBlockquote().run()
+            return
         }
+        editor.chain().focus().insertContent({
+            type: 'blockquote',
+            content: [{ type: 'paragraph' }],
+        }).run()
     }
 
     const insertTableOfContents = () => {
@@ -1191,7 +1284,7 @@ const FloatingMenuBar = ({
                     description: 'Wyróżniony blok tekstu',
                     icon: <Quote size={16} />,
                     color: 'bg-pink-500/10 text-pink-500',
-                    action: () => editor.chain().focus().toggleBlockquote().run(),
+                    action: insertQuoteSmart,
                 },
                 {
                     label: 'Blok kodu',
@@ -1213,6 +1306,13 @@ const FloatingMenuBar = ({
                     icon: <ListTree size={16} />,
                     color: 'bg-cyan-500/10 text-cyan-500',
                     action: insertTableOfContents,
+                },
+                {
+                    label: 'Prostokąt kolorowy',
+                    description: 'Blok do pisania z wybranym tłem',
+                    icon: <Square size={16} />,
+                    color: 'bg-indigo-500/10 text-indigo-500',
+                    action: insertColoredPanel,
                 },
             ],
         },
@@ -1277,36 +1377,23 @@ export function TiptapEditor({
     }>({ open: false, type: 'image', value: '' })
     const [headings, setHeadings] = useState<TocHeading[]>([])
     const [showTocPreview, setShowTocPreview] = useState(false)
-    const [provider, setProvider] = useState<SupabaseYjsProvider | null>(null)
-
-    // Setup Collaboration Document
-    useEffect(() => {
-        if (!documentId || !user) return
-
-        const ydoc = new Y.Doc()
-        const providerInstance = new SupabaseYjsProvider(ydoc, supabase, `document_${documentId}`, user)
-        setProvider(providerInstance)
-
-        providerInstance.awareness.on('update', () => {
-            if (onCollaboratorsChange) {
-                const states = Array.from(providerInstance.awareness.getStates().values())
-                const activeUsers: any[] = []
-                states.forEach((state: any) => {
-                    if (state.user && state.user.name) {
-                        activeUsers.push(state.user)
-                    }
-                })
-                // Deduplicate by name or ID if multiple tabs open
-                const uniqueUsers = Array.from(new Map(activeUsers.map(u => [u.name, u])).values())
-                onCollaboratorsChange(uniqueUsers)
-            }
-        })
-
-        return () => {
-            providerInstance.disconnect()
-            ydoc.destroy()
+    const [liveCursors, setLiveCursors] = useState<Record<string, LiveCursor>>({})
+    const liveChannelRef = useRef<RealtimeChannel | null>(null)
+    const isApplyingRemoteRef = useRef(false)
+    const lastContentBroadcastRef = useRef(0)
+    const lastPointerBroadcastRef = useRef(0)
+    const channelSubscribedRef = useRef(false)
+    const editorSurfaceRef = useRef<HTMLDivElement | null>(null)
+    const sendLiveEvent = useCallback((event: string, payload: Record<string, any>) => {
+        const channel = liveChannelRef.current as any
+        if (!channel || !channelSubscribedRef.current) return
+        const body = { type: 'broadcast', event, payload }
+        if (typeof channel.httpSend === 'function') {
+            channel.httpSend(body).catch(() => { })
+            return
         }
-    }, [documentId, user?.id])
+        channel.send(body).catch(() => { })
+    }, [])
 
     const editor = useEditor({
         immediatelyRender: false,
@@ -1314,6 +1401,12 @@ export function TiptapEditor({
             StarterKit.configure({
                 heading: { levels: [1, 2, 3] },
                 codeBlock: false,
+                link: {
+                    openOnClick: false,
+                    HTMLAttributes: {
+                        class: 'text-blue-500 underline cursor-pointer hover:text-blue-600',
+                    },
+                },
             }),
             CodeBlockLowlight.configure({
                 lowlight,
@@ -1327,13 +1420,7 @@ export function TiptapEditor({
             }),
             TaskList,
             TaskItem.configure({ nested: true }),
-            Link.configure({
-                openOnClick: false,
-                HTMLAttributes: {
-                    class: 'text-blue-500 underline cursor-pointer hover:text-blue-600',
-                },
-            }),
-            Underline,
+            TextColorMark,
             Highlight.configure({ multicolor: true }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             CharacterCount,
@@ -1366,27 +1453,32 @@ export function TiptapEditor({
                     return element
                 },
             }),
-            ...(provider ? [
-                Collaboration.configure({
-                    document: provider.doc,
-                }),
-                CollaborationCursor.configure({
-                    provider: provider as any,
-                    user: {
-                        name: user?.name || 'Anonymous',
-                        color: provider.awareness.getLocalState()?.user?.color || '#fef08a',
-                        avatarUrl: user?.image
-                    },
-                }),
-            ] : []),
         ],
-        // Do not pass initial content directly to editor when using Yjs to avoid overrides
-        content: provider ? undefined : (content || ''),
+        content: content || '',
         editable,
         onUpdate: ({ editor }) => {
+            if (isApplyingRemoteRef.current) {
+                isApplyingRemoteRef.current = false
+                if (onCharacterCountChange) {
+                    onCharacterCountChange(editor.storage.characterCount?.characters() || 0)
+                }
+                return
+            }
             if (onChange) onChange(editor.getHTML())
             if (onCharacterCountChange) {
                 onCharacterCountChange(editor.storage.characterCount?.characters() || 0)
+            }
+            const channel = liveChannelRef.current
+            if (channel && documentId && user?.id) {
+                const now = Date.now()
+                if (now - lastContentBroadcastRef.current > 120) {
+                    lastContentBroadcastRef.current = now
+                    sendLiveEvent('doc-update', {
+                        userId: user.id,
+                        content: editor.getHTML(),
+                        updatedAt: now,
+                    })
+                }
             }
         },
         editorProps: {
@@ -1394,7 +1486,139 @@ export function TiptapEditor({
                 class: 'notion-editor prose prose-lg dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-260px)] px-16 py-12',
             },
         },
-    })
+    }, [documentId, user?.id, editable])
+
+
+    useEffect(() => {
+        if (!editor || !documentId || !user?.id) {
+            channelSubscribedRef.current = false
+            liveChannelRef.current = null
+            setLiveCursors({})
+            if (onCollaboratorsChange) onCollaboratorsChange([])
+            return
+        }
+
+        const channel = supabase.channel(`doc_live_${documentId}`, {
+            config: {
+                broadcast: { self: false },
+                presence: { key: user.id },
+            },
+        })
+        liveChannelRef.current = channel
+
+        channel
+            .on('broadcast', { event: 'doc-update' }, ({ payload }) => {
+                if (!payload?.content || payload.userId === user.id) return
+                const current = editor.getHTML()
+                if (current === payload.content) return
+                isApplyingRemoteRef.current = true
+                editor.commands.setContent(payload.content, { emitUpdate: false })
+            })
+            .on('broadcast', { event: 'pointer-update' }, ({ payload }) => {
+                if (!payload || payload.userId === user.id) return
+                setLiveCursors((prev) => ({
+                    ...prev,
+                    [payload.userId]: {
+                        userId: payload.userId,
+                        name: payload.name || 'Anonymous',
+                        color: payload.color || '#fef08a',
+                        avatarUrl: payload.avatarUrl || undefined,
+                        x: typeof payload.x === 'number' ? payload.x : 0,
+                        y: typeof payload.y === 'number' ? payload.y : 0,
+                        updatedAt: Date.now(),
+                    },
+                }))
+            })
+            .on('presence', { event: 'sync' }, () => {
+                const state = channel.presenceState() as Record<string, any[]>
+                const activeUsers = Object.entries(state)
+                    .filter(([id]) => id !== user.id)
+                    .map(([id, entries]) => {
+                        const first = entries?.[0] || {}
+                        return {
+                            userId: id,
+                            username: first.name || 'Anonymous',
+                            name: first.name || 'Anonymous',
+                            color: { background: first.color || colorFromString(id) },
+                            avatarUrl: first.avatarUrl || null,
+                        }
+                    })
+                if (onCollaboratorsChange) onCollaboratorsChange(activeUsers)
+                setLiveCursors((prev) => {
+                    const next: Record<string, LiveCursor> = {}
+                    activeUsers.forEach((u) => {
+                        if (prev[u.userId]) next[u.userId] = prev[u.userId]
+                    })
+                    return next
+                })
+            })
+
+        channel.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                channelSubscribedRef.current = true
+                await channel.track({
+                    id: user.id,
+                    name: user.name || 'Anonymous',
+                    color: colorFromString(user.id || user.email || user.name || 'anonymous'),
+                    avatarUrl: user.image || null,
+                    onlineAt: new Date().toISOString(),
+                })
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                channelSubscribedRef.current = false
+            }
+        })
+
+        return () => {
+            channelSubscribedRef.current = false
+            channel.untrack()
+            supabase.removeChannel(channel)
+            if (liveChannelRef.current === channel) liveChannelRef.current = null
+            setLiveCursors({})
+            if (onCollaboratorsChange) onCollaboratorsChange([])
+        }
+    }, [editor, documentId, user?.id, onCollaboratorsChange])
+
+    useEffect(() => {
+        const surface = editorSurfaceRef.current
+        if (!surface || !user?.id) return
+        const sendPointer = (event: PointerEvent) => {
+            const channel = liveChannelRef.current
+            if (!channel) return
+            const rect = surface.getBoundingClientRect()
+            if (rect.width <= 0 || rect.height <= 0) return
+            const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
+            const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))
+            const now = Date.now()
+            if (now - lastPointerBroadcastRef.current < 50) return
+            lastPointerBroadcastRef.current = now
+            sendLiveEvent('pointer-update', {
+                userId: user.id,
+                name: user.name || 'Anonymous',
+                avatarUrl: user.image || null,
+                color: colorFromString(user.id || user.email || user.name || 'anonymous'),
+                x,
+                y,
+            })
+        }
+        surface.addEventListener('pointermove', sendPointer)
+        return () => {
+            surface.removeEventListener('pointermove', sendPointer)
+        }
+    }, [editor, user?.id, sendLiveEvent])
+
+    useEffect(() => {
+        const interval = window.setInterval(() => {
+            const now = Date.now()
+            setLiveCursors((prev) => {
+                const next: Record<string, LiveCursor> = {}
+                Object.entries(prev).forEach(([id, cursor]) => {
+                    if (now - cursor.updatedAt < 8000) next[id] = cursor
+                })
+                return next
+            })
+        }, 2000)
+        return () => window.clearInterval(interval)
+    }, [])
 
     const openMediaToast = useCallback((type: MediaInsertType) => {
         setMediaToast({ open: true, type, value: '' })
@@ -1431,6 +1655,16 @@ export function TiptapEditor({
     useEffect(() => {
         if (!editor) return
 
+        const syncOrderedListStarts = () => {
+            const root = editorSurfaceRef.current
+            if (!root) return
+            root.querySelectorAll('ol').forEach((element) => {
+                const ol = element as HTMLOListElement
+                const start = Number(ol.getAttribute('start') || '1')
+                ol.style.setProperty('--list-start', String(start))
+            })
+        }
+
         const updateHeadings = () => {
             const nextHeadings: TocHeading[] = []
             editor.state.doc.descendants((node: any, pos: number) => {
@@ -1442,12 +1676,15 @@ export function TiptapEditor({
                 }
             })
             setHeadings(nextHeadings)
+            syncOrderedListStarts()
         }
 
         updateHeadings()
         editor.on('update', updateHeadings)
+        editor.on('transaction', syncOrderedListStarts)
         return () => {
             editor.off('update', updateHeadings)
+            editor.off('transaction', syncOrderedListStarts)
         }
     }, [editor])
 
@@ -1472,13 +1709,11 @@ export function TiptapEditor({
         }
     }, [editor, onEditorActionsChange])
 
-    // Update character count on mount
-    if (editor && onCharacterCountChange) {
+    useEffect(() => {
+        if (!editor || !onCharacterCountChange) return
         const count = editor.storage.characterCount?.characters() || 0
-        if (count > 0) {
-            onCharacterCountChange(count)
-        }
-    }
+        onCharacterCountChange(count)
+    }, [editor, onCharacterCountChange])
 
     if (!editor) {
         return (
@@ -1498,11 +1733,30 @@ export function TiptapEditor({
                     {/* Main Editor Container */}
                     <div className="flex-1 min-w-0 h-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-bg-card)] shadow-[var(--app-shadow-card)] overflow-hidden">
                         <div className="h-full">
-                            <div className="flex-1 min-w-0">
+                            <div ref={editorSurfaceRef} className="flex-1 min-w-0 relative">
                                 <BubbleMenuBar editor={editor} />
                                 <TableOverlayControls editor={editor} />
                                 <FloatingMenuBar editor={editor} onInsertImage={addImage} onInsertVideo={addVideo} />
                                 <EditorContent editor={editor} />
+                                {Object.values(liveCursors).map((cursor) => (
+                                    <div
+                                        key={cursor.userId}
+                                        className="pointer-events-none absolute z-[70]"
+                                        style={{
+                                            left: `${cursor.x * 100}%`,
+                                            top: `${cursor.y * 100}%`,
+                                            transform: 'translate(-2px, -2px)',
+                                        }}
+                                    >
+                                        <div style={{ borderColor: cursor.color }} className="h-4 border-l-2" />
+                                        <div
+                                            className="mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold text-black whitespace-nowrap"
+                                            style={{ backgroundColor: cursor.color }}
+                                        >
+                                            {cursor.name}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
