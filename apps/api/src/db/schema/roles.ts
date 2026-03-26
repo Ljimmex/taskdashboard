@@ -332,7 +332,7 @@ export const SYSTEM_ROLES = {
                 update: true,
                 delete: true,
                 viewAll: true,
-                manage: false,
+                manage: true,
             },
             files: {
                 upload: true,
@@ -420,7 +420,7 @@ export const SYSTEM_ROLES = {
                 update: true,
                 delete: true,
                 viewAll: true,
-                manage: false,
+                manage: true,
             },
             files: {
                 upload: true,

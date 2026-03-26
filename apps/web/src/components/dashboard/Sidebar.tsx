@@ -78,6 +78,7 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
         { iconKey: 'calendar', label: t('dashboard.calendar'), path: `${baseUrl}/calendar`, count: null },
         { iconKey: 'files', label: t('dashboard.files'), path: `${baseUrl}/files`, count: null },
         { iconKey: 'board', label: t('dashboard.resources'), path: `${baseUrl}/board`, count: null },
+        { iconKey: 'timetracker', label: t('dashboard.timeTracker'), path: `${baseUrl}/time-tracker`, count: null },
     ]
 
     return (

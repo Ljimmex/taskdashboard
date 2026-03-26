@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceSlugIndexRouteImport } from './routes/$workspaceSlug/index'
 import { Route as InviteInviteIdRouteImport } from './routes/invite/$inviteId'
 import { Route as WorkspaceSlugCalendarRouteImport } from './routes/$workspaceSlug/calendar'
+import { Route as WorkspaceSlugTimeTrackerIndexRouteImport } from './routes/$workspaceSlug/time-tracker/index'
 import { Route as WorkspaceSlugTeamIndexRouteImport } from './routes/$workspaceSlug/team/index'
 import { Route as WorkspaceSlugResourcesIndexRouteImport } from './routes/$workspaceSlug/resources/index'
 import { Route as WorkspaceSlugProjectsIndexRouteImport } from './routes/$workspaceSlug/projects/index'
@@ -79,6 +80,12 @@ const WorkspaceSlugCalendarRoute = WorkspaceSlugCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => WorkspaceSlugRoute,
 } as any)
+const WorkspaceSlugTimeTrackerIndexRoute =
+  WorkspaceSlugTimeTrackerIndexRouteImport.update({
+    id: '/time-tracker/',
+    path: '/time-tracker/',
+    getParentRoute: () => WorkspaceSlugRoute,
+  } as any)
 const WorkspaceSlugTeamIndexRoute = WorkspaceSlugTeamIndexRouteImport.update({
   id: '/team/',
   path: '/team/',
@@ -149,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/$workspaceSlug/projects/': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/resources/': typeof WorkspaceSlugResourcesIndexRoute
   '/$workspaceSlug/team/': typeof WorkspaceSlugTeamIndexRoute
+  '/$workspaceSlug/time-tracker/': typeof WorkspaceSlugTimeTrackerIndexRoute
   '/$workspaceSlug/projects/$projectId/': typeof WorkspaceSlugProjectsProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -169,6 +177,7 @@ export interface FileRoutesByTo {
   '/$workspaceSlug/projects': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/resources': typeof WorkspaceSlugResourcesIndexRoute
   '/$workspaceSlug/team': typeof WorkspaceSlugTeamIndexRoute
+  '/$workspaceSlug/time-tracker': typeof WorkspaceSlugTimeTrackerIndexRoute
   '/$workspaceSlug/projects/$projectId': typeof WorkspaceSlugProjectsProjectIdIndexRoute
 }
 export interface FileRoutesById {
@@ -191,6 +200,7 @@ export interface FileRoutesById {
   '/$workspaceSlug/projects/': typeof WorkspaceSlugProjectsIndexRoute
   '/$workspaceSlug/resources/': typeof WorkspaceSlugResourcesIndexRoute
   '/$workspaceSlug/team/': typeof WorkspaceSlugTeamIndexRoute
+  '/$workspaceSlug/time-tracker/': typeof WorkspaceSlugTimeTrackerIndexRoute
   '/$workspaceSlug/projects/$projectId/': typeof WorkspaceSlugProjectsProjectIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/$workspaceSlug/projects/'
     | '/$workspaceSlug/resources/'
     | '/$workspaceSlug/team/'
+    | '/$workspaceSlug/time-tracker/'
     | '/$workspaceSlug/projects/$projectId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/$workspaceSlug/projects'
     | '/$workspaceSlug/resources'
     | '/$workspaceSlug/team'
+    | '/$workspaceSlug/time-tracker'
     | '/$workspaceSlug/projects/$projectId'
   id:
     | '__root__'
@@ -255,6 +267,7 @@ export interface FileRouteTypes {
     | '/$workspaceSlug/projects/'
     | '/$workspaceSlug/resources/'
     | '/$workspaceSlug/team/'
+    | '/$workspaceSlug/time-tracker/'
     | '/$workspaceSlug/projects/$projectId/'
   fileRoutesById: FileRoutesById
 }
@@ -341,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceSlugCalendarRouteImport
       parentRoute: typeof WorkspaceSlugRoute
     }
+    '/$workspaceSlug/time-tracker/': {
+      id: '/$workspaceSlug/time-tracker/'
+      path: '/time-tracker'
+      fullPath: '/$workspaceSlug/time-tracker/'
+      preLoaderRoute: typeof WorkspaceSlugTimeTrackerIndexRouteImport
+      parentRoute: typeof WorkspaceSlugRoute
+    }
     '/$workspaceSlug/team/': {
       id: '/$workspaceSlug/team/'
       path: '/team'
@@ -418,6 +438,7 @@ interface WorkspaceSlugRouteChildren {
   WorkspaceSlugProjectsIndexRoute: typeof WorkspaceSlugProjectsIndexRoute
   WorkspaceSlugResourcesIndexRoute: typeof WorkspaceSlugResourcesIndexRoute
   WorkspaceSlugTeamIndexRoute: typeof WorkspaceSlugTeamIndexRoute
+  WorkspaceSlugTimeTrackerIndexRoute: typeof WorkspaceSlugTimeTrackerIndexRoute
   WorkspaceSlugProjectsProjectIdIndexRoute: typeof WorkspaceSlugProjectsProjectIdIndexRoute
 }
 
@@ -432,6 +453,7 @@ const WorkspaceSlugRouteChildren: WorkspaceSlugRouteChildren = {
   WorkspaceSlugProjectsIndexRoute: WorkspaceSlugProjectsIndexRoute,
   WorkspaceSlugResourcesIndexRoute: WorkspaceSlugResourcesIndexRoute,
   WorkspaceSlugTeamIndexRoute: WorkspaceSlugTeamIndexRoute,
+  WorkspaceSlugTimeTrackerIndexRoute: WorkspaceSlugTimeTrackerIndexRoute,
   WorkspaceSlugProjectsProjectIdIndexRoute:
     WorkspaceSlugProjectsProjectIdIndexRoute,
 }

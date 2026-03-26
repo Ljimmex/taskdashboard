@@ -136,6 +136,7 @@ export const taskComments = pgTable('task_comments', {
 export const timeEntries = pgTable('time_entries', {
     id: uuid('id').primaryKey().defaultRandom(),
     taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+    subtaskId: uuid('subtask_id').references(() => subtasks.id, { onDelete: 'set null' }),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     description: varchar('description', { length: 255 }),
     durationMinutes: integer('duration_minutes').notNull(),
@@ -193,6 +194,7 @@ export const taskCommentsRelations = relations(taskComments, ({ one, many }) => 
 
 export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
     task: one(tasks, { fields: [timeEntries.taskId], references: [tasks.id] }),
+    subtask: one(subtasks, { fields: [timeEntries.subtaskId], references: [subtasks.id] }),
     user: one(users, { fields: [timeEntries.userId], references: [users.id] }),
 }))
 

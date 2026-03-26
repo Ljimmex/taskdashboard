@@ -245,7 +245,49 @@
             "defaults": "Domyślne",
             "integrations": "Integracje",
             "security": "Bezpieczeństwo"
-        }
+        },
+        "timeTracker": "Time Tracker"
+    },
+    "timeTracker": {
+        "title": "Time Tracker",
+        "desc": "Śledź czas i obliczaj udział w przychodach",
+        "myTimer": "Mój Timer",
+        "dashboard": "Dashboard",
+        "selectTask": "Wybierz zadanie",
+        "pickTask": "Wybierz zadanie...",
+        "analog": "Analogowy",
+        "digital": "Cyfrowy",
+        "manualEntry": "Dodaj ręcznie",
+        "manualEntrySub": "Zanotuj przepracowany czas",
+        "date": "Data",
+        "startTime": "Czas rozpoczęcia",
+        "endTime": "Czas zakończenia",
+        "addEntry": "Dodaj wpis",
+        "durationAuto": "Czas trwania wyliczy się automatycznie",
+        "user": "Użytkownik",
+        "selectUser": "Wybierz użytkownika",
+        "whatWorkingOn": "Nad czym teraz pracujesz?",
+        "selectSubtask": "Podzadanie (opcjonalne)",
+        "noSubtask": "— Brak podzadania —",
+        "noTasks": "Brak przypisanych zadań",
+        "start": "Start",
+        "stop": "Stop",
+        "recentSessions": "Ostatnie sesje",
+        "noSessions": "Brak wpisów czasu. Zacznij śledzić!",
+        "selectProject": "Wybierz projekt",
+        "pickProject": "— Wybierz projekt —",
+        "noProjectSelected": "Wybierz projekt, aby zobaczyć dane",
+        "revshareTitle": "Udział w przychodach",
+        "member": "Członek",
+        "role": "Rola",
+        "hours": "Godziny",
+        "share": "Udział",
+        "noData": "Brak wpisów czasu dla tego projektu.",
+        "distribution": "Rozkład",
+        "allEntries": "Wszystkie wpisy czasu",
+        "noEntries": "Brak wpisów czasu dla tego projektu.",
+        "influencePoints": "Punkty Wpływu",
+        "totalIP": "Suma Punktów Wpływu (IP)"
     },
     "calendar": {
         "scope": {
@@ -407,18 +449,6 @@
                 "reminder": "Przypomnienie",
                 "task": "Zadanie"
             }
-        },
-        "export": {
-            "title": "Eksport Kalendarza",
-            "desc": "Eksportuj kalendarz workspace do PDF lub iCal.",
-            "sync_title": "Synchronizacja z zewn. aplikacjami",
-            "copy_link": "Kopiuj link subskrypcji",
-            "link_copied": "Link skopiowany!",
-            "sync_desc": "Synchronizuj swój harmonogram z zewnętrznym kalendarzem – np. Google Calendar lub Apple Calendar. Po dodaniu linku do wybranego kalendarza, wydarzenia będą aktualizowane automatycznie. Pamiętaj jednak, że zmiany w zewnętrznym kalendarzu mogą byc widoczne z opóźnieniem.",
-            "sync_instructions": "Instrukcje synchronizacji",
-            "google_help": "Pomoc Google Calendar",
-            "apple_iphone": "Apple Calendar (iPhone)",
-            "apple_mac": "Apple Calendar (Mac)"
         }
     },
     "register": {
@@ -2117,5 +2147,17 @@
             "cancel": "Anuluj",
             "save_button": "Zapisz zmiany"
         }
+    },
+    "export": {
+        "title": "Eksport Kalendarza",
+        "desc": "Eksportuj kalendarz workspace do PDF lub iCal.",
+        "sync_title": "Synchronizacja z zewn. aplikacjami",
+        "copy_link": "Kopiuj link subskrypcji",
+        "link_copied": "Link skopiowany!",
+        "sync_desc": "Synchronizuj swój harmonogram z zewnętrznym kalendarzem – np. Google Calendar lub Apple Calendar. Po dodaniu linku do wybranego kalendarza, wydarzenia będą aktualizowane automatycznie. Pamiętaj jednak, że zmiany w zewnętrznym kalendarzu mogą byc widoczne z opóźnieniem.",
+        "sync_instructions": "Instrukcje synchronizacji",
+        "google_help": "Pomoc Google Calendar",
+        "apple_iphone": "Apple Calendar (iPhone)",
+        "apple_mac": "Apple Calendar (Mac)"
     }
 }

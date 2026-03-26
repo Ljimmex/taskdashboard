@@ -92,6 +92,9 @@ export const workspaces = pgTable('workspaces', {
             email?: boolean
             inApp?: boolean
         }
+        revshareMultipliers?: Record<string, number>
+        revshareTaskWeight?: number    // default 1.0
+        revshareSubtaskWeight?: number // default 0.8
         [key: string]: any
     }>().default({
         defaultLanguage: 'pl',

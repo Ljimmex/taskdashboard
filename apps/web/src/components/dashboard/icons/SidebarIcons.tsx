@@ -172,6 +172,26 @@ export const sidebarIcons = {
             </svg>
         ),
     },
+    timetracker: {
+        gold: (
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="17" r="11" fill="var(--app-accent-hover)" />
+                <circle cx="16" cy="17" r="8" fill="var(--app-accent)" />
+                <path d="M16 11V17L20 19" stroke="var(--app-accent-hover)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M16 4V7" stroke="var(--app-accent)" strokeWidth="3" strokeLinecap="round" />
+                <path d="M22 6L20 8.5" stroke="var(--app-accent-hover)" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+        ),
+        gray: (
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="17" r="11" fill="var(--app-text-secondary)" />
+                <circle cx="16" cy="17" r="8" fill="var(--app-text-muted)" />
+                <path d="M16 11V17L20 19" stroke="var(--app-text-secondary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M16 4V7" stroke="var(--app-text-muted)" strokeWidth="3" strokeLinecap="round" />
+                <path d="M22 6L20 8.5" stroke="var(--app-text-secondary)" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+        ),
+    },
 }
 
 // Day/Night mode icons

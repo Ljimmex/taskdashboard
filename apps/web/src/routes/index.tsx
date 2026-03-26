@@ -419,7 +419,7 @@ function DashboardWireframe({ t }: { t: any }) {
                 <div className="col-span-3 bg-gray-800/50 rounded-lg p-3 space-y-2">
                     <div className="flex items-center gap-2 text-amber-400 text-sm font-medium mb-4">
                         <div className="w-6 h-6 rounded bg-amber-500/20 flex items-center justify-center text-xs">📊</div>
-                        {t('auth.dashboard.projects')}
+                        {t('dashboard.projects')}
                     </div>
                     <div className="h-2 bg-gray-700 rounded w-full" />
                     <div className="h-2 bg-gray-700 rounded w-3/4" />
@@ -524,7 +524,7 @@ function PricingCard({
             </div>
             <p className="text-gray-400 text-sm mb-4">{description}</p>
             <ul className="space-y-2 mb-6">
-                {features.map((feature, i) => (
+                {Array.isArray(features) && features.map((feature, i) => (
                     <li key={i} className="flex items-center gap-2 text-sm">
                         <span className="text-amber-400">✓</span>
                         {feature}
