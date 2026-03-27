@@ -181,10 +181,17 @@ export function TaskCard({
     }, [labels])
 
     const safeAssignees = useMemo(() => {
-        const source = (assigneeDetails?.length ? assigneeDetails : (assignees || [])) as TaskAssignee[]
+        // source can be TaskAssignee[] or string[] (ids)
+        const source = (assigneeDetails?.length ? assigneeDetails : (assignees || [])) as (TaskAssignee | string)[]
         if (source.length === 0) return []
+
+        const mapped = source.map(a => {
+            if (typeof a === 'string') return { id: a, name: '...' }
+            return a
+        })
+
         // Deduplicate by ID
-        return Array.from(new Map(source.map(a => [a.id, a])).values())
+        return Array.from(new Map(mapped.map(a => [a.id, a])).values())
     }, [assignees, assigneeDetails])
 
     useEffect(() => {
@@ -220,26 +227,16 @@ export function TaskCard({
         e.stopPropagation()
         if (userId && onQuickUpdate) {
             // Check if already assigned
-            const isAssigned = assignees.some(a => a.id === userId)
+            const isAssigned = safeAssignees.some(a => a.id === userId)
             if (!isAssigned) {
                 // Add me to assignees
-                // Extract existing IDs
-                const currentAssigneeIds = assignees.map(a => a.id)
+                const currentAssigneeIds = safeAssignees.map(a => a.id)
                 onQuickUpdate({
                     id: _id,
                     title,
                     priority,
-                    // We need to pass the FULL list of assignees including the new one
-                    // The backend/API expects 'assignees' array of IDs usually, or we might need to check 'onQuickUpdate' signature.
-                    // Looking at KanbanBoard, onQuickUpdate signature is:
-                    // (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string })
-                    // It seems it only supports single 'assigneeId' in the type definition in KanbanBoard.
-                    // BUT AssigneePicker supports multiple.
-                    // I updated the signature in TaskCardProps above to include optional `assignees?: string[]`.
-                    // I need to ensure the parent handles it.
-                    // For now, let's pass it.
                     assignees: [...currentAssigneeIds, userId],
-                    assigneeId: userId // Backend expects singular assigneeId
+                    assigneeId: userId
                 })
             }
         }
@@ -260,7 +257,7 @@ export function TaskCard({
         setShowMenu(false)
     }
 
-    const isAssignedToMe = userId && assignees.some(a => a.id === userId)
+    const isAssignedToMe = userId && safeAssignees.some(a => a.id === userId)
 
     // Check if overdue
     const isOverdue = dueDate ? new Date(dueDate) < new Date() : false

@@ -11,6 +11,7 @@ import { useSession } from '@/lib/auth'
 import { format } from 'date-fns'
 import { debounce } from 'lodash'
 import * as locales from 'date-fns/locale'
+import { useThemeStore } from '@/lib/themeStore'
 
 export const Route = createFileRoute('/$workspaceSlug/board/')({
     component: BoardPage,
@@ -32,6 +33,7 @@ function BoardPage() {
     const { workspaceSlug } = Route.useParams()
     const { data: session } = useSession()
     const user = session?.user
+    const { theme } = useThemeStore()
 
     // Fetch both types of resources
     const { data: whiteboards, isLoading: isWhiteboardsLoading } = useWhiteboards(workspaceSlug)
@@ -293,6 +295,7 @@ function BoardPage() {
                             initialData={selectedResource.data}
                             onSave={(data) => debouncedUpdateBoard(selectedResource.id, { data })}
                             boardName={selectedResource.name}
+                            theme={theme}
                         />
                     ) : (
                         <>

@@ -450,16 +450,16 @@ export function TaskListView({
                                         onDuplicate={() => onTaskDuplicate?.(task.id)}
                                         onArchive={() => onTaskArchive?.(task.id)}
                                         userRole={userRole}
-                                        isAssignedToMe={userId ? task.assignees?.some(a => a.id === userId) : false}
+                                        isAssignedToMe={userId ? task.assignees?.some(a => (typeof a === 'string' ? a === userId : a.id === userId)) : false}
                                         isCompleted={task.isCompleted}
                                         isBlocked={(task as any).isBlocked}
                                         onAssignToMe={() => {
                                             if (userId && onQuickUpdate) {
-                                                const currentAssigneeIds = task.assignees?.map(a => a.id) || []
+                                                const currentAssigneeIds = task.assignees?.map(a => (typeof a === 'string' ? a : a.id)) || []
                                                 onQuickUpdate({
                                                     id: task.id,
                                                     assignees: [...currentAssigneeIds, userId],
-                                                    assigneeId: userId // Backend expects singular assigneeId
+                                                    assigneeId: userId
                                                 })
                                             }
                                         }}

@@ -688,23 +688,26 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
             // Re-implement self-assignment check properly for arrays if needed.
             // For now, stick to permission check.
             if (!canAssignTasks(workspaceRole, teamLevel)) {
-                // Check if it's a self-assignment (adding self)
-                const newAssignees = body.assignees || []
-                const oldAssignees = task.assignees || []
+                const newAssignees = (body.assignees || []).filter(Boolean)
+                const oldAssignees = (task.assignees || []).filter(Boolean)
 
-                // If the only difference is adding/removing self, allow it?
-                // Or broadly, if user is in newAssignees...
+                console.log(`👤 Self-assignment check for user ${userId}:`, { oldAssignees, newAssignees })
 
-                // Let's rely on standard permissions for now or simple "assign to me" check from before
-                // The previous fix allowed if body.assigneeId === userId.
-                // Here body.assignees is array.
+                // Allow if:
+                // 1. User is adding themselves to the existing list
+                // 2. User is removing only themselves from the existing list (optional, but good for UX)
+                const isAddingSelf = newAssignees.includes(userId) &&
+                    newAssignees.length === oldAssignees.length + 1 &&
+                    oldAssignees.every(id => newAssignees.includes(id))
 
-                const isSelfAssign = newAssignees.includes(userId) && newAssignees.length === oldAssignees.length + 1 && oldAssignees.every(id => newAssignees.includes(id))
-                // Or just simpler: if user is not an admin, they can only assign themselves?
+                const isRemovingSelf = !newAssignees.includes(userId) &&
+                    oldAssignees.includes(userId) &&
+                    newAssignees.length === oldAssignees.length - 1 &&
+                    newAssignees.every(id => oldAssignees.includes(id))
 
-                if (!isSelfAssign) {
-                    // Strict check
-                    return c.json({ success: false, error: 'Unauthorized to assign tasks' }, 403)
+                if (!isAddingSelf && !isRemovingSelf) {
+                    console.warn(`🚫 Unauthorized assignment attempt by user ${userId}`)
+                    return c.json({ success: false, error: 'Unauthorized to assign tasks to others' }, 403)
                 }
             }
 

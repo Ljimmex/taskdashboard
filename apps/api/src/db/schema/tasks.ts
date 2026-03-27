@@ -139,9 +139,24 @@ export const timeEntries = pgTable('time_entries', {
     subtaskId: uuid('subtask_id').references(() => subtasks.id, { onDelete: 'set null' }),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     description: varchar('description', { length: 255 }),
-    durationMinutes: integer('duration_minutes').notNull(),
+    durationMinutes: integer('duration_minutes').notNull().default(0),
     startedAt: timestamp('started_at').notNull(),
     endedAt: timestamp('ended_at'),
+
+    // --- RevShare v3 Columns ---
+    entryType: varchar('entry_type', { length: 20 }).default('task').notNull(),
+    // 'task' | 'meeting'
+    projectRole: varchar('project_role', { length: 30 }).default('participant').notNull(),
+    // 'project_leader' | 'area_leader' | 'participant'
+    difficultyLevel: varchar('difficulty_level', { length: 20 }).default('standard').notNull(),
+    // 'basic' | 'standard' | 'advanced' | 'critical'
+    approvalStatus: varchar('approval_status', { length: 20 }).default('pending').notNull(),
+    // 'pending' | 'approved' | 'rejected'
+    approvedBy: text('approved_by').references(() => users.id, { onDelete: 'set null' }),
+    approvedAt: timestamp('approved_at'),
+    rejectionReason: varchar('rejection_reason', { length: 500 }),
+    bonusPoints: integer('bonus_points'),
+
     createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
