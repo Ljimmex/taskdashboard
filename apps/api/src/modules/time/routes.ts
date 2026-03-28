@@ -6,7 +6,7 @@ import { projects } from '../../db/schema/projects'
 import { teams } from '../../db/schema/teams'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { users } from '../../db/schema/users'
-import { eq, desc, and, inArray } from 'drizzle-orm'
+import { eq, desc, and, inArray, or, sql, gte } from 'drizzle-orm'
 import {
     canCreateTimeEntries,
     canViewAllTimeEntries,
@@ -256,8 +256,14 @@ timeRoutes.get('/my-tasks', async (c) => {
                 startAt: calendarEvents.startAt,
             }).from(calendarEvents).where(
                 and(
-                    inArray(calendarEvents.taskId, allTaskIds),
-                    inArray(calendarEvents.type, ['meeting', 'event'])
+                    eq(calendarEvents.workspaceId, workspace.id),
+                    inArray(calendarEvents.type, ['meeting', 'event']),
+                    gte(calendarEvents.endAt, sql`now()`),
+                    or(
+                        inArray(calendarEvents.taskId, allTaskIds.length > 0 ? allTaskIds : ['']),
+                        eq(calendarEvents.createdBy, userId),
+                        sql`${userId} = ANY(${calendarEvents.attendeeIds})`
+                    )
                 )
             ).orderBy(desc(calendarEvents.startAt))
         }
@@ -274,7 +280,7 @@ timeRoutes.get('/my-tasks', async (c) => {
         const projectMap = Object.fromEntries(teamProjects.map(p => [p.id, p]))
 
         // Build response with tasks grouped by project
-        const result = myTasks.map(t => ({
+        const taskResults = myTasks.map(t => ({
             id: t.id,
             title: t.title,
             status: t.status,
@@ -299,7 +305,30 @@ timeRoutes.get('/my-tasks', async (c) => {
                 })),
         }))
 
-        return c.json({ success: true, data: result })
+        // Filter standalone meetings (no taskId or taskId not in our projects)
+        const standaloneMeetings = allMeetings.filter(m => !m.taskId || !allTaskIds.includes(m.taskId))
+
+        if (standaloneMeetings.length > 0) {
+            // Add a virtual task for standalone meetings
+            taskResults.push({
+                id: 'standalone-meetings',
+                title: 'Meetings & Calendar Events',
+                status: 'todo',
+                priority: 'medium',
+                projectId: 'calendar',
+                projectName: 'Calendar',
+                type: 'task',
+                subtasks: [],
+                meetings: standaloneMeetings.map(m => ({
+                    id: m.id,
+                    title: m.title,
+                    taskId: 'standalone-meetings',
+                    date: m.startAt,
+                }))
+            } as any)
+        }
+
+        return c.json({ success: true, data: taskResults })
     } catch (error) {
         console.error('Error fetching my tasks:', error)
         return c.json({ success: false, error: 'Failed to fetch tasks' }, 500)
@@ -484,6 +513,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 taskId: r.taskId,
                 taskTitle: recentTaskMap[r.taskId] || 'Unknown Task',
                 durationMinutes: r.durationMinutes,
+                description: r.description,
                 startedAt: r.startedAt,
                 entryType: r.entryType,
                 approvalStatus: r.approvalStatus,

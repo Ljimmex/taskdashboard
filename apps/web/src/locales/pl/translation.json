@@ -142,7 +142,8 @@
         "uploading": "Przesyłanie...",
         "sending": "Wysyłanie...",
         "save_changes": "Zapisz zmiany",
-        "feature_coming_soon": "Ta funkcja będzie dostępna wkrótce."
+        "feature_coming_soon": "Ta funkcja będzie dostępna wkrótce.",
+        "selectProject": "Wybierz projekt"
     },
     "resources": {
         "title": "Zasoby",
@@ -325,7 +326,35 @@
         "bonusList": "Lista premii",
         "noBonuses": "Brak przyznanych premii",
         "systemResolvedRole": "Rola ustalona przez system",
-        "onlyBaseHoursCount": "Tylko podstawowe godziny pracy liczą się do progu 200h (bez mnożników)."
+        "onlyBaseHoursCount": "Tylko podstawowe godziny pracy liczą się do progu 200h (bez mnożników).",
+        "description": "Opis",
+        "descriptionPlaceholder": "Opisz co robisz... (opcjonalnie)",
+        "descriptionPlaceholderManual": "Opisz co zostało wykonane...",
+        "roleMult": "Mnożnik roli",
+        "revshareShare": "Przewidywany Udział",
+        "recentHistory": "Ostatnia Aktywność",
+        "approvals": "Zatwierdzanie",
+        "ownerDashboard": "Panel Właściciela",
+        "monthly": "Miesięczny",
+        "cumulative": "Skumulowany",
+        "custom": "Własny",
+        "participants": "Uczestnicy",
+        "participantsCount": "Uczestnicy",
+        "hoursWorked": "Przepracowane Godziny",
+        "less": "Mniej",
+        "more": "Więcej",
+        "workTimeline": "Analiza Czasu Pracy",
+        "roleBreakdown": "Rozkład Ról",
+        "projectActivity": "Aktywność Projektowa",
+        "revenueShareDetails": "Szczegóły Udziałów RevShare",
+        "myHours": "Moje Godziny",
+        "status": "Status",
+        "qualificationTitle": "Droga do kwalifikacji",
+        "qualificationDesc": "Potrzebujesz 200 zatwierdzonych godzin pracy, aby odblokować pełny udział w RevShare dla tego projektu.",
+        "noRecentEntries": "Brak zarejestrowanego czasu w tym projekcie.",
+        "noProject": "Brak wybranego projektu",
+        "selectProjectToViewContrib": "Wybierz projekt z listy, aby zobaczyć swój wkład.",
+        "projectDashboard": "Dashboard Projektu"
     },
     "calendar": {
         "scope": {

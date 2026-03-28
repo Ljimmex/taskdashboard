@@ -138,7 +138,7 @@ export const timeEntries = pgTable('time_entries', {
     taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
     subtaskId: uuid('subtask_id').references(() => subtasks.id, { onDelete: 'set null' }),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    description: varchar('description', { length: 255 }),
+    description: text('description'),
     durationMinutes: integer('duration_minutes').notNull().default(0),
     startedAt: timestamp('started_at').notNull(),
     endedAt: timestamp('ended_at'),
