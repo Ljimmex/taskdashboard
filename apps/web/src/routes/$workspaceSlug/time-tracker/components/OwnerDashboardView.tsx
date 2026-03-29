@@ -214,31 +214,24 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
 
     const exportToPDF = async () => {
         const doc = new jsPDF()
-        const fontUrl = "https://cdn.jsdelivr.net/font-roboto/1.1.0/fonts/Roboto-Regular.ttf"
+        // Use a guaranteed full-subset font from Google Fonts repo
+        const fontUrl = "https://raw.githubusercontent.com/googlefonts/roboto/main/src/v2/Roboto-Regular.ttf"
 
-        // Load Roboto font for Polish characters using a more robust method
         try {
             const fontRes = await fetch(fontUrl)
             if (!fontRes.ok) throw new Error("Font fetch failed")
-            const blob = await fontRes.blob()
-            const base64Font = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader()
-                reader.onloadend = () => {
-                    const base64 = (reader.result as string).split(',')[1]
-                    resolve(base64)
-                }
-                reader.onerror = reject
-                reader.readAsDataURL(blob)
-            })
+            const arrayBuffer = await fontRes.arrayBuffer()
+            const base64Font = btoa(
+                new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+            )
 
-            doc.addFileToVFS("Roboto-Regular.ttf", base64Font)
-            doc.addFont("Roboto-Regular.ttf", "Roboto", "normal")
+            doc.addFileToVFS("RobotoFull.ttf", base64Font)
+            doc.addFont("RobotoFull.ttf", "Roboto", "normal")
             doc.setFont("Roboto")
         } catch (e) {
-            console.warn("Failed to load PDF font from CDN, falling back to standard font", e)
+            console.error("Failed to load PDF font", e)
         }
 
-        // Set font BEFORE any text
         doc.setFont("Roboto", "normal")
         doc.setFontSize(18)
         // Ensure title also uses the font
