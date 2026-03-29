@@ -3,7 +3,7 @@ import { db } from '../../db'
 import { timeEntries, type NewTimeEntry, tasks, subtasks } from '../../db/schema/tasks'
 import { calendarEvents } from '../../db/schema/calendar'
 import { projects, projectMembers } from '../../db/schema/projects'
-import { teams } from '../../db/schema/teams'
+import { teams, teamMembers } from '../../db/schema/teams'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { users } from '../../db/schema/users'
 import { eq, desc, and, inArray, or, sql, gte } from 'drizzle-orm'
@@ -450,12 +450,20 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             })
         }
 
-        // Fetch project mapping for all users involved to get CURRENT roles
-        const projectMembersList = await db.select({
+        // Fetch project mapping for all users involved to get CURRENT roles (Workspace + Team context)
+        const membersData = await db.select({
             userId: projectMembers.userId,
-            role: projectMembers.role,
-        }).from(projectMembers).where(eq(projectMembers.projectId, projectId))
-        const memberRoleMap = Object.fromEntries(projectMembersList.map(m => [m.userId, m.role]))
+            wsRole: workspaceMembers.role,
+            teamLevel: teamMembers.teamLevel
+        }).from(projectMembers)
+            .leftJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, workspace.id)))
+            .leftJoin(teamMembers, and(eq(teamMembers.userId, projectMembers.userId), eq(teamMembers.teamId, team.id)))
+            .where(eq(projectMembers.projectId, projectId))
+
+        const memberRoleMap = Object.fromEntries(membersData.map(m => {
+            const resolved = resolveProjectRole(m.wsRole || 'member', m.teamLevel as any)
+            return [m.userId, resolved]
+        }))
 
         // --- CALCULATE USER TOTAL APPROVED HOURS (GLOBAL FOR 200H CHECK) ---
         const userTotalApprovedMinutes: Record<string, number> = {}
@@ -464,7 +472,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             userTotalApprovedMinutes[entry.userId] = (userTotalApprovedMinutes[entry.userId] || 0) + effectiveDuration
         }
 
-        const allProjectUserIds = projectMembersList.map(m => m.userId)
+        const allProjectUserIds = membersData.map(m => m.userId)
         const displayUserIds = targetUserId ? [targetUserId] : allProjectUserIds
 
         const userDetails = displayUserIds.length > 0
@@ -654,11 +662,19 @@ timeRoutes.get('/project/:projectId', async (c) => {
 
         const taskMap = Object.fromEntries(projectTasks.map(t => [t.id, t]))
 
-        const projectMembersList = await db.select({
+        const membersData = await db.select({
             userId: projectMembers.userId,
-            role: projectMembers.role,
-        }).from(projectMembers).where(eq(projectMembers.projectId, projectId))
-        const memberRoleMap = Object.fromEntries(projectMembersList.map(m => [m.userId, m.role]))
+            wsRole: workspaceMembers.role,
+            teamLevel: teamMembers.teamLevel
+        }).from(projectMembers)
+            .leftJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, team.workspaceId)))
+            .leftJoin(teamMembers, and(eq(teamMembers.userId, projectMembers.userId), eq(teamMembers.teamId, team.id)))
+            .where(eq(projectMembers.projectId, projectId))
+
+        const memberRoleMap = Object.fromEntries(membersData.map(m => {
+            const resolved = resolveProjectRole(m.wsRole || 'member', m.teamLevel as any)
+            return [m.userId, resolved]
+        }))
 
         // Get all time entries for these tasks + standalone meetings of the same workspace
         const entries = await db.select().from(timeEntries)
