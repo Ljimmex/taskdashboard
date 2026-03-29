@@ -5,13 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
 import { useSession } from '@/lib/auth'
 import {
-    Activity,
-    Clock,
-    UserCircle,
-    ClipboardCheck,
-    LayoutDashboard,
     ChevronDown
 } from 'lucide-react'
+import { sidebarIcons } from '@/components/dashboard/icons/SidebarIcons'
 
 // Import modular components
 import { MemberTimerView } from './components/MemberTimerView'
@@ -68,11 +64,11 @@ export function TimeTrackerPage() {
     if (!user || !workspaceSlug) return null
 
     const navItems = [
-        { id: 'timer', label: t('timeTracker.myTimer', 'My Timer'), icon: Clock, show: true },
-        { id: 'manual', label: t('timeTracker.manualEntry', 'Manual Entry'), icon: Activity, show: true },
-        { id: 'approval', label: t('timeTracker.approvals', 'Approvals'), icon: ClipboardCheck, show: canApproveEntries },
-        { id: 'contribution', label: t('timeTracker.myContribution', 'My Contribution'), icon: UserCircle, show: true },
-        { id: 'dashboard', label: t('timeTracker.ownerDashboard', 'Owner Dashboard'), icon: LayoutDashboard, show: canManageEntries },
+        { id: 'timer', label: t('timeTracker.myTimer', 'My Timer'), iconKey: 'timetracker', show: true },
+        { id: 'manual', label: t('timeTracker.manualEntry', 'Manual Entry'), iconKey: 'timetracker', show: true },
+        { id: 'approval', label: t('timeTracker.approvals', 'Approvals'), iconKey: 'board', show: canApproveEntries },
+        { id: 'contribution', label: t('timeTracker.myContribution', 'My Contribution'), iconKey: 'team', show: true },
+        { id: 'dashboard', label: t('timeTracker.ownerDashboard', 'Owner Dashboard'), iconKey: 'dashboard', show: canManageEntries },
     ]
 
     return (
@@ -87,12 +83,17 @@ export function TimeTrackerPage() {
                                 <button
                                     key={item.id}
                                     onClick={() => setView(item.id as any)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 text-[10px] font-bold uppercase tracking-wider ${view === item.id
-                                        ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-md'
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${view === item.id
+                                        ? 'bg-[var(--app-bg-elevated)] text-[var(--app-accent)] shadow-md'
                                         : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'
                                         }`}
                                 >
-                                    <item.icon size={14} strokeWidth={view === item.id ? 2.5 : 2} />
+                                    <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+                                        {view === item.id
+                                            ? sidebarIcons[item.iconKey as keyof typeof sidebarIcons].gold
+                                            : sidebarIcons[item.iconKey as keyof typeof sidebarIcons].gray
+                                        }
+                                    </div>
                                     <span>{item.label}</span>
                                 </button>
                             ))}
@@ -146,7 +147,7 @@ export function TimeTrackerPage() {
                 {view === 'manual' && userId && <ManualEntryView workspaceSlug={workspaceSlug} userId={userId} canManage={canManageEntries} />}
                 {view === 'approval' && <HRApprovalView workspaceSlug={workspaceSlug} />}
                 {view === 'contribution' && userId && <MemberContributionView userId={userId} selectedProjectId={selectedProjectId} />}
-                {view === 'dashboard' && <OwnerDashboardView selectedProjectId={selectedProjectId} projects={projects} />}
+                {view === 'dashboard' && <OwnerDashboardView selectedProjectId={selectedProjectId} projects={projects} workspaceSlug={workspaceSlug} />}
             </div>
         </div>
     )

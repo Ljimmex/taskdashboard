@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
-import { Clock, AlertCircle, Activity } from 'lucide-react'
+import { Clock, AlertCircle, Calendar } from 'lucide-react'
 import { formatMinutes, formatHours } from './utils'
 
 export function MemberContributionView({ userId, selectedProjectId }: { userId: string; selectedProjectId: string | null }) {
@@ -16,7 +16,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
 
   if (!selectedProjectId) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 bg-[var(--app-bg-card)]/50 rounded-3xl border border-dashed border-[var(--app-border)] backdrop-blur-sm">
+      <div className="flex flex-col items-center justify-center py-24 bg-[var(--app-bg-card)]/50 rounded-3xl backdrop-blur-sm">
         <div className="p-4 bg-[var(--app-bg-elevated)] rounded-full mb-4 shadow-sm">
           <AlertCircle size={40} className="text-[var(--app-text-muted)]" />
         </div>
@@ -35,11 +35,11 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-[var(--app-bg-card)] rounded-2xl border border-[var(--app-border)]/50" />
+            <div key={i} className="h-32 bg-[var(--app-bg-card)] rounded-2xl" />
           ))}
         </div>
-        <div className="h-40 bg-[var(--app-bg-card)] rounded-2xl border border-[var(--app-border)]/50" />
-        <div className="h-64 bg-[var(--app-bg-card)] rounded-2xl border border-[var(--app-border)]/50" />
+        <div className="h-40 bg-[var(--app-bg-card)] rounded-2xl" />
+        <div className="h-64 bg-[var(--app-bg-card)] rounded-2xl" />
       </div>
     )
   }
@@ -70,7 +70,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
         <StatCard
           icon={<StatusIcon />}
           label={t('timeTracker.status', 'Status')}
-          value={summary?.hasThreshold ? 'Zakwalifikowany' : 'W trakcie'}
+          value={summary?.hasThreshold ? t('timeTracker.qualified', 'Zakwalifikowany') : t('timeTracker.pending', 'W trakcie')}
           isStatus
           statusState={summary?.hasThreshold ? 'qualified' : 'pending'}
         />
@@ -78,7 +78,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
 
       {/* Pasek Postępu Kwalifikacji */}
       {!summary?.hasThreshold && (
-        <div className="relative overflow-hidden bg-[var(--app-bg-card)] p-6 md:p-8 rounded-3xl border border-[var(--app-border)] shadow-sm group">
+        <div className="relative overflow-hidden bg-[var(--app-bg-card)] p-6 md:p-8 rounded-3xl border border-[var(--app-divider)] shadow-sm group">
           {/* Subtelny gradient w tle */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-opacity group-hover:bg-amber-500/10" />
 
@@ -103,10 +103,10 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
 
           <div className="space-y-2 relative z-10">
             <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-[var(--app-text-muted)] mb-1">
-              <span>Postęp</span>
+              <span>{t('timeTracker.progress', 'Postęp')}</span>
               <span className="text-amber-500">{Math.round(((summary?.approvedBaseHoursTotal || 0) / hourThreshold) * 100)}%</span>
             </div>
-            <div className="h-4 w-full bg-[var(--app-bg-elevated)] rounded-full overflow-hidden border border-[var(--app-border)] inset-shadow-sm">
+            <div className="h-4 w-full bg-[var(--app-bg-elevated)] rounded-full overflow-hidden border border-[var(--app-divider)] inset-shadow-sm">
               <div
                 className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 transition-all duration-1000 ease-out rounded-full relative"
                 style={{ width: `${Math.min(((summary?.approvedBaseHoursTotal || 0) / hourThreshold) * 100, 100)}%` }}
@@ -120,19 +120,17 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
       )}
 
       {/* Historia Aktywności */}
-      <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-border)] shadow-sm">
+      <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-lg font-bold text-[var(--app-text-primary)] flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[var(--app-bg-elevated)] border border-[var(--app-border)] shadow-sm">
-              <Activity size={18} className="text-[var(--app-text-primary)]" />
-            </div>
+            <HistoryIcon />
             {t('timeTracker.recentHistory', 'Ostatnia Aktywność')}
           </h2>
         </div>
 
         {recent.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center bg-[var(--app-bg-elevated)]/50 rounded-2xl border border-dashed border-[var(--app-border)]">
-            <div className="w-12 h-12 rounded-full bg-[var(--app-bg-card)] flex items-center justify-center mb-4 border border-[var(--app-border)]">
+          <div className="flex flex-col items-center justify-center py-12 text-center bg-[var(--app-bg-elevated)]/50 rounded-2xl">
+            <div className="w-12 h-12 rounded-full bg-[var(--app-bg-card)] flex items-center justify-center mb-4 border border-[var(--app-divider)]">
               <Clock size={20} className="text-[var(--app-text-muted)]" />
             </div>
             <p className="text-[var(--app-text-muted)] font-medium">
@@ -157,7 +155,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
 
 function StatCard({ icon, label, value, isStatus = false, statusState }: any) {
   return (
-    <div className={`relative overflow-hidden bg-[var(--app-bg-card)] p-6 rounded-[24px] border border-[var(--app-border)] transition-all duration-300 group hover:shadow-xl hover:shadow-black/10`}>
+    <div className={`relative overflow-hidden bg-[var(--app-bg-card)] p-6 rounded-[24px] border border-[var(--app-divider)] transition-all duration-300 group hover:shadow-xl hover:shadow-black/10`}>
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-5">
           <div className="flex-shrink-0">
@@ -186,33 +184,35 @@ function StatCard({ icon, label, value, isStatus = false, statusState }: any) {
 }
 
 function HistoryEntry({ entry }: { entry: any }) {
+  const { t, i18n } = useTranslation()
   const getStatusConfig = (status: string) => {
     switch (status.toLowerCase()) {
       case 'approved':
-        return { color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/10', label: 'Zatwierdzone' }
+        return { color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/10', label: t('timeTracker.history.approved', 'Zatwierdzone') }
       case 'rejected':
-        return { color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/10', label: 'Odrzucone' }
+        return { color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/10', label: t('timeTracker.history.rejected', 'Odrzucone') }
       default:
-        return { color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/10', label: 'Oczekujące' }
+        return { color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/10', label: t('timeTracker.history.pending', 'Oczekujące') }
     }
   }
 
   const status = getStatusConfig(entry.approvalStatus)
 
   return (
-    <div className="group flex flex-col md:flex-row md:items-center justify-between p-5 rounded-[20px] bg-[var(--app-bg-card)] border border-[var(--app-border)] hover:bg-[var(--app-bg-elevated)] transition-all duration-300 hover:shadow-lg hover:shadow-black/5 cursor-default">
+    <div className="group flex flex-col md:flex-row md:items-center justify-between p-5 rounded-[20px] bg-[var(--app-bg-card)] border border-[var(--app-divider)] hover:bg-[var(--app-bg-elevated)] transition-all duration-300 hover:shadow-lg hover:shadow-black/5 cursor-default">
       <div className="flex-1 mb-3 md:mb-0 pr-4">
         <h3 className="text-[15px] font-bold text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)] transition-colors line-clamp-1 mb-2">
-          {entry.taskTitle || "Zadanie bez tytułu"}
+          {entry.taskTitle || t('timeTracker.history.noTitle', 'Zadanie bez tytułu')}
         </h3>
         <div className="flex flex-wrap items-center gap-3 text-xs font-bold">
-          <span className="flex items-center gap-1.5 text-[var(--app-text-primary)] bg-[var(--app-bg-elevated)] px-2.5 py-1.5 rounded-lg border border-[var(--app-border)]">
+          <span className="flex items-center gap-1.5 text-[var(--app-text-primary)] bg-[var(--app-bg-elevated)] px-2.5 py-1.5 rounded-lg border border-[var(--app-divider)]">
             <Clock size={12} className="text-[var(--app-accent)]" />
             {formatMinutes(entry.durationMinutes)}
           </span>
-          <span className="text-[var(--app-text-muted)] opacity-60">
-            {new Date(entry.startedAt).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </span>
+          <div className="flex items-center gap-2 text-[var(--app-text-muted)] text-xs">
+            <Calendar size={14} className="opacity-50" />
+            <span>{new Date(entry.startedAt).toLocaleString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
           <span className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-[0.1em] ${status.bg} ${status.color} ${status.border} shadow-sm`}>
             <span className="flex items-center gap-1.5">
               <div className={`w-1 h-1 rounded-full ${status.color.replace('text-', 'bg-')}`} />
@@ -228,13 +228,13 @@ function HistoryEntry({ entry }: { entry: any }) {
         )}
       </div>
 
-      <div className="flex items-center gap-4 justify-between md:justify-end border-t md:border-t-0 border-[var(--app-border)] pt-4 md:pt-0">
+      <div className="flex items-center gap-4 justify-between md:justify-end border-t md:border-t-0 border-[var(--app-divider)] pt-4 md:pt-0">
         <div className="text-right flex flex-col items-end">
           <div className="text-base font-black text-[var(--app-text-primary)] bg-gradient-to-br from-[var(--app-text-primary)] to-[var(--app-text-muted)] bg-clip-text">
             +{entry.points} pts
           </div>
           <div className="text-[9px] uppercase font-black text-[var(--app-text-muted)] tracking-[0.2em] opacity-40">
-            Wkład
+            {t('timeTracker.history.pointsLabel', 'Wkład')}
           </div>
         </div>
       </div>
@@ -277,5 +277,13 @@ const StatusIcon = () => (
     <rect x="6" y="8" width="20" height="18" rx="4" stroke="var(--app-accent)" strokeWidth="2.5" />
     <path d="M6 13H26" stroke="var(--app-accent-hover)" strokeWidth="3" opacity="0.3" />
     <path d="M11 19L14 22L21 15" stroke="var(--app-accent-hover)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+const HistoryIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+    <path d="M16 4C9.37 4 4 9.37 4 16C4 22.63 9.37 28 16 28C22.63 28 28 22.63 28 16" stroke="var(--app-accent)" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" />
+    <path d="M16 8V16L22 20" stroke="var(--app-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M16 28C19.1826 28 22.2348 26.7357 24.4853 24.4853C26.7357 22.2348 28 19.1826 28 16" stroke="var(--app-accent)" strokeWidth="2.5" strokeLinecap="round" />
   </svg>
 )

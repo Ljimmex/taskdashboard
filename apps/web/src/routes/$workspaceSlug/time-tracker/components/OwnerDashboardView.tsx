@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
@@ -8,23 +8,48 @@ import {
 } from 'recharts'
 import {
     PieChart as PieChartIcon, Download, AlertCircle,
-    Search, Filter, FileSpreadsheet
+    Search, FileSpreadsheet, ChevronDown, Users
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatHours } from './utils'
 import { TimeEntryRaw } from './types'
 
-export function OwnerDashboardView({ selectedProjectId, projects }: { selectedProjectId: string | null; projects: any[] }) {
-    const { t } = useTranslation()
+export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug }: { selectedProjectId: string | null; projects: any[]; workspaceSlug: string }) {
+    const { t, i18n } = useTranslation()
     const activeProjectName = useMemo(() => projects.find(p => p.id === selectedProjectId)?.name || t('timeTracker.projectDashboard', 'Dashboard Projektu'), [projects, selectedProjectId, t])
     const [dashboardMode, setDashboardMode] = useState<'monthly' | 'cumulative' | 'custom'>('monthly')
 
     // Nowe stany dla filtrów
     const [searchTerm, setSearchTerm] = useState('')
-    const [roleFilter, setRoleFilter] = useState('ALL')
+    const [teamFilter, setTeamFilter] = useState('ALL')
     const [dateFrom, setDateFrom] = useState('')
     const [dateTo, setDateTo] = useState('')
+
+    const [teamDropdownOpen, setTeamDropdownOpen] = useState(false)
+    const teamRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (teamRef.current && !teamRef.current.contains(e.target as Node)) {
+                setTeamDropdownOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    // Fetch teams for filtering
+    const { data: teamsData } = useQuery({
+        queryKey: ['teams', workspaceSlug],
+        queryFn: async () => {
+            if (!workspaceSlug) return []
+            const json = await apiFetchJson<{ success: boolean; data: any[] }>(`/api/teams?workspaceSlug=${workspaceSlug}`)
+            return json.data
+        },
+        enabled: !!workspaceSlug,
+    })
+    const teams = teamsData || []
 
     // Fetch data
     const { data: revshareData, isLoading: revshareLoading } = useQuery({
@@ -61,15 +86,17 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
     // ----------------------------------------------------
     // LOGIKA: Filtrowanie
     // ----------------------------------------------------
-    const uniqueRoles = useMemo(() => Array.from(new Set(participants.map((p: any) => p.role))), [participants])
 
     const filteredParticipants = useMemo(() => {
+        const selectedTeam = teamFilter === 'ALL' ? null : teams.find((t: any) => t.id === teamFilter)
+        const teamMemberIds = selectedTeam ? selectedTeam.members.map((m: any) => m.userId) : null
+
         return participants.filter((p: any) => {
             const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase())
-            const matchesRole = roleFilter === 'ALL' || p.role === roleFilter
-            return matchesSearch && matchesRole
+            const matchesTeam = teamFilter === 'ALL' || (teamMemberIds && teamMemberIds.includes(p.userId))
+            return matchesSearch && matchesTeam
         })
-    }, [participants, searchTerm, roleFilter])
+    }, [participants, searchTerm, teamFilter, teams])
 
     // ----------------------------------------------------
     // LOGIKA: Przetwarzanie danych dla wykresów
@@ -154,9 +181,21 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
     // LOGIKA: Eksporty
     // ----------------------------------------------------
     const exportToCSV = () => {
-        const headers = ['Członek Zespołu', 'Rola', 'Godziny', 'Punkty (PW)', 'Udział (%)', 'Zatwierdzone Godziny', 'Kwalifikacja']
+        const headers = [
+            t('timeTracker.csv.teamMember', 'Członek Zespołu'),
+            t('timeTracker.csv.role', 'Rola'),
+            t('timeTracker.csv.hours', 'Godziny'),
+            t('timeTracker.csv.points', 'Punkty (PW)'),
+            t('timeTracker.csv.share', 'Udział (%)'),
+            t('timeTracker.csv.status', 'Status')
+        ]
         const rows = filteredParticipants.map((p: any) => [
-            p.name, p.role.replace('_', ' '), p.totalHours, p.contributionPoints, p.sharePercent, p.approvedBaseHoursTotal, p.has200h ? 'TAK' : 'NIE'
+            p.name,
+            p.role.replace('_', ' '),
+            formatHours(p.totalHours),
+            p.contributionPoints,
+            p.hasThreshold ? `${p.sharePercent}%` : '0%',
+            p.hasThreshold ? t('timeTracker.qualified', 'ZAKWALIFIKOWANY') : t('timeTracker.pending', 'W TRAKCIE')
         ])
 
         // BOM (\uFEFF) wymusza poprawne kodowanie polskich znaków w Excelu
@@ -164,8 +203,9 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
         const link = document.createElement("a")
         const url = URL.createObjectURL(blob)
+        const dateStr = new Date().toISOString().split('T')[0]
         link.setAttribute("href", url)
-        link.setAttribute("download", `raport_wkladu_${selectedProjectId}.csv`)
+        link.setAttribute("download", `raport_revshare_${activeProjectName.replace(/\s+/g, '_')}_${dateStr}.csv`)
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
@@ -190,28 +230,42 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
         }
 
         doc.setFontSize(18)
-        doc.text('Raport Revenue Share', 14, 22)
+        doc.text(t('timeTracker.pdf.reportTitle', 'Raport Revenue Share'), 14, 22)
+
+        let periodText = dashboardMode === 'monthly' ? t('timeTracker.monthly', 'Miesięczny') : dashboardMode === 'cumulative' ? t('timeTracker.cumulative', 'Skumulowany') : t('timeTracker.custom', 'Własny')
+
+        if (dashboardMode === 'monthly') {
+            const now = new Date()
+            periodText = now.toLocaleString(i18n.language, { month: 'long', year: 'numeric' })
+            periodText = periodText.charAt(0).toUpperCase() + periodText.slice(1)
+        }
 
         doc.setFontSize(11)
         doc.setTextColor(100)
-        doc.text(`Projekt: ${activeProjectName}`, 14, 30)
-        doc.text(`Okres: ${dashboardMode === 'monthly' ? 'Miesięczny' : dashboardMode === 'cumulative' ? 'Skumulowany' : 'Własny'}`, 14, 36)
-        doc.text(`Łączne PW Projektu: ${totalProjectPW}`, 14, 42)
-        doc.text(`Pula PW (Kwalifikująca): ${totalPW}`, 14, 48)
-        doc.text(`Próg kwalifikacji: ${hourThreshold}h`, 14, 54)
+        doc.text(`${t('timeTracker.pdf.project', 'Projekt:')} ${activeProjectName}`, 14, 30)
+        doc.text(`${t('timeTracker.pdf.period', 'Okres:')} ${periodText}`, 14, 36)
+        doc.text(`${t('timeTracker.pdf.totalPoints', 'Łączne PW Projektu:')} ${totalProjectPW}`, 14, 42)
+        doc.text(`${t('timeTracker.pdf.threshold', 'Próg kwalifikacji:')} ${hourThreshold}h`, 14, 48)
 
-        const tableColumn = ['Członek zespołu', 'Rola', 'Godziny', 'Punkty (PW)', 'Udział (%)', 'Status']
+        const tableColumn = [
+            t('timeTracker.csv.teamMember', 'Członek Zespołu'),
+            t('timeTracker.csv.role', 'Rola'),
+            t('timeTracker.csv.hours', 'Godziny'),
+            t('timeTracker.csv.points', 'Punkty (PW)'),
+            t('timeTracker.csv.share', 'Udział (%)'),
+            t('timeTracker.csv.status', 'Status')
+        ]
         const tableRows = filteredParticipants.map((p: any) => [
             p.name,
             p.role.replace('_', ' ').toUpperCase(),
             formatHours(p.totalHours),
             p.contributionPoints.toString(),
             `${p.hasThreshold ? p.sharePercent : 0}%`,
-            p.hasThreshold ? 'ZAKWALIFIKOWANY' : 'W TRAKCIE'
+            p.hasThreshold ? t('timeTracker.qualified', 'ZAKWALIFIKOWANY') : t('timeTracker.pending', 'W TRAKCIE')
         ])
 
         autoTable(doc, {
-            startY: 62,
+            startY: 56,
             head: [tableColumn],
             body: tableRows,
             theme: 'grid',
@@ -240,7 +294,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                         {activeProjectName}
                     </h1>
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="inline-flex bg-[var(--app-bg-card)] p-1 rounded-full border border-[var(--app-border)] shadow-sm">
+                        <div className="inline-flex bg-[var(--app-bg-card)] p-1 rounded-full border border-[var(--app-divider)] shadow-sm">
                             <button
                                 onClick={() => setDashboardMode('monthly')}
                                 className={`px-5 py-2 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all duration-300 ${dashboardMode === 'monthly' ? 'bg-[var(--app-accent)] text-white shadow-md' : 'text-[var(--app-text-primary)] opacity-60 hover:opacity-100 hover:bg-[var(--app-bg-deepest)]'}`}
@@ -256,10 +310,10 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                         </div>
 
                         {dashboardMode === 'custom' && (
-                            <div className="flex items-center gap-2 bg-[var(--app-bg-elevated)] p-1.5 rounded-2xl border border-[var(--app-border)]">
-                                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-[var(--app-bg-card)] border border-[var(--app-border)] text-[var(--app-text-primary)] text-sm rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500" />
+                            <div className="flex items-center gap-2 bg-[var(--app-bg-elevated)] p-1.5 rounded-2xl border border-[var(--app-divider)]">
+                                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-primary)] text-sm rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500" />
                                 <span className="text-[var(--app-text-muted)]">-</span>
-                                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="bg-[var(--app-bg-card)] border border-[var(--app-border)] text-[var(--app-text-primary)] text-sm rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500" />
+                                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-primary)] text-sm rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500" />
                             </div>
                         )}
                     </div>
@@ -267,12 +321,12 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
             )}
 
             {!selectedProjectId && (
-                <div className="flex flex-col items-center justify-center py-24 bg-[var(--app-bg-card)]/50 rounded-3xl border border-dashed border-[var(--app-border)] backdrop-blur-sm mt-8">
-                    <div className="p-4 bg-[var(--app-bg-elevated)] rounded-full mb-4 shadow-sm border border-[var(--app-border)]/50">
+                <div className="flex flex-col items-center justify-center py-24 bg-[var(--app-bg-card)]/50 rounded-3xl border border-dashed border-[var(--app-divider)] backdrop-blur-sm mt-8">
+                    <div className="p-4 bg-[var(--app-bg-elevated)] rounded-full mb-4 shadow-sm border border-[var(--app-divider)]/50">
                         <PieChartIcon size={40} className="text-[var(--app-text-muted)]" />
                     </div>
-                    <h3 className="text-lg font-bold text-[var(--app-text-primary)] mb-1">Wybierz projekt z listy</h3>
-                    <p className="text-sm text-[var(--app-text-muted)] font-medium">Kliknij projekt w panelu bocznym, aby zobaczyć analitykę.</p>
+                    <h3 className="text-lg font-bold text-[var(--app-text-primary)] mb-1">{t('timeTracker.dashboard.selectProject', 'Wybierz projekt z listy')}</h3>
+                    <p className="text-sm text-[var(--app-text-muted)] font-medium">{t('timeTracker.dashboard.clickSidebar', 'Kliknij projekt w panelu bocznym, aby zobaczyć analitykę.')}</p>
                 </div>
             )}
 
@@ -307,7 +361,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                     {entries.length > 0 && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             {/* Line Chart */}
-                            <div className="lg:col-span-2 bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-border)] shadow-sm">
+                            <div className="lg:col-span-2 bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm">
                                 <h2 className="text-base font-bold text-[var(--app-text-primary)] mb-6 flex items-center gap-3 opacity-90">
                                     <TimelineIcon />
                                     {t('timeTracker.workTimeline', 'Analiza Czasu Pracy')}
@@ -315,11 +369,11 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                                 <div className="h-64 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={timelineData}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--app-border)" opacity={0.5} />
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--app-divider)" opacity={0.5} />
                                             <XAxis dataKey="date" stroke="var(--app-text-muted)" fontSize={11} tickLine={false} axisLine={false} dy={10} />
                                             <YAxis stroke="var(--app-text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => formatHours(val)} />
                                             <RechartsTooltip
-                                                contentStyle={{ backgroundColor: 'var(--app-bg-card)', borderColor: 'var(--app-border)', borderRadius: '16px', fontSize: '12px', border: '1px solid var(--app-border)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                                contentStyle={{ backgroundColor: 'var(--app-bg-card)', borderColor: 'var(--app-divider)', borderRadius: '16px', fontSize: '12px', border: '1px solid var(--app-divider)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                                                 formatter={(value: any) => [formatHours(Number(value) || 0), t('timeTracker.hours', 'Godziny')]}
                                             />
                                             <Line type="monotone" dataKey="hours" stroke="var(--app-accent)" strokeWidth={3} dot={{ r: 4, fill: 'var(--app-accent)', strokeWidth: 2, stroke: 'var(--app-bg-card)' }} activeDot={{ r: 6, strokeWidth: 0 }} />
@@ -329,7 +383,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                             </div>
 
                             {/* Donut Chart (Roles) */}
-                            <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-border)] shadow-sm">
+                            <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm">
                                 <h2 className="text-base font-bold text-[var(--app-text-primary)] mb-6 flex items-center gap-3 opacity-90">
                                     <BreakdownIcon />
                                     {t('timeTracker.roleBreakdown', 'Rozkład Ról')}
@@ -341,7 +395,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                                                 {roleBreakdownData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                                             </Pie>
                                             <RechartsTooltip
-                                                contentStyle={{ backgroundColor: 'var(--app-bg-card)', border: '1px solid var(--app-border)', borderRadius: '12px', color: 'var(--app-text-primary)' }}
+                                                contentStyle={{ backgroundColor: 'var(--app-bg-card)', border: '1px solid var(--app-divider)', borderRadius: '12px', color: 'var(--app-text-primary)' }}
                                                 formatter={(value: any) => [formatHours(Number(value) || 0), t('timeTracker.hours', 'Godziny')]}
                                             />
                                         </RechartsPieChart>
@@ -349,7 +403,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                                     {/* Środek Donuta */}
                                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                         <span className="text-xl font-bold text-[var(--app-text-primary)]">{formatHours(participants.reduce((a: number, p: any) => a + p.totalHours, 0))}</span>
-                                        <span className="text-[10px] text-[var(--app-text-muted)] uppercase tracking-widest font-bold">Łącznie</span>
+                                        <span className="text-[10px] text-[var(--app-text-muted)] uppercase tracking-widest font-bold">{t('timeTracker.total', 'Łącznie')}</span>
                                     </div>
                                 </div>
                             </div>
@@ -357,7 +411,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                     )}
 
                     {/* Revenue Share Table Card with Filters */}
-                    <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-border)] shadow-sm">
+                    <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm">
                         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8">
                             <h2 className="text-base font-bold text-[var(--app-text-primary)] flex items-center gap-3 opacity-90">
                                 <TableIcon />
@@ -370,32 +424,72 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--app-text-muted)]" />
                                     <input
                                         type="text"
-                                        placeholder="Szukaj osoby..."
+                                        placeholder={t('timeTracker.dashboard.searchPerson', 'Szukaj osoby...')}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full sm:w-56 pl-9 pr-4 py-2 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] text-[var(--app-text-primary)] text-sm rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
+                                        className="w-full sm:w-56 pl-9 pr-4 py-2 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] text-sm rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
                                     />
                                 </div>
-                                {/* Filtr Ról */}
-                                <div className="relative w-full sm:w-auto flex items-center">
-                                    <Filter size={16} className="absolute left-3 text-[var(--app-text-muted)]" />
-                                    <select
-                                        value={roleFilter}
-                                        onChange={(e) => setRoleFilter(e.target.value)}
-                                        className="w-full sm:w-auto pl-9 pr-8 py-2 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] text-[var(--app-text-primary)] text-sm rounded-xl focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                                {/* Filtr Zespołów - Custom Dropdown */}
+                                <div className="relative w-full sm:w-auto" ref={teamRef}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTeamDropdownOpen(!teamDropdownOpen)}
+                                        className={`w-full sm:w-auto flex items-center justify-between gap-3 px-4 py-2 bg-[var(--app-bg-elevated)] border rounded-xl text-left transition-all outline-none ${teamDropdownOpen ? 'border-[var(--app-accent)] ring-1 ring-[var(--app-accent)]/20 shadow-lg' : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
+                                            }`}
                                     >
-                                        <option value="ALL">Wszystkie Role</option>
-                                        {uniqueRoles.map((role: any) => (
-                                            <option key={role} value={role}>{role.replace('_', ' ')}</option>
-                                        ))}
-                                    </select>
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <Users size={16} className={teamDropdownOpen ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'} />
+                                            <span className="text-sm font-bold text-[var(--app-text-primary)] truncate">
+                                                {teamFilter === 'ALL' ? t('timeTracker.dashboard.allTeams', 'Wszystkie Zespoły') : (teams.find((t: any) => t.id === teamFilter)?.name || teamFilter)}
+                                            </span>
+                                        </div>
+                                        <ChevronDown size={16} className={`text-[var(--app-text-muted)] transition-transform duration-200 ${teamDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {teamDropdownOpen && (
+                                        <div className="absolute z-50 w-full sm:w-72 mt-2 right-0 bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-2xl max-h-80 overflow-y-auto custom-scrollbar p-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                            <button
+                                                onClick={() => { setTeamFilter('ALL'); setTeamDropdownOpen(false) }}
+                                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${teamFilter === 'ALL'
+                                                    ? 'bg-[var(--app-accent)] text-[var(--app-bg-deepest)] shadow-md'
+                                                    : 'text-[var(--app-text-muted)] hover:bg-[var(--app-bg-deepest)] hover:text-[var(--app-text-primary)]'
+                                                    }`}
+                                            >
+                                                <div className={`w-1.5 h-1.5 rounded-full ${teamFilter === 'ALL' ? 'bg-[var(--app-bg-deepest)]' : 'bg-[var(--app-text-muted)]'}`} />
+                                                {t('timeTracker.dashboard.allTeams', 'Wszystkie Zespoły')}
+                                            </button>
+
+                                            <div className="my-1 border-t border-[var(--app-divider)] opacity-50" />
+
+                                            {teams.length === 0 ? (
+                                                <div className="px-3 py-4 text-center text-[10px] font-bold text-[var(--app-text-muted)]">
+                                                    {t('timeTracker.noTeamsFound', 'Nie znaleziono zespołów')}
+                                                </div>
+                                            ) : (
+                                                teams.map((team: any) => (
+                                                    <button
+                                                        key={team.id}
+                                                        onClick={() => { setTeamFilter(team.id); setTeamDropdownOpen(false) }}
+                                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap overflow-hidden ${teamFilter === team.id
+                                                            ? 'bg-[var(--app-accent)] text-[var(--app-bg-deepest)] shadow-md'
+                                                            : 'text-[var(--app-text-muted)] hover:bg-[var(--app-bg-deepest)] hover:text-[var(--app-text-primary)]'
+                                                            }`}
+                                                    >
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${teamFilter === team.id ? 'bg-[var(--app-bg-deepest)]' : 'bg-[var(--app-accent)]'}`} />
+                                                        <span className="truncate">{team.name}</span>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                                 {/* Export Przyciski */}
                                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    <button onClick={exportToCSV} className="flex-1 sm:flex-none flex justify-center items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-card)] border border-[var(--app-border)] transition-all shadow-sm text-sm font-bold text-emerald-500 hover:border-emerald-500/50">
+                                    <button onClick={exportToCSV} className="flex-1 sm:flex-none flex justify-center items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-card)] border border-[var(--app-divider)] transition-all shadow-sm text-sm font-bold text-emerald-500 hover:border-emerald-500/50">
                                         <FileSpreadsheet size={16} /> <span className="hidden sm:inline">CSV</span>
                                     </button>
-                                    <button onClick={exportToPDF} className="flex-1 sm:flex-none flex justify-center items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-card)] border border-[var(--app-border)] transition-all shadow-sm text-sm font-bold text-rose-500 hover:border-rose-500/50">
+                                    <button onClick={exportToPDF} className="flex-1 sm:flex-none flex justify-center items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-card)] border border-[var(--app-divider)] transition-all shadow-sm text-sm font-bold text-rose-500 hover:border-rose-500/50">
                                         <Download size={16} /> <span className="hidden sm:inline">PDF</span>
                                     </button>
                                 </div>
@@ -403,15 +497,15 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                         </div>
 
                         {filteredParticipants.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center bg-[var(--app-bg-elevated)]/50 rounded-2xl border border-dashed border-[var(--app-border)]">
+                            <div className="flex flex-col items-center justify-center py-12 text-center bg-[var(--app-bg-elevated)]/50 rounded-2xl border border-dashed border-[var(--app-divider)]">
                                 <AlertCircle size={32} className="text-[var(--app-text-muted)]/50 mb-3" />
-                                <p className="text-[var(--app-text-muted)] font-medium text-sm">Brak wyników do wyświetlenia.</p>
+                                <p className="text-[var(--app-text-muted)] font-medium text-sm">{t('timeTracker.dashboard.noResults', 'Brak wyników do wyświetlenia.')}</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full whitespace-nowrap">
                                     <thead>
-                                        <tr className="border-b border-[var(--app-border)]">
+                                        <tr className="border-b border-[var(--app-divider)]">
                                             <th className="text-left py-3 px-4 text-[10px] md:text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">Członek Zespołu</th>
                                             <th className="text-left py-3 px-4 text-[10px] md:text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">Rola</th>
                                             <th className="text-right py-3 px-4 text-[10px] md:text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">Godziny</th>
@@ -420,46 +514,36 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                                             <th className="text-right py-3 px-4 text-[10px] md:text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-[var(--app-border)]/50">
+                                    <tbody className="divide-y divide-[var(--app-divider)]">
                                         {filteredParticipants.map((p: any) => (
                                             <tr key={p.userId} className="hover:bg-[var(--app-bg-elevated)] transition-colors duration-200 group">
                                                 <td className="py-3 px-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--app-bg-elevated)] to-[var(--app-bg-card)] flex items-center justify-center text-xs font-bold text-[var(--app-text-primary)] overflow-hidden border border-[var(--app-border)]">
+                                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--app-bg-elevated)] to-[var(--app-bg-card)] flex items-center justify-center text-xs font-bold text-[var(--app-text-primary)] overflow-hidden border border-[var(--app-divider)]">
                                                             {p.image ? <img src={p.image} alt={p.name} className="w-full h-full object-cover" /> : p.name?.charAt(0)?.toUpperCase() || '?'}
                                                         </div>
                                                         <span className="text-sm font-semibold text-[var(--app-text-primary)]">{p.name}</span>
                                                     </div>
                                                 </td>
                                                 <td className="py-3 px-4">
-                                                    <span className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] border border-[var(--app-border)]">
+                                                    <span className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] border border-[var(--app-divider)]">
                                                         {p.role.replace('_', ' ')}
                                                     </span>
                                                 </td>
                                                 <td className="py-3 px-4 text-right"><span className="text-sm font-bold text-[var(--app-text-primary)]">{formatHours(p.totalHours)}</span></td>
                                                 <td className="py-3 px-4 text-right"><span className="text-sm font-bold text-emerald-500">+{typeof p.contributionPoints === 'number' ? (p.contributionPoints % 1 === 0 ? p.contributionPoints : p.contributionPoints.toFixed(2)) : p.contributionPoints} pts</span></td>
                                                 <td className="py-3 px-4 text-right">
-                                                    <div className="flex items-center justify-end gap-3">
-                                                        <div className="w-24 h-2 rounded-full bg-[var(--app-bg-elevated)] overflow-hidden border border-[var(--app-border)]/50">
-                                                            <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 relative" style={{ width: `${Math.min(p.sharePercent, 100)}%` }}></div>
-                                                        </div>
-                                                        <span className="text-sm font-bold text-[var(--app-text-primary)] min-w-[3rem] text-right">{p.hasThreshold ? `${p.sharePercent}%` : '0%'}</span>
-                                                    </div>
+                                                    <span className="text-sm font-bold text-[var(--app-text-primary)]">{p.hasThreshold ? `${p.sharePercent}%` : '0%'}</span>
                                                 </td>
                                                 <td className="py-3 px-4 text-right">
                                                     {p.hasThreshold ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-500 bg-transparent text-[10px] uppercase font-bold tracking-wide">
+                                                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/20 text-emerald-500 bg-transparent text-[10px] uppercase font-black tracking-wider">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {t('timeTracker.qualified', 'Zakwalifikowany')}
                                                         </span>
                                                     ) : (
-                                                        <div className="flex flex-col items-end gap-1">
-                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-500/30 text-amber-500 bg-transparent text-[10px] uppercase font-bold tracking-wide">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> {t('timeTracker.pending', 'W Trakcie')}
-                                                            </span>
-                                                            <span className="text-[10px] text-[var(--app-text-muted)] font-black mr-2 opacity-60">
-                                                                {formatHours(p.approvedBaseHoursTotal)} / {hourThreshold}h
-                                                            </span>
-                                                        </div>
+                                                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#F2CE88]/20 text-[#F2CE88] bg-transparent text-[10px] uppercase font-black tracking-wider">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-[#F2CE88] animate-pulse" /> {t('timeTracker.pending', 'W Trakcie')}
+                                                        </span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -472,7 +556,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
 
                     {/* NEW: GitHub-style Activity Heatmap */}
                     {entries.length > 0 && (
-                        <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-border)] shadow-sm">
+                        <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm">
                             <h2 className="text-base font-bold text-[var(--app-text-primary)] mb-6 flex items-center gap-3 opacity-90">
                                 <HeatmapIcon />
                                 {t('timeTracker.projectActivity', 'Aktywność Projektowa')}
@@ -519,7 +603,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                                             <div key={colIndex} className="flex flex-col gap-1">
                                                 {heatmapData.slice(colIndex * 7, Math.min(colIndex * 7 + 7, heatmapData.length)).map((day, i) => {
                                                     // Logika kolorowania: 0h, 1-8h (modesta), 8-16h (pro), 16h+ (crunch)
-                                                    let bgColor = 'bg-[var(--app-bg-elevated)] border-[var(--app-border)]'
+                                                    let bgColor = 'bg-[var(--app-bg-elevated)] border-[var(--app-divider)]'
                                                     if (day.isPadding) bgColor = 'opacity-0 pointer-events-none'
                                                     else if (day.hours > 0 && day.hours <= 8) bgColor = 'bg-emerald-500/20 border-emerald-500/10'
                                                     else if (day.hours > 8 && day.hours <= 16) bgColor = 'bg-emerald-500/50 border-emerald-500/30'
@@ -532,7 +616,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                                                             className={`w-2.5 h-2.5 rounded-[3px] border ${bgColor} ${!day.isPadding ? 'hover:ring-2 hover:ring-blue-500 cursor-crosshair group relative shadow-inner transition-all' : ''}`}
                                                         >
                                                             {!day.isPadding && (
-                                                                <div className={`absolute z-[100] hidden group-hover:block bg-[var(--app-bg-card)] border border-[var(--app-border)] text-[var(--app-text-primary)] text-[10px] px-2 py-1.5 rounded-xl shadow-2xl backdrop-blur-md pointer-events-none font-bold min-w-max whitespace-nowrap ${i < 3 ? 'top-full mt-2' : 'bottom-full mb-2'} ${colIndex < 3 ? 'left-0 origin-top-left' : (colIndex > 50 ? 'right-0 origin-bottom-right' : 'left-1/2 -translate-x-1/2')}`}>
+                                                                <div className={`absolute z-[100] hidden group-hover:block bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-primary)] text-[10px] px-2 py-1.5 rounded-xl shadow-2xl backdrop-blur-md pointer-events-none font-bold min-w-max whitespace-nowrap ${i < 3 ? 'top-full mt-2' : 'bottom-full mb-2'} ${colIndex < 3 ? 'left-0 origin-top-left' : (colIndex > 50 ? 'right-0 origin-bottom-right' : 'left-1/2 -translate-x-1/2')}`}>
                                                                     {day.dateObj.toLocaleDateString('pl', { day: 'numeric', month: 'long' })}: {formatHours(day.hours)}
                                                                 </div>
                                                             )}
@@ -546,7 +630,7 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                             </div>
                             <div className="flex items-center gap-2 mt-4 text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-widest justify-end">
                                 <span>{t('timeTracker.less', 'Mniej')}</span>
-                                <div className="w-3 h-3 rounded-[2px] bg-[var(--app-bg-elevated)] border border-[var(--app-border)]" />
+                                <div className="w-3 h-3 rounded-[2px] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)]" />
                                 <div className="w-3 h-3 rounded-[2px] bg-emerald-500/30" />
                                 <div className="w-3 h-3 rounded-[2px] bg-emerald-500/60" />
                                 <div className="w-3 h-3 rounded-[2px] bg-emerald-500" />
@@ -639,7 +723,7 @@ function StatCard({ icon, label, value, theme, tooltip }: { icon: React.ReactNod
     const currentTheme = themeStyles[theme]
 
     return (
-        <div className={`relative overflow-hidden bg-[var(--app-bg-card)] p-6 rounded-3xl border border-[var(--app-border)] transition-all duration-300 group shadow-sm hover:shadow-md ${currentTheme.border}`} title={tooltip}>
+        <div className={`relative overflow-hidden bg-[var(--app-bg-card)] p-6 rounded-3xl border border-[var(--app-divider)] transition-all duration-300 group shadow-sm hover:shadow-md ${currentTheme.border}`} title={tooltip}>
             <div className={`absolute inset-0 transition-colors duration-300 ${currentTheme.glow}`} />
             <div className="relative z-10">
                 <div className="flex items-center gap-4 mb-5">

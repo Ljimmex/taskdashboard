@@ -6,22 +6,23 @@ import { CheckCircle, Calendar, Clock, XCircle, ChevronDown, Check } from 'lucid
 import { formatMinutes } from './utils'
 import { toast } from '@/hooks/useToast'
 
-const DIFFICULTIES = [
-  { value: 'basic', label: 'Podstawowy (×0.75)' },
-  { value: 'standard', label: 'Standardowy (×1.00)' },
-  { value: 'advanced', label: 'Zaawansowany (×1.30)' },
-  { value: 'critical', label: 'Krytyczny (×1.50)' },
-]
-
-const BONUSES = [
-  { value: '1.0', label: 'Brak (×1.00)' },
-  { value: '1.1', label: 'Standard (×1.10)' },
-  { value: '1.25', label: 'Sążna (×1.25)' },
-  { value: '1.5', label: 'MEGA (×1.50)' },
-]
-
 export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
   const { t } = useTranslation()
+
+  const DIFFICULTIES = [
+    { value: 'basic', label: t('timeTracker.factors.difficulty.basic', 'Podstawowy (×0.75)') },
+    { value: 'standard', label: t('timeTracker.factors.difficulty.standard', 'Standardowy (×1.00)') },
+    { value: 'advanced', label: t('timeTracker.factors.difficulty.advanced', 'Zaawansowany (×1.30)') },
+    { value: 'critical', label: t('timeTracker.factors.difficulty.critical', 'Krytyczny (×1.50)') },
+  ]
+
+  const BONUSES = [
+    { value: '1.0', label: t('timeTracker.factors.bonus.none', 'Brak (×1.00)') },
+    { value: '1.1', label: t('timeTracker.factors.bonus.standard', 'Standard (×1.10)') },
+    { value: '1.25', label: t('timeTracker.factors.bonus.vast', 'Sążna (×1.25)') },
+    { value: '1.5', label: t('timeTracker.factors.bonus.mega', 'MEGA (×1.50)') },
+  ]
+
   const queryClient = useQueryClient()
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
@@ -103,6 +104,12 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                     <span className="px-2 py-0.5 rounded-lg bg-[var(--app-accent)]/10 text-[var(--app-accent)] text-[9px] uppercase font-black tracking-widest whitespace-nowrap">
                       {entry.projectRole?.replace('_', ' ')}
                     </span>
+                    {!entry.endedAt && (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-[#F2CE88]/20 text-[#F2CE88] bg-transparent text-[9px] uppercase font-black tracking-widest shadow-sm">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#F2CE88] animate-pulse" />
+                        {t('timeTracker.pending', 'W Trakcie')}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -120,14 +127,14 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                   {entry.taskTitle}
                 </span>
 
-                <div className="h-4 w-px bg-[var(--app-border)]/20 mx-1 hidden md:block" />
+                <div className="h-4 w-px bg-[var(--app-divider)]/20 mx-1 hidden md:block" />
 
                 <div className="flex items-center gap-2 text-[var(--app-text-muted)] text-xs">
                   <Calendar size={14} className="opacity-50" />
                   <span>{new Date(entry.startedAt).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
 
-                <div className="h-4 w-px bg-[var(--app-border)]/20 mx-1 hidden md:block" />
+                <div className="h-4 w-px bg-[var(--app-divider)]/20 mx-1 hidden md:block" />
 
                 <div className="flex items-center gap-2">
                   <Clock size={14} className="text-[var(--app-accent)] opacity-70" />
@@ -146,7 +153,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                 </div>
               )}
 
-              <div className="md:w-full flex items-end gap-4 mt-2 pt-4 border-t border-[var(--app-border)]/10">
+              <div className="md:w-full flex items-end gap-4 mt-2 pt-4 border-t border-[var(--app-divider)]/10">
                 {rejectingId === entry.id ? (
                   <div className="w-full space-y-3 animate-in fade-in slide-in-from-bottom-2">
                     <textarea
@@ -169,7 +176,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                           setRejectingId(null)
                           setRejectionReason('')
                         }}
-                        className="flex-1 py-2.5 px-6 bg-[var(--app-bg-deepest)] text-[var(--app-text-muted)] rounded-xl text-sm hover:bg-[var(--app-bg-elevated)] transition-colors border border-[var(--app-border)]/50"
+                        className="flex-1 py-2.5 px-6 bg-[var(--app-bg-deepest)] text-[var(--app-text-muted)] rounded-xl text-sm hover:bg-[var(--app-bg-elevated)] transition-colors border border-[var(--app-divider)]/50"
                       >
                         {t('common.cancel', 'Anuluj')}
                       </button>
@@ -184,7 +191,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                           <button
                             type="button"
                             onClick={() => setOpenDropdown(openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? null : { id: entry.id, type: 'diff' })}
-                            className={`w-full flex items-center justify-between px-4 py-2.5 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl text-left transition-all outline-none text-xs font-bold ${openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? 'ring-1 ring-[var(--app-accent)] border-[var(--app-accent)]' : 'hover:border-[var(--app-accent)]/50'
+                            className={`w-full flex items-center justify-between px-4 py-2.5 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl text-left transition-all outline-none text-xs font-bold ${openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? 'ring-1 ring-[var(--app-accent)] border-[var(--app-accent)]' : 'hover:border-[var(--app-accent)]/50'
                               }`}
                           >
                             <span className="text-[var(--app-text-primary)] truncate">
@@ -193,7 +200,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                             <ChevronDown size={14} className={`text-[var(--app-text-muted)] transition-transform duration-200 ${openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? 'rotate-180' : ''}`} />
                           </button>
                           {openDropdown?.id === entry.id && openDropdown?.type === 'diff' && (
-                            <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                               {DIFFICULTIES.map(d => (
                                 <button
                                   key={d.value}
@@ -219,7 +226,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                           <button
                             type="button"
                             onClick={() => setOpenDropdown(openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? null : { id: entry.id, type: 'bonus' })}
-                            className={`w-full flex items-center justify-between px-4 py-2.5 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl text-left transition-all outline-none text-xs font-bold ${openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? 'ring-1 ring-[var(--app-accent)] border-[var(--app-accent)]' : 'hover:border-[var(--app-accent)]/50'
+                            className={`w-full flex items-center justify-between px-4 py-2.5 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl text-left transition-all outline-none text-xs font-bold ${openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? 'ring-1 ring-[var(--app-accent)] border-[var(--app-accent)]' : 'hover:border-[var(--app-accent)]/50'
                               }`}
                           >
                             <span className="text-[var(--app-text-primary)] truncate">
@@ -228,7 +235,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                             <ChevronDown size={14} className={`text-[var(--app-text-muted)] transition-transform duration-200 ${openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? 'rotate-180' : ''}`} />
                           </button>
                           {openDropdown?.id === entry.id && openDropdown?.type === 'bonus' && (
-                            <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                               {BONUSES.map(b => (
                                 <button
                                   key={b.value}
@@ -259,8 +266,8 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                               bonusPoints: parseFloat(values.bonus)
                             })
                           }}
-                          disabled={approveMutation.isPending}
-                          className="bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl text-sm hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10"
+                          disabled={approveMutation.isPending || !entry.endedAt}
+                          className="bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl text-sm hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 disabled:opacity-40"
                         >
                           <CheckCircle size={16} /> {t('timeTracker.approve', 'Zatwierdź')}
                         </button>

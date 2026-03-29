@@ -277,7 +277,7 @@ function DashboardHome() {
             </>
           ) : (
             <>
-              <div className="h-[140px] rounded-2xl bg-[var(--app-bg-card)] flex items-center justify-center border-2 border-dashed border-[var(--app-border)]">
+              <div className="h-[140px] rounded-2xl bg-[var(--app-bg-card)] flex items-center justify-center">
                 <p className="text-gray-500 text-sm">{t('dashboard.noMeetings')}</p>
               </div>
               {canCreateCalendarEvents && (
@@ -369,7 +369,7 @@ function DashboardHome() {
                 />
               ))
             ) : (
-              <div className="col-span-2 py-12 flex flex-col items-center justify-center border-2 border-dashed border-[var(--app-border)] rounded-2xl">
+              <div className="col-span-2 py-12 flex flex-col items-center justify-center rounded-2xl">
                 <p className="text-gray-500 mb-4">{projectFilter === 'active' ? t('dashboard.noProjectsActive') : t('dashboard.noProjectsPending')}</p>
                 {projectFilter === 'active' && workspaceData?.userRole && !['member', 'guest'].includes(workspaceData.userRole) && (
                   <button onClick={() => setIsCreateProjectOpen(true)} className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">{t('dashboard.createProject')}</button>

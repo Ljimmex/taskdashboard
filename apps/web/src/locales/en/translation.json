@@ -252,7 +252,6 @@
         "title": "Time Tracker",
         "desc": "Track time and calculate revenue share",
         "myTimer": "My Timer",
-        "dashboard": "Dashboard",
         "selectTask": "Select Task",
         "pickTask": "Pick a task...",
         "analog": "Analog",
@@ -319,12 +318,133 @@
         "rejectionReasonPlaceholder": "Provide rejection reason (min. 5 chars)...",
         "eligibilityStatus": "Eligibility Status",
         "qualified": "Qualified for RevShare",
-        "inProgress": "In Progress (below 200h)",
+        "inProgress": "In Progress (below {{threshold}}h)",
         "roleFactor": "Role Factor",
         "bonusList": "Bonus List",
         "noBonuses": "No bonuses assigned yet.",
         "systemResolvedRole": "System-resolved role",
-        "onlyBaseHoursCount": "Only base working hours count towards the 200h threshold (multipliers not included)."
+        "onlyBaseHoursCount": "Only base working hours count towards the {{threshold}}h threshold (multipliers not included).",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe what you're doing... (optional)",
+        "descriptionPlaceholderManual": "Describe what was done...",
+        "roleMult": "Role Multiplier",
+        "revshareShare": "Predicted Share",
+        "recentHistory": "Recent Activity",
+        "approvals": "Approvals",
+        "ownerDashboard": "Owner Dashboard",
+        "monthly": "Monthly",
+        "cumulative": "Cumulative",
+        "custom": "Custom",
+        "participants": "Participants",
+        "participantsCount": "Participants",
+        "hoursWorked": "Hours Worked",
+        "less": "Less",
+        "more": "More",
+        "workTimeline": "Work Timeline",
+        "roleBreakdown": "Role Breakdown",
+        "projectActivity": "Project Activity",
+        "revenueShareDetails": "Revenue Share Details",
+        "myHours": "My Hours",
+        "status": "Status",
+        "qualificationTitle": "Road to Qualification",
+        "qualificationDesc": "You need {{threshold}} approved base working hours to unlock full RevShare participation for this project.",
+        "noRecentEntries": "No recorded time in this project.",
+        "noProject": "No project selected",
+        "selectProjectToViewContrib": "Select a project from the list to view your contribution.",
+        "projectDashboard": "Project Dashboard",
+        "csv": {
+            "teamMember": "Team Member",
+            "role": "Role",
+            "hours": "Hours",
+            "points": "Points (PW)",
+            "share": "Share (%)",
+            "status": "Status"
+        },
+        "pdf": {
+            "reportTitle": "Revenue Share Report",
+            "project": "Project:",
+            "period": "Period:",
+            "totalPoints": "Total Project PW:",
+            "threshold": "Qualification threshold:"
+        },
+        "dashboard": {
+            "allTeams": "All Teams",
+            "searchPerson": "Search person...",
+            "allRoles": "All Roles",
+            "noResults": "No results found.",
+            "selectProject": "Select a project from the list",
+            "clickSidebar": "Click a project in the sidebar to view analytics."
+        },
+        "chart": {
+            "total": "Total",
+            "average": "Average"
+        },
+        "heatmap": {
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat",
+            "sun": "Sun"
+        },
+        "timer": {
+            "whatWorkingOn": "What are you working on?",
+            "selectTask": "Select a task to track time...",
+            "noTasks": "No tasks assigned to you.",
+            "tasksHeader": "Tasks",
+            "meetingsHeader": "Meetings & Calendar Events",
+            "done": "Done",
+            "analog": "Analog",
+            "digital": "Digital",
+            "start": "Start Timer",
+            "stop": "Stop Timer",
+            "recentSessions": "Recent Sessions",
+            "noSessions": "No sessions yet. Start tracking!",
+            "inProgress": "(In progress)",
+            "pomodoro": {
+                "work": "WORK",
+                "break": "BREAK"
+            }
+        },
+        "manual": {
+            "title": "Manual Entry",
+            "subtitle": "Log time manually",
+            "user": "User",
+            "pickTask": "Pick a task...",
+            "durationAuto": "Duration will be computed automatically",
+            "addEntry": "Add Entry",
+            "date": "Date",
+            "startTime": "Start Time",
+            "endTime": "End Time"
+        },
+        "roles": {
+            "projectLeader": "Project Leader",
+            "areaLeader": "Area Leader",
+            "participant": "Participant"
+        },
+        "factors": {
+            "difficulty": {
+                "basic": "Basic (×0.75)",
+                "standard": "Standard (×1.00)",
+                "advanced": "Advanced (×1.30)",
+                "critical": "Critical (×1.50)"
+            },
+            "bonus": {
+                "none": "None (×1.00)",
+                "standard": "Standard (×1.10)",
+                "vast": "Vast (×1.25)",
+                "mega": "MEGA (×1.50)"
+            }
+        },
+        "history": {
+            "pending": "Pending",
+            "approved": "Approved",
+            "rejected": "Rejected",
+            "noTitle": "Untitled Task",
+            "pointsLabel": "Contribution"
+        },
+        "progress": "Progress"
     },
     "calendar": {
         "scope": {

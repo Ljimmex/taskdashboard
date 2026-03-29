@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { db } from '../../db'
 import { timeEntries, type NewTimeEntry, tasks, subtasks } from '../../db/schema/tasks'
 import { calendarEvents } from '../../db/schema/calendar'
-import { projects } from '../../db/schema/projects'
+import { projects, projectMembers } from '../../db/schema/projects'
 import { teams } from '../../db/schema/teams'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { users } from '../../db/schema/users'
@@ -425,9 +425,19 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             userTotalApprovedMinutes[entry.userId] = (userTotalApprovedMinutes[entry.userId] || 0) + entry.durationMinutes
         }
 
-        // Get all unique user IDs in this range
-        const rangeUserIds = targetUserId ? [targetUserId] : [...new Set(targetEntries.map(e => e.userId))]
-        if (rangeUserIds.length === 0) {
+        // Get all unique project members (the base list)
+        const projectMembersList = await db.select({
+            userId: projectMembers.userId,
+            role: projectMembers.role,
+        }).from(projectMembers).where(eq(projectMembers.projectId, projectId))
+
+        const allProjectUserIds = projectMembersList.map(m => m.userId)
+        const memberRoleMap = Object.fromEntries(projectMembersList.map(m => [m.userId, m.role]))
+
+        // Final list of users to display (either specific target or all project members)
+        const displayUserIds = targetUserId ? [targetUserId] : allProjectUserIds
+
+        if (displayUserIds.length === 0) {
             return c.json({ success: true, data: { participants: [], totalPW: 0, totalProjectPW: 0, hourThreshold } })
         }
 
@@ -436,7 +446,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             id: users.id,
             name: users.name,
             image: users.image,
-        }).from(users).where(inArray(users.id, rangeUserIds))
+        }).from(users).where(inArray(users.id, displayUserIds))
         const userMap = Object.fromEntries(userDetails.map(u => [u.id, u]))
 
         // Calculate Stats for current range AND total project PW
@@ -485,8 +495,8 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             }
         }
 
-        const participants = rangeUserIds.map(uId => {
-            const data = userStats[uId] || { totalMinutes: 0, pw: 0, bonus: 0, role: 'participant', averageDifficulty: 0, taskCount: 0 }
+        const participants = displayUserIds.map(uId => {
+            const data = userStats[uId] || { totalMinutes: 0, pw: 0, bonus: 0, role: memberRoleMap[uId] || 'participant', averageDifficulty: 0, taskCount: 0 }
             const approvedHoursTotal = (userTotalApprovedMinutes[uId] || 0) / 60
             const hasThreshold = approvedHoursTotal >= hourThreshold
             let sharePercent = 0
@@ -508,7 +518,10 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 approvedBaseHoursTotal: Math.round(approvedHoursTotal * 100) / 100,
                 sharePercent
             }
-        }).sort((a, b) => b.contributionPoints - a.contributionPoints)
+        })
+
+        const sortedParticipants = [...participants].sort((a, b) => b.contributionPoints - a.contributionPoints)
+        const dashboardParticipants = sortedParticipants.filter(p => p.totalMinutes > 0 || p.bonusPoints > 0)
 
         if (targetUserId) {
             // ... (rest remains same but using rangeUserIds[0])
@@ -556,7 +569,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         return c.json({
             success: true,
             data: {
-                participants,
+                participants: dashboardParticipants,
                 totalPW: Math.round(totalRevSharePW * 100) / 100,
                 totalProjectPW: Math.round(totalProjectPW * 100) / 100,
                 hourThreshold
@@ -850,7 +863,10 @@ timeRoutes.get('/pending', async (c) => {
         const taskMap = Object.fromEntries(projectTasks.map(t => [t.id, t]))
 
         const pendingEntries = await db.select().from(timeEntries)
-            .where(and(inArray(timeEntries.taskId, taskIds), eq(timeEntries.approvalStatus, 'pending')))
+            .where(and(
+                inArray(timeEntries.taskId, taskIds),
+                eq(timeEntries.approvalStatus, 'pending')
+            ))
             .orderBy(desc(timeEntries.startedAt))
 
         const entryUserIds = [...new Set(pendingEntries.map(e => e.userId))]

@@ -253,7 +253,6 @@
         "title": "Time Tracker",
         "desc": "Śledź czas i obliczaj udział w przychodach",
         "myTimer": "Mój Timer",
-        "dashboard": "Dashboard",
         "selectTask": "Wybierz zadanie",
         "pickTask": "Wybierz zadanie...",
         "analog": "Analogowy",
@@ -321,12 +320,12 @@
         "rejectionReasonPlaceholder": "Podaj powód odrzucenia (min. 5 znaków)...",
         "eligibilityStatus": "Status kwalifikacji",
         "qualified": "Zakwalifikowany do RevShare",
-        "inProgress": "W trakcie (poniżej 200h)",
+        "inProgress": "W trakcie (poniżej {{threshold}}h)",
         "roleFactor": "Współczynnik roli",
         "bonusList": "Lista premii",
         "noBonuses": "Brak przyznanych premii",
         "systemResolvedRole": "Rola ustalona przez system",
-        "onlyBaseHoursCount": "Tylko podstawowe godziny pracy liczą się do progu 200h (bez mnożników).",
+        "onlyBaseHoursCount": "Tylko podstawowe godziny pracy liczą się do progu {{threshold}}h (bez mnożników).",
         "description": "Opis",
         "descriptionPlaceholder": "Opisz co robisz... (opcjonalnie)",
         "descriptionPlaceholderManual": "Opisz co zostało wykonane...",
@@ -350,11 +349,104 @@
         "myHours": "Moje Godziny",
         "status": "Status",
         "qualificationTitle": "Droga do kwalifikacji",
-        "qualificationDesc": "Potrzebujesz 200 zatwierdzonych godzin pracy, aby odblokować pełny udział w RevShare dla tego projektu.",
+        "qualificationDesc": "Potrzebujesz {{threshold}} zatwierdzonych godzin pracy, aby odblokować pełny udział w RevShare dla tego projektu.",
         "noRecentEntries": "Brak zarejestrowanego czasu w tym projekcie.",
         "noProject": "Brak wybranego projektu",
         "selectProjectToViewContrib": "Wybierz projekt z listy, aby zobaczyć swój wkład.",
-        "projectDashboard": "Dashboard Projektu"
+        "projectDashboard": "Dashboard Projektu",
+        "csv": {
+            "teamMember": "Członek Zespołu",
+            "role": "Rola",
+            "hours": "Godziny",
+            "points": "Punkty (PW)",
+            "share": "Udział (%)",
+            "status": "Status"
+        },
+        "pdf": {
+            "reportTitle": "Raport Revenue Share",
+            "project": "Projekt:",
+            "period": "Okres:",
+            "totalPoints": "Łączne PW Projektu:",
+            "threshold": "Próg kwalifikacji:"
+        },
+        "dashboard": {
+            "allTeams": "Wszystkie Zespoły",
+            "searchPerson": "Szukaj osoby...",
+            "allRoles": "Wszystkie Role",
+            "noResults": "Brak wyników do wyświetlenia.",
+            "selectProject": "Wybierz projekt z listy",
+            "clickSidebar": "Kliknij projekt w panelu bocznym, aby zobaczyć analitykę."
+        },
+        "chart": {
+            "total": "Łącznie",
+            "average": "Średnia"
+        },
+        "heatmap": {
+            "mon": "Pon",
+            "tue": "Wt",
+            "wed": "Śr",
+            "thu": "Czw",
+            "fri": "Pt",
+            "sat": "Sob",
+            "sun": "Nie"
+        },
+        "timer": {
+            "whatWorkingOn": "Nad czym pracujesz?",
+            "selectTask": "Wybierz zadanie do mierzenia czasu...",
+            "noTasks": "Brak przypisanych zadań.",
+            "tasksHeader": "Zadania",
+            "meetingsHeader": "Spotkania i Wydarzenia",
+            "done": "Gotowe",
+            "analog": "Analogowy",
+            "digital": "Cyfrowy",
+            "start": "Start",
+            "stop": "Stop",
+            "recentSessions": "Ostatnie sesje",
+            "noSessions": "Brak sesji. Rozpocznij mierzenie czasu!",
+            "inProgress": "(W trakcie)",
+            "pomodoro": {
+                "work": "WORK",
+                "break": "BREAK"
+            }
+        },
+        "manual": {
+            "title": "Ręczny Wpis",
+            "subtitle": "Zaloguj czas ręcznie",
+            "user": "Użytkownik",
+            "pickTask": "Wybierz zadanie...",
+            "durationAuto": "Czas zostanie obliczony automatycznie",
+            "addEntry": "Dodaj Wpis",
+            "date": "Data",
+            "startTime": "Czas rozpoczęcia",
+            "endTime": "Czas zakończenia"
+        },
+        "roles": {
+            "projectLeader": "Lider Projektu",
+            "areaLeader": "Lider Obszaru",
+            "participant": "Uczestnik"
+        },
+        "factors": {
+            "difficulty": {
+                "basic": "Podstawowy (×0.75)",
+                "standard": "Standardowy (×1.00)",
+                "advanced": "Zaawansowany (×1.30)",
+                "critical": "Krytyczny (×1.50)"
+            },
+            "bonus": {
+                "none": "Brak (×1.00)",
+                "standard": "Standard (×1.10)",
+                "vast": "Sążna (×1.25)",
+                "mega": "MEGA (×1.50)"
+            }
+        },
+        "history": {
+            "pending": "Oczekujące",
+            "approved": "Zatwierdzone",
+            "rejected": "Odrzucone",
+            "noTitle": "Zadanie bez tytułu",
+            "pointsLabel": "Wkład"
+        },
+        "progress": "Postęp"
     },
     "calendar": {
         "scope": {
