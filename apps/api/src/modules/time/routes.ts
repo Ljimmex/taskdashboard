@@ -125,7 +125,8 @@ timeRoutes.get('/', async (c) => {
         const { taskId, startDate, endDate, approvalStatus } = c.req.query()
         const filterUserId = c.req.query('userId')
 
-        let result = await db.select().from(timeEntries).orderBy(desc(timeEntries.startedAt))
+        let query = db.select().from(timeEntries).orderBy(desc(timeEntries.startedAt))
+        let result = await query
 
         // Check if viewing all or filtering by specific user
         if (filterUserId && filterUserId !== userId) {
@@ -148,8 +149,6 @@ timeRoutes.get('/', async (c) => {
         if (endDate) result = result.filter(e => new Date(e.startedAt) <= new Date(endDate))
         if (approvalStatus) result = result.filter(e => e.approvalStatus === approvalStatus)
 
-        const totalMinutes = result.reduce((sum, e) => sum + e.durationMinutes, 0)
-
         // Fetch task and subtask titles for display
         const taskIds = [...new Set(result.map(e => e.taskId).filter(Boolean) as string[])]
         let taskMap: Record<string, string> = {
@@ -167,11 +166,26 @@ timeRoutes.get('/', async (c) => {
             subtaskMap = Object.fromEntries(subtaskList.map(s => [s.id, s.title]))
         }
 
-        const enrichedResult = result.map(e => ({
-            ...e,
-            taskTitle: (e.taskId ? taskMap[e.taskId] : taskMap['standalone-meetings']) || 'General',
-            subtaskTitle: (e.subtaskId && typeof e.subtaskId === 'string') ? subtaskMap[e.subtaskId] || null : null
-        }))
+        // Apply 50% rule for meetings and calculate points
+        const enrichedResult = result.map(e => {
+            const rawDuration = e.durationMinutes
+            const effectiveDuration = e.entryType === 'meeting' ? rawDuration * 0.5 : rawDuration
+
+            const roleFactor = ROLE_COEFFICIENTS[e.projectRole] ?? 1.0
+            const diffFactor = DIFFICULTY_COEFFICIENTS[e.difficultyLevel] ?? 1.0
+            const points = Math.round(((effectiveDuration / 60) * roleFactor * diffFactor + (e.bonusPoints || 0)) * 100) / 100
+
+            return {
+                ...e,
+                durationMinutes: effectiveDuration, // Override with effective duration
+                rawDurationMinutes: rawDuration,
+                points,
+                taskTitle: (e.taskId ? taskMap[e.taskId] : taskMap['standalone-meetings']) || 'General',
+                subtaskTitle: (e.subtaskId && typeof e.subtaskId === 'string') ? subtaskMap[e.subtaskId] || null : null
+            }
+        })
+
+        const totalMinutes = enrichedResult.reduce((sum, e) => sum + e.durationMinutes, 0)
 
         return c.json({ success: true, data: enrichedResult, totalMinutes })
     } catch (error: any) {
@@ -188,7 +202,7 @@ timeRoutes.get('/summary', async (c) => {
         const { startDate, endDate } = c.req.query()
         const filterUserId = c.req.query('userId')
 
-        let result = await db.select().from(timeEntries)
+        let result = await db.select({ durationMinutes: timeEntries.durationMinutes, entryType: timeEntries.entryType, userId: timeEntries.userId, startedAt: timeEntries.startedAt }).from(timeEntries)
 
         if (filterUserId) result = result.filter(e => e.userId === filterUserId)
         else result = result.filter(e => e.userId === userId)
@@ -196,7 +210,10 @@ timeRoutes.get('/summary', async (c) => {
         if (startDate) result = result.filter(e => new Date(e.startedAt) >= new Date(startDate))
         if (endDate) result = result.filter(e => new Date(e.startedAt) <= new Date(endDate))
 
-        const totalMinutes = result.reduce((sum, e) => sum + e.durationMinutes, 0)
+        const totalMinutes = result.reduce((sum, e) => {
+            const effective = e.entryType === 'meeting' ? e.durationMinutes * 0.5 : e.durationMinutes
+            return sum + effective
+        }, 0)
         return c.json({ success: true, totalMinutes, totalHours: Math.round(totalMinutes / 60 * 100) / 100 })
     } catch (error: any) {
         console.error('Error fetching time summary:', error)
@@ -396,14 +413,20 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         const projectTasks = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.projectId, projectId))
         const taskIds = projectTasks.map(t => t.id)
 
-        if (taskIds.length === 0) {
-            return c.json({ success: true, data: { participants: [], totalPW: 0, totalProjectPW: 0, hourThreshold } })
-        }
-
         // --- FETCH ALL APPROVED ENTRIES ---
+        // Includes: 
+        // 1. Entries associated with project tasks
+        // 2. Standalone meetings of the same workspace (shared across projects in that workspace)
         const allApprovedEntries = await db.select().from(timeEntries).where(
             and(
-                taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
+                or(
+                    taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
+                    and(
+                        eq(timeEntries.workspaceId, workspace.id),
+                        eq(timeEntries.entryType, 'meeting'),
+                        sql`${timeEntries.taskId} IS NULL`
+                    )
+                ),
                 eq(timeEntries.approvalStatus, 'approved')
             )
         )
@@ -433,7 +456,8 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         // --- CALCULATE USER TOTAL APPROVED HOURS (GLOBAL FOR 200H CHECK) ---
         const userTotalApprovedMinutes: Record<string, number> = {}
         for (const entry of allApprovedEntries) {
-            userTotalApprovedMinutes[entry.userId] = (userTotalApprovedMinutes[entry.userId] || 0) + entry.durationMinutes
+            const effectiveDuration = entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
+            userTotalApprovedMinutes[entry.userId] = (userTotalApprovedMinutes[entry.userId] || 0) + effectiveDuration
         }
 
         // Get all unique project members (the base list)
@@ -448,16 +472,9 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         // Final list of users to display (either specific target or all project members)
         const displayUserIds = targetUserId ? [targetUserId] : allProjectUserIds
 
-        if (displayUserIds.length === 0) {
-            return c.json({ success: true, data: { participants: [], totalPW: 0, totalProjectPW: 0, hourThreshold } })
-        }
-
-        // Get user details
-        const userDetails = await db.select({
-            id: users.id,
-            name: users.name,
-            image: users.image,
-        }).from(users).where(inArray(users.id, displayUserIds))
+        const userDetails = displayUserIds.length > 0
+            ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, displayUserIds))
+            : []
         const userMap = Object.fromEntries(userDetails.map(u => [u.id, u]))
 
         // Calculate Stats for current range AND total project PW
@@ -465,18 +482,20 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         let totalProjectPW = 0
 
         for (const entry of targetEntries) {
-            // Stats for summary
+            const effectiveDuration = entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
+            const timeHours = effectiveDuration / 60
+            const roleFactor = ROLE_COEFFICIENTS[entry.projectRole] ?? 1.0
+            const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
+
+            // points = (duration * 0.5) / 60 * role * diff + bonus
+            const points = timeHours * roleFactor * diffFactor + (entry.bonusPoints || 0)
+
             if (!userStats[entry.userId]) {
                 userStats[entry.userId] = { totalMinutes: 0, pw: 0, bonus: 0, role: entry.projectRole, averageDifficulty: 0, taskCount: 0 }
             }
             const stats = userStats[entry.userId]
-            const timeHours = entry.durationMinutes / 60
-            const roleFactor = ROLE_COEFFICIENTS[entry.projectRole] ?? 1.0
-            const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
-            const meetingFactor = entry.entryType === 'meeting' ? 0.5 : 1.0
-            const points = timeHours * roleFactor * diffFactor * meetingFactor + (entry.bonusPoints || 0)
 
-            stats.totalMinutes += entry.durationMinutes
+            stats.totalMinutes += effectiveDuration
             stats.pw += points
             stats.bonus += (entry.bonusPoints || 0)
             if (entry.durationMinutes > 0) {
@@ -484,19 +503,17 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 stats.taskCount++
             }
 
-            // Total Project PW (regardless of qualifying)
             totalProjectPW += points
         }
 
         // Calculate total PW for pool (qualifying users only)
         let totalRevSharePW = 0
-        // We need totalRevSharePW calculated from ALL users in the project who qualify, even if viewing 1 member
         const poolUserStats: Record<string, number> = {}
         for (const entry of allApprovedEntries) {
+            const effectiveDuration = entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
             const roleFactor = ROLE_COEFFICIENTS[entry.projectRole] ?? 1.0
             const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
-            const meetingFactor = entry.entryType === 'meeting' ? 0.5 : 1.0
-            const points = (entry.durationMinutes / 60) * roleFactor * diffFactor * meetingFactor + (entry.bonusPoints || 0)
+            const points = (effectiveDuration / 60) * roleFactor * diffFactor + (entry.bonusPoints || 0)
             poolUserStats[entry.userId] = (poolUserStats[entry.userId] || 0) + points
         }
 
@@ -535,16 +552,24 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         const dashboardParticipants = sortedParticipants.filter(p => p.totalMinutes > 0 || p.bonusPoints > 0)
 
         if (targetUserId) {
-            // ... (rest remains same but using rangeUserIds[0])
-            const recent = await db.select().from(timeEntries)
+            const recentQuery = db.select().from(timeEntries)
                 .where(
                     and(
-                        taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
+                        or(
+                            taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
+                            and(
+                                eq(timeEntries.workspaceId, workspace.id),
+                                eq(timeEntries.entryType, 'meeting'),
+                                sql`${timeEntries.taskId} IS NULL`
+                            )
+                        ),
                         eq(timeEntries.userId, targetUserId)
                     )
                 )
                 .orderBy(desc(timeEntries.startedAt))
                 .limit(10)
+
+            const recent = await recentQuery
 
             const recentTaskIds = [...new Set(recent.map(r => r.taskId).filter(Boolean) as string[])]
             let recentTaskMap: Record<string, string> = {
@@ -557,17 +582,23 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 recentTasks.forEach(t => { recentTaskMap[t.id] = t.title })
             }
 
-            const mappedRecent = recent.map(r => ({
-                id: r.id,
-                taskId: r.taskId,
-                taskTitle: (r.taskId ? recentTaskMap[r.taskId] : recentTaskMap['standalone-meetings']) || 'General',
-                durationMinutes: r.durationMinutes,
-                description: r.description,
-                startedAt: r.startedAt,
-                entryType: r.entryType,
-                approvalStatus: r.approvalStatus,
-                points: Math.round(((r.durationMinutes / 60) * (ROLE_COEFFICIENTS[r.projectRole] ?? 1.0) * (DIFFICULTY_COEFFICIENTS[r.difficultyLevel] ?? 1.0) * (r.entryType === 'meeting' ? 0.5 : 1.0) + (r.bonusPoints || 0)) * 100) / 100
-            }))
+            const mappedRecent = recent.map(r => {
+                const effective = r.entryType === 'meeting' ? r.durationMinutes * 0.5 : r.durationMinutes
+                const points = Math.round(((effective / 60) * (ROLE_COEFFICIENTS[r.projectRole] ?? 1.0) * (DIFFICULTY_COEFFICIENTS[r.difficultyLevel] ?? 1.0) + (r.bonusPoints || 0)) * 100) / 100
+
+                return {
+                    id: r.id,
+                    taskId: r.taskId,
+                    taskTitle: (r.taskId ? recentTaskMap[r.taskId] : recentTaskMap['standalone-meetings']) || 'General',
+                    durationMinutes: effective,
+                    rawDurationMinutes: r.durationMinutes,
+                    description: r.description,
+                    startedAt: r.startedAt,
+                    entryType: r.entryType,
+                    approvalStatus: r.approvalStatus,
+                    points
+                }
+            })
 
             return c.json({
                 success: true,
@@ -605,6 +636,13 @@ timeRoutes.get('/project/:projectId', async (c) => {
     try {
         const projectId = c.req.param('projectId')
 
+        // Get project and workspace
+        const [project] = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1)
+        if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
+
+        const [team] = await db.select().from(teams).where(eq(teams.id, project.teamId)).limit(1)
+        if (!team) return c.json({ success: false, error: 'Team not found' }, 404)
+
         // Get tasks in project
         const projectTasks = await db.select({
             id: tasks.id,
@@ -612,15 +650,22 @@ timeRoutes.get('/project/:projectId', async (c) => {
         }).from(tasks).where(eq(tasks.projectId, projectId))
         const taskIds = projectTasks.map(t => t.id)
 
-        if (taskIds.length === 0) {
-            return c.json({ success: true, data: [] })
-        }
-
         const taskMap = Object.fromEntries(projectTasks.map(t => [t.id, t]))
 
-        // Get all time entries for these tasks
+        // Get all time entries for these tasks + standalone meetings of the same workspace
         const entries = await db.select().from(timeEntries)
-            .where(inArray(timeEntries.taskId, taskIds))
+            .where(
+                and(
+                    or(
+                        taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
+                        and(
+                            eq(timeEntries.workspaceId, team.workspaceId),
+                            eq(timeEntries.entryType, 'meeting'),
+                            sql`${timeEntries.taskId} IS NULL`
+                        )
+                    )
+                )
+            )
             .orderBy(desc(timeEntries.startedAt))
 
         // Get subtask info
@@ -638,13 +683,23 @@ timeRoutes.get('/project/:projectId', async (c) => {
             : []
         const userMap = Object.fromEntries(userDetails.map(u => [u.id, u]))
 
-        const result = entries.map(e => ({
-            ...e,
-            taskTitle: (e.taskId ? taskMap[e.taskId] : taskMap['standalone-meetings']) || 'General',
-            subtaskTitle: e.subtaskId ? subtaskMap[e.subtaskId] || null : null,
-            userName: userMap[e.userId]?.name || 'Unknown',
-            userImage: userMap[e.userId]?.image || null,
-        }))
+        const result = entries.map(e => {
+            const effective = e.entryType === 'meeting' ? e.durationMinutes * 0.5 : e.durationMinutes
+            const roleFactor = ROLE_COEFFICIENTS[e.projectRole] ?? 1.0
+            const diffFactor = DIFFICULTY_COEFFICIENTS[e.difficultyLevel] ?? 1.0
+            const points = Math.round(((effective / 60) * roleFactor * diffFactor + (e.bonusPoints || 0)) * 100) / 100
+
+            return {
+                ...e,
+                durationMinutes: effective,
+                rawDurationMinutes: e.durationMinutes,
+                points,
+                taskTitle: (e.taskId ? taskMap[e.taskId]?.title : 'Meetings & Calendar Events') || 'General',
+                subtaskTitle: e.subtaskId ? subtaskMap[e.subtaskId]?.title || null : null,
+                userName: userMap[e.userId]?.name || 'Unknown',
+                userImage: userMap[e.userId]?.image || null,
+            }
+        })
 
         return c.json({ success: true, data: result })
     } catch (error: any) {
@@ -955,7 +1010,7 @@ timeRoutes.get('/pending', async (c) => {
 
         const result = pendingEntries.map(e => ({
             ...e,
-            taskTitle: (e.taskId ? taskMap[e.taskId]?.title : taskMap['standalone-meetings']) || 'General',
+            taskTitle: (e.taskId ? taskMap[e.taskId]?.title : 'Meetings & Calendar Events') || 'General',
             userName: userMap[e.userId]?.name || 'Unknown',
             userImage: userMap[e.userId]?.image || null,
         }))
