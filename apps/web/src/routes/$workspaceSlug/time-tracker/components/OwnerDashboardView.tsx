@@ -190,16 +190,17 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
             t('timeTracker.csv.status', 'Status')
         ]
         const rows = filteredParticipants.map((p: any) => [
-            p.name,
-            p.role.replace('_', ' '),
-            formatHours(p.totalHours),
-            p.contributionPoints,
-            p.hasThreshold ? `${p.sharePercent}%` : '0%',
-            p.hasThreshold ? t('timeTracker.qualified', 'ZAKWALIFIKOWANY') : t('timeTracker.pending', 'W TRAKCIE')
+            `"${p.name}"`,
+            `"${p.role.replace('_', ' ')}"`,
+            `"${formatHours(p.totalHours)}"`,
+            `"${p.contributionPoints}"`,
+            `"${p.hasThreshold ? `${p.sharePercent}%` : '0%'}"`,
+            `"${p.hasThreshold ? t('timeTracker.qualified', 'ZAKWALIFIKOWANY') : t('timeTracker.pending', 'W TRAKCIE')}"`
         ])
 
-        // BOM (\uFEFF) wymusza poprawne kodowanie polskich znaków w Excelu
-        const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n")
+        const csvHeaders = headers.map(h => `"${h}"`).join(";")
+        // BOM + sep=; + Quoted Semicolon CSV
+        const csvContent = "\uFEFF" + "sep=;\n" + [csvHeaders, ...rows.map(r => r.join(";"))].join("\n")
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
         const link = document.createElement("a")
         const url = URL.createObjectURL(blob)
@@ -229,15 +230,21 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
             console.warn("Failed to load PDF font", e)
         }
 
+        // Set font BEFORE any text
+        doc.setFont("Roboto", "normal")
         doc.setFontSize(18)
+        // Ensure title also uses the font
         doc.text(t('timeTracker.pdf.reportTitle', 'Raport Revenue Share'), 14, 22)
 
-        let periodText = dashboardMode === 'monthly' ? t('timeTracker.monthly', 'Miesięczny') : dashboardMode === 'cumulative' ? t('timeTracker.cumulative', 'Skumulowany') : t('timeTracker.custom', 'Własny')
-
+        let periodText = ""
         if (dashboardMode === 'monthly') {
             const now = new Date()
-            periodText = now.toLocaleString(i18n.language, { month: 'long', year: 'numeric' })
+            periodText = now.toLocaleString(i18n.language === 'pl' ? 'pl-PL' : 'en-US', { month: 'long', year: 'numeric' })
             periodText = periodText.charAt(0).toUpperCase() + periodText.slice(1)
+        } else if (dashboardMode === 'cumulative') {
+            periodText = t('timeTracker.cumulative', 'Skumulowany')
+        } else if (dashboardMode === 'custom') {
+            periodText = `${dateFrom || '...'} - ${dateTo || '...'}`
         }
 
         doc.setFontSize(11)
