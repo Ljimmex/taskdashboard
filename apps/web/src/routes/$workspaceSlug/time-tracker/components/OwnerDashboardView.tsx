@@ -214,20 +214,28 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
 
     const exportToPDF = async () => {
         const doc = new jsPDF()
-        // Load Roboto font for Polish characters
+        const fontUrl = "https://cdn.jsdelivr.net/font-roboto/1.1.0/fonts/Roboto-Regular.ttf"
+
+        // Load Roboto font for Polish characters using a more robust method
         try {
-            const fontRes = await fetch("https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf")
-            const buffer = await fontRes.arrayBuffer()
-            const binary = new Uint8Array(buffer)
-            let binaryString = ""
-            for (let i = 0; i < binary.length; i++) {
-                binaryString += String.fromCharCode(binary[i])
-            }
-            doc.addFileToVFS("Roboto-Regular.ttf", btoa(binaryString))
+            const fontRes = await fetch(fontUrl)
+            if (!fontRes.ok) throw new Error("Font fetch failed")
+            const blob = await fontRes.blob()
+            const base64Font = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onloadend = () => {
+                    const base64 = (reader.result as string).split(',')[1]
+                    resolve(base64)
+                }
+                reader.onerror = reject
+                reader.readAsDataURL(blob)
+            })
+
+            doc.addFileToVFS("Roboto-Regular.ttf", base64Font)
             doc.addFont("Roboto-Regular.ttf", "Roboto", "normal")
             doc.setFont("Roboto")
         } catch (e) {
-            console.warn("Failed to load PDF font", e)
+            console.warn("Failed to load PDF font from CDN, falling back to standard font", e)
         }
 
         // Set font BEFORE any text
