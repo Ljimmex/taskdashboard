@@ -360,7 +360,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
                   )}
 
                   {myTasks.filter(t => t.id !== 'standalone-meetings').map((task: MyTask) => (
-                    <div key={task.id} className="border-b border-[var(--app-divider)]/50 last:border-0">
+                    <div key={task.id} className="border-b border-[var(--app-divider)] last:border-0">
                       <button
                         onClick={() => {
                           setSelectedTaskId(task.id)
@@ -403,7 +403,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
                   {/* SPOTKANIA */}
                   {myTasks.find(t => t.id === 'standalone-meetings') && (
                     <>
-                      <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50 border-t border-[var(--app-divider)]/50">
+                      <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50 border-t border-[var(--app-divider)]">
                         {t('timeTracker.meetingsHeader', 'Spotkania i Wydarzenia')}
                       </div>
                       <div>
@@ -417,7 +417,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
                               setSelectedEntryType('meeting')
                               setTaskDropdownOpen(false)
                             }}
-                            className="w-full px-4 py-3 text-left hover:bg-[var(--app-bg-elevated)] flex items-center gap-3 border-b border-[var(--app-divider)]/50 last:border-0 transition-colors group"
+                            className="w-full px-4 py-3 text-left hover:bg-[var(--app-bg-elevated)] flex items-center gap-3 border-b border-[var(--app-divider)] last:border-0 transition-colors group"
                           >
                             <div className="p-1.5 rounded-md bg-[var(--app-accent)]/10 text-[var(--app-accent)] group-hover:bg-[var(--app-accent)]/20 transition-colors">
                               <Calendar size={14} />

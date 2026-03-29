@@ -296,7 +296,7 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
                       )}
 
                       {myTasks.filter(t => t.id !== 'standalone-meetings').map((task: MyTask) => (
-                        <div key={task.id} className="border-b border-[var(--app-divider)]/50 last:border-0">
+                        <div key={task.id} className="border-b border-[var(--app-divider)] last:border-0">
                           <button
                             type="button"
                             onClick={() => {
@@ -355,7 +355,7 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
                                   setSelectedEntryType('meeting')
                                   setTaskDropdownOpen(false)
                                 }}
-                                className="w-full px-4 py-3 text-left hover:bg-[var(--app-bg-elevated)] flex items-center gap-3 border-b border-[var(--app-divider)]/50 last:border-0 transition-colors"
+                                className="w-full px-4 py-3 text-left hover:bg-[var(--app-bg-elevated)] flex items-center gap-3 border-b border-[var(--app-divider)] last:border-0 transition-colors"
                               >
                                 <div className="p-1.5 rounded-md bg-[var(--app-accent)]/10 text-[var(--app-accent)]">
                                   <Calendar size={14} />
