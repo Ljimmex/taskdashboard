@@ -24,7 +24,7 @@ export function FileContextMenu({ children, itemId, isFolder, onRename, onDelete
     return (
         <ContextMenu>
             <ContextMenuTrigger>{children}</ContextMenuTrigger>
-            <ContextMenuContent className="w-48 bg-[var(--app-bg-card)] border-[var(--app-border)] p-1 shadow-2xl">
+            <ContextMenuContent className="w-48 bg-[var(--app-bg-card)] border-[var(--app-divider)] p-1 shadow-2xl">
                 {/* Open / Preview (everyone) */}
                 {!isFolder && onOpen && (
                     <ContextMenuItem onClick={() => onOpen(itemId)} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer transition-colors">
@@ -49,7 +49,7 @@ export function FileContextMenu({ children, itemId, isFolder, onRename, onDelete
                     </ContextMenuItem>
                 )}
 
-                <ContextMenuSeparator className="bg-[var(--app-border)]/50 my-1" />
+                <ContextMenuSeparator className="bg-[var(--app-divider)] my-1" />
 
                 {/* Management actions (admin/owner only) */}
                 {canManage && (

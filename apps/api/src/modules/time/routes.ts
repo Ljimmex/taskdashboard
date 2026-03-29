@@ -34,6 +34,11 @@ const DIFFICULTY_COEFFICIENTS: Record<string, number> = {
     critical: 1.50,
 }
 
+const isUUID = (val: string | null | undefined): boolean => {
+    if (!val) return false
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+}
+
 // Mapowanie ról workspace/team → współczynnik projektu
 export function resolveProjectRole(wsRole: string, teamLevel: string | null): string {
     // Owner, Admin, Project Manager → Lider Projektu
@@ -89,6 +94,7 @@ async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLev
 
 // Helper: Get teamId from taskId
 async function getTeamIdFromTask(taskId: string): Promise<string | null> {
+    if (!isUUID(taskId)) return null
     const [task] = await db.select({ projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1)
     if (!task) return null
     const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, task.projectId)).limit(1)
@@ -97,6 +103,7 @@ async function getTeamIdFromTask(taskId: string): Promise<string | null> {
 
 // Helper: Get workspace role from a taskId
 async function getWorkspaceRoleFromTask(userId: string, taskId: string): Promise<string | null> {
+    if (!isUUID(taskId)) return null
     const [task] = await db.select({ projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1)
     if (!task) return null
     const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, task.projectId)).limit(1)
@@ -163,9 +170,9 @@ timeRoutes.get('/', async (c) => {
         }))
 
         return c.json({ success: true, data: enrichedResult, totalMinutes })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching time entries:', error)
-        return c.json({ success: false, error: 'Failed to fetch time entries' }, 500)
+        return c.json({ success: false, error: 'Failed to fetch time entries', details: error.message }, 500)
     }
 })
 
@@ -187,9 +194,9 @@ timeRoutes.get('/summary', async (c) => {
 
         const totalMinutes = result.reduce((sum, e) => sum + e.durationMinutes, 0)
         return c.json({ success: true, totalMinutes, totalHours: Math.round(totalMinutes / 60 * 100) / 100 })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching time summary:', error)
-        return c.json({ success: false, error: 'Failed to fetch summary' }, 500)
+        return c.json({ success: false, error: 'Failed to fetch summary', details: error.message }, 500)
     }
 })
 
@@ -329,9 +336,9 @@ timeRoutes.get('/my-tasks', async (c) => {
         }
 
         return c.json({ success: true, data: taskResults })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching my tasks:', error)
-        return c.json({ success: false, error: 'Failed to fetch tasks' }, 500)
+        return c.json({ success: false, error: 'Failed to fetch tasks', details: error.message }, 500)
     }
 })
 
@@ -575,9 +582,9 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 hourThreshold
             }
         })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error calculating contribution:', error)
-        return c.json({ success: false, error: 'Failed' }, 500)
+        return c.json({ success: false, error: 'Failed to calculate contribution', details: error.message }, 500)
     }
 }
 
@@ -634,9 +641,9 @@ timeRoutes.get('/project/:projectId', async (c) => {
         }))
 
         return c.json({ success: true, data: result })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching project time entries:', error)
-        return c.json({ success: false, error: 'Failed to fetch project time entries' }, 500)
+        return c.json({ success: false, error: 'Failed to fetch project time entries', details: error.message }, 500)
     }
 })
 
@@ -682,9 +689,9 @@ timeRoutes.post('/', zValidator('json', createTimeEntrySchema), async (c) => {
         }
         const [created] = await db.insert(timeEntries).values(newEntry).returning()
         return c.json({ success: true, data: created }, 201)
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error creating time entry:', error)
-        return c.json({ success: false, error: 'Failed to create time entry' }, 500)
+        return c.json({ success: false, error: 'Failed to create time entry', details: error.message }, 500)
     }
 })
 
@@ -722,9 +729,9 @@ timeRoutes.post('/start', zValidator('json', startTimeEntrySchema), async (c) =>
         }
         const [created] = await db.insert(timeEntries).values(newEntry).returning()
         return c.json({ success: true, data: created }, 201)
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error starting timer:', error)
-        return c.json({ success: false, error: 'Failed to start timer' }, 500)
+        return c.json({ success: false, error: 'Failed to start timer', details: error.message }, 500)
     }
 })
 

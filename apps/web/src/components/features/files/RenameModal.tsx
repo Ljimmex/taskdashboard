@@ -65,9 +65,9 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
             <div className="absolute inset-0" onClick={handleClose} />
 
             {/* Modal */}
-            <div className="relative z-10 w-full max-w-md bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="relative z-10 w-full max-w-md bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-border)]/50">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-divider)]">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-[var(--app-accent)]/10 flex items-center justify-center">
                             {itemType === 'folder' ? (
@@ -103,7 +103,7 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
                             onChange={(e) => setName(e.target.value)}
                             placeholder={t('files.modals.rename.placeholder')}
                             autoFocus
-                            className="w-full px-4 py-3 bg-[var(--app-bg-input)] border border-[var(--app-border)] rounded-xl text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--app-accent)]/50 focus:border-[var(--app-accent)] transition-all"
+                            className="w-full px-4 py-3 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--app-accent)]/50 focus:border-[var(--app-accent)] transition-all"
                         />
                     </div>
 
@@ -112,7 +112,7 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 px-4 py-2.5 text-[var(--app-text-muted)] bg-[var(--app-bg-input)] border border-[var(--app-border)]/50 rounded-xl font-medium hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors"
+                            className="flex-1 px-4 py-2.5 text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl font-medium hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] transition-colors"
                         >
                             {t('files.modals.rename.cancel')}
                         </button>

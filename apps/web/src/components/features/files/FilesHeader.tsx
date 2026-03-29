@@ -251,7 +251,7 @@ export function FilesHeader({
                 <button
                     ref={dateButtonRef}
                     onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
+                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
                 >
                     <Calendar size={14} />
                     <span>{formatDate(startDate)} / {formatDate(endDate)}</span>
@@ -261,7 +261,7 @@ export function FilesHeader({
                 <button
                     ref={typeButtonRef}
                     onClick={() => setIsTypeOpen(!isTypeOpen)}
-                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
+                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
                 >
                     <span className="capitalize">{selectedTypeLabel}</span>
                     <ChevronDown size={12} />
@@ -271,7 +271,7 @@ export function FilesHeader({
                 <button
                     ref={sortButtonRef}
                     onClick={() => setIsSortOpen(!isSortOpen)}
-                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
+                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
                 >
                     <span>{t('files.header.sort_by', { value: selectedSortLabel })}</span>
                     <ChevronDown size={14} className={`transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
@@ -281,7 +281,7 @@ export function FilesHeader({
             {/* Right side: View switcher and Upload */}
             <div className="flex items-center gap-3">
                 {/* View Switcher */}
-                <div className="flex bg-[var(--app-bg-input)] border border-[var(--app-border)] p-1 rounded-full">
+                <div className="flex bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] p-1 rounded-full">
                     <button
                         onClick={() => onViewModeChange('grid')}
                         className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === 'grid'
@@ -309,7 +309,7 @@ export function FilesHeader({
                 {/* Upload Button */}
                 <button
                     onClick={onUploadClick}
-                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-border)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
+                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
                 >
                     <Plus size={14} />
                     <span>{t('files.header.upload')}</span>
@@ -320,7 +320,7 @@ export function FilesHeader({
             {isDatePickerOpen && createPortal(
                 <div
                     ref={dateDropdownRef}
-                    className="fixed bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl shadow-xl z-[9999] p-5 animate-in fade-in zoom-in duration-200"
+                    className="fixed bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-2xl shadow-xl z-[9999] p-5 animate-in fade-in zoom-in duration-200"
                     style={{ top: `${datePosition.top}px`, left: `${datePosition.left}px` }}
                 >
                     <div className="flex items-center justify-between mb-4">
@@ -344,7 +344,7 @@ export function FilesHeader({
                         {renderMonth(0)}
                         {renderMonth(1)}
                     </div>
-                    <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-[var(--app-border)]">
+                    <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-[var(--app-divider)]">
                         <button onClick={() => onDateRangeChange(null, null)} className="px-4 py-2 text-sm text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors">{t('common.cancel')}</button>
                         <button onClick={() => setIsDatePickerOpen(false)} className="px-5 py-2 bg-[var(--app-accent)] text-[var(--app-accent-text)] text-sm font-bold rounded-full hover:bg-[var(--app-accent-hover)] transition-all">{t('common.save')}</button>
                     </div>
@@ -356,7 +356,7 @@ export function FilesHeader({
             {isTypeOpen && createPortal(
                 <div
                     ref={typeDropdownRef}
-                    className="fixed bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-xl shadow-xl z-[9999] py-1 w-40 animate-in fade-in zoom-in duration-200"
+                    className="fixed bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-xl z-[9999] py-1 w-40 animate-in fade-in zoom-in duration-200"
                     style={{ top: `${typePosition.top}px`, left: `${typePosition.left}px` }}
                 >
                     {visibleTypes.map(type => (
@@ -379,7 +379,7 @@ export function FilesHeader({
             {isSortOpen && createPortal(
                 <div
                     ref={sortDropdownRef}
-                    className="fixed bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-xl shadow-xl z-[9999] py-2 min-w-32 animate-in fade-in zoom-in duration-200"
+                    className="fixed bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-xl z-[9999] py-2 min-w-32 animate-in fade-in zoom-in duration-200"
                     style={{ top: `${sortPosition.top}px`, left: `${sortPosition.left}px` }}
                 >
                     {SORT_OPTIONS.map(option => (

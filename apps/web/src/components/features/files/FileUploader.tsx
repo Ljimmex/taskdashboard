@@ -298,7 +298,7 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
     }
 
     return (
-        <div className="rounded-xl border-2 border-dashed border-gray-800 bg-[#13131a] overflow-hidden transition-colors">
+        <div className="rounded-xl border-2 border-dashed border-[var(--app-divider)] bg-[var(--app-bg-elevated)]/30 overflow-hidden transition-colors">
             {/* Drop Zone */}
             <div
                 className={cn(
@@ -316,18 +316,18 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
                 <p className="text-lg font-medium text-white mb-1">
                     {t('files.messages.drag_drop_files_folders')}
                 </p>
-                <p className="text-sm text-gray-400 mb-4">
+                <p className="text-sm text-[var(--app-text-muted)] mb-4">
                     {t('files.messages.click_to_browse')}
                 </p>
                 <div className="flex gap-2">
-                    <button type="button" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1a1a24] border border-gray-700 rounded-lg hover:bg-gray-800 hover:text-white transition-colors" onClick={(e) => {
+                    <button type="button" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-lg hover:bg-[var(--app-bg-card)] hover:text-[var(--app-text-primary)] transition-colors" onClick={(e) => {
                         e.stopPropagation()
                         document.getElementById('file-input')?.click()
                     }}>
                         <File className="w-4 h-4" />
                         {t('files.actions.select_files')}
                     </button>
-                    <button type="button" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1a1a24] border border-gray-700 rounded-lg hover:bg-gray-800 hover:text-white transition-colors" onClick={(e) => {
+                    <button type="button" className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-lg hover:bg-[var(--app-bg-card)] hover:text-[var(--app-text-primary)] transition-colors" onClick={(e) => {
                         e.stopPropagation()
                         document.getElementById('folder-input')?.click()
                     }}>
@@ -357,27 +357,27 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
 
             {/* Upload Queue */}
             {uploadQueue.length > 0 && (
-                <div className="border-t border-gray-800 bg-[#16161f] p-4 space-y-3 max-h-60 overflow-y-auto">
-                    <div className="flex items-center justify-between sticky top-0 bg-[#16161f] pb-2 z-10">
-                        <h4 className="text-sm font-medium text-white">{t('files.messages.uploading_count', { count: uploadQueue.length })}</h4>
+                <div className="border-t border-[var(--app-divider)] bg-[var(--app-bg-card)] p-4 space-y-3 max-h-60 overflow-y-auto">
+                    <div className="flex items-center justify-between sticky top-0 bg-[var(--app-bg-card)] pb-2 z-10">
+                        <h4 className="text-sm font-medium text-[var(--app-text-primary)]">{t('files.messages.uploading_count', { count: uploadQueue.length })}</h4>
                         <button
                             onClick={(e) => { e.stopPropagation(); setUploadQueue([]) }}
-                            className="px-2 py-1 text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+                            className="px-2 py-1 text-xs font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded transition-colors"
                         >
                             {t('files.actions.clear_all')}
                         </button>
                     </div>
 
                     {uploadQueue.map((item, index) => (
-                        <div key={index} className="flex items-center gap-3 bg-[#1a1a24] rounded-lg p-3 border border-gray-800">
-                            <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0">
-                                <File className="w-5 h-5 text-gray-500" />
+                        <div key={index} className="flex items-center gap-3 bg-[var(--app-bg-elevated)] rounded-lg p-3 border border-[var(--app-divider)]">
+                            <div className="w-10 h-10 rounded-lg bg-[var(--app-bg-card)] flex items-center justify-center flex-shrink-0">
+                                <File className="w-5 h-5 text-[var(--app-text-muted)]" />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate text-white" title={item.relativePath}>{item.relativePath}</p>
-                                <p className="text-xs text-gray-400">{formatFileSize(item.file.size)}</p>
+                                <p className="text-sm font-medium truncate text-[var(--app-text-primary)]" title={item.relativePath}>{item.relativePath}</p>
+                                <p className="text-xs text-[var(--app-text-muted)]">{formatFileSize(item.file.size)}</p>
                                 {item.status === 'uploading' && (
-                                    <div className="mt-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div className="mt-1 h-1.5 bg-[var(--app-bg-input)] rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-amber-500 transition-all duration-300"
                                             style={{ width: `${item.progress}%` }}
@@ -398,7 +398,7 @@ export function FileUploader({ onUploadComplete, folderId }: FileUploaderProps) 
                                 {item.status === 'pending' && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); removeFromQueue(item.file) }}
-                                        className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+                                        className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] rounded-md transition-colors"
                                     >
                                         <X className="w-4 h-4" />
                                     </button>

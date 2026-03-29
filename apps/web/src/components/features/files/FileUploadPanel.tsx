@@ -374,7 +374,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                 className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
-                <div className="flex-none p-6 border-b border-[var(--app-border)]/50">
+                <div className="flex-none p-6 border-b border-[var(--app-divider)]">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => !isUploading && onClose()}
@@ -403,7 +403,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                             relative flex flex-col items-center justify-center py-12 px-6 rounded-xl border-2 border-dashed cursor-pointer transition-all mb-6
                             ${isDragOver
                                 ? 'border-[var(--app-accent)] bg-[var(--app-accent)]/10'
-                                : 'border-[var(--app-border)]/50 bg-[var(--app-bg-input)] hover:border-[var(--app-accent)]/30 hover:bg-[var(--app-bg-elevated)]'
+                                : 'border-[var(--app-divider)] bg-[var(--app-bg-elevated)]/30 hover:border-[var(--app-accent)]/30 hover:bg-[var(--app-bg-elevated)]/50'
                             }
                         `}
                     >
@@ -431,10 +431,10 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                             {queuedFiles.map((qFile) => (
                                 <div
                                     key={qFile.id}
-                                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)]/30 group"
+                                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--app-bg-elevated)]/50 border border-[var(--app-divider)] group"
                                 >
                                     {/* File Icon */}
-                                    <div className="w-10 h-10 rounded-lg bg-[var(--app-bg-elevated)] border border-[var(--app-border)]/50 flex items-center justify-center text-lg flex-shrink-0">
+                                    <div className="w-10 h-10 rounded-lg bg-[var(--app-bg-card)] border border-[var(--app-divider)] flex items-center justify-center text-lg flex-shrink-0">
                                         {getFileIcon(qFile.file)}
                                     </div>
 
@@ -491,7 +491,7 @@ export function FileUploadPanel({ isOpen, onClose, folderId, initialFiles, onUpl
                 </div>
 
                 {/* Footer */}
-                <div className="flex-none p-6 border-t border-[var(--app-border)]/50 bg-[var(--app-bg-deepest)]">
+                <div className="flex-none p-6 border-t border-[var(--app-divider)] bg-[var(--app-bg-card)]">
                     <button
                         onClick={handleUpload}
                         disabled={pendingCount === 0 || isUploading}
