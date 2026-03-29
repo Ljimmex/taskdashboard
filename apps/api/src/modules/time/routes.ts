@@ -40,11 +40,11 @@ const isUUID = (val: string | null | undefined): boolean => {
 }
 
 // Mapowanie ról workspace/team → współczynnik projektu
-export function resolveProjectRole(wsRole: string, teamLevel: string | null): string {
-    // Owner, Admin, Project Manager → Lider Projektu
+export function resolveProjectRole(wsRole: string, isAnyTeamLead: boolean): string {
+    // Owner, Admin, Project Manager → Lider Projektu (Najwyższa ranga)
     if (['owner', 'admin', 'project_manager'].includes(wsRole)) return 'project_leader'
-    // Team Lead → Lider Obszaru
-    if (teamLevel === 'team_lead') return 'area_leader'
+    // Jeśli jest leaderem w DOWOLNYM zespole w tym workspace → Lider Obszaru
+    if (isAnyTeamLead) return 'area_leader'
     // Wszyscy inni → Uczestnik
     return 'participant'
 }
@@ -103,6 +103,21 @@ async function getTeamIdFromTask(taskId: string | null | undefined): Promise<str
     return project?.teamId || null
 }
 
+// Helper: Check if user is a team_lead in ANY team within a workspace
+async function isUserAnyTeamLead(userId: string, workspaceId: string): Promise<boolean> {
+    const [lead] = await db.select({ id: teamMembers.id })
+        .from(teamMembers)
+        .innerJoin(teams, eq(teamMembers.teamId, teams.id))
+        .where(
+            and(
+                eq(teamMembers.userId, userId),
+                eq(teamMembers.teamLevel, 'team_lead'),
+                eq(teams.workspaceId, workspaceId)
+            )
+        )
+        .limit(1)
+    return !!lead
+}
 // Helper: Get workspace role from a taskId
 async function getWorkspaceRoleFromTask(userId: string, taskId: string | null | undefined): Promise<string | null> {
     if (!taskId || !isUUID(taskId)) return null
@@ -454,14 +469,19 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         const membersData = await db.select({
             userId: projectMembers.userId,
             wsRole: workspaceMembers.role,
-            teamLevel: teamMembers.teamLevel
+            isAnyTeamLead: sql<boolean>`EXISTS (
+                SELECT 1 FROM team_members tm 
+                JOIN teams t ON tm.team_id = t.id 
+                WHERE tm.user_id = ${projectMembers.userId} 
+                AND tm.team_level = 'team_lead' 
+                AND t.workspace_id = ${workspace.id}
+            )`
         }).from(projectMembers)
             .leftJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, workspace.id)))
-            .leftJoin(teamMembers, and(eq(teamMembers.userId, projectMembers.userId), eq(teamMembers.teamId, team.id)))
             .where(eq(projectMembers.projectId, projectId))
 
         const memberRoleMap = Object.fromEntries(membersData.map(m => {
-            const resolved = resolveProjectRole(m.wsRole || 'member', m.teamLevel as any)
+            const resolved = resolveProjectRole(m.wsRole || 'member', !!m.isAnyTeamLead)
             return [m.userId, resolved]
         }))
 
@@ -665,14 +685,19 @@ timeRoutes.get('/project/:projectId', async (c) => {
         const membersData = await db.select({
             userId: projectMembers.userId,
             wsRole: workspaceMembers.role,
-            teamLevel: teamMembers.teamLevel
+            isAnyTeamLead: sql<boolean>`EXISTS (
+                SELECT 1 FROM team_members tm 
+                JOIN teams t ON tm.team_id = t.id 
+                WHERE tm.user_id = ${projectMembers.userId} 
+                AND tm.team_level = 'team_lead' 
+                AND t.workspace_id = ${team.workspaceId}
+            )`
         }).from(projectMembers)
             .leftJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, team.workspaceId)))
-            .leftJoin(teamMembers, and(eq(teamMembers.userId, projectMembers.userId), eq(teamMembers.teamId, team.id)))
             .where(eq(projectMembers.projectId, projectId))
 
         const memberRoleMap = Object.fromEntries(membersData.map(m => {
-            const resolved = resolveProjectRole(m.wsRole || 'member', m.teamLevel as any)
+            const resolved = resolveProjectRole(m.wsRole || 'member', !!m.isAnyTeamLead)
             return [m.userId, resolved]
         }))
 
@@ -784,21 +809,13 @@ timeRoutes.post('/', zValidator('json', createTimeEntrySchema), async (c) => {
 
         // NOW: Resolve role for the TARGET user (the entry owner)
         let targetWsRole: string | null = null
-        let targetTeamLevel: string | null = null
+        let targetAnyTeamLead = false
 
         if (wsId) {
             const [targetWsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
                 .where(and(eq(workspaceMembers.userId, targetUserId), eq(workspaceMembers.workspaceId, wsId))).limit(1)
             targetWsRole = targetWsMember?.role || null
-        }
-        if (body.taskId && body.taskId !== 'standalone-meetings') {
-            const teamId = await getTeamIdFromTask(body.taskId)
-            if (teamId) {
-                targetTeamLevel = await getUserTeamLevel(targetUserId, teamId)
-                if (!targetWsRole) {
-                    targetWsRole = await getWorkspaceRoleFromTask(targetUserId, body.taskId)
-                }
-            }
+            targetAnyTeamLead = await isUserAnyTeamLead(targetUserId, wsId)
         }
 
         const newEntry = {
@@ -811,7 +828,7 @@ timeRoutes.post('/', zValidator('json', createTimeEntrySchema), async (c) => {
             startedAt: new Date(body.startedAt),
             endedAt: body.endedAt ? new Date(body.endedAt) : null,
             entryType: body.entryType || 'task',
-            projectRole: resolveProjectRole(targetWsRole as any, targetTeamLevel as any),
+            projectRole: resolveProjectRole(targetWsRole as any, targetAnyTeamLead),
             approvalStatus: 'pending'
         }
         const [created] = await db.insert(timeEntries).values(newEntry).returning()
@@ -860,20 +877,12 @@ timeRoutes.post('/start', zValidator('json', startTimeEntrySchema), async (c) =>
 
         // TARGET user context
         let targetWsRole: string | null = null
-        let targetTeamLevel: string | null = null
+        let targetAnyTeamLead = false
         if (wsId) {
             const [targetWsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
                 .where(and(eq(workspaceMembers.userId, targetUserId), eq(workspaceMembers.workspaceId, wsId))).limit(1)
             targetWsRole = targetWsMember?.role || null
-        }
-        if (body.taskId && body.taskId !== 'standalone-meetings') {
-            const teamId = await getTeamIdFromTask(body.taskId)
-            if (teamId) {
-                targetTeamLevel = await getUserTeamLevel(targetUserId, teamId)
-                if (!targetWsRole) {
-                    targetWsRole = await getWorkspaceRoleFromTask(targetUserId, body.taskId)
-                }
-            }
+            targetAnyTeamLead = await isUserAnyTeamLead(targetUserId, wsId)
         }
 
         const newEntry = {
@@ -885,7 +894,7 @@ timeRoutes.post('/start', zValidator('json', startTimeEntrySchema), async (c) =>
             durationMinutes: 0,
             startedAt: new Date(),
             entryType: body.entryType || 'task',
-            projectRole: resolveProjectRole(targetWsRole as any, targetTeamLevel as any),
+            projectRole: resolveProjectRole(targetWsRole as any, targetAnyTeamLead),
             approvalStatus: 'pending'
         }
         const [created] = await db.insert(timeEntries).values(newEntry).returning()
