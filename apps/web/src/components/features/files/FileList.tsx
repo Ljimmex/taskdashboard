@@ -129,7 +129,7 @@ export function FileList({
         <div className="rounded-xl bg-[var(--app-bg-card)] border border-[var(--app-divider)] overflow-hidden">
             <table className="w-full">
                 <thead>
-                    <tr className="border-b border-[var(--app-divider)]">
+                    <tr className="border-b border-white/5">
                         <th
                             className="w-[50%] px-4 py-3 text-left text-xs font-medium text-[var(--app-text-muted)] uppercase tracking-wider cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
                             onClick={() => onSort('name')}
@@ -161,7 +161,7 @@ export function FileList({
                     {folders.map(folder => (
                         <tr
                             key={folder.id}
-                            className="cursor-pointer border-b border-[var(--app-divider)] hover:bg-[var(--app-bg-elevated)] transition-colors"
+                            className="cursor-pointer border-b border-white/5 hover:bg-[var(--app-bg-elevated)] transition-colors"
                             onClick={() => onNavigate(folder.id)}
                         >
                             <td className="px-4 py-3">
@@ -223,10 +223,10 @@ export function FileList({
                         const iconColor = getFileColor(file.mimeType)
 
                         return (
-                            <tr key={file.id} className="cursor-pointer border-b border-[var(--app-divider)] hover:bg-[var(--app-bg-elevated)] transition-colors" onClick={() => onInfo?.(file.id)} onDoubleClick={(e) => { e.stopPropagation(); onOpen?.(file.id) }}>
+                            <tr key={file.id} className="cursor-pointer border-b border-white/5 hover:bg-[var(--app-bg-elevated)] transition-colors" onClick={() => onInfo?.(file.id)} onDoubleClick={(e) => { e.stopPropagation(); onOpen?.(file.id) }}>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-lg bg-[var(--app-bg-elevated)] flex items-center justify-center border border-[var(--app-divider)]">
+                                        <div className="w-9 h-9 rounded-lg bg-[var(--app-bg-elevated)] flex items-center justify-center border border-white/5">
                                             <FileTypeIcon className={`h-4 w-4 ${iconColor}`} />
                                         </div>
                                         <span className="text-sm font-medium text-[var(--app-text-primary)]">{file.name}</span>

@@ -124,6 +124,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     mutationFn: (body: {
       taskId: string;
       subtaskId?: string | null;
+      workspaceSlug: string;
       entryType: 'task' | 'meeting';
       description?: string;
     }) =>
@@ -170,6 +171,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     startMutation.mutate({
       taskId: selectedTaskId,
       subtaskId: selectedSubtaskId,
+      workspaceSlug,
       entryType: selectedEntryType,
       description: description
     })

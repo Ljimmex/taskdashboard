@@ -65,9 +65,9 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
             <div className="absolute inset-0" onClick={handleClose} />
 
             {/* Modal */}
-            <div className="relative z-10 w-full max-w-md bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="relative z-10 w-full max-w-md bg-[var(--app-bg-card)] border border-white/5 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--app-divider)]">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-[var(--app-accent)]/10 flex items-center justify-center">
                             {itemType === 'folder' ? (

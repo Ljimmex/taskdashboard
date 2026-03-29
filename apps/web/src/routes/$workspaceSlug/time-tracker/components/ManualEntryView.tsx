@@ -165,6 +165,7 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
       taskId: selectedTaskId,
       subtaskId: selectedSubtaskId,
       userId: selectedUserId,
+      workspaceSlug,
       entryType: selectedEntryType,
       description,
       durationMinutes,

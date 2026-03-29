@@ -2,6 +2,7 @@ import { pgTable, uuid, varchar, text, timestamp, integer, pgEnum, boolean, pgPo
 import { relations, sql } from 'drizzle-orm'
 import { projects } from './projects'
 import { users } from './users'
+import { workspaces } from './workspaces'
 
 // =============================================================================
 // ENUMS
@@ -135,9 +136,10 @@ export const taskComments = pgTable('task_comments', {
 
 export const timeEntries = pgTable('time_entries', {
     id: uuid('id').primaryKey().defaultRandom(),
-    taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+    taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'cascade' }),
     subtaskId: uuid('subtask_id').references(() => subtasks.id, { onDelete: 'set null' }),
     userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    workspaceId: text('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
     description: text('description'),
     durationMinutes: integer('duration_minutes').notNull().default(0),
     startedAt: timestamp('started_at').notNull(),

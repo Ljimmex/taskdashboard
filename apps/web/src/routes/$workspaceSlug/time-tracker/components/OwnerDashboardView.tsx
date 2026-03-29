@@ -199,9 +199,8 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
         ])
 
         const csvHeaders = headers.map(h => `"${h}"`).join(";")
-        // BOM + sep=; + Quoted Semicolon CSV
-        const csvContent = "\uFEFF" + "sep=;\n" + [csvHeaders, ...rows.map(r => r.join(";"))].join("\n")
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const csvContent = "\uFEFF" + "sep=;\r\n" + [csvHeaders, ...rows.map(r => r.join(";"))].join("\r\n")
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
         const link = document.createElement("a")
         const url = URL.createObjectURL(blob)
         const dateStr = new Date().toISOString().split('T')[0]
@@ -240,12 +239,16 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
         let periodText = ""
         if (dashboardMode === 'monthly') {
             const now = new Date()
-            periodText = now.toLocaleString(i18n.language === 'pl' ? 'pl-PL' : 'en-US', { month: 'long', year: 'numeric' })
-            periodText = periodText.charAt(0).toUpperCase() + periodText.slice(1)
+            const year = now.getFullYear()
+            const monthNamesPl = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień']
+            const monthNamesEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+            const monthName = i18n.language === 'pl' ? monthNamesPl[now.getMonth()] : monthNamesEn[now.getMonth()]
+            periodText = `${monthName} ${year}`
         } else if (dashboardMode === 'cumulative') {
             periodText = t('timeTracker.cumulative', 'Skumulowany')
         } else if (dashboardMode === 'custom') {
-            periodText = `${dateFrom || '...'} - ${dateTo || '...'}`
+            periodText = `${dateFrom || ''} - ${dateTo || ''}`
+            if (periodText === '- ') periodText = t('timeTracker.allTime', 'Cały czas')
         }
 
         doc.setFontSize(11)

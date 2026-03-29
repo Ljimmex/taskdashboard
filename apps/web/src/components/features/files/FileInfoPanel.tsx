@@ -126,10 +126,10 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} `}
+                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-card)] border border-white/5 rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} `}
             >
                 {/* Header */}
-                <div className="flex-none p-6 border-b border-[var(--app-divider)] flex items-center justify-between">
+                <div className="flex-none p-6 border-b border-white/5 flex items-center justify-between">
                     <h2 className="text-lg font-bold text-[var(--app-text-primary)]">{t('files.properties.details')}</h2>
                     <button
                         onClick={onClose}
@@ -192,7 +192,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                     </div>
 
                     {/* File Properties */}
-                    <div className="pt-4 border-t border-[var(--app-divider)] space-y-3">
+                    <div className="pt-4 border-t border-white/5 space-y-3">
                         <h4 className="uppercase text-xs font-bold text-[var(--app-text-muted)] tracking-wider mb-4">{t('files.properties.section_title')}</h4>
 
                         <div className="flex items-center justify-between text-sm py-1">
