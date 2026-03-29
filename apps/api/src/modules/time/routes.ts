@@ -414,9 +414,6 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         const taskIds = projectTasks.map(t => t.id)
 
         // --- FETCH ALL APPROVED ENTRIES ---
-        // Includes: 
-        // 1. Entries associated with project tasks
-        // 2. Standalone meetings of the same workspace (shared across projects in that workspace)
         const allApprovedEntries = await db.select().from(timeEntries).where(
             and(
                 or(
@@ -453,6 +450,13 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             })
         }
 
+        // Fetch project mapping for all users involved to get CURRENT roles
+        const projectMembersList = await db.select({
+            userId: projectMembers.userId,
+            role: projectMembers.role,
+        }).from(projectMembers).where(eq(projectMembers.projectId, projectId))
+        const memberRoleMap = Object.fromEntries(projectMembersList.map(m => [m.userId, m.role]))
+
         // --- CALCULATE USER TOTAL APPROVED HOURS (GLOBAL FOR 200H CHECK) ---
         const userTotalApprovedMinutes: Record<string, number> = {}
         for (const entry of allApprovedEntries) {
@@ -460,16 +464,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             userTotalApprovedMinutes[entry.userId] = (userTotalApprovedMinutes[entry.userId] || 0) + effectiveDuration
         }
 
-        // Get all unique project members (the base list)
-        const projectMembersList = await db.select({
-            userId: projectMembers.userId,
-            role: projectMembers.role,
-        }).from(projectMembers).where(eq(projectMembers.projectId, projectId))
-
         const allProjectUserIds = projectMembersList.map(m => m.userId)
-        const memberRoleMap = Object.fromEntries(projectMembersList.map(m => [m.userId, m.role]))
-
-        // Final list of users to display (either specific target or all project members)
         const displayUserIds = targetUserId ? [targetUserId] : allProjectUserIds
 
         const userDetails = displayUserIds.length > 0
@@ -484,14 +479,16 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         for (const entry of targetEntries) {
             const effectiveDuration = entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
             const timeHours = effectiveDuration / 60
-            const roleFactor = ROLE_COEFFICIENTS[entry.projectRole] ?? 1.0
+
+            // PRIORITY: Use current project role if available, fallback to stored role
+            const currentResolvedRole = memberRoleMap[entry.userId] || entry.projectRole || 'participant'
+            const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
             const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
 
-            // points = (duration * 0.5) / 60 * role * diff + bonus
             const points = timeHours * roleFactor * diffFactor + (entry.bonusPoints || 0)
 
             if (!userStats[entry.userId]) {
-                userStats[entry.userId] = { totalMinutes: 0, pw: 0, bonus: 0, role: entry.projectRole, averageDifficulty: 0, taskCount: 0 }
+                userStats[entry.userId] = { totalMinutes: 0, pw: 0, bonus: 0, role: currentResolvedRole, averageDifficulty: 0, taskCount: 0 }
             }
             const stats = userStats[entry.userId]
 
@@ -511,7 +508,8 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         const poolUserStats: Record<string, number> = {}
         for (const entry of allApprovedEntries) {
             const effectiveDuration = entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
-            const roleFactor = ROLE_COEFFICIENTS[entry.projectRole] ?? 1.0
+            const currentResolvedRole = memberRoleMap[entry.userId] || entry.projectRole || 'participant'
+            const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
             const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
             const points = (effectiveDuration / 60) * roleFactor * diffFactor + (entry.bonusPoints || 0)
             poolUserStats[entry.userId] = (poolUserStats[entry.userId] || 0) + points
@@ -524,7 +522,8 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         }
 
         const participants = displayUserIds.map(uId => {
-            const data = userStats[uId] || { totalMinutes: 0, pw: 0, bonus: 0, role: memberRoleMap[uId] || 'participant', averageDifficulty: 0, taskCount: 0 }
+            const currentRole = memberRoleMap[uId] || 'participant'
+            const data = userStats[uId] || { totalMinutes: 0, pw: 0, bonus: 0, role: currentRole, averageDifficulty: 0, taskCount: 0 }
             const approvedHoursTotal = (userTotalApprovedMinutes[uId] || 0) / 60
             const hasThreshold = approvedHoursTotal >= hourThreshold
             let sharePercent = 0
@@ -536,7 +535,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 userId: uId,
                 name: userMap[uId]?.name || 'Unknown',
                 image: userMap[uId]?.image || null,
-                role: data.role,
+                role: currentRole, // Use current role here
                 totalMinutes: data.totalMinutes,
                 totalHours: Math.round(data.totalMinutes / 60 * 100) / 100,
                 averageDifficulty: data.taskCount > 0 ? (Math.round((data.averageDifficulty / data.taskCount) * 100) / 100) : 0,
@@ -584,7 +583,10 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
 
             const mappedRecent = recent.map(r => {
                 const effective = r.entryType === 'meeting' ? r.durationMinutes * 0.5 : r.durationMinutes
-                const points = Math.round(((effective / 60) * (ROLE_COEFFICIENTS[r.projectRole] ?? 1.0) * (DIFFICULTY_COEFFICIENTS[r.difficultyLevel] ?? 1.0) + (r.bonusPoints || 0)) * 100) / 100
+                const currentResolvedRole = memberRoleMap[r.userId] || r.projectRole || 'participant'
+                const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
+                const diffFactor = DIFFICULTY_COEFFICIENTS[r.difficultyLevel] ?? 1.0
+                const points = Math.round(((effective / 60) * roleFactor * diffFactor + (r.bonusPoints || 0)) * 100) / 100
 
                 return {
                     id: r.id,
@@ -652,6 +654,12 @@ timeRoutes.get('/project/:projectId', async (c) => {
 
         const taskMap = Object.fromEntries(projectTasks.map(t => [t.id, t]))
 
+        const projectMembersList = await db.select({
+            userId: projectMembers.userId,
+            role: projectMembers.role,
+        }).from(projectMembers).where(eq(projectMembers.projectId, projectId))
+        const memberRoleMap = Object.fromEntries(projectMembersList.map(m => [m.userId, m.role]))
+
         // Get all time entries for these tasks + standalone meetings of the same workspace
         const entries = await db.select().from(timeEntries)
             .where(
@@ -685,7 +693,8 @@ timeRoutes.get('/project/:projectId', async (c) => {
 
         const result = entries.map(e => {
             const effective = e.entryType === 'meeting' ? e.durationMinutes * 0.5 : e.durationMinutes
-            const roleFactor = ROLE_COEFFICIENTS[e.projectRole] ?? 1.0
+            const currentResolvedRole = memberRoleMap[e.userId] || e.projectRole || 'participant'
+            const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
             const diffFactor = DIFFICULTY_COEFFICIENTS[e.difficultyLevel] ?? 1.0
             const points = Math.round(((effective / 60) * roleFactor * diffFactor + (e.bonusPoints || 0)) * 100) / 100
 
@@ -694,6 +703,7 @@ timeRoutes.get('/project/:projectId', async (c) => {
                 durationMinutes: effective,
                 rawDurationMinutes: e.durationMinutes,
                 points,
+                projectRole: currentResolvedRole, // Use current role
                 taskTitle: (e.taskId ? taskMap[e.taskId]?.title : 'Meetings & Calendar Events') || 'General',
                 subtaskTitle: e.subtaskId ? subtaskMap[e.subtaskId]?.title || null : null,
                 userName: userMap[e.userId]?.name || 'Unknown',
@@ -711,138 +721,162 @@ timeRoutes.get('/project/:projectId', async (c) => {
 // POST /api/time - Create time entry (requires timeTracking.create permission)
 timeRoutes.post('/', zValidator('json', createTimeEntrySchema), async (c) => {
     try {
-        const user = c.get('user')
-        const userId = user.id
+        const currentUser = c.get('user')
         const body = c.req.valid('json')
+        const targetUserId = body.userId || currentUser.id
 
-        // Resolve workspace and team context
-        let teamId: string | null = null
+        // Resolve context for the CURRENT user (to check permissions)
+        let currentUserWsRole: string | null = null
+        let currentUserTeamLevel: string | null = null
         let wsId: string | null = null
-        let wsRole: string | null = null
-        let teamLevel: string | null = null
 
-        // 1. Resolve workspace context if slug is provided
         if (body.workspaceSlug) {
             const [workspace] = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.slug, body.workspaceSlug)).limit(1)
             if (workspace) {
                 wsId = workspace.id
                 const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                    .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, wsId))).limit(1)
-                wsRole = wsMember?.role || null
+                    .where(and(eq(workspaceMembers.userId, currentUser.id), eq(workspaceMembers.workspaceId, wsId))).limit(1)
+                currentUserWsRole = wsMember?.role || null
             }
         }
 
-        // 2. Resolve task/team context if taskId is provided
         if (body.taskId && body.taskId !== 'standalone-meetings') {
-            teamId = await getTeamIdFromTask(body.taskId)
+            const teamId = await getTeamIdFromTask(body.taskId)
             if (teamId) {
-                teamLevel = await getUserTeamLevel(userId, teamId)
-
-                // If we didn't get wsRole from slug, try getting it from task's workspace
-                if (!wsRole) {
-                    wsRole = await getWorkspaceRoleFromTask(userId, body.taskId)
+                currentUserTeamLevel = await getUserTeamLevel(currentUser.id, teamId)
+                if (!currentUserWsRole) {
+                    currentUserWsRole = await getWorkspaceRoleFromTask(currentUser.id, body.taskId)
                 }
             }
         }
 
-        if (!wsRole && !teamLevel) {
-            return c.json({ success: false, error: 'Unauthorized or context not found' }, 403)
+        if (!currentUserWsRole && !currentUserTeamLevel) {
+            return c.json({ success: false, error: 'Unauthorized context' }, 403)
         }
 
-        if (!canCreateTimeEntries(wsRole as any, teamLevel as any)) {
-            return c.json({ success: false, error: 'Unauthorized to create time entries' }, 403)
+        // Basic permission check for current user
+        if (!canCreateTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
         }
 
-        // Check if trying to create an entry for someone else
-        if (body.userId && body.userId !== userId) {
-            if (!canManageTimeEntries(wsRole as any, teamLevel as any)) {
-                return c.json({ success: false, error: 'Unauthorized to create time entries for other users' }, 403)
+        // If adding for someone else, need manage permission
+        if (targetUserId !== currentUser.id) {
+            if (!canManageTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
+                return c.json({ success: false, error: 'Unauthorized to create entries for others' }, 403)
+            }
+        }
+
+        // NOW: Resolve role for the TARGET user (the entry owner)
+        let targetWsRole: string | null = null
+        let targetTeamLevel: string | null = null
+
+        if (wsId) {
+            const [targetWsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
+                .where(and(eq(workspaceMembers.userId, targetUserId), eq(workspaceMembers.workspaceId, wsId))).limit(1)
+            targetWsRole = targetWsMember?.role || null
+        }
+        if (body.taskId && body.taskId !== 'standalone-meetings') {
+            const teamId = await getTeamIdFromTask(body.taskId)
+            if (teamId) {
+                targetTeamLevel = await getUserTeamLevel(targetUserId, teamId)
+                if (!targetWsRole) {
+                    targetWsRole = await getWorkspaceRoleFromTask(targetUserId, body.taskId)
+                }
             }
         }
 
         const newEntry = {
             taskId: (body.taskId === 'standalone-meetings' || !body.taskId) ? null : body.taskId,
             subtaskId: body.subtaskId || null,
-            userId: body.userId || userId,
+            userId: targetUserId,
             workspaceId: wsId,
             description: body.description || null,
             durationMinutes: body.durationMinutes,
             startedAt: new Date(body.startedAt),
             endedAt: body.endedAt ? new Date(body.endedAt) : null,
             entryType: body.entryType || 'task',
-            projectRole: resolveProjectRole(wsRole as any, teamLevel as any),
+            projectRole: resolveProjectRole(targetWsRole as any, targetTeamLevel as any),
             approvalStatus: 'pending'
         }
         const [created] = await db.insert(timeEntries).values(newEntry).returning()
         return c.json({ success: true, data: created }, 201)
     } catch (error: any) {
         console.error('Error creating time entry:', error)
-        return c.json({ success: false, error: 'Failed to create time entry', details: error.message }, 500)
+        return c.json({ success: false, error: 'Failed to create time entry' }, 500)
     }
 })
 
 // POST /api/time/start - Start timer
 timeRoutes.post('/start', zValidator('json', startTimeEntrySchema), async (c) => {
     try {
-        const user = c.get('user')
-        const userId = user.id
+        const currentUser = c.get('user')
         const body = c.req.valid('json')
+        const targetUserId = body.userId || currentUser.id
 
-        // Resolve workspace and team context
-        let teamId: string | null = null
+        // Resolve context for CURRENT user
+        let currentUserWsRole: string | null = null
+        let currentUserTeamLevel: string | null = null
         let wsId: string | null = null
-        let wsRole: string | null = null
-        let teamLevel: string | null = null
 
-        // 1. Resolve workspace context if slug is provided
         if (body.workspaceSlug) {
             const [workspace] = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.slug, body.workspaceSlug)).limit(1)
             if (workspace) {
                 wsId = workspace.id
                 const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                    .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, wsId))).limit(1)
-                wsRole = wsMember?.role || null
+                    .where(and(eq(workspaceMembers.userId, currentUser.id), eq(workspaceMembers.workspaceId, wsId))).limit(1)
+                currentUserWsRole = wsMember?.role || null
             }
         }
 
-        // 2. Resolve task/team context if taskId is provided
         if (body.taskId && body.taskId !== 'standalone-meetings') {
-            teamId = await getTeamIdFromTask(body.taskId)
+            const teamId = await getTeamIdFromTask(body.taskId)
             if (teamId) {
-                teamLevel = await getUserTeamLevel(userId, teamId)
-
-                // If we didn't get wsRole from slug, try getting it from task's workspace
-                if (!wsRole) {
-                    wsRole = await getWorkspaceRoleFromTask(userId, body.taskId)
+                currentUserTeamLevel = await getUserTeamLevel(currentUser.id, teamId)
+                if (!currentUserWsRole) {
+                    currentUserWsRole = await getWorkspaceRoleFromTask(currentUser.id, body.taskId)
                 }
             }
         }
 
-        if (!wsRole && !teamLevel) {
-            return c.json({ success: false, error: 'Unauthorized or context not found' }, 403)
+        if (!canCreateTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
         }
 
-        if (!canCreateTimeEntries(wsRole as any, teamLevel as any)) {
-            return c.json({ success: false, error: 'Unauthorized to track time' }, 403)
+        // TARGET user context
+        let targetWsRole: string | null = null
+        let targetTeamLevel: string | null = null
+        if (wsId) {
+            const [targetWsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
+                .where(and(eq(workspaceMembers.userId, targetUserId), eq(workspaceMembers.workspaceId, wsId))).limit(1)
+            targetWsRole = targetWsMember?.role || null
+        }
+        if (body.taskId && body.taskId !== 'standalone-meetings') {
+            const teamId = await getTeamIdFromTask(body.taskId)
+            if (teamId) {
+                targetTeamLevel = await getUserTeamLevel(targetUserId, teamId)
+                if (!targetWsRole) {
+                    targetWsRole = await getWorkspaceRoleFromTask(targetUserId, body.taskId)
+                }
+            }
         }
 
         const newEntry = {
             taskId: (body.taskId === 'standalone-meetings' || !body.taskId) ? null : body.taskId,
             subtaskId: body.subtaskId || null,
-            userId: body.userId || userId,
+            userId: targetUserId,
             workspaceId: wsId,
             description: body.description || null,
             durationMinutes: 0,
             startedAt: new Date(),
             entryType: body.entryType || 'task',
-            projectRole: resolveProjectRole(wsRole as any, teamLevel as any),
+            projectRole: resolveProjectRole(targetWsRole as any, targetTeamLevel as any),
             approvalStatus: 'pending'
         }
         const [created] = await db.insert(timeEntries).values(newEntry).returning()
         return c.json({ success: true, data: created }, 201)
     } catch (error: any) {
         console.error('Error starting timer:', error)
-        return c.json({ success: false, error: 'Failed to start timer', details: error.message }, 500)
+        return c.json({ success: false, error: 'Failed to start timer' }, 500)
     }
 })
 

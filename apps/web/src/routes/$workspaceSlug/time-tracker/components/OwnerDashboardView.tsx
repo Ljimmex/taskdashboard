@@ -8,7 +8,8 @@ import {
 } from 'recharts'
 import {
     PieChart as PieChartIcon, Download, AlertCircle,
-    Search, FileSpreadsheet, ChevronDown, Users
+    Search, FileSpreadsheet, ChevronDown, Users,
+    ChevronLeft, ChevronRight
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -26,6 +27,9 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
     const [dateFrom, setDateFrom] = useState('')
     const [dateTo, setDateTo] = useState('')
 
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 5
+
     const [teamDropdownOpen, setTeamDropdownOpen] = useState(false)
     const teamRef = useRef<HTMLDivElement>(null)
 
@@ -38,6 +42,11 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
+
+    // Reset strony po zmianie filtrów
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchTerm, teamFilter])
 
     // Fetch teams for filtering
     const { data: teamsData } = useQuery({
@@ -83,12 +92,9 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
     const hourThreshold = revshareData?.data?.hourThreshold || 200
     const entries = entriesData?.data || []
 
-    // ----------------------------------------------------
-    // LOGIKA: Filtrowanie
-    // ----------------------------------------------------
-
     const filteredParticipants = useMemo(() => {
         const selectedTeam = teamFilter === 'ALL' ? null : teams.find((t: any) => t.id === teamFilter)
+        // Team members might be an array of objects with userId
         const teamMemberIds = selectedTeam ? selectedTeam.members.map((m: any) => m.userId) : null
 
         return participants.filter((p: any) => {
@@ -97,6 +103,12 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
             return matchesSearch && matchesTeam
         })
     }, [participants, searchTerm, teamFilter, teams])
+
+    const totalPages = Math.ceil(filteredParticipants.length / itemsPerPage)
+    const paginatedParticipants = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage
+        return filteredParticipants.slice(start, start + itemsPerPage)
+    }, [filteredParticipants, currentPage, itemsPerPage])
 
     // ----------------------------------------------------
     // LOGIKA: Przetwarzanie danych dla wykresów
@@ -526,7 +538,7 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-[var(--app-divider)]">
-                                        {filteredParticipants.map((p: any) => (
+                                        {paginatedParticipants.map((p: any) => (
                                             <tr key={p.userId} className="hover:bg-[var(--app-bg-elevated)] transition-colors duration-200 group">
                                                 <td className="py-3 px-4">
                                                     <div className="flex items-center gap-3">
@@ -561,6 +573,45 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between mt-8 pt-6 border-t border-[var(--app-divider)]">
+                                <span className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-widest">
+                                    {t('common.page', 'Strona')} {currentPage} {t('common.of', 'z')} {totalPages}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setCurrentPage(curr => Math.max(1, curr - 1))}
+                                        disabled={currentPage === 1}
+                                        className="p-2 rounded-xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--app-bg-card)] transition-all"
+                                    >
+                                        <ChevronLeft size={18} />
+                                    </button>
+                                    <div className="flex items-center gap-1 mx-2">
+                                        {Array.from({ length: totalPages }).map((_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setCurrentPage(i + 1)}
+                                                className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${currentPage === i + 1
+                                                    ? 'bg-[var(--app-accent)] text-white shadow-lg shadow-blue-500/20'
+                                                    : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
+                                                    }`}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <button
+                                        onClick={() => setCurrentPage(curr => Math.min(totalPages, curr + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="p-2 rounded-xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--app-bg-card)] transition-all"
+                                    >
+                                        <ChevronRight size={18} />
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
