@@ -28,11 +28,22 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
 
     // Fetch data
     const { data: revshareData, isLoading: revshareLoading } = useQuery({
-        queryKey: ['revshare', selectedProjectId, dashboardMode],
-        queryFn: () => apiFetchJson<{ success: boolean; data: { participants: any[]; totalPW: number } }>(
-            `/api/time/contribution/${selectedProjectId}${dashboardMode === 'monthly' ? '/monthly' : '/cumulative'}`
-        ),
+        queryKey: ['revshare', selectedProjectId, dashboardMode, dateFrom, dateTo],
+        queryFn: () => {
+            let url = `/api/time/contribution/${selectedProjectId}`
+            if (dashboardMode === 'monthly') {
+                const now = new Date()
+                const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+                url += `/monthly?month=${monthStr}`
+            } else if (dashboardMode === 'cumulative') {
+                url += `/cumulative`
+            } else if (dashboardMode === 'custom') {
+                url += `/custom?startDate=${dateFrom}&endDate=${dateTo}`
+            }
+            return apiFetchJson<{ success: boolean; data: { participants: any[]; totalPW: number; totalProjectPW: number; hourThreshold: number } }>(url)
+        },
         enabled: !!selectedProjectId,
+        refetchInterval: 5000,
     })
 
     const { data: entriesData } = useQuery({
@@ -43,6 +54,8 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
 
     const participants = revshareData?.data?.participants || []
     const totalPW = revshareData?.data?.totalPW || 0
+    const totalProjectPW = revshareData?.data?.totalProjectPW || 0
+    const hourThreshold = revshareData?.data?.hourThreshold || 200
     const entries = entriesData?.data || []
 
     // ----------------------------------------------------
@@ -160,11 +173,16 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
 
     const exportToPDF = async () => {
         const doc = new jsPDF()
+        // Load Roboto font for Polish characters
         try {
             const fontRes = await fetch("https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf")
             const buffer = await fontRes.arrayBuffer()
-            const fontBase64 = btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''))
-            doc.addFileToVFS("Roboto-Regular.ttf", fontBase64)
+            const binary = new Uint8Array(buffer)
+            let binaryString = ""
+            for (let i = 0; i < binary.length; i++) {
+                binaryString += String.fromCharCode(binary[i])
+            }
+            doc.addFileToVFS("Roboto-Regular.ttf", btoa(binaryString))
             doc.addFont("Roboto-Regular.ttf", "Roboto", "normal")
             doc.setFont("Roboto")
         } catch (e) {
@@ -173,24 +191,40 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
 
         doc.setFontSize(18)
         doc.text('Raport Revenue Share', 14, 22)
+
         doc.setFontSize(11)
         doc.setTextColor(100)
-        doc.text(`Całkowite Punkty Wkładu (PW): ${totalPW}`, 14, 30)
+        doc.text(`Projekt: ${activeProjectName}`, 14, 30)
+        doc.text(`Okres: ${dashboardMode === 'monthly' ? 'Miesięczny' : dashboardMode === 'cumulative' ? 'Skumulowany' : 'Własny'}`, 14, 36)
+        doc.text(`Łączne PW Projektu: ${totalProjectPW}`, 14, 42)
+        doc.text(`Pula PW (Kwalifikująca): ${totalPW}`, 14, 48)
+        doc.text(`Próg kwalifikacji: ${hourThreshold}h`, 14, 54)
 
-        const tableColumn = ['Członek zespołu', 'Rola', 'Godziny', 'Punkty (PW)', 'Udział (%)', 'Kwalifikacja']
+        const tableColumn = ['Członek zespołu', 'Rola', 'Godziny', 'Punkty (PW)', 'Udział (%)', 'Status']
         const tableRows = filteredParticipants.map((p: any) => [
-            p.name, p.role.replace('_', ' ').toUpperCase(), `${p.totalHours}h`, p.contributionPoints.toString(), `${p.sharePercent}%`, p.has200h ? 'TAK' : 'NIE'
+            p.name,
+            p.role.replace('_', ' ').toUpperCase(),
+            formatHours(p.totalHours),
+            p.contributionPoints.toString(),
+            `${p.hasThreshold ? p.sharePercent : 0}%`,
+            p.hasThreshold ? 'ZAKWALIFIKOWANY' : 'W TRAKCIE'
         ])
 
         autoTable(doc, {
-            startY: 40,
+            startY: 62,
             head: [tableColumn],
             body: tableRows,
             theme: 'grid',
             headStyles: { fillColor: [59, 130, 246], font: "Roboto", fontStyle: "normal" },
-            styles: { fontSize: 10, cellPadding: 5, font: "Roboto", fontStyle: "normal" }
+            styles: { fontSize: 9, cellPadding: 3, font: "Roboto", fontStyle: "normal" },
+            columnStyles: {
+                2: { halign: 'right' },
+                3: { halign: 'right' },
+                4: { halign: 'right' },
+                5: { halign: 'center', cellWidth: 35 }
+            }
         })
-        doc.save(`revshare_raport.pdf`)
+        doc.save(`raport_revshare_${activeProjectName.replace(/\s+/g, '_')}.pdf`)
     }
 
     // Kolory do wykresów
@@ -245,10 +279,28 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
             {selectedProjectId && !revshareLoading && (
                 <>
                     {/* Summary Stats Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
                         <StatCard icon={<UsersIcon />} label={t('timeTracker.participantsCount', 'Uczestnicy')} value={participants.length} theme="blue" />
-                        <StatCard icon={<PointsIcon />} label={t('timeTracker.approvedPoints', 'Zatwierdzone Punkty (PW)')} value={typeof totalPW === 'number' ? (totalPW % 1 === 0 ? totalPW : totalPW.toFixed(2)) : totalPW} theme="emerald" />
-                        <StatCard icon={<HoursIcon />} label={t('timeTracker.hoursWorked', 'Przepracowane Godziny')} value={formatHours(participants.reduce((acc: number, p: any) => acc + p.totalHours, 0))} theme="amber" />
+                        <StatCard
+                            icon={<PointsIcon />}
+                            label={t('timeTracker.approvedPoints', 'Zatwierdzone Punkty (PW)')}
+                            value={typeof totalProjectPW === 'number' ? (totalProjectPW % 1 === 0 ? totalProjectPW : totalProjectPW.toFixed(2)) : totalProjectPW}
+                            theme="emerald"
+                            tooltip={t('timeTracker.totalProjectPWTooltip', 'Suma wszystkich zatwierdzonych punktów w wybranym okresie.')}
+                        />
+                        <StatCard
+                            icon={<BreakdownIcon />}
+                            label={t('timeTracker.revsharePool', 'Pula RevShare (Qualifying)')}
+                            value={typeof totalPW === 'number' ? (totalPW % 1 === 0 ? totalPW : totalPW.toFixed(2)) : totalPW}
+                            theme="blue"
+                            tooltip={t('timeTracker.revsharePoolTooltip', 'Suma punktów osób, które przekroczyły próg {{threshold}}h.', { threshold: hourThreshold })}
+                        />
+                        <StatCard
+                            icon={<HoursIcon />}
+                            label={t('timeTracker.hoursWorked', 'Przepracowane Godziny')}
+                            value={formatHours(participants.reduce((acc: number, p: any) => acc + p.totalHours, 0))}
+                            theme="amber"
+                        />
                     </div>
 
                     {/* NEW: Analytics Row (Timeline + Role Breakdown) */}
@@ -391,20 +443,22 @@ export function OwnerDashboardView({ selectedProjectId, projects }: { selectedPr
                                                         <div className="w-24 h-2 rounded-full bg-[var(--app-bg-elevated)] overflow-hidden border border-[var(--app-border)]/50">
                                                             <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 relative" style={{ width: `${Math.min(p.sharePercent, 100)}%` }}></div>
                                                         </div>
-                                                        <span className="text-sm font-bold text-[var(--app-text-primary)] min-w-[3rem] text-right">{p.has200h ? `${p.sharePercent}%` : '0%'}</span>
+                                                        <span className="text-sm font-bold text-[var(--app-text-primary)] min-w-[3rem] text-right">{p.hasThreshold ? `${p.sharePercent}%` : '0%'}</span>
                                                     </div>
                                                 </td>
                                                 <td className="py-3 px-4 text-right">
-                                                    {p.has200h ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] uppercase font-bold border border-emerald-500/20">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Zakwalifikowany
+                                                    {p.hasThreshold ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-500 bg-transparent text-[10px] uppercase font-bold tracking-wide">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {t('timeTracker.qualified', 'Zakwalifikowany')}
                                                         </span>
                                                     ) : (
                                                         <div className="flex flex-col items-end gap-1">
-                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-500 text-[10px] uppercase font-bold border border-amber-500/20">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> W Trakcie
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-500/30 text-amber-500 bg-transparent text-[10px] uppercase font-bold tracking-wide">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> {t('timeTracker.pending', 'W Trakcie')}
                                                             </span>
-                                                            <span className="text-[10px] text-[var(--app-text-muted)] font-bold">{formatHours(p.approvedBaseHoursTotal)} / 200h</span>
+                                                            <span className="text-[10px] text-[var(--app-text-muted)] font-black mr-2 opacity-60">
+                                                                {formatHours(p.approvedBaseHoursTotal)} / {hourThreshold}h
+                                                            </span>
                                                         </div>
                                                     )}
                                                 </td>
@@ -576,7 +630,7 @@ const TableIcon = () => (
     </svg>
 )
 
-function StatCard({ icon, label, value, theme }: { icon: React.ReactNode, label: string, value: string | number, theme: 'blue' | 'emerald' | 'amber' }) {
+function StatCard({ icon, label, value, theme, tooltip }: { icon: React.ReactNode, label: string, value: string | number, theme: 'blue' | 'emerald' | 'amber', tooltip?: string }) {
     const themeStyles = {
         blue: { bg: 'bg-blue-500/10', text: 'text-blue-500', glow: 'group-hover:bg-blue-500/5', border: 'hover:border-blue-500/30' },
         emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-500', glow: 'group-hover:bg-emerald-500/5', border: 'hover:border-emerald-500/30' },
@@ -585,7 +639,7 @@ function StatCard({ icon, label, value, theme }: { icon: React.ReactNode, label:
     const currentTheme = themeStyles[theme]
 
     return (
-        <div className={`relative overflow-hidden bg-[var(--app-bg-card)] p-6 rounded-3xl border border-[var(--app-border)] transition-all duration-300 group shadow-sm hover:shadow-md`}>
+        <div className={`relative overflow-hidden bg-[var(--app-bg-card)] p-6 rounded-3xl border border-[var(--app-border)] transition-all duration-300 group shadow-sm hover:shadow-md ${currentTheme.border}`} title={tooltip}>
             <div className={`absolute inset-0 transition-colors duration-300 ${currentTheme.glow}`} />
             <div className="relative z-10">
                 <div className="flex items-center gap-4 mb-5">

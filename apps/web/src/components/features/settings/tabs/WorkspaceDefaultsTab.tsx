@@ -195,6 +195,45 @@ export function WorkspaceDefaultsTab({ workspace }: WorkspaceDefaultsTabProps) {
                 </div>
             </div>
 
+            {/* Time Tracker Settings */}
+            <div className="bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h4 className="font-semibold text-[var(--app-text-primary)] text-lg">{t('settings.organization.defaults.time_tracker_title', 'Ustawienia Time Tracker')}</h4>
+                        <p className="text-sm text-[var(--app-text-secondary)]">{t('settings.organization.defaults.time_tracker_subtitle', 'Skonfiguruj parametry rozliczeń i RevShare.')}</p>
+                    </div>
+                </div>
+                <div className="space-y-6">
+                    <div className="flex flex-col gap-2 max-w-sm">
+                        <label className="text-sm font-medium text-[var(--app-text-primary)]">
+                            {t('settings.organization.defaults.revshare_threshold', 'Próg kwalifikacji RevShare (Godziny)')}
+                        </label>
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="number"
+                                className="w-32 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-lg px-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
+                                value={workspace?.settings?.revshareHourThreshold || 200}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value, 10)
+                                    if (!isNaN(val)) {
+                                        updateDefaultsMutation.mutate({
+                                            settings: {
+                                                ...workspace.settings,
+                                                revshareHourThreshold: val
+                                            }
+                                        } as any)
+                                    }
+                                }}
+                            />
+                            <span className="text-sm font-bold text-[var(--app-text-muted)]">h</span>
+                        </div>
+                        <p className="text-xs text-[var(--app-text-muted)] mt-1">
+                            {t('settings.organization.defaults.revshare_threshold_hint', 'Minimalna liczba zatwierdzonych godzin potrzebna do odblokowania udziału w RevShare.')}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* Priorities Management */}
             <div className="bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-6">

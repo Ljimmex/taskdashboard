@@ -654,3 +654,18 @@ input:-webkit-autofill:active {
   line-height: 1;
   user-select: none;
 }
+
+/* Toast Progress Animation */
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
+}
+
+.animate-toast-progress {
+  animation: toast-progress linear forwards;
+}

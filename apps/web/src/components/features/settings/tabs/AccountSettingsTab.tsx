@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { toast } from '@/hooks/useToast'
 
 // Icons
 // import { Trash2, Upload } from 'lucide-react' 
@@ -80,10 +81,9 @@ export function AccountSettingsTab() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['user', 'me'] })
-            // Ideally invalidate session too
-            alert(t('settings.account.toast.success'))
+            toast.success(t('settings.account.toast.success'))
         },
-        onError: () => alert(t('settings.account.toast.error'))
+        onError: () => toast.error(t('settings.account.toast.error'))
     })
 
     const uploadAvatarMutation = useMutation({
@@ -101,7 +101,7 @@ export function AccountSettingsTab() {
         },
         onError: () => {
             setIsUploading(false)
-            alert(t('settings.account.toast.avatarError'))
+            toast.error(t('settings.account.toast.avatarError'))
         }
     })
 

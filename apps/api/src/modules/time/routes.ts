@@ -346,6 +346,16 @@ timeRoutes.get('/contribution/:projectId/cumulative', async (c) => {
     return handleContribution(c, 'cumulative')
 })
 
+// GET /api/time/contribution/:projectId/custom - Custom date range
+timeRoutes.get('/contribution/:projectId/custom', async (c) => {
+    return handleContribution(c, 'custom')
+})
+
+// GET /api/time/contribution/:projectId - Base route (defaults to cumulative)
+timeRoutes.get('/contribution/:projectId', async (c) => {
+    return handleContribution(c, 'cumulative')
+})
+
 // GET /api/time/contribution/:projectId/member - Single member view
 timeRoutes.get('/contribution/:projectId/member', async (c) => {
     const userId = c.req.query('userId')
@@ -356,7 +366,7 @@ timeRoutes.get('/contribution/:projectId/member', async (c) => {
 async function handleContribution(c: any, type: string, targetUserId?: string) {
     try {
         const projectId = c.req.param('projectId')
-        const { month } = c.req.query() // month='YYYY-MM'
+        const { month, startDate, endDate } = c.req.query() // month='YYYY-MM', or startDate/endDate for custom
 
         // Get project and workspace
         const [project] = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1)
@@ -368,15 +378,18 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         const [workspace] = await db.select().from(workspaces).where(eq(workspaces.id, team.workspaceId)).limit(1)
         if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
 
+        // Get threshold from settings (default 200)
+        const hourThreshold = workspace.settings?.revshareHourThreshold || 200
+
         // Get all tasks in this project
         const projectTasks = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.projectId, projectId))
         const taskIds = projectTasks.map(t => t.id)
 
         if (taskIds.length === 0) {
-            return c.json({ success: true, data: { participants: [], totalPW: 0 } })
+            return c.json({ success: true, data: { participants: [], totalPW: 0, totalProjectPW: 0, hourThreshold } })
         }
 
-        // --- FETCH ALL APPROVED ENTRIES TO CALCULATE 200H TOTAL ---
+        // --- FETCH ALL APPROVED ENTRIES ---
         const allApprovedEntries = await db.select().from(timeEntries).where(
             and(
                 inArray(timeEntries.taskId, taskIds),
@@ -384,12 +397,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             )
         )
 
-        const userTotalApprovedMinutes: Record<string, number> = {}
-        for (const entry of allApprovedEntries) {
-            userTotalApprovedMinutes[entry.userId] = (userTotalApprovedMinutes[entry.userId] || 0) + entry.durationMinutes
-        }
-
-        // --- FILTER ENTRIES ---
+        // --- FILTER ENTRIES BY RANGE ---
         let targetEntries = allApprovedEntries
         if (type === 'monthly' && month) {
             const [yearStr, monthStr] = month.split('-')
@@ -401,12 +409,26 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 const d = new Date(e.startedAt)
                 return d >= startOfMonth && d <= endOfMonth
             })
+        } else if (type === 'custom' && startDate && endDate) {
+            const start = new Date(startDate)
+            const end = new Date(endDate)
+            end.setHours(23, 59, 59, 999)
+            targetEntries = allApprovedEntries.filter(e => {
+                const d = new Date(e.startedAt)
+                return d >= start && d <= end
+            })
         }
 
-        // Get all unique user IDs
-        const userIds = targetUserId ? [targetUserId] : [...new Set(targetEntries.map(e => e.userId))]
-        if (userIds.length === 0) {
-            return c.json({ success: true, data: { participants: [], totalPW: 0 } })
+        // --- CALCULATE USER TOTAL APPROVED HOURS (GLOBAL FOR 200H CHECK) ---
+        const userTotalApprovedMinutes: Record<string, number> = {}
+        for (const entry of allApprovedEntries) {
+            userTotalApprovedMinutes[entry.userId] = (userTotalApprovedMinutes[entry.userId] || 0) + entry.durationMinutes
+        }
+
+        // Get all unique user IDs in this range
+        const rangeUserIds = targetUserId ? [targetUserId] : [...new Set(targetEntries.map(e => e.userId))]
+        if (rangeUserIds.length === 0) {
+            return c.json({ success: true, data: { participants: [], totalPW: 0, totalProjectPW: 0, hourThreshold } })
         }
 
         // Get user details
@@ -414,40 +436,42 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             id: users.id,
             name: users.name,
             image: users.image,
-        }).from(users).where(inArray(users.id, userIds))
+        }).from(users).where(inArray(users.id, rangeUserIds))
         const userMap = Object.fromEntries(userDetails.map(u => [u.id, u]))
 
-        // Calculate Stats
+        // Calculate Stats for current range AND total project PW
         const userStats: Record<string, any> = {}
+        let totalProjectPW = 0
+
         for (const entry of targetEntries) {
-            if (targetUserId && entry.userId !== targetUserId) continue
+            // Stats for summary
             if (!userStats[entry.userId]) {
                 userStats[entry.userId] = { totalMinutes: 0, pw: 0, bonus: 0, role: entry.projectRole, averageDifficulty: 0, taskCount: 0 }
             }
             const stats = userStats[entry.userId]
-            if (entry.bonusPoints) {
-                stats.bonus += entry.bonusPoints
-                stats.pw += entry.bonusPoints
-            }
             const timeHours = entry.durationMinutes / 60
             const roleFactor = ROLE_COEFFICIENTS[entry.projectRole] ?? 1.0
             const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
             const meetingFactor = entry.entryType === 'meeting' ? 0.5 : 1.0
-            const points = timeHours * roleFactor * diffFactor * meetingFactor
+            const points = timeHours * roleFactor * diffFactor * meetingFactor + (entry.bonusPoints || 0)
+
             stats.totalMinutes += entry.durationMinutes
             stats.pw += points
+            stats.bonus += (entry.bonusPoints || 0)
             if (entry.durationMinutes > 0) {
                 stats.averageDifficulty += diffFactor
                 stats.taskCount++
             }
+
+            // Total Project PW (regardless of qualifying)
+            totalProjectPW += points
         }
 
         // Calculate total PW for pool (qualifying users only)
         let totalRevSharePW = 0
         // We need totalRevSharePW calculated from ALL users in the project who qualify, even if viewing 1 member
-        const poolEntries = targetEntries
         const poolUserStats: Record<string, number> = {}
-        for (const entry of poolEntries) {
+        for (const entry of allApprovedEntries) {
             const roleFactor = ROLE_COEFFICIENTS[entry.projectRole] ?? 1.0
             const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
             const meetingFactor = entry.entryType === 'meeting' ? 0.5 : 1.0
@@ -456,17 +480,17 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         }
 
         for (const [uId, pw] of Object.entries(poolUserStats)) {
-            if ((userTotalApprovedMinutes[uId] || 0) / 60 >= 200) {
+            if ((userTotalApprovedMinutes[uId] || 0) / 60 >= hourThreshold) {
                 totalRevSharePW += pw
             }
         }
 
-        const participants = userIds.map(uId => {
+        const participants = rangeUserIds.map(uId => {
             const data = userStats[uId] || { totalMinutes: 0, pw: 0, bonus: 0, role: 'participant', averageDifficulty: 0, taskCount: 0 }
             const approvedHoursTotal = (userTotalApprovedMinutes[uId] || 0) / 60
-            const has200h = approvedHoursTotal >= 200
+            const hasThreshold = approvedHoursTotal >= hourThreshold
             let sharePercent = 0
-            if (has200h && totalRevSharePW > 0) {
+            if (hasThreshold && totalRevSharePW > 0) {
                 sharePercent = Math.round((data.pw / totalRevSharePW) * 10000) / 100
             }
 
@@ -480,14 +504,14 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 averageDifficulty: data.taskCount > 0 ? (Math.round((data.averageDifficulty / data.taskCount) * 100) / 100) : 0,
                 bonusPoints: data.bonus,
                 contributionPoints: Math.round(data.pw * 100) / 100,
-                has200h,
+                hasThreshold,
                 approvedBaseHoursTotal: Math.round(approvedHoursTotal * 100) / 100,
                 sharePercent
             }
         }).sort((a, b) => b.contributionPoints - a.contributionPoints)
 
         if (targetUserId) {
-            // Fetch recent entries for this member in this project
+            // ... (rest remains same but using rangeUserIds[0])
             const recent = await db.select().from(timeEntries)
                 .where(
                     and(
@@ -498,7 +522,6 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 .orderBy(desc(timeEntries.startedAt))
                 .limit(10)
 
-            // Get task titles for recent entries
             const recentTaskIds = [...new Set(recent.map(r => r.taskId))]
             let recentTaskMap: Record<string, string> = {}
             if (recentTaskIds.length > 0) {
@@ -524,17 +547,31 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 success: true,
                 data: {
                     summary: participants[0],
-                    recentEntries: mappedRecent
+                    recentEntries: mappedRecent,
+                    hourThreshold
                 }
             })
         }
 
-        return c.json({ success: true, data: { participants, totalPW: Math.round(totalRevSharePW * 100) / 100 } })
+        return c.json({
+            success: true,
+            data: {
+                participants,
+                totalPW: Math.round(totalRevSharePW * 100) / 100,
+                totalProjectPW: Math.round(totalProjectPW * 100) / 100,
+                hourThreshold
+            }
+        })
     } catch (error) {
         console.error('Error calculating contribution:', error)
         return c.json({ success: false, error: 'Failed' }, 500)
     }
 }
+
+// GET /api/time/contribution/:projectId/custom - Custom view
+timeRoutes.get('/contribution/:projectId/custom', async (c) => {
+    return handleContribution(c, 'custom')
+})
 
 
 // GET /api/time/project/:projectId - List time entries for a project (owner/admin view)

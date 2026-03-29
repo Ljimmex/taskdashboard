@@ -67,6 +67,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     queryKey: ['my-tasks', workspaceSlug],
     queryFn: () => apiFetchJson<{ success: boolean; data: MyTask[] }>(`/api/time/my-tasks?workspaceSlug=${workspaceSlug}`),
     enabled: !!workspaceSlug && !!userId,
+    refetchInterval: 5000,
   })
   const myTasks = (tasksData?.data || []).filter((t: MyTask) => t.status !== 'done')
 
@@ -75,6 +76,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     queryKey: ['my-time-entries', userId],
     queryFn: () => apiFetchJson<{ success: boolean; data: any[]; totalMinutes: number }>('/api/time'),
     enabled: !!userId,
+    refetchInterval: 5000,
   })
   const myHistory = historyData?.data || []
 

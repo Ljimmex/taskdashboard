@@ -6,6 +6,7 @@ import { ChevronDown, Clock, Calendar } from 'lucide-react'
 import { DueDatePicker } from '@/components/features/tasks/components/DueDatePicker'
 import { MyTask } from './types'
 import { formatMinutes } from './utils'
+import { toast } from '@/hooks/useToast'
 
 function TimeSelect({ value, onChange, label }: { value: string, onChange: (v: string) => void, label: string }) {
   const [open, setOpen] = useState(false)
@@ -102,6 +103,7 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
     queryKey: ['workspace-members', workspaceSlug],
     queryFn: () => apiFetchJson<{ success: boolean; data: any[] }>(`/api/workspaces/${workspaceSlug}/members`),
     enabled: !!workspaceSlug && canManage,
+    refetchInterval: 5000,
   })
   const members = membersData?.data || []
 
@@ -139,9 +141,12 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
         queryClient.invalidateQueries({ queryKey: ['project-time-entries'] })
         queryClient.invalidateQueries({ queryKey: ['revshare'] })
 
-        alert('Success!')
+        toast.success(t('timeTracker.manualEntrySuccess', 'Wpis dodany pomyślnie!'))
       }
     },
+    onError: () => {
+      toast.error(t('timeTracker.manualEntryError', 'Błąd podczas dodawania wpisu.'))
+    }
   })
 
   const handleSubmit = (e: React.FormEvent) => {

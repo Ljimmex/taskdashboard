@@ -2,19 +2,37 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
-import { CheckCircle, Calendar, Clock, XCircle } from 'lucide-react'
+import { CheckCircle, Calendar, Clock, XCircle, ChevronDown, Check } from 'lucide-react'
 import { formatMinutes } from './utils'
+import { toast } from '@/hooks/useToast'
+
+const DIFFICULTIES = [
+  { value: 'basic', label: 'Podstawowy (×0.75)' },
+  { value: 'standard', label: 'Standardowy (×1.00)' },
+  { value: 'advanced', label: 'Zaawansowany (×1.30)' },
+  { value: 'critical', label: 'Krytyczny (×1.50)' },
+]
+
+const BONUSES = [
+  { value: '1.0', label: 'Brak (×1.00)' },
+  { value: '1.1', label: 'Standard (×1.10)' },
+  { value: '1.25', label: 'Sążna (×1.25)' },
+  { value: '1.5', label: 'MEGA (×1.50)' },
+]
 
 export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
+  const [openDropdown, setOpenDropdown] = useState<{ id: string, type: 'diff' | 'bonus' } | null>(null)
+  const [selectedValues, setSelectedValues] = useState<Record<string, { diff: string, bonus: string }>>({})
 
   const { data: pendingData, isLoading } = useQuery({
     queryKey: ['pending-time-entries', workspaceSlug],
     queryFn: () => apiFetchJson<{ success: boolean; data: any[] }>(`/api/time/pending?workspaceSlug=${workspaceSlug}`),
     enabled: !!workspaceSlug,
+    refetchInterval: 5000,
   })
   const entries = pendingData?.data || []
 
@@ -25,9 +43,12 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
         body: JSON.stringify({ difficultyLevel, bonusPoints })
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pending-time-entries'] })
       queryClient.invalidateQueries({ queryKey: ['revshare'] })
       queryClient.invalidateQueries({ queryKey: ['project-time-entries'] })
+      toast.success(t('timeTracker.approveSuccess', 'Wpis został zatwierdzony.'))
+    },
+    onError: () => {
+      toast.error(t('timeTracker.approveError', 'Błąd podczas zatwierdzania wpisu.'))
     }
   })
 
@@ -41,6 +62,10 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
       setRejectingId(null)
       setRejectionReason('')
       queryClient.invalidateQueries({ queryKey: ['pending-time-entries'] })
+      toast.success(t('timeTracker.rejectSuccess', 'Wpis został odrzucony.'))
+    },
+    onError: () => {
+      toast.error(t('timeTracker.rejectError', 'Błąd podczas odrzucania wpisu.'))
     }
   })
 
@@ -74,7 +99,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                     {entry.userImage ? <img src={entry.userImage} alt="" className="w-full h-full object-cover" /> : <div className="text-xs font-bold">{entry.userName?.[0]}</div>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="font-bold text-[var(--app-text-primary)]">{entry.userName}</div>
+                    <div className="font-bold text-[var(--app-text-primary)] text-sm">{entry.userName}</div>
                     <span className="px-2 py-0.5 rounded-lg bg-[var(--app-accent)]/10 text-[var(--app-accent)] text-[9px] uppercase font-black tracking-widest whitespace-nowrap">
                       {entry.projectRole?.replace('_', ' ')}
                     </span>
@@ -125,7 +150,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                 {rejectingId === entry.id ? (
                   <div className="w-full space-y-3 animate-in fade-in slide-in-from-bottom-2">
                     <textarea
-                      placeholder={t('timeTracker.rejectionReasonPlaceholder', 'Podaj powód odrzucenia...')}
+                      placeholder={t('timeTracker.rejectionReasonPlaceholder', 'Podaj powód odrzucenia (min. 5 znaków)...')}
                       className="w-full bg-[var(--app-bg-deepest)] rounded-xl p-3 text-sm text-[var(--app-text-primary)] focus:ring-1 focus:ring-rose-500 outline-none shadow-inner"
                       rows={2}
                       value={rejectionReason}
@@ -135,13 +160,16 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                       <button
                         onClick={() => rejectMutation.mutate({ id: entry.id, reason: rejectionReason })}
                         disabled={rejectionReason.length < 5 || rejectMutation.isPending}
-                        className="bg-rose-500 text-white font-bold py-2.5 rounded-xl text-sm hover:bg-rose-600 transition-colors disabled:opacity-40 flex items-center justify-center gap-2 shadow-md"
+                        className="flex-1 bg-rose-500 text-white font-bold py-2.5 px-6 rounded-xl text-sm hover:bg-rose-600 transition-colors disabled:opacity-40 flex items-center justify-center gap-2 shadow-md"
                       >
-                        <XCircle size={16} /> {t('timeTracker.reject', 'Odrzuć wpis')}
+                        <XCircle size={16} /> {t('timeTracker.reject', 'Odrzuć')}
                       </button>
                       <button
-                        onClick={() => setRejectingId(null)}
-                        className="px-6 py-2.5 bg-[var(--app-bg-deepest)] text-[var(--app-text-muted)] rounded-xl text-sm hover:bg-[var(--app-bg-elevated)] transition-colors"
+                        onClick={() => {
+                          setRejectingId(null)
+                          setRejectionReason('')
+                        }}
+                        className="flex-1 py-2.5 px-6 bg-[var(--app-bg-deepest)] text-[var(--app-text-muted)] rounded-xl text-sm hover:bg-[var(--app-bg-elevated)] transition-colors border border-[var(--app-border)]/50"
                       >
                         {t('common.cancel', 'Anuluj')}
                       </button>
@@ -152,54 +180,97 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                     <div className="flex flex-1 gap-3 min-w-0 h-full">
                       <div className="flex-1 min-w-0">
                         <div className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase mb-1.5 ml-1">{t('timeTracker.difficulty', 'Trudność')}</div>
-                        <select
-                          id={`diff-${entry.id}`}
-                          className="w-full bg-[var(--app-bg-deepest)] rounded-xl px-4 py-2.5 text-sm text-[var(--app-text-primary)] outline-none hover:bg-[var(--app-bg-elevated)] transition-all appearance-none cursor-pointer shadow-inner"
-                          defaultValue="standard"
-                        >
-                          <option value="basic">Podstawowy (×0.75)</option>
-                          <option value="standard">Standardowy (×1.00)</option>
-                          <option value="advanced">Zaawansowany (×1.30)</option>
-                          <option value="critical">Krytyczny (×1.50)</option>
-                        </select>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setOpenDropdown(openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? null : { id: entry.id, type: 'diff' })}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl text-left transition-all outline-none text-xs font-bold ${openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? 'ring-1 ring-[var(--app-accent)] border-[var(--app-accent)]' : 'hover:border-[var(--app-accent)]/50'
+                              }`}
+                          >
+                            <span className="text-[var(--app-text-primary)] truncate">
+                              {DIFFICULTIES.find(d => d.value === (selectedValues[entry.id]?.diff || 'standard'))?.label}
+                            </span>
+                            <ChevronDown size={14} className={`text-[var(--app-text-muted)] transition-transform duration-200 ${openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? 'rotate-180' : ''}`} />
+                          </button>
+                          {openDropdown?.id === entry.id && openDropdown?.type === 'diff' && (
+                            <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                              {DIFFICULTIES.map(d => (
+                                <button
+                                  key={d.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedValues(prev => ({ ...prev, [entry.id]: { ...(prev[entry.id] || { diff: 'standard', bonus: '1.0' }), diff: d.value } }))
+                                    setOpenDropdown(null)
+                                  }}
+                                  className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors flex items-center justify-between ${(selectedValues[entry.id]?.diff || 'standard') === d.value ? 'text-[var(--app-accent)] bg-[var(--app-bg-deepest)]' : 'text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'
+                                    }`}
+                                >
+                                  {d.label}
+                                  {(selectedValues[entry.id]?.diff || 'standard') === d.value && <Check size={12} />}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase mb-1.5 ml-1">{t('timeTracker.bonusFactor', 'Premia')}</div>
-                        <select
-                          id={`bonus-factor-${entry.id}`}
-                          className="w-full bg-[var(--app-bg-deepest)] rounded-xl px-4 py-2.5 text-sm text-[var(--app-text-primary)] outline-none hover:bg-[var(--app-bg-elevated)] transition-all appearance-none cursor-pointer shadow-inner"
-                          defaultValue="1.0"
-                        >
-                          <option value="1.0">Brak (×1.00)</option>
-                          <option value="1.1">Standard (×1.10)</option>
-                          <option value="1.25">Sążna (×1.25)</option>
-                          <option value="1.5">MEGA (×1.50)</option>
-                        </select>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setOpenDropdown(openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? null : { id: entry.id, type: 'bonus' })}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl text-left transition-all outline-none text-xs font-bold ${openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? 'ring-1 ring-[var(--app-accent)] border-[var(--app-accent)]' : 'hover:border-[var(--app-accent)]/50'
+                              }`}
+                          >
+                            <span className="text-[var(--app-text-primary)] truncate">
+                              {BONUSES.find(b => b.value === (selectedValues[entry.id]?.bonus || '1.0'))?.label}
+                            </span>
+                            <ChevronDown size={14} className={`text-[var(--app-text-muted)] transition-transform duration-200 ${openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? 'rotate-180' : ''}`} />
+                          </button>
+                          {openDropdown?.id === entry.id && openDropdown?.type === 'bonus' && (
+                            <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                              {BONUSES.map(b => (
+                                <button
+                                  key={b.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedValues(prev => ({ ...prev, [entry.id]: { ...(prev[entry.id] || { diff: 'standard', bonus: '1.0' }), bonus: b.value } }))
+                                    setOpenDropdown(null)
+                                  }}
+                                  className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors flex items-center justify-between ${(selectedValues[entry.id]?.bonus || '1.0') === b.value ? 'text-[var(--app-accent)] bg-[var(--app-bg-deepest)]' : 'text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'
+                                    }`}
+                                >
+                                  {b.label}
+                                  {(selectedValues[entry.id]?.bonus || '1.0') === b.value && <Check size={12} />}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex gap-2 h-[42px] mb-[1px]">
-                      <button
-                        onClick={() => {
-                          const diff = (document.getElementById(`diff-${entry.id}`) as HTMLSelectElement).value
-                          const factorStr = (document.getElementById(`bonus-factor-${entry.id}`) as HTMLSelectElement).value
-                          const factor = parseFloat(factorStr)
-                          const hours = entry.durationMinutes / 60
-                          const bonusPoints = factor > 1.0 ? Math.round(hours * (factor - 1) * 10) : 0
-                          approveMutation.mutate({ id: entry.id, difficultyLevel: diff, bonusPoints })
-                        }}
-                        disabled={approveMutation.isPending}
-                        className="min-w-[140px] h-full bg-emerald-500 text-white shadow-[0_4px_12px_rgba(16,185,129,0.25)] font-bold py-2 px-4 rounded-xl text-sm hover:bg-emerald-600 active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0"
-                      >
-                        <CheckCircle size={18} /> {t('timeTracker.approve', 'Zatwierdź')}
-                      </button>
-                      <button
-                        onClick={() => setRejectingId(entry.id)}
-                        className="h-full bg-rose-500/10 text-rose-500 font-bold px-4 rounded-xl text-sm hover:bg-rose-500 hover:text-white transition-all active:scale-95 flex items-center justify-center shrink-0"
-                        title={t('timeTracker.reject', 'Odrzuć')}
-                      >
-                        <XCircle size={18} />
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const values = selectedValues[entry.id] || { diff: 'standard', bonus: '1.0' }
+                            approveMutation.mutate({
+                              id: entry.id,
+                              difficultyLevel: values.diff,
+                              bonusPoints: parseFloat(values.bonus)
+                            })
+                          }}
+                          disabled={approveMutation.isPending}
+                          className="bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl text-sm hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10"
+                        >
+                          <CheckCircle size={16} /> {t('timeTracker.approve', 'Zatwierdź')}
+                        </button>
+                        <button
+                          onClick={() => setRejectingId(entry.id)}
+                          className="py-2.5 px-4 bg-rose-500/10 text-rose-500 rounded-xl text-sm hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20"
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      </div>
                     </div>
                   </>
                 )}

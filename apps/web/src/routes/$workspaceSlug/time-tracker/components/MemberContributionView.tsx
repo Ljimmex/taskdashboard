@@ -9,8 +9,9 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
 
   const { data: contribData, isLoading } = useQuery({
     queryKey: ['revshare-member', selectedProjectId, userId],
-    queryFn: () => apiFetchJson<{ success: boolean; data: { summary: any; recentEntries: any[] } }>(`/api/time/contribution/${selectedProjectId}/member?userId=${userId}`),
+    queryFn: () => apiFetchJson<{ success: boolean; data: { summary: any; recentEntries: any[]; hourThreshold: number } }>(`/api/time/contribution/${selectedProjectId}/member?userId=${userId}`),
     enabled: !!selectedProjectId && !!userId,
+    refetchInterval: 5000,
   })
 
   if (!selectedProjectId) {
@@ -45,6 +46,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
 
   const summary = contribData?.data?.summary
   const recent = contribData?.data?.recentEntries || []
+  const hourThreshold = contribData?.data?.hourThreshold || 200
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
@@ -68,14 +70,14 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
         <StatCard
           icon={<StatusIcon />}
           label={t('timeTracker.status', 'Status')}
-          value={summary?.has200h ? 'Zakwalifikowany' : 'W trakcie'}
+          value={summary?.hasThreshold ? 'Zakwalifikowany' : 'W trakcie'}
           isStatus
-          statusState={summary?.has200h ? 'qualified' : 'pending'}
+          statusState={summary?.hasThreshold ? 'qualified' : 'pending'}
         />
       </div>
 
       {/* Pasek Postępu Kwalifikacji */}
-      {!summary?.has200h && (
+      {!summary?.hasThreshold && (
         <div className="relative overflow-hidden bg-[var(--app-bg-card)] p-6 md:p-8 rounded-3xl border border-[var(--app-border)] shadow-sm group">
           {/* Subtelny gradient w tle */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-opacity group-hover:bg-amber-500/10" />
@@ -86,7 +88,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
                 {t('timeTracker.qualificationTitle', 'Droga do kwalifikacji')}
               </h3>
               <p className="text-sm text-[var(--app-text-muted)] max-w-lg">
-                {t('timeTracker.qualificationDesc', 'Potrzebujesz 200 zatwierdzonych godzin pracy, aby odblokować pełny udział w RevShare dla tego projektu.')}
+                {t('timeTracker.qualificationDesc', 'Potrzebujesz {{threshold}} zatwierdzonych godzin pracy, aby odblokować pełny udział w RevShare dla tego projektu.', { threshold: hourThreshold })}
               </p>
             </div>
             <div className="text-left md:text-right flex-shrink-0">
@@ -94,7 +96,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
                 <span className="text-4xl font-extrabold bg-gradient-to-br from-amber-400 to-amber-600 bg-clip-text text-transparent">
                   {formatHours(summary?.approvedBaseHoursTotal || 0)}
                 </span>
-                <span className="text-lg font-medium text-[var(--app-text-muted)]">/ 200h</span>
+                <span className="text-lg font-medium text-[var(--app-text-muted)]">/ {hourThreshold}h</span>
               </div>
             </div>
           </div>
@@ -102,12 +104,12 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
           <div className="space-y-2 relative z-10">
             <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-[var(--app-text-muted)] mb-1">
               <span>Postęp</span>
-              <span className="text-amber-500">{Math.round(((summary?.approvedBaseHoursTotal || 0) / 200) * 100)}%</span>
+              <span className="text-amber-500">{Math.round(((summary?.approvedBaseHoursTotal || 0) / hourThreshold) * 100)}%</span>
             </div>
             <div className="h-4 w-full bg-[var(--app-bg-elevated)] rounded-full overflow-hidden border border-[var(--app-border)] inset-shadow-sm">
               <div
                 className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 transition-all duration-1000 ease-out rounded-full relative"
-                style={{ width: `${Math.min(((summary?.approvedBaseHoursTotal || 0) / 200) * 100, 100)}%` }}
+                style={{ width: `${Math.min(((summary?.approvedBaseHoursTotal || 0) / hourThreshold) * 100, 100)}%` }}
               >
                 {/* Efekt połysku na pasku */}
                 <div className="absolute top-0 left-0 right-0 bottom-0 bg-gradient-to-b from-white/20 to-transparent" />
@@ -166,9 +168,9 @@ function StatCard({ icon, label, value, isStatus = false, statusState }: any) {
 
         {isStatus ? (
           <div className="mt-1">
-            <span className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm border ${statusState === 'qualified'
-              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/10'
-              : 'bg-[#F2CE88]/10 text-[#F2CE88] border-[#F2CE88]/10'}`}>
+            <span className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm border bg-transparent ${statusState === 'qualified'
+              ? 'text-emerald-500 border-emerald-500/20'
+              : 'text-[#F2CE88] border-[#F2CE88]/20'}`}>
               <div className={`w-1.5 h-1.5 rounded-full ${statusState === 'qualified' ? 'bg-emerald-500' : 'bg-[#F2CE88]'} ${statusState === 'pending' ? 'animate-pulse' : ''}`} />
               {value}
             </span>
