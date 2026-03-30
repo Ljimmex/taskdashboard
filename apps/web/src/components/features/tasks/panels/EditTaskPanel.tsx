@@ -437,7 +437,7 @@ export function EditTaskPanel({
                                 <CheckCircle2 size={16} className={isCompleted ? 'fill-emerald-500/20' : ''} />
                                 <span>{isCompleted ? t('tasks.status.done', { defaultValue: 'Gotowe' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' })}</span>
                             </button>
-                            <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-500/50 font-bold bg-amber-500/5 px-2 py-1 rounded border border-amber-500/10">
+                            <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-500 text-black text-[10px] font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(245,158,11,0.2)]">
                                 {t('tasks.edit.edit_mode')}
                             </span>
                         </div>
@@ -497,9 +497,9 @@ export function EditTaskPanel({
                                                 // Handle archive if needed, or other edit-mode specifics
                                                 console.log('Archive task requested in edit mode')
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 flex items-center gap-2"
+                                            className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-gray-800 flex items-center gap-2 whitespace-nowrap transition-colors"
                                         >
-                                            <Archive size={14} />
+                                            <Archive size={15} className="text-gray-500" />
                                             {t('common.archive', { defaultValue: 'Archiwizuj' })}
                                         </button>
                                         <button
@@ -508,131 +508,115 @@ export function EditTaskPanel({
                                                 // Handle delete if needed
                                                 console.log('Delete task requested in edit mode')
                                             }}
-                                            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 flex items-center gap-2"
+                                            className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 flex items-center gap-2 whitespace-nowrap transition-colors"
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={15} />
                                             {t('common.delete', { defaultValue: 'Usuń' })}
                                         </button>
                                     </div>
                                 )}
                             </div>
                         </div>
-                    </div>
 
-                    {/* Task Title - Editable with Checkbox */}
-                    <div className="flex items-center gap-3 mb-4">
-                        <button
-                            onClick={() => !isBlocked && setIsCompleted(!isCompleted)}
-                            disabled={isBlocked}
-                            className={`flex flex-shrink-0 items-center justify-center w-6 h-6 rounded-md border text-white transition-all transform
-                                ${isCompleted ? 'bg-green-500 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-[#1a1a24] border-gray-600'}
-                                ${isBlocked ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95 hover:border-gray-500 hover:bg-gray-800'}
-                            `}
-                            title={isBlocked ? t('tasks.blocked_by_dependencies') : (isCompleted ? t('tasks.edit.mark_incomplete') : t('tasks.edit.mark_complete'))}
-                        >
-                            {isCompleted && (
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            )}
-                        </button>
-
-                        <div className="flex-1">
-                            {isEditingTitle ? (
-                                <input
-                                    type="text"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    onBlur={() => setIsEditingTitle(false)}
-                                    onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
-                                    autoFocus
-                                    className="text-xl font-bold text-white w-full bg-gray-800 border border-amber-500 rounded-lg px-3 py-2 outline-none"
-                                />
-                            ) : (
-                                <h2
-                                    onClick={() => setIsEditingTitle(true)}
-                                    className={`text-xl font-bold cursor-pointer hover:text-amber-400 transition-colors ${isCompleted ? 'line-through text-gray-500' : 'text-white'}`}
-                                    title={t('tasks.edit.click_to_edit')}
-                                >
-                                    {title}
-                                </h2>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Task Meta */}
-                    <div className="space-y-3">
-                        {/* Project */}
-                        {task.projectName && (
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.project')}</span>
-                                <span className="text-sm text-white">{task.projectName}</span>
-                            </div>
-                        )}
-
-                        {/* Assignees - Editable */}
-                        <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-20 pt-2">{t('tasks.edit.meta.assignee')}</span>
+                        {/* Task Title - Editable */}
+                        <div className="flex items-center gap-3 mb-4">
                             <div className="flex-1">
-                                <AssigneePicker
-                                    selectedAssignees={selectedAssignees}
-                                    availableAssignees={teamMembers}
-                                    onSelect={setSelectedAssignees}
-                                    maxVisible={2}
+                                {isEditingTitle ? (
+                                    <input
+                                        type="text"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        onBlur={() => setIsEditingTitle(false)}
+                                        onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
+                                        autoFocus
+                                        className="text-xl font-bold text-white w-full bg-gray-800 border border-amber-500 rounded-lg px-3 py-2 outline-none"
+                                    />
+                                ) : (
+                                    <h2
+                                        onClick={() => setIsEditingTitle(true)}
+                                        className={`text-xl font-bold cursor-pointer hover:text-amber-400 transition-colors ${isCompleted ? 'line-through text-gray-500' : 'text-white'}`}
+                                        title={t('tasks.edit.click_to_edit')}
+                                    >
+                                        {title}
+                                    </h2>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Task Meta */}
+                        <div className="space-y-3">
+                            {/* Project */}
+                            {task.projectName && (
+                                <div className="flex items-center gap-4">
+                                    <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.project')}</span>
+                                    <span className="text-sm text-white">{task.projectName}</span>
+                                </div>
+                            )}
+
+                            {/* Assignees - Editable */}
+                            <div className="flex items-start gap-4">
+                                <span className="text-sm text-gray-500 w-20 pt-2">{t('tasks.edit.meta.assignee')}</span>
+                                <div className="flex-1">
+                                    <AssigneePicker
+                                        selectedAssignees={selectedAssignees}
+                                        availableAssignees={teamMembers}
+                                        onSelect={setSelectedAssignees}
+                                        maxVisible={2}
+                                        disabled={isBlocked}
+                                        title={blockedTitle}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Status */}
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.status')}</span>
+                                <StatusSelector
+                                    status={status}
+                                    stages={stages}
+                                    onChange={setStatus}
                                     disabled={isBlocked}
                                     title={blockedTitle}
                                 />
                             </div>
-                        </div>
 
-                        {/* Status */}
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.status')}</span>
-                            <StatusSelector
-                                status={status}
-                                stages={stages}
-                                onChange={setStatus}
-                                disabled={isBlocked}
-                                title={blockedTitle}
-                            />
-                        </div>
-
-                        {/* Due Date - Editable */}
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.end_date')}</span>
-                            <DueDatePicker
-                                value={dueDate}
-                                onChange={setDueDate}
-                                placeholder={t('tasks.edit.select_date')}
-                            />
-                        </div>
-
-                        {/* Priority - Editable */}
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.priority')}</span>
-                            <PrioritySelector value={priority} onChange={setPriority} size="sm" />
-                        </div>
-
-                        {/* Labels - Editable */}
-                        <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-20 pt-2">{t('tasks.edit.meta.labels')}</span>
-                            <div className="flex-1">
-                                <LabelPicker
-                                    selectedLabels={selectedLabels}
-                                    availableLabels={availableLabels}
-                                    onSelect={setSelectedLabels}
-                                    onCreateNew={handleCreateLabel}
+                            {/* Due Date - Editable */}
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.end_date')}</span>
+                                <DueDatePicker
+                                    value={dueDate}
+                                    onChange={setDueDate}
+                                    placeholder={t('tasks.edit.select_date')}
                                 />
                             </div>
-                        </div>
 
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-20">{t('tasks.create.dependencies')}</span>
-                            <DependsOnSelector
-                                selectedIds={selectedDependsOn}
-                                availableTasks={availableTasks}
-                                onChange={setSelectedDependsOn}
-                            />
+                            {/* Priority - Editable */}
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.priority')}</span>
+                                <PrioritySelector value={priority} onChange={setPriority} size="sm" />
+                            </div>
+
+                            {/* Labels - Editable */}
+                            <div className="flex items-start gap-4">
+                                <span className="text-sm text-gray-500 w-20 pt-2">{t('tasks.edit.meta.labels')}</span>
+                                <div className="flex-1">
+                                    <LabelPicker
+                                        selectedLabels={selectedLabels}
+                                        availableLabels={availableLabels}
+                                        onSelect={setSelectedLabels}
+                                        onCreateNew={handleCreateLabel}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-500 w-20">{t('tasks.create.dependencies')}</span>
+                                <DependsOnSelector
+                                    selectedIds={selectedDependsOn}
+                                    availableTasks={availableTasks}
+                                    onChange={setSelectedDependsOn}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

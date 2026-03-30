@@ -425,9 +425,9 @@ export function TaskDetailsPanel({
                                                     setShowMoreMenu(false)
                                                     onEditTask()
                                                 }}
-                                                className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 flex items-center gap-2"
+                                                className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-gray-800 flex items-center gap-2 whitespace-nowrap transition-colors"
                                             >
-                                                <Edit2 size={14} />
+                                                <Edit2 size={15} />
                                                 {t('common.edit', { defaultValue: 'Edytuj' })}
                                             </button>
                                         )}
@@ -437,9 +437,9 @@ export function TaskDetailsPanel({
                                                     setShowMoreMenu(false)
                                                     onDeleteTask()
                                                 }}
-                                                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 flex items-center gap-2"
+                                                className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 flex items-center gap-2 whitespace-nowrap transition-colors"
                                             >
-                                                <Trash2 size={14} />
+                                                <Trash2 size={15} />
                                                 {t('common.delete', { defaultValue: 'Usuń' })}
                                             </button>
                                         )}
@@ -449,9 +449,9 @@ export function TaskDetailsPanel({
                                                     setShowMoreMenu(false)
                                                     onArchive()
                                                 }}
-                                                className="w-full text-left px-4 py-2 text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 flex items-center gap-2"
+                                                className="w-full text-left px-4 py-2.5 text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 flex items-center gap-2 whitespace-nowrap transition-colors"
                                             >
-                                                <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="flex-shrink-0">
+                                                <svg width="15" height="15" viewBox="0 0 32 32" fill="none" className="flex-shrink-0">
                                                     <rect x="4" y="12" width="24" height="16" rx="3" fill="currentColor" opacity="0.7" />
                                                     <rect x="6" y="8" width="20" height="4" rx="1" fill="currentColor" />
                                                 </svg>

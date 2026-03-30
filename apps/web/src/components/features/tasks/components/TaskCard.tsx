@@ -308,9 +308,9 @@ export function TaskCard({
 
                 {/* Dropdown Menu - smart positioning based on available space */}
                 {showMenu && (
-                    <div className={`absolute right-4 w-36 bg-[var(--app-bg-card)] rounded-xl shadow-2xl overflow-hidden z-50 p-2 space-y-1 border border-[var(--app-border)] ${menuDirection === 'up' ? 'bottom-full mb-2' : 'top-10'
+                    <div className={`absolute right-4 w-48 bg-[var(--app-bg-card)] rounded-xl shadow-2xl overflow-hidden z-50 p-2 space-y-1 border border-[var(--app-border)] ${menuDirection === 'up' ? 'bottom-full mb-2' : 'top-10'
                         }`}>
-                        <button onClick={(e) => { e.stopPropagation(); onFullEdit?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item">
+                        <button onClick={(e) => { e.stopPropagation(); onFullEdit?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item whitespace-nowrap">
                             <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
                                 <path d="M22.5 4.5L27.5 9.5L12 25L7 20L22.5 4.5Z" fill="#545454" />
                                 <path d="M12 25L7 20L4 28L12 25Z" fill="#9E9E9E" />
@@ -323,7 +323,7 @@ export function TaskCard({
                         </button>
 
                         {type !== 'meeting' && !isAssignedToMe && (canManageTasks || userRole === 'member') && (
-                            <button onClick={handleAssignToMe} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item">
+                            <button onClick={handleAssignToMe} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item whitespace-nowrap">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="group-hover/item:hidden">
                                     <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#545454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="#545454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -341,7 +341,7 @@ export function TaskCard({
                             <button
                                 onClick={handleToggleCompletion}
                                 disabled={isBlocked}
-                                className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors group/item
+                                className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors group/item whitespace-nowrap
                                     ${isBlocked ? 'text-[var(--app-text-muted)] cursor-not-allowed opacity-50' : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500'}`
                                 }
                             >
@@ -357,7 +357,7 @@ export function TaskCard({
 
                         {canManageTasks && (
                             <>
-                                <button onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item">
+                                <button onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item whitespace-nowrap">
                                     <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
                                         <rect x="10" y="10" width="16" height="16" rx="3" fill="#9E9E9E" />
                                         <path d="M8 22V10C8 7.79086 9.79086 6 12 6H22" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
@@ -368,7 +368,7 @@ export function TaskCard({
                                     </svg>
                                     {t('tasks.card.menu.duplicate')}
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); onArchive?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item">
+                                <button onClick={(e) => { e.stopPropagation(); onArchive?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item whitespace-nowrap">
                                     <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
                                         <rect x="4" y="12" width="24" height="16" rx="3" fill="#545454" />
                                         <rect x="6" y="8" width="20" height="4" rx="1" fill="#9E9E9E" />
@@ -379,7 +379,7 @@ export function TaskCard({
                                     </svg>
                                     {t('tasks.card.menu.archive')}
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); onDelete?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-red-500 transition-colors group/item">
+                                <button onClick={(e) => { e.stopPropagation(); onDelete?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-red-500 transition-colors group/item whitespace-nowrap">
                                     <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
                                         <path d="M6 10V24C6 26.2091 7.79086 28 10 28H22C24.2091 28 26 26.2091 26 24V10H6Z" fill="#545454" />
                                         <rect x="4" y="6" width="24" height="4" rx="2" fill="#9E9E9E" />
