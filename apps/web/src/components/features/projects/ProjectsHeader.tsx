@@ -4,7 +4,7 @@ import { FilterIcon, SearchIconDefault, SearchIconActive } from '@/components/da
 
 // Icons
 const GanttIcon = ({ active }: { active: boolean }) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#0a0a0f' : '#9E9E9E'} strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--app-accent-text)' : '#9E9E9E'} strokeWidth="2">
         <rect x="3" y="4" width="18" height="4" rx="1" />
         <rect x="5" y="10" width="14" height="4" rx="1" />
         <rect x="7" y="16" width="10" height="4" rx="1" />
@@ -12,7 +12,7 @@ const GanttIcon = ({ active }: { active: boolean }) => (
 )
 
 const TimelineIcon = ({ active }: { active: boolean }) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#0a0a0f' : '#9E9E9E'} strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--app-accent-text)' : '#9E9E9E'} strokeWidth="2">
         <rect x="3" y="3" width="7" height="7" rx="1" />
         <rect x="14" y="3" width="7" height="7" rx="1" />
         <rect x="3" y="14" width="7" height="7" rx="1" />
@@ -21,7 +21,7 @@ const TimelineIcon = ({ active }: { active: boolean }) => (
 )
 
 const SortIcon = ({ active }: { active: boolean }) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#F2CE88' : '#9E9E9E'} strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--app-accent)' : '#9E9E9E'} strokeWidth="2">
         <path d="M3 6h18M3 12h12M3 18h6" />
     </svg>
 )
@@ -88,7 +88,7 @@ function SortDropdown({
     return (
         <div
             ref={ref}
-            className="absolute right-0 top-12 z-50 w-52 bg-[#1a1a24] rounded-xl shadow-2xl border border-gray-800 overflow-hidden"
+            className="absolute right-0 top-12 z-50 w-52 bg-[var(--app-bg-elevated)] rounded-xl shadow-2xl border border-[var(--app-border)] overflow-hidden"
         >
             <div className="p-2">
                 <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">
@@ -99,8 +99,8 @@ function SortDropdown({
                         key={opt.value}
                         onClick={() => handleSelect(opt.value)}
                         className={`flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg transition-colors ${sortBy === opt.value
-                            ? 'bg-amber-500/10 text-[#F2CE88]'
-                            : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                            ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
+                            : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-primary)]'
                             }`}
                     >
                         {opt.label}
@@ -113,7 +113,7 @@ function SortDropdown({
                 ))}
             </div>
 
-            <div className="border-t border-gray-800" />
+            <div className="border-t border-[var(--app-border)]" />
 
             <div className="p-2">
                 <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">
@@ -121,7 +121,7 @@ function SortDropdown({
                 </div>
                 <button
                     onClick={toggleDirection}
-                    className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
+                    className="flex items-center gap-3 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-primary)] rounded-lg transition-colors"
                 >
                     {direction === 'asc' ? (
                         <>
@@ -208,7 +208,7 @@ function FilterDropdown({
     return (
         <div
             ref={ref}
-            className="absolute right-0 top-12 z-50 w-60 bg-[#1a1a24] rounded-xl shadow-2xl border border-gray-800 overflow-hidden max-h-[70vh] overflow-y-auto"
+            className="absolute right-0 top-12 z-50 w-60 bg-[var(--app-bg-elevated)] rounded-xl shadow-2xl border border-[var(--app-border)] overflow-hidden max-h-[70vh] overflow-y-auto"
         >
             {/* Priority */}
             <div className="p-2">
@@ -219,7 +219,7 @@ function FilterDropdown({
                     <button
                         key={p.id}
                         onClick={() => toggle('priorities', p.id)}
-                        className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
+                        className="flex items-center gap-3 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-primary)] rounded-lg transition-colors"
                     >
                         <Checkbox checked={filters.priorities.includes(p.id)} />
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
@@ -231,7 +231,7 @@ function FilterDropdown({
             {/* Status */}
             {availableStatuses.length > 0 && (
                 <>
-                    <div className="border-t border-gray-800" />
+                    <div className="border-t border-[var(--app-border)]" />
                     <div className="p-2">
                         <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                             {t('board.filters.status', 'Status')}
@@ -253,7 +253,7 @@ function FilterDropdown({
             {/* Assignees */}
             {members.length > 0 && (
                 <>
-                    <div className="border-t border-gray-800" />
+                    <div className="border-t border-[var(--app-border)]" />
                     <div className="p-2">
                         <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">
                             {t('board.filters.assignees', 'Assignees')}
@@ -263,7 +263,7 @@ function FilterDropdown({
                                 <button
                                     key={m.id}
                                     onClick={() => toggle('assigneeIds', m.id)}
-                                    className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition-colors"
+                                    className="flex items-center gap-3 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-primary)] rounded-lg transition-colors"
                                 >
                                     <Checkbox checked={filters.assigneeIds.includes(m.id)} />
                                     {m.avatar ? (
@@ -289,7 +289,7 @@ function FilterDropdown({
                         setFilters(empty)
                         onFilterChange?.(empty)
                     }}
-                    className="w-full px-3 py-2 text-sm text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+                    className="w-full px-3 py-2 text-sm text-[var(--app-accent)] hover:bg-[var(--app-accent)]/10 rounded-lg transition-colors"
                 >
                     {t('board.filters.clear', 'Clear All')}
                 </button>
@@ -321,12 +321,12 @@ export function ProjectsHeader({
     return (
         <div className="flex items-center justify-between mb-6 relative z-50">
             {/* Left side - View Toggle */}
-            <div className="flex bg-[#1a1a24] p-1 rounded-full">
+            <div className="flex bg-[var(--app-bg-elevated)] p-1 rounded-full">
                 <button
                     onClick={() => onViewModeChange('gantt')}
                     className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === 'gantt'
-                        ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                        : 'text-gray-500 hover:text-white'
+                        ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-lg shadow-amber-500/10'
+                        : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                         }`}
                 >
                     <GanttIcon active={viewMode === 'gantt'} />
@@ -335,8 +335,8 @@ export function ProjectsHeader({
                 <button
                     onClick={() => onViewModeChange('timeline')}
                     className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium transition-all ${viewMode === 'timeline'
-                        ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                        : 'text-gray-500 hover:text-white'
+                        ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-lg shadow-amber-500/10'
+                        : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                         }`}
                 >
                     <TimelineIcon active={viewMode === 'timeline'} />
@@ -358,7 +358,7 @@ export function ProjectsHeader({
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
                         onBlur={() => setSearchFocused(false)}
-                        className="w-48 pl-10 pr-4 py-2 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
+                        className="w-48 pl-10 pr-4 py-2 rounded-xl bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
                     />
                 </div>
 
@@ -368,7 +368,7 @@ export function ProjectsHeader({
                         onClick={() => { setShowFilters(!showFilters); setShowSort(false) }}
                         onMouseEnter={() => setHoveredBtn('filters')}
                         onMouseLeave={() => setHoveredBtn(null)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a24] text-gray-400 hover:text-white text-sm font-medium transition-all"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] text-sm font-medium transition-all"
                     >
                         <FilterIcon isHovered={hoveredBtn === 'filters' || showFilters} />
                         {t('projects.header.filters')}
@@ -390,7 +390,7 @@ export function ProjectsHeader({
                         onClick={() => { setShowSort(!showSort); setShowFilters(false) }}
                         onMouseEnter={() => setHoveredBtn('sort')}
                         onMouseLeave={() => setHoveredBtn(null)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1a24] text-gray-400 hover:text-white text-sm font-medium transition-all"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] text-sm font-medium transition-all"
                     >
                         <SortIcon active={hoveredBtn === 'sort' || showSort} />
                         {t('projects.header.sort')}

@@ -55,24 +55,24 @@ export function TimelineView({
     return (
         <div className="flex flex-col w-full">
             {/* Month Navigator Header */}
-            <div className="flex items-center justify-center h-10 gap-4 bg-[#1e1e29] rounded-xl m-2 flex-shrink-0">
-                <button onClick={handlePrevMonth} className="text-gray-400 hover:text-white"><ChevronLeft size={14} /></button>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+            <div className="flex items-center justify-center h-10 gap-4 bg-[var(--app-bg-elevated)] rounded-xl m-2 flex-shrink-0">
+                <button onClick={handlePrevMonth} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"><ChevronLeft size={14} /></button>
+                <span className="text-xs font-bold text-[var(--app-text-primary)] uppercase tracking-wider">
                     {currentMonth.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
                 </span>
-                <button onClick={handleNextMonth} className="text-gray-400 hover:text-white"><ChevronRight size={14} /></button>
+                <button onClick={handleNextMonth} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"><ChevronRight size={14} /></button>
             </div>
 
             <div className="overflow-x-auto custom-gantt-scroll pb-2 pr-4 [mask-image:linear-gradient(to_right,black_90%,transparent_100%)]">
                 {/* Date Header bar */}
-                <div className="flex h-12 bg-[#1e1e29] rounded-xl mb-2 mx-2 shadow-sm items-center w-[calc(100%-16px)] min-w-max">
+                <div className="flex h-12 bg-[var(--app-bg-elevated)] rounded-xl mb-2 mx-2 shadow-sm items-center w-[calc(100%-16px)] min-w-max">
                     {days.map((day, idx) => {
                         const dayName = day.toLocaleDateString(i18n.language, { weekday: 'short' }).toUpperCase()
                         const isToday = isSameDay(day, today)
                         return (
                             <div
                                 key={idx}
-                                className={`w-12 h-full flex-shrink-0 flex flex-col items-center justify-center text-[10px] ${isToday ? 'text-amber-500 font-bold' : 'text-gray-500'}`}
+                                className={`w-12 h-full flex-shrink-0 flex flex-col items-center justify-center text-[10px] ${isToday ? 'text-amber-500 font-bold' : 'text-[var(--app-text-muted)]'}`}
                             >
                                 <span>{dayName}</span>
                                 <span>{day.getDate()}</span>
@@ -81,7 +81,7 @@ export function TimelineView({
                     })}
                 </div>
                 {/* Timeline Grid */}
-                <div className="flex flex-col mx-2 w-[calc(100%-16px)] min-w-max rounded-xl overflow-hidden border border-gray-700/20 bg-[#13131a] relative">
+                <div className="flex flex-col mx-2 w-[calc(100%-16px)] min-w-max rounded-xl overflow-hidden border border-[var(--app-border)] bg-[var(--app-bg-page)] relative">
 
                     {/* Global "Current Time" Line Overlay */}
                     {nowPosition !== -1 && (
@@ -105,7 +105,7 @@ export function TimelineView({
                             return (
                                 <div
                                     key={idx}
-                                    className="w-12 flex-shrink-0 border-r border-gray-700/20 flex flex-col items-center justify-center relative z-10"
+                                    className="w-12 flex-shrink-0 border-r border-[var(--app-divider)] flex flex-col items-center justify-center relative z-10"
                                 >
                                     {dayTasks.length > 0 && (
                                         <div
@@ -113,11 +113,11 @@ export function TimelineView({
                                                 e.stopPropagation()
                                                 onDayClick?.(day, dayTasks)
                                             }}
-                                            className="px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm cursor-pointer hover:opacity-80 transition-opacity bg-background border border-gray-700/50"
+                                            className="px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm cursor-pointer hover:opacity-80 transition-opacity bg-background border border-[var(--app-border)]"
                                             style={{
                                                 borderColor: projectColor,
                                                 color: projectColor,
-                                                backgroundColor: '#13131a' // Match bg to hide line behind
+                                                backgroundColor: 'var(--app-bg-page)' // Match bg to hide line behind
                                             }}
                                         >
                                             {dayTasks.length}{t('projects.timeline.task_abbr')}
@@ -129,15 +129,15 @@ export function TimelineView({
                     </div>
 
                     {/* Add Buttons Row */}
-                    <div className="flex h-10 hover:bg-gray-800/20 transition-colors relative z-10">
+                    <div className="flex h-10 hover:bg-[var(--app-bg-sidebar)]/20 transition-colors relative z-10">
                         {days.map((day, idx) => (
                             <div
                                 key={idx}
-                                className="w-12 flex-shrink-0 border-r border-gray-700/20 flex items-center justify-center group"
+                                className="w-12 flex-shrink-0 border-r border-[var(--app-divider)] flex items-center justify-center group"
                             >
                                 <button
                                     onClick={() => onAddTask?.(day)}
-                                    className="w-6 h-6 rounded flex items-center justify-center text-gray-600 group-hover:text-gray-400 group-hover:bg-gray-700/50 transition-colors"
+                                    className="w-6 h-6 rounded flex items-center justify-center text-[var(--app-text-muted)] group-hover:text-[var(--app-text-primary)] group-hover:bg-[var(--app-bg-sidebar)]/50 transition-colors"
                                 >
                                     <Plus size={14} />
                                 </button>

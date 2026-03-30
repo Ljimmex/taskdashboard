@@ -327,8 +327,8 @@ export function DueDatePicker({
                 disabled={disabled}
                 className={cn(
                     'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all w-full justify-start',
-                    !triggerClassName && 'bg-gray-800/50 hover:bg-gray-800 text-gray-400 hover:text-white',
-                    !triggerClassName && selectedDate && 'text-white',
+                    !triggerClassName && 'bg-[var(--app-bg-input)] h-10 hover:bg-[var(--app-bg-sidebar)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] border border-[var(--app-border)]',
+                    !triggerClassName && selectedDate && 'text-[var(--app-text-primary)]',
                     disabled && 'opacity-50 cursor-not-allowed',
                     triggerClassName
                 )}
@@ -349,9 +349,9 @@ export function DueDatePicker({
                                 onChange(undefined)
                             }
                         }}
-                        className="ml-auto p-0.5 hover:bg-gray-700/50 rounded transition-colors cursor-pointer"
+                        className="ml-auto p-0.5 hover:bg-[var(--app-divider)] rounded transition-colors cursor-pointer"
                     >
-                        <X className="w-3 h-3" />
+                        <X className="w-3 h-3 text-[var(--app-text-muted)]" />
                     </span>
                 )}
             </button>
@@ -361,7 +361,7 @@ export function DueDatePicker({
                     <div
                         ref={dropdownRef}
                         className={cn(
-                            "fixed bg-[#16161f] border-none rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[9999] p-5 w-72 animate-in fade-in zoom-in duration-200 backdrop-blur-xl flex flex-col",
+                            "fixed bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-2xl shadow-[var(--app-shadow-card)] z-[9999] p-5 w-72 animate-in fade-in zoom-in duration-200 backdrop-blur-xl flex flex-col",
                             showTime && "w-80"
                         )}
                         style={{
@@ -384,7 +384,7 @@ export function DueDatePicker({
                                                 setMinutes(date.getMinutes())
                                                 if (!showTime) setIsOpen(false)
                                             }}
-                                            className="flex-1 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-white bg-gray-800/40 hover:bg-gray-800 rounded-lg transition-all"
+                                            className="flex-1 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-all border border-[var(--app-border)]/50"
                                         >
                                             {label}
                                         </button>
@@ -395,16 +395,16 @@ export function DueDatePicker({
                                 <div className="flex items-center justify-between mb-4 px-1">
                                     <button
                                         onClick={handlePrevMonth}
-                                        className="p-1 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                        className="p-1 hover:bg-[var(--app-bg-sidebar)] rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
-                                    <span className="font-semibold text-gray-100 capitalize">
+                                    <span className="font-semibold text-[var(--app-text-primary)] capitalize">
                                         {months[viewDate.getMonth()]} {viewDate.getFullYear()}
                                     </span>
                                     <button
                                         onClick={handleNextMonth}
-                                        className="p-1 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                        className="p-1 hover:bg-[var(--app-bg-sidebar)] rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
@@ -413,7 +413,7 @@ export function DueDatePicker({
                                 {/* Calendar Grid */}
                                 <div className="grid grid-cols-7 gap-1 mb-2">
                                     {days.map((day) => (
-                                        <div key={day} className="text-center text-xs font-medium text-gray-500 py-1 capitalize">
+                                        <div key={day} className="text-center text-xs font-medium text-[var(--app-text-muted)] py-1 capitalize">
                                             {day}
                                         </div>
                                     ))}
@@ -423,9 +423,9 @@ export function DueDatePicker({
                                             onClick={() => handleDateSelect(dayObj)}
                                             className={cn(
                                                 "h-8 w-8 rounded-full flex items-center justify-center text-sm transition-all relative group",
-                                                dayObj.type !== 'current' && "text-gray-600 hover:text-gray-400",
+                                                dayObj.type !== 'current' && "text-[var(--app-text-muted)]/50 hover:text-[var(--app-text-muted)]",
                                                 // Normal state
-                                                dayObj.type === 'current' && !isSelected(dayObj.day, dayObj.type) && !isToday(dayObj.day, dayObj.type) && "text-gray-300 hover:bg-gray-800 hover:text-white",
+                                                dayObj.type === 'current' && !isSelected(dayObj.day, dayObj.type) && !isToday(dayObj.day, dayObj.type) && "text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-primary)]",
                                                 // Today state (solid circle with different color, or just text color + dot)
                                                 // User requested "different style". Let's try text highlight + small dot
                                                 isToday(dayObj.day, dayObj.type) && !isSelected(dayObj.day, dayObj.type) && "text-amber-500 font-bold",
@@ -454,7 +454,7 @@ export function DueDatePicker({
                                                 onClick={() => handleTimeChange('hours', h)}
                                                 className={cn(
                                                     "text-[11px] py-1.5 rounded-md transition-all font-medium",
-                                                    hours === h ? "bg-[#F2CE88] text-black font-bold shadow-sm" : "text-gray-500 hover:bg-gray-800 hover:text-white"
+                                                    hours === h ? "bg-amber-400 text-black font-bold shadow-sm" : "text-[var(--app-text-muted)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-primary)]"
                                                 )}
                                             >
                                                 {String(h).padStart(2, '0')}:00
@@ -466,7 +466,7 @@ export function DueDatePicker({
                                             onClick={() => handleTimeChange('minutes', 0)}
                                             className={cn(
                                                 "flex-1 text-[10px] py-1.5 rounded-md transition-all font-bold",
-                                                minutes === 0 ? "bg-gray-700 text-white" : "text-gray-500 bg-gray-800/30 hover:text-white hover:bg-gray-800"
+                                                minutes === 0 ? "bg-[var(--app-text-primary)] text-[var(--app-bg-card)]" : "text-[var(--app-text-muted)] bg-[var(--app-bg-sidebar)]/30 hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)]"
                                             )}
                                         >
                                             :00
@@ -475,7 +475,7 @@ export function DueDatePicker({
                                             onClick={() => handleTimeChange('minutes', 30)}
                                             className={cn(
                                                 "flex-1 text-[10px] py-1.5 rounded-md transition-all font-bold",
-                                                minutes === 30 ? "bg-gray-700 text-white" : "text-gray-500 bg-gray-800/30 hover:text-white hover:bg-gray-800"
+                                                minutes === 30 ? "bg-[var(--app-text-primary)] text-[var(--app-bg-card)]" : "text-[var(--app-text-muted)] bg-[var(--app-bg-sidebar)]/30 hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)]"
                                             )}
                                         >
                                             :30
@@ -486,10 +486,10 @@ export function DueDatePicker({
                         </div>
 
                         {/* Full Width Done Button */}
-                        <div className="mt-4 pt-4 border-t border-gray-800/50 w-full">
+                        <div className="mt-4 pt-4 border-t border-[var(--app-border)] w-full">
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="w-full py-2.5 bg-[#F2CE88] hover:bg-[#d6b677] text-gray-900 rounded-xl text-sm font-bold transition-all shadow-lg shadow-[#F2CE88]/20 active:scale-95"
+                                className="w-full py-2.5 bg-amber-400 hover:bg-amber-500 text-black rounded-xl text-sm font-bold transition-all shadow-lg shadow-amber-500/20 active:scale-95"
                             >
                                 {t('tasks.datepicker.done', 'Done')}
                             </button>

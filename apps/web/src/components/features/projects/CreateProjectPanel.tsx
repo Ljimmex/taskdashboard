@@ -195,21 +195,21 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                 onClick={onClose}
             />
 
-            <div className="fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right">
-                <div className="flex items-center justify-between p-6 border-b border-gray-800">
+            <div className="fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-card)] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right">
+                <div className="flex items-center justify-between p-6 border-b border-[var(--app-border)]">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
                             <FolderOpen className="w-5 h-5 text-amber-500" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">{t('projects.create.title')}</h2>
-                            <p className="text-sm text-gray-500">{t('projects.create.subtitle')}</p>
+                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('projects.create.title')}</h2>
+                            <p className="text-sm text-[var(--app-text-muted)]">{t('projects.create.subtitle')}</p>
                         </div>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                        className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>
@@ -217,7 +217,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
 
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                             {t('projects.create.name')} <span className="text-red-400">*</span>
                         </label>
                         <input
@@ -225,7 +225,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder={t('projects.create.name_placeholder')}
-                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all font-medium"
+                            className="w-full px-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all font-medium border border-[var(--app-border)]"
                             required
                         />
                     </div>
@@ -239,12 +239,12 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={t('projects.create.description_placeholder')}
                             rows={3}
-                            className="w-full px-4 py-3 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none text-sm"
+                            className="w-full px-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none text-sm border border-[var(--app-border)]"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                             <Users size={14} className="inline mr-2" />
                             {t('projects.create.team')} <span className="text-red-400">*</span>
                         </label>
@@ -260,10 +260,10 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                                         }
                                     }}
                                     className={cn(
-                                        "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border border-transparent",
+                                        "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border border-[var(--app-border)]",
                                         teamIds.includes(team.id)
-                                            ? "bg-amber-500/10 border-amber-500/30 text-white"
-                                            : "bg-[#1a1a24] text-gray-400 hover:bg-gray-800 hover:text-gray-300"
+                                            ? "bg-[var(--app-accent)]/10 border-[var(--app-accent)]/30 text-[var(--app-text-primary)]"
+                                            : "bg-[var(--app-bg-input)] text-[var(--app-text-muted)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-secondary)]"
                                     )}
                                 >
                                     <div
@@ -283,37 +283,37 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             ))}
                         </div>
                         {teams.length === 0 && (
-                            <p className="text-xs text-gray-500 mt-2">
+                            <p className="text-xs text-[var(--app-text-muted)] mt-2">
                                 {t('projects.create.no_teams')}
                             </p>
                         )}
-                        <p className="text-[10px] text-gray-500 mt-2">
+                        <p className="text-[10px] text-[var(--app-text-muted)] mt-2">
                             {t('projects.create.multi_team_help') || 'Możesz zaznaczyć kilka zespołów'}
                         </p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                             {t('projects.create.template')}
                         </label>
                         <Select value={industryTemplateId} onValueChange={setIndustryTemplateId}>
-                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[#1a1a24] border-none text-white focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all">
+                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-[var(--app-text-primary)] focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all">
                                 <SelectValue placeholder={t('projects.create.select_template')} />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#1a1a24] border-none text-white">
-                                <SelectItem value="no_template" className="focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white font-medium">
+                            <SelectContent className="bg-[var(--app-bg-elevated)] border border-[var(--app-border)] text-[var(--app-text-primary)]">
+                                <SelectItem value="no_template" className="focus:bg-[var(--app-bg-sidebar)] focus:text-[var(--app-text-primary)] cursor-pointer py-3 text-[var(--app-text-secondary)] data-[state=checked]:text-[var(--app-text-primary)] font-medium">
                                     {t('projects.create.no_template')}
                                 </SelectItem>
                                 {templates.map((template) => (
                                     <SelectItem
                                         key={template.id}
                                         value={template.id}
-                                        className="focus:bg-gray-800 focus:text-white cursor-pointer py-3 text-gray-300 data-[state=checked]:text-white"
+                                        className="focus:bg-[var(--app-bg-sidebar)] focus:text-[var(--app-text-primary)] cursor-pointer py-3 text-[var(--app-text-secondary)] data-[state=checked]:text-[var(--app-text-primary)]"
                                     >
                                         <div className="flex flex-col items-start gap-1">
                                             <span className="font-medium flex items-center gap-2"> {template.icon} {template.name}</span>
                                             {template.description && (
-                                                <span className="text-xs text-gray-500 truncate max-w-[280px]">
+                                                <span className="text-xs text-[var(--app-text-muted)] truncate max-w-[280px]">
                                                     {template.description}
                                                 </span>
                                             )}
@@ -322,13 +322,13 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                                 ))}
                             </SelectContent>
                         </Select>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-[var(--app-text-muted)] mt-2">
                             {t('projects.create.template_help')}
                         </p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                             <Palette size={14} className="inline mr-2" />
                             {t('projects.create.color')}
                         </label>
@@ -339,7 +339,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                                     type="button"
                                     onClick={() => setColor(c)}
                                     className={`w-8 h-8 rounded-lg transition-all ${color === c
-                                        ? 'ring-2 ring-white ring-offset-2 ring-offset-[#12121a] scale-110'
+                                        ? 'ring-2 ring-[var(--app-text-primary)] ring-offset-2 ring-offset-[var(--app-bg-card)] scale-110'
                                         : 'hover:scale-110'
                                         }`}
                                     style={{ backgroundColor: c }}
@@ -350,7 +350,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                                 {t('projects.create.start_date')}
                             </label>
                             <DueDatePicker
@@ -361,7 +361,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                                 {t('projects.create.deadline')}
                             </label>
                             <DueDatePicker
@@ -380,11 +380,11 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     )}
                 </form>
 
-                <div className="p-6 border-t border-gray-800 flex gap-3">
+                <div className="p-6 border-t border-[var(--app-border)] flex gap-3">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-300 font-medium hover:bg-gray-800 transition-colors"
+                        className="flex-1 px-4 py-3 rounded-xl border border-[var(--app-border)] text-[var(--app-text-secondary)] font-medium hover:bg-[var(--app-bg-sidebar)] transition-colors"
                     >
                         {t('projects.create.cancel')}
                     </button>

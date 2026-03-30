@@ -134,30 +134,30 @@ export function GanttView({
     return (
         <div className="flex flex-col w-full h-full">
             {/* Month Navigator Header */}
-            <div className="flex items-center justify-center h-10 gap-4 bg-[#1e1e29] rounded-xl m-2 flex-shrink-0">
-                <button onClick={handlePrevMonth} className="text-gray-400 hover:text-white"><ChevronLeft size={14} /></button>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">
+            <div className="flex items-center justify-center h-10 gap-4 bg-[var(--app-bg-elevated)] rounded-xl m-2 flex-shrink-0">
+                <button onClick={handlePrevMonth} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"><ChevronLeft size={14} /></button>
+                <span className="text-xs font-bold text-[var(--app-text-primary)] uppercase tracking-wider">
                     {currentMonthLabel}
                 </span>
-                <button onClick={handleNextMonth} className="text-gray-400 hover:text-white"><ChevronRight size={14} /></button>
+                <button onClick={handleNextMonth} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"><ChevronRight size={14} /></button>
             </div>
 
             {/* Gantt Container */}
-            <div className="flex-1 flex flex-col mx-2 min-h-0 overflow-hidden bg-[#13131a] rounded-xl border border-gray-800">
+            <div className="flex-1 flex flex-col mx-2 min-h-0 overflow-hidden bg-[var(--app-bg-page)] rounded-xl border border-[var(--app-border)]">
 
                 {/* 1. SEPARATE HEADER ROW */}
                 <div
                     ref={headerRef}
-                    className="flex overflow-hidden border-b border-gray-800 bg-[#1e1e29] relative z-20 flex-shrink-0 shadow-sm"
+                    className="flex overflow-hidden border-b border-[var(--app-border)] bg-[var(--app-bg-elevated)] relative z-20 flex-shrink-0 shadow-sm"
                 >
                     <div className="min-w-max flex">
                         {/* Left Side Header (Sticky Left) */}
-                        <div className="w-[720px] flex-shrink-0 sticky left-0 z-30 bg-[#1e1e29] flex items-center h-12 text-xs font-semibold text-gray-300 border-r border-gray-800 shadow-[4px_0_24px_rgba(0,0,0,0.3)]">
-                            <div className="w-[240px] px-4 border-r border-gray-800/50 h-full flex items-center overflow-hidden"><Marquee>{t('projects.gantt.task_name')}</Marquee></div>
-                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.start_date')}</Marquee></div>
-                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.end_date')}</Marquee></div>
-                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.status')}</Marquee></div>
-                            <div className="w-[100px] px-2 text-center border-r border-gray-800/50 h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.subtasks')}</Marquee></div>
+                        <div className="w-[720px] flex-shrink-0 sticky left-0 z-30 bg-[var(--app-bg-elevated)] flex items-center h-12 text-xs font-semibold text-[var(--app-text-secondary)] border-r border-[var(--app-border)] shadow-[4px_0_24px_rgba(0,0,0,0.1)]">
+                            <div className="w-[240px] px-4 border-r border-[var(--app-divider)] h-full flex items-center overflow-hidden"><Marquee>{t('projects.gantt.task_name')}</Marquee></div>
+                            <div className="w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.start_date')}</Marquee></div>
+                            <div className="w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.end_date')}</Marquee></div>
+                            <div className="w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.status')}</Marquee></div>
+                            <div className="w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.subtasks')}</Marquee></div>
                             <div className="w-[80px] px-2 text-center h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.assignee')}</Marquee></div>
                         </div>
 
@@ -168,7 +168,7 @@ export function GanttView({
                                 return (
                                     <div
                                         key={idx}
-                                        className={`w-12 h-12 flex-shrink-0 flex flex-col items-center justify-center text-[10px] border-r border-gray-800/50 last:border-0 ${isToday ? 'relative' : 'text-gray-500'} bg-[#1e1e29]`}
+                                        className={`w-12 h-12 flex-shrink-0 flex flex-col items-center justify-center text-[10px] border-r border-[var(--app-divider)] last:border-0 ${isToday ? 'relative' : 'text-[var(--app-text-muted)]'} bg-[var(--app-bg-elevated)]`}
                                     >
                                         {isToday && (
                                             <div className="absolute inset-1 bg-amber-500/10 border border-amber-500/20 rounded-lg -z-0" />
@@ -192,28 +192,28 @@ export function GanttView({
                         {/* Task Rows */}
                         <div className="flex flex-col">
                             {tasks.map((task) => (
-                                <div key={task.id} className="flex group transition-colors h-12 relative border-b border-gray-800/30 hover:bg-[#1a1a24]/50">
+                                <div key={task.id} className="flex group transition-colors h-12 relative border-b border-[var(--app-divider)]/50 hover:bg-[var(--app-bg-sidebar)]/50">
                                     {/* Left Side Details (Sticky Left) */}
                                     <div
-                                        className="w-[720px] flex-shrink-0 sticky left-0 z-20 flex items-center bg-[#13131a] group-hover:bg-[#1a1a24] transition-colors border-r border-gray-800 shadow-[4px_0_24px_rgba(0,0,0,0.3)]"
+                                        className="w-[720px] flex-shrink-0 sticky left-0 z-20 flex items-center bg-[var(--app-bg-page)] group-hover:bg-[var(--app-bg-sidebar)] transition-colors border-r border-[var(--app-border)] shadow-[4px_0_24px_rgba(0,0,0,0.1)]"
                                         onClick={() => onTaskClick?.(task)}
                                     >
-                                        <div className="w-[240px] px-4 text-sm font-medium text-gray-200 cursor-pointer hover:text-white transition-colors border-r border-gray-800/20 h-full flex items-center overflow-hidden">
+                                        <div className="w-[240px] px-4 text-sm font-medium text-[var(--app-text-primary)] cursor-pointer hover:text-[var(--app-accent)] transition-colors border-r border-[var(--app-divider)] h-full flex items-center overflow-hidden">
                                             <Marquee>{task.title}</Marquee>
                                         </div>
-                                        <div className="w-[100px] px-2 text-xs text-gray-500 text-center border-r border-gray-800/20 h-full flex items-center justify-center overflow-hidden">
+                                        <div className="w-[100px] px-2 text-xs text-[var(--app-text-muted)] text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden">
                                             <Marquee>{task.startDate ? formatShortDate(task.startDate) : '-'}</Marquee>
                                         </div>
-                                        <div className="w-[100px] px-2 text-xs text-gray-500 text-center border-r border-gray-800/20 h-full flex items-center justify-center overflow-hidden">
+                                        <div className="w-[100px] px-2 text-xs text-[var(--app-text-muted)] text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden">
                                             <Marquee>{task.endDate ? formatShortDate(task.endDate) : '-'}</Marquee>
                                         </div>
-                                        <div className="w-[100px] px-2 flex justify-center border-r border-gray-800/20 h-full items-center overflow-hidden">
+                                        <div className="w-[100px] px-2 flex justify-center border-r border-[var(--app-divider)] h-full items-center overflow-hidden">
                                             <StatusBadge status={task.status} stages={stages} size="sm" />
                                         </div>
-                                        <div className="w-[100px] px-2 text-xs text-gray-500 flex items-center justify-center gap-1 border-r border-gray-800/20 h-full overflow-hidden">
+                                        <div className="w-[100px] px-2 text-xs text-[var(--app-text-muted)] flex items-center justify-center gap-1 border-r border-[var(--app-divider)] h-full overflow-hidden">
                                             {task.subtasksCount ? (
-                                                <span className="flex items-center gap-1 bg-gray-800/50 px-1.5 py-0.5 rounded text-[10px]">
-                                                    <span className="text-gray-400">📄</span>
+                                                <span className="flex items-center gap-1 bg-[var(--app-divider)] px-1.5 py-0.5 rounded text-[10px]">
+                                                    <span className="text-[var(--app-text-muted)]">📄</span>
                                                     {task.subtasksCompleted || 0}/{task.subtasksCount}
                                                 </span>
                                             ) : '-'}
@@ -227,14 +227,14 @@ export function GanttView({
                                                                 key={assignee.id || idx}
                                                                 src={assignee.image || assignee.avatar}
                                                                 alt={assignee.name}
-                                                                className="w-6 h-6 rounded-full object-cover border border-[#13131a] relative"
+                                                                className="w-6 h-6 rounded-full object-cover border border-[var(--app-bg-page)] relative"
                                                                 style={{ zIndex: 10 - idx }}
                                                                 title={assignee.name}
                                                             />
                                                         ) : (
                                                             <div
                                                                 key={assignee.id || idx}
-                                                                className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[10px] text-black font-bold border border-[#13131a] relative"
+                                                                className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[10px] text-black font-bold border border-[var(--app-bg-page)] relative"
                                                                 style={{ zIndex: 10 - idx }}
                                                                 title={assignee.name}
                                                             >
@@ -244,7 +244,7 @@ export function GanttView({
                                                     ))}
                                                     {task.assigneeDetails.length > 2 && (
                                                         <div
-                                                            className="w-6 h-6 rounded-full bg-gray-800 border border-[#13131a] flex items-center justify-center text-[10px] text-gray-400 font-bold relative"
+                                                            className="w-6 h-6 rounded-full bg-[var(--app-divider)] border border-[var(--app-bg-page)] flex items-center justify-center text-[10px] text-[var(--app-text-muted)] font-bold relative"
                                                             style={{ zIndex: 0 }}
                                                         >
                                                             +{task.assigneeDetails.length - 2}
@@ -260,7 +260,7 @@ export function GanttView({
                                         {days.map((day, idx) => {
                                             const isToday = isSameDay(day, today)
                                             return (
-                                                <div key={idx} className="w-12 h-full flex-shrink-0 border-r border-gray-800/30 relative last:border-0">
+                                                <div key={idx} className="w-12 h-full flex-shrink-0 border-r border-[var(--app-divider)]/50 relative last:border-0">
                                                     {/* Current Time Line Segment */}
                                                     {isToday && (
                                                         <div
@@ -285,7 +285,7 @@ export function GanttView({
                             ))}
 
                             {tasks.length === 0 && (
-                                <div className="flex items-center justify-center h-32 text-gray-500 text-sm">
+                                <div className="flex items-center justify-center h-32 text-[var(--app-text-muted)] text-sm">
                                     <div className="w-[600px] text-center sticky left-0">
                                         {t('projects.gantt.no_tasks')}
                                     </div>

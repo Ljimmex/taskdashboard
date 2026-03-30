@@ -71,13 +71,13 @@ function ProjectMenu({ project, tasks, onEditProject, onDeleteProject }: { proje
                     e.stopPropagation()
                     setIsOpen(!isOpen)
                 }}
-                className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-colors"
             >
                 <MoreHorizontal size={16} />
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-[#1a1a24] rounded-xl shadow-2xl z-[100] py-1"
+                <div className="absolute right-0 top-full mt-1 w-44 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl shadow-2xl z-[100] py-1"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <button
@@ -85,29 +85,29 @@ function ProjectMenu({ project, tasks, onEditProject, onDeleteProject }: { proje
                             e.stopPropagation()
                             handleExportTasks()
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800/80 hover:text-white transition-colors flex items-center gap-3"
+                        className="w-full text-left px-4 py-2.5 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-sidebar)]/80 hover:text-[var(--app-text-primary)] transition-colors flex items-center gap-3"
                     >
                         <Download size={14} />
                         {t('project_edit.menu.export_tasks')}
                     </button>
-                    <div className="my-1 mx-2 h-px bg-gray-800" />
+                    <div className="my-1 mx-2 h-px bg-[var(--app-divider)]" />
                     <button
                         onClick={() => {
                             onEditProject?.(project)
                             setIsOpen(false)
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-800/80 hover:text-white transition-colors flex items-center gap-3"
+                        className="w-full text-left px-4 py-2.5 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-sidebar)]/80 hover:text-[var(--app-text-primary)] transition-colors flex items-center gap-3"
                     >
                         <Edit2 size={14} />
                         {t('project_edit.menu.edit_project')}
                     </button>
-                    <div className="my-1 mx-2 h-px bg-gray-800" />
+                    <div className="my-1 mx-2 h-px bg-[var(--app-divider)]" />
                     <button
                         onClick={() => {
                             onDeleteProject?.(project)
                             setIsOpen(false)
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-3"
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-3"
                     >
                         <Trash2 size={14} />
                         {t('project_edit.menu.delete_project')}
@@ -137,13 +137,13 @@ export function ProjectSection({
     const canEditProject = userRole && !['member', 'guest'].includes(userRole)
 
     return (
-        <div className="bg-[#16161f] rounded-xl border border-gray-700/50 overflow-hidden mb-4 shadow-sm">
+        <div className="bg-[var(--app-bg-card)] rounded-xl border border-[var(--app-border)] overflow-hidden mb-4 shadow-sm">
             {/* Project Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-[#1e1e29] border-b border-gray-700/50">
+            <div className="flex items-center justify-between px-4 py-3 bg-[var(--app-bg-elevated)] border-b border-[var(--app-border)]">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
                     >
                         {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                     </button>
@@ -153,7 +153,7 @@ export function ProjectSection({
                     />
                     <button
                         onClick={() => onProjectClick?.(project.id)}
-                        className="text-white font-medium hover:text-[#F2CE88] transition-colors"
+                        className="text-[var(--app-text-primary)] font-semibold hover:text-[var(--app-accent)] transition-colors"
                     >
                         {project.name}
                     </button>
@@ -161,7 +161,7 @@ export function ProjectSection({
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => onAddTask?.()}
-                        className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-colors"
                     >
                         <Plus size={16} />
                     </button>
@@ -175,7 +175,7 @@ export function ProjectSection({
                     )}
                     <button
                         onClick={() => onProjectClick?.(project.id)}
-                        className="p-1.5 text-gray-500 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-colors"
                         title="Otwórz projekt"
                     >
                         <Maximize2 size={16} />

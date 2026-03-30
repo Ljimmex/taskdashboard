@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useParams } from '@tanstack/react-router'
 import { usePanelStore } from '../../../../lib/panelStore'
+import { useSession } from '../../../../lib/auth'
 import type { Label } from '../../labels/LabelBadge'
 import { LabelPicker } from '../../labels/LabelPicker'
 import { FilePicker } from '../../files/FilePicker'
@@ -94,8 +95,6 @@ const TabButton = ({
         {label}
     </button>
 )
-
-
 
 // Status Selector with dropdown
 import * as Select from '@radix-ui/react-select'
@@ -251,9 +250,9 @@ export function EditTaskPanel({
     teamMembers = [],
     availableLabels: propAvailableLabels = [],
     onCreateLabel: propOnCreateLabel,
-    userId,
 }: EditTaskPanelProps) {
     const { t } = useTranslation()
+    const { data: session } = useSession()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
     const [activeTab, setActiveTab] = useState<'subtasks' | 'shared' | 'links'>('subtasks')
     const [links, setLinks] = useState<TaskLink[]>([])
@@ -304,7 +303,7 @@ export function EditTaskPanel({
     const isBlocked = isTaskBlocked({ dependsOn: selectedDependsOn } as any, allTasks)
     const blockedTitle = isBlocked ? t('tasks.blocked_by_dependencies') : undefined
 
-    // Labels - use useMemo to prevent recreation on every render
+    // Labels
     const defaultLabels: Label[] = [
         { id: 'bug', name: 'Bug', color: '#ef4444' },
         { id: 'feature', name: 'Feature', color: '#10b981' },
@@ -320,7 +319,7 @@ export function EditTaskPanel({
         setIsPanelOpen(isOpen)
     }, [isOpen, setIsPanelOpen])
 
-    // Initialize form when task changes - only depend on task.id and isOpen
+    // Initialize form when task changes
     useEffect(() => {
         if (task && isOpen) {
             setTitle(task.title || '')
@@ -332,7 +331,6 @@ export function EditTaskPanel({
             setSelectedDependsOn((task as any).dependsOn || [])
             setIsCompleted(task.isCompleted || false)
             setActiveTab('subtasks')
-            // Deduplicate assignees by ID and include image support
             const sourceAssignees = task.assigneeDetails || task.assignees || []
             const rawAssignees = (sourceAssignees as any[]).map(a => ({
                 id: a.id,
@@ -342,7 +340,6 @@ export function EditTaskPanel({
             })) || []
             const uniqueAssignees = Array.from(new Map(rawAssignees.map(a => [a.id, a])).values())
             setSelectedAssignees(uniqueAssignees)
-            // Resolve label IDs to objects
             const taskLabelIds = (task.labels as unknown as string[]) || []
             const allLabels = propAvailableLabels.length > 0 ? propAvailableLabels : defaultLabels
             const resolvedLabels = taskLabelIds
@@ -350,7 +347,6 @@ export function EditTaskPanel({
                 .filter((l): l is Label => !!l)
             setSelectedLabels(resolvedLabels)
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [task?.id, isOpen])
 
     // Close on escape
@@ -363,10 +359,6 @@ export function EditTaskPanel({
             return () => document.removeEventListener('keydown', handleEscape)
         }
     }, [isOpen, onClose])
-
-    // NOTE: Removed click outside handler as it was closing the panel when clicking on 
-    // dropdowns/pickers (DueDatePicker, AssigneePicker, LabelPicker, PrioritySelector).
-    // Users can close the panel using the close button or Escape key.
 
     const handleCreateLabel = async (name: string, color: string): Promise<Label | undefined> => {
         if (propOnCreateLabel) {
@@ -400,21 +392,19 @@ export function EditTaskPanel({
         <>
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                    }`}
+                className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             />
 
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-all duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
-                    } ${isMaximized ? 'max-w-5xl' : 'max-w-lg'}`}
+                className={`fixed top-4 right-4 bottom-4 w-full bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-all duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} ${isMaximized ? 'max-w-5xl' : 'max-w-lg'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-gray-800 rounded-t-2xl">
-                    {/* Top row with collapse and actions */}
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
+                    {/* Top row with actions synced with Details Panel style */}
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-3">
                             <button
                                 onClick={onClose}
                                 className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
@@ -494,7 +484,6 @@ export function EditTaskPanel({
                                         <button
                                             onClick={() => {
                                                 setShowMoreMenu(false)
-                                                // Handle archive if needed, or other edit-mode specifics
                                                 console.log('Archive task requested in edit mode')
                                             }}
                                             className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-gray-800 flex items-center gap-2 whitespace-nowrap transition-colors"
@@ -505,7 +494,6 @@ export function EditTaskPanel({
                                         <button
                                             onClick={() => {
                                                 setShowMoreMenu(false)
-                                                // Handle delete if needed
                                                 console.log('Delete task requested in edit mode')
                                             }}
                                             className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 flex items-center gap-2 whitespace-nowrap transition-colors"
@@ -517,106 +505,105 @@ export function EditTaskPanel({
                                 )}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Task Title - Editable */}
-                        <div className="flex items-center gap-3 mb-4">
+                    {/* Task Title - Editable */}
+                    <div className="mb-6">
+                        {isEditingTitle ? (
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                onBlur={() => setIsEditingTitle(false)}
+                                onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
+                                autoFocus
+                                className="text-2xl font-bold text-white w-full bg-gray-800/50 border border-amber-500/50 rounded-xl px-4 py-2 outline-none shadow-[0_0_20px_rgba(245,158,11,0.05)]"
+                            />
+                        ) : (
+                            <h2
+                                onClick={() => setIsEditingTitle(true)}
+                                className={`text-2xl font-bold cursor-pointer hover:text-amber-400 transition-all ${isCompleted ? 'line-through text-gray-500/70' : 'text-white'}`}
+                                title={t('tasks.edit.click_to_edit')}
+                            >
+                                {title}
+                            </h2>
+                        )}
+                    </div>
+
+                    {/* Task Meta Grid - Synced with Details Panel layout */}
+                    <div className="space-y-3">
+                        {/* Project */}
+                        {task.projectName && (
+                            <div className="flex items-center gap-4 group">
+                                <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.edit.meta.project')}</span>
+                                <span className="text-sm text-gray-300 group-hover:text-white transition-colors">{task.projectName}</span>
+                            </div>
+                        )}
+
+                        {/* Assignees - Editable */}
+                        <div className="flex items-start gap-4">
+                            <span className="text-sm text-gray-500 w-24 flex-shrink-0 pt-1.5">{t('tasks.edit.meta.assignee')}</span>
                             <div className="flex-1">
-                                {isEditingTitle ? (
-                                    <input
-                                        type="text"
-                                        value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
-                                        onBlur={() => setIsEditingTitle(false)}
-                                        onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
-                                        autoFocus
-                                        className="text-xl font-bold text-white w-full bg-gray-800 border border-amber-500 rounded-lg px-3 py-2 outline-none"
-                                    />
-                                ) : (
-                                    <h2
-                                        onClick={() => setIsEditingTitle(true)}
-                                        className={`text-xl font-bold cursor-pointer hover:text-amber-400 transition-colors ${isCompleted ? 'line-through text-gray-500' : 'text-white'}`}
-                                        title={t('tasks.edit.click_to_edit')}
-                                    >
-                                        {title}
-                                    </h2>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Task Meta */}
-                        <div className="space-y-3">
-                            {/* Project */}
-                            {task.projectName && (
-                                <div className="flex items-center gap-4">
-                                    <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.project')}</span>
-                                    <span className="text-sm text-white">{task.projectName}</span>
-                                </div>
-                            )}
-
-                            {/* Assignees - Editable */}
-                            <div className="flex items-start gap-4">
-                                <span className="text-sm text-gray-500 w-20 pt-2">{t('tasks.edit.meta.assignee')}</span>
-                                <div className="flex-1">
-                                    <AssigneePicker
-                                        selectedAssignees={selectedAssignees}
-                                        availableAssignees={teamMembers}
-                                        onSelect={setSelectedAssignees}
-                                        maxVisible={2}
-                                        disabled={isBlocked}
-                                        title={blockedTitle}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Status */}
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.status')}</span>
-                                <StatusSelector
-                                    status={status}
-                                    stages={stages}
-                                    onChange={setStatus}
+                                <AssigneePicker
+                                    selectedAssignees={selectedAssignees}
+                                    availableAssignees={teamMembers}
+                                    onSelect={setSelectedAssignees}
+                                    maxVisible={2}
                                     disabled={isBlocked}
                                     title={blockedTitle}
                                 />
                             </div>
+                        </div>
 
-                            {/* Due Date - Editable */}
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.end_date')}</span>
-                                <DueDatePicker
-                                    value={dueDate}
-                                    onChange={setDueDate}
-                                    placeholder={t('tasks.edit.select_date')}
+                        {/* Status */}
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.edit.meta.status')}</span>
+                            <StatusSelector
+                                status={status}
+                                stages={stages}
+                                onChange={setStatus}
+                                disabled={isBlocked}
+                                title={blockedTitle}
+                            />
+                        </div>
+
+                        {/* Due Date - Editable */}
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.edit.meta.end_date')}</span>
+                            <DueDatePicker
+                                value={dueDate}
+                                onChange={setDueDate}
+                                placeholder={t('tasks.edit.select_date')}
+                            />
+                        </div>
+
+                        {/* Priority - Editable */}
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.edit.meta.priority')}</span>
+                            <PrioritySelector value={priority} onChange={setPriority} size="sm" />
+                        </div>
+
+                        {/* Labels - Editable */}
+                        <div className="flex items-start gap-4">
+                            <span className="text-sm text-gray-500 w-24 flex-shrink-0 pt-1.5">{t('tasks.edit.meta.labels')}</span>
+                            <div className="flex-1">
+                                <LabelPicker
+                                    selectedLabels={selectedLabels}
+                                    availableLabels={availableLabels}
+                                    onSelect={setSelectedLabels}
+                                    onCreateNew={handleCreateLabel}
                                 />
                             </div>
+                        </div>
 
-                            {/* Priority - Editable */}
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-20">{t('tasks.edit.meta.priority')}</span>
-                                <PrioritySelector value={priority} onChange={setPriority} size="sm" />
-                            </div>
-
-                            {/* Labels - Editable */}
-                            <div className="flex items-start gap-4">
-                                <span className="text-sm text-gray-500 w-20 pt-2">{t('tasks.edit.meta.labels')}</span>
-                                <div className="flex-1">
-                                    <LabelPicker
-                                        selectedLabels={selectedLabels}
-                                        availableLabels={availableLabels}
-                                        onSelect={setSelectedLabels}
-                                        onCreateNew={handleCreateLabel}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-20">{t('tasks.create.dependencies')}</span>
-                                <DependsOnSelector
-                                    selectedIds={selectedDependsOn}
-                                    availableTasks={availableTasks}
-                                    onChange={setSelectedDependsOn}
-                                />
-                            </div>
+                        {/* Dependencies */}
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.create.dependencies')}</span>
+                            <DependsOnSelector
+                                selectedIds={selectedDependsOn}
+                                availableTasks={availableTasks}
+                                onChange={setSelectedDependsOn}
+                            />
                         </div>
                     </div>
                 </div>
@@ -671,7 +658,7 @@ export function EditTaskPanel({
                 </div>
 
                 {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto min-h-0">
                     {/* Subtasks Tab */}
                     {activeTab === 'subtasks' && (
                         <div className="p-6">
@@ -753,13 +740,10 @@ export function EditTaskPanel({
                             {/* FilePicker Modal */}
                             {showFilePicker && createPortal(
                                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                                    {/* Backdrop */}
                                     <div
                                         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                                         onClick={() => setShowFilePicker(false)}
                                     />
-
-                                    {/* Modal Content - FilePicker provides its own container */}
                                     <FilePicker
                                         onCancel={() => setShowFilePicker(false)}
                                         onSelect={(files: FileRecord[]) => {
@@ -770,7 +754,6 @@ export function EditTaskPanel({
                                             }
                                             setShowFilePicker(false)
                                         }}
-                                    // workspaceSlug is handled internally by FilePicker using useParams
                                     />
                                 </div>,
                                 document.body
@@ -798,39 +781,35 @@ export function EditTaskPanel({
                     )}
                 </div>
 
-                {/* LinkInput Modal */}
-                <LinkInput
-                    open={showLinkInput}
-                    onClose={() => setShowLinkInput(false)}
-                    onAdd={(link: { url: string; title?: string }) => {
-                        const newLink: TaskLink = {
-                            id: crypto.randomUUID(),
-                            url: link.url,
-                            title: link.title || '',
-                            addedBy: userId || 'unknown',
-                            addedAt: new Date().toISOString()
-                        }
-                        setLinks(prev => [...prev, newLink])
-                        setShowLinkInput(false)
-                    }}
-                />
-
-                {/* Footer with Save Button */}
-                <div className="flex-none p-6 border-t border-gray-800 flex gap-3">
+                {/* Footer with Save Action */}
+                <div className="flex-none p-6 border-t border-gray-800 flex justify-end gap-3 bg-[#12121a] rounded-b-2xl">
                     <button
                         onClick={onClose}
-                        className="flex-1 px-4 py-3 bg-gray-800 text-gray-300 rounded-xl font-medium hover:bg-gray-700 transition-colors"
+                        className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors"
                     >
-                        {t('tasks.edit.cancel')}
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={handleSave}
-                        disabled={!title.trim()}
-                        className="flex-1 px-4 py-3 bg-amber-500 text-black rounded-xl font-bold hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-2 text-sm font-bold text-black bg-amber-500 hover:bg-amber-400 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_25px_rgba(245,158,11,0.3)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
                     >
-                        {t('tasks.edit.save')}
+                        {t('common.save')}
                     </button>
                 </div>
+
+                <LinkInput
+                    open={showLinkInput}
+                    onClose={() => setShowLinkInput(false)}
+                    onAdd={(newLink) => {
+                        setLinks(prev => [...prev, {
+                            ...newLink,
+                            id: Date.now().toString(),
+                            addedBy: session?.user?.id || 'unknown',
+                            addedAt: new Date().toISOString()
+                        }])
+                        setShowLinkInput(false)
+                    }}
+                />
             </div>
         </>
     )
