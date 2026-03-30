@@ -109,6 +109,17 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     enabled: !!userId,
     refetchInterval: 5000,
   })
+
+  // Verify Active Entry Existence (Keep it for info, but don't clear automatically)
+  const { error: activeEntryError } = useQuery({
+    queryKey: ['active-time-entry', activeEntryId],
+    queryFn: () => apiFetchJson<{ success: boolean; data: any }>(`/api/time/${activeEntryId}`),
+    enabled: !!activeEntryId,
+    refetchInterval: 15000,
+    retry: false,
+  })
+
+  // We no longer clear the timer automatically on 404 to be resilient to accidental deletions
   const myHistory = historyData?.data || []
 
   const paginatedHistory = useMemo(() => {
@@ -152,6 +163,23 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     },
   })
 
+  const manualSaveMutation = useMutation({
+    mutationFn: (body: any) =>
+      apiFetchJson<{ success: boolean; data: any }>('/api/time', {
+        method: 'POST',
+        body: JSON.stringify(body)
+      }),
+    onSuccess: () => {
+      setIsRunning(false)
+      setActiveEntryId(null)
+      setElapsed(0)
+      setDescription('')
+      startTimeRef.current = 0
+      localStorage.removeItem(`tt_${userId}`)
+      queryClient.invalidateQueries({ queryKey: ['my-time-entries'] })
+    }
+  })
+
   const stopMutation = useMutation({
     mutationFn: (entryId: string) =>
       apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/stop`, { method: 'PATCH' }),
@@ -164,6 +192,24 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
       localStorage.removeItem(`tt_${userId}`)
       queryClient.invalidateQueries({ queryKey: ['my-time-entries'] })
     },
+    onError: (err: any) => {
+      // If entry doesn't exist (404), fallback to creating a NEW manual entry with the same stats
+      if (err.status === 404 || err.message?.includes('404')) {
+        const endedAt = new Date()
+        const durationMinutes = Math.round((endedAt.getTime() - startTimeRef.current) / 60000)
+
+        manualSaveMutation.mutate({
+          taskId: selectedTaskId,
+          subtaskId: selectedSubtaskId,
+          workspaceSlug,
+          description: description,
+          durationMinutes,
+          startedAt: new Date(startTimeRef.current).toISOString(),
+          endedAt: endedAt.toISOString(),
+          entryType: selectedEntryType
+        })
+      }
+    }
   })
 
   const handleStart = useCallback(() => {
@@ -490,7 +536,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
 
         {/* CLOCK RENDERER */}
         {clockType === 'analog' ? (
-          <div className="mb-8 relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+          <div className="mb-4 relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
             {/* Soft Glow behind clock if running */}
             <div className={`absolute inset-0 rounded-full transition-opacity duration-1000 blur-3xl pointer-events-none ${isRunning ? 'bg-[var(--app-accent)]/10 opacity-100' : 'opacity-0'}`} />
 
@@ -597,11 +643,23 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
             </div>
           </div>
         ) : (
-          <div className="mb-12 mt-6">
+          <div className="mb-10 mt-6">
             <div className={`font-mono text-[4.5rem] md:text-8xl font-black tracking-tighter transition-colors duration-500 tabular-nums ${isRunning ? 'text-[var(--app-accent)] drop-shadow-[0_0_20px_var(--app-accent)]' : 'text-[var(--app-text-primary)]'}`}>
               {formatTime(Math.floor(elapsed))}
             </div>
-            {isRunning && <div className="text-[var(--app-text-muted)] font-bold uppercase tracking-[0.3em] text-xs mt-2 animate-pulse">Rejestrowanie</div>}
+            {isRunning && (
+              <div className="flex flex-col items-center gap-2 mt-2">
+                <div className="text-[var(--app-text-muted)] font-bold uppercase tracking-[0.3em] text-xs animate-pulse">
+                  {t('timeTracker.timer.recording', 'Rejestrowanie')}
+                </div>
+                {activeEntryError && (activeEntryError as any).status === 404 && (
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold uppercase tracking-wider animate-bounce shadow-sm">
+                    <Activity size={12} />
+                    {t('timeTracker.timer.unsynced', 'Wpis usunięty - zostanie przywrócony przy zapisie')}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

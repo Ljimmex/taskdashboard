@@ -42,11 +42,11 @@ const isUUID = (val: string | null | undefined): boolean => {
 // Mapowanie ról workspace/team → współczynnik projektu
 export function resolveProjectRole(wsRole: string, isAnyTeamLead: boolean): string {
     // Owner, Admin, Project Manager → Lider Projektu (Najwyższa ranga)
-    if (['owner', 'admin', 'project_manager'].includes(wsRole)) return 'project_leader'
+    if (['owner', 'admin', 'project_manager'].includes(wsRole)) return 'Project_Leader'
     // Jeśli jest leaderem w DOWOLNYM zespole w tym workspace → Lider Obszaru
-    if (isAnyTeamLead) return 'area_leader'
+    if (isAnyTeamLead) return 'Team_Leader'
     // Wszyscy inni → Uczestnik
-    return 'participant'
+    return 'Participant'
 }
 
 const createTimeEntrySchema = z.object({
@@ -209,7 +209,6 @@ timeRoutes.get('/', async (c) => {
     }
 })
 
-// GET /api/time/summary - Get time summary
 timeRoutes.get('/summary', async (c) => {
     try {
         const user = c.get('user')

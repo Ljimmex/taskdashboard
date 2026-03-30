@@ -29,9 +29,6 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}): Pro
 export async function apiFetchJson<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const response = await apiFetch(endpoint, options)
 
-    if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`)
-    }
 
     return response.json()
 }
