@@ -15,7 +15,7 @@ import {
 } from '../../lib/permissions'
 
 import { type Auth } from '../../lib/auth'
-
+import { NotificationService } from '../notifications/service'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { zSanitizedString } from '../../lib/zod-extensions'
@@ -1115,6 +1115,21 @@ timeRoutes.patch('/:id/approve', zValidator('json', approveTimeEntrySchema), asy
             .where(eq(timeEntries.id, id))
             .returning()
 
+        // Notify user about approval
+        if (updated && updated.userId) {
+            const [workspace] = await db.select({ slug: workspaces.slug }).from(workspaces)
+                .where(eq(workspaces.id, updated.workspaceId!)).limit(1)
+
+            await NotificationService.push(updated.userId, {
+                type: 'time_entry_approved',
+                title: 'notifications.titles.time_approved',
+                message: `Twój wpis czasu (${updated.durationMinutes} min) został zaakceptowany przez [${user.name}]`,
+                link: `/${workspace?.slug}/time-tracker`,
+                actor: { name: user.name, image: user.image || undefined },
+                metadata: { entryId: updated.id }
+            })
+        }
+
         return c.json({ success: true, data: updated })
     } catch (error) {
         console.error('Error approving entry:', error)
@@ -1154,6 +1169,21 @@ timeRoutes.patch('/:id/reject', zValidator('json', rejectTimeEntrySchema), async
             })
             .where(eq(timeEntries.id, id))
             .returning()
+
+        // Notify user about rejection
+        if (updated && updated.userId) {
+            const [workspace] = await db.select({ slug: workspaces.slug }).from(workspaces)
+                .where(eq(workspaces.id, updated.workspaceId!)).limit(1)
+
+            await NotificationService.push(updated.userId, {
+                type: 'time_entry_rejected',
+                title: 'notifications.titles.time_rejected',
+                message: `Twój wpis czasu (${updated.durationMinutes} min) został odrzucony przez [${user.name}]. Powód: ${body.rejectionReason}`,
+                link: `/${workspace?.slug}/time-tracker`,
+                actor: { name: user.name, image: user.image || undefined },
+                metadata: { entryId: updated.id, reason: body.rejectionReason }
+            })
+        }
 
         return c.json({ success: true, data: updated })
     } catch (error) {

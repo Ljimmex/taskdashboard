@@ -7,6 +7,7 @@ import { triggerWebhook } from '../webhooks/trigger'
 import type { WorkspaceRole } from '../../lib/permissions'
 
 import { type Auth } from '../../lib/auth'
+import { NotificationService } from '../notifications/service'
 
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
@@ -36,7 +37,7 @@ const createConversationSchema = z.object({
 }).refine(data => data.teamId || data.workspaceId, {
     message: "teamId or workspaceId required"
 }).refine(data => data.type !== 'channel' || data.name, {
-    message: "name required for channels"
+    message: "name required for platforms"
 })
 
 const createDirectConversationSchema = z.object({
@@ -487,6 +488,19 @@ conversationsRoutes.post('/:id/messages', zValidator('json', createMessageSchema
             }, conversation.workspaceId)
         }
 
+        // Notify other participants
+        const otherParticipants = (participants as string[] || []).filter(p => p !== effectiveSenderId)
+        for (const targetId of otherParticipants) {
+            await NotificationService.push(targetId, {
+                type: conversation.type === 'direct' ? 'direct_message' : 'group_message',
+                title: 'notifications.titles.message_new',
+                message: typeof content === 'string' ? `[${user.name}]: ${content}` : 'Wysłano nową wiadomość',
+                link: `/messages/${conversationId}`,
+                actor: { name: user.name, image: user.image || undefined },
+                metadata: { conversationId }
+            })
+        }
+
         return c.json({ success: true, data: newMessage })
     } catch (error) {
         console.error('Error adding message:', error)
@@ -550,6 +564,19 @@ conversationsRoutes.patch('/:id/messages', zValidator('json', appendMessageSchem
                 message: newMessage,
                 workspaceId: conversation.workspaceId
             }, conversation.workspaceId)
+        }
+
+        // Notify other participants
+        const otherParticipants = (participants as string[] || []).filter(p => p !== userId)
+        for (const targetId of otherParticipants) {
+            await NotificationService.push(targetId, {
+                type: conversation.type === 'direct' ? 'direct_message' : 'group_message',
+                title: 'notifications.titles.message_new',
+                message: typeof content === 'string' ? `[${user.name}]: ${content}` : 'Wysłano nową wiadomość',
+                link: `/messages/${conversationId}`,
+                actor: { name: user.name, image: user.image || undefined },
+                metadata: { conversationId }
+            })
         }
 
         return c.json({ success: true, data: newMessage })

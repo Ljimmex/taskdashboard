@@ -7,6 +7,7 @@ import { DropdownArrowUp, DropdownArrowDown } from './icons'
 import { NotificationPanel } from '@/components/features/notifications/NotificationPanel'
 import { UserSettingsPanel } from '@/components/features/settings/panels/UserSettingsPanel'
 import { LanguageSwitcher } from '@/components/language-switcher'
+import { useNotifications } from '@/hooks/useNotifications'
 
 export function Header() {
     const { t } = useTranslation()
@@ -15,6 +16,7 @@ export function Header() {
     const [showNotifications, setShowNotifications] = useState(false)
     const [userPosition, setUserPosition] = useState<string>('')
     const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false)
+    const { unreadCount } = useNotifications()
 
     // Fetch user data for position
     useEffect(() => {
@@ -97,7 +99,11 @@ export function Header() {
                             <path d="M16 4V8" stroke="#7A664E" strokeWidth="3" strokeLinecap="round" />
                             <path d="M26 10C27.5 11.5 28 13.5 28 16" stroke="#7A664E" strokeWidth="3" strokeLinecap="round" />
                         </svg>
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full" />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-amber-500 rounded-full flex items-center justify-center text-[10px] font-bold text-black border-2 border-[var(--app-bg-sidebar)] animate-in zoom-in duration-300">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
                     </button>
                     <NotificationPanel
                         isOpen={showNotifications}

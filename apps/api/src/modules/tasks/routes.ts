@@ -20,6 +20,7 @@ import {
 import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema/teams'
 import { syncTaskToCalendar, deleteTaskCalendarEvent } from '../calendar/sync'
+import { NotificationService } from '../notifications/service'
 
 type Env = {
     Variables: {
@@ -560,13 +561,28 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
                 }) : null,
                 db.query.workspaces.findFirst({
                     where: (w, { eq }) => eq(w.id, workspaceId),
-                    columns: { priorities: true }
+                    columns: { id: true, slug: true, priorities: true }
                 })
             ])
 
             const priorityObj = workspace?.priorities?.find((p: any) => p.id === created.priority)
             const priorityName = priorityObj?.name || created.priority
             const priorityColor = priorityObj?.color
+
+            // Notify assignees (other than the person who created it)
+            if (assignees.length > 0) {
+                for (const assigneeId of assignees) {
+                    if (assigneeId === userId) continue;
+                    await NotificationService.push(assigneeId, {
+                        type: 'task_assigned',
+                        title: 'notifications.titles.task_assigned',
+                        message: `[${session.user.name}] przypisał Cię do zadania: ${created.title}`,
+                        link: `/${workspace?.slug}/tasks/${created.id}`,
+                        actor: { name: session.user.name, image: session.user.image || undefined },
+                        metadata: { taskId: created.id, projectId: created.projectId }
+                    })
+                }
+            }
 
             triggerWebhook('task.created', {
                 ...created,
@@ -608,6 +624,11 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
         // Get permissions
         let workspaceRole: WorkspaceRole | null = null
         const workspaceId = await getWorkspaceIdFromProject(task.projectId)
+        const workspace = workspaceId ? await db.query.workspaces.findFirst({
+            where: (w, { eq }) => eq(w.id, workspaceId),
+            columns: { id: true, slug: true }
+        }) : null
+
         if (workspaceId) {
             workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
         }
@@ -770,6 +791,20 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
                     task: updated,
                     title: updated.title
                 }, workspaceId)
+
+                // Notify all assignees about status change
+                const currentAssignees = updated.assignees || [];
+                for (const assigneeId of currentAssignees) {
+                    if (assigneeId === userId) continue;
+                    await NotificationService.push(assigneeId, {
+                        type: 'task_status_changed',
+                        title: 'notifications.titles.task_status_changed',
+                        message: `[${user.name}] zmienił status zadania "${updated.title}" na: ${newStage?.name || updated.status}`,
+                        link: `/${workspace?.slug}/tasks/${updated.id}`,
+                        actor: { name: user.name, image: user.image || undefined },
+                        metadata: { taskId: updated.id, oldStatus: task.status, newStatus: updated.status }
+                    })
+                }
             }
 
             // Assignees Change - fetch user names for display
@@ -803,6 +838,23 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
                         task: updated,
                         title: updated.title
                     }, workspaceId)
+
+                    // Notify ONLY newly added assignees
+                    const oldAssigneesList = task.assignees || [];
+                    const newAssigneesList = updated.assignees || [];
+                    const addedAssignees = newAssigneesList.filter(uid => !oldAssigneesList.includes(uid));
+
+                    for (const assigneeId of addedAssignees) {
+                        if (assigneeId === userId) continue;
+                        await NotificationService.push(assigneeId, {
+                            type: 'task_assigned',
+                            title: 'notifications.titles.task_assigned',
+                            message: `[${user.name}] przypisał Cię do zadania: ${updated.title}`,
+                            link: `/${workspace?.slug}/tasks/${updated.id}`,
+                            actor: { name: user.name, image: user.image || undefined },
+                            metadata: { taskId: updated.id }
+                        })
+                    }
                 }
             }
 
@@ -1047,7 +1099,8 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
         const id = c.req.param('id')
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
         if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
-        const userId = session.user.id
+        const user = session.user
+        const userId = user.id
 
         const body = await c.req.json()
         const [created] = await db.insert(subtasks).values({
@@ -1058,6 +1111,25 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
             assigneeId: body.assigneeId || null,
             dependsOn: body.dependsOn || []
         } as NewSubtask).returning()
+
+        // Notify subtask assignee
+        if (created.assigneeId && created.assigneeId !== userId) {
+            const task = await db.query.tasks.findFirst({ where: (t, { eq }) => eq(t.id, id), columns: { projectId: true } })
+            const workspaceId = task?.projectId ? await getWorkspaceIdFromProject(task.projectId) : null
+            const workspace = workspaceId ? await db.query.workspaces.findFirst({
+                where: (w, { eq }) => eq(w.id, workspaceId),
+                columns: { slug: true }
+            }) : null
+
+            await NotificationService.push(created.assigneeId, {
+                type: 'subtask_assigned',
+                title: 'notifications.titles.subtask_assigned',
+                message: `[${user.name}] przypisał Cię do podzadania: ${created.title}`,
+                link: `/${workspace?.slug}/tasks/${id}`,
+                actor: { name: user.name, image: user.image || undefined },
+                metadata: { taskId: id, subtaskId: created.id }
+            })
+        }
 
         // Log activity
         await db.insert(taskActivityLog).values({
@@ -1311,6 +1383,33 @@ tasksRoutes.post('/:id/comments', async (c) => {
             parentId: parentId || null,
             likes: '[]'
         } as NewTaskComment).returning()
+
+        // Notify task assignees
+        const taskObj = await db.query.tasks.findFirst({
+            where: (t, { eq }) => eq(t.id, id),
+            columns: { title: true, assignees: true, projectId: true }
+        })
+
+        if (taskObj) {
+            const workspaceId = await getWorkspaceIdFromProject(taskObj.projectId)
+            const workspace = workspaceId ? await db.query.workspaces.findFirst({
+                where: (w, { eq }) => eq(w.id, workspaceId),
+                columns: { slug: true }
+            }) : null
+
+            const assignees = (taskObj.assignees || []) as string[]
+            for (const assigneeId of assignees) {
+                if (assigneeId === effectiveUserId) continue
+                await NotificationService.push(assigneeId, {
+                    type: 'task_comment',
+                    title: 'notifications.titles.task_comment',
+                    message: `[${session.user.name}] skomentował zadanie: ${taskObj.title}`,
+                    link: `/${workspace?.slug}/tasks/${id}`,
+                    actor: { name: session.user.name, image: session.user.image || undefined },
+                    metadata: { taskId: id, commentId: created.id }
+                })
+            }
+        }
 
         // Log activity
         await db.insert(taskActivityLog).values({

@@ -31,6 +31,7 @@ import { webhooksRoutes } from './modules/webhooks/routes'
 import { sessionsRoutes } from './modules/sessions/routes'
 import { docsRoutes } from './modules/docs/routes'
 import { whiteboardsRoutes } from './modules/whiteboards/routes'
+import { notificationRoutes } from './modules/notifications/routes'
 import annotationsRoutes from './modules/annotations/routes'
 
 // Create OpenAPI Hono app
@@ -62,7 +63,17 @@ app.use('*', secureHeaders({
         objectSrc: ["'none'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline often needed for styled-components/emotion
-        connectSrc: ["'self'", "https:", "wss:", "https://*.supabase.co", "wss://*.supabase.co", "https://*.r2.cloudflarestorage.com", "https://taskdashboard-api.onrender.com"],
+        connectSrc: [
+            "'self'",
+            "https:",
+            "wss:",
+            "https://*.supabase.co",
+            "wss://*.supabase.co",
+            "https://opwnyaxsxutmodbapjrc.supabase.co",
+            "wss://opwnyaxsxutmodbapjrc.supabase.co",
+            "https://*.r2.cloudflarestorage.com",
+            "https://taskdashboard-api.onrender.com"
+        ],
         upgradeInsecureRequests: [],
     },
 }))
@@ -257,6 +268,7 @@ app.route('/api/webhooks', webhooksRoutes)
 app.route('/api/sessions', sessionsRoutes)
 app.route('/api/docs', docsRoutes)
 app.route('/api/whiteboards', whiteboardsRoutes)
+app.route('/api/notifications', notificationRoutes)
 app.route('/api/annotations', annotationsRoutes)
 
 

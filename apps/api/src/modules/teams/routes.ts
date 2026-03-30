@@ -12,6 +12,7 @@ import {
     type TeamLevel
 } from '../../lib/permissions'
 import { triggerWebhook } from '../webhooks/trigger'
+import { NotificationService } from '../notifications/service'
 
 type Env = {
     Variables: {
@@ -591,6 +592,23 @@ teamsRoutes.post('/:id/members', zValidator('json', addTeamMemberSchema), async 
             return inserted
         })
 
+        // Notify added user
+        if (newMember && targetUserId !== userId) {
+            const workspace = await db.query.workspaces.findFirst({
+                where: (w, { eq }) => eq(w.id, team.workspaceId),
+                columns: { slug: true }
+            })
+
+            await NotificationService.push(targetUserId, {
+                type: 'team_access',
+                title: 'notifications.titles.team_access',
+                message: `[${user.name}] dodał Cię do zespołu: ${team.name}`,
+                link: `/${workspace?.slug}/teams/${teamId}`,
+                actor: { name: user.name, image: user.image || undefined },
+                metadata: { teamId: teamId }
+            })
+        }
+
         // TRIGGER WEBHOOK
         if (newMember) {
             triggerWebhook('team.member_joined', newMember, team.workspaceId)
@@ -653,7 +671,7 @@ teamsRoutes.delete('/:id/members/:memberId', async (c) => {
                     .from(projectTeams)
                     .where(eq(projectTeams.projectId, projectId))
                     .then(res => res.map(r => r.teamId))
-                
+
                 // Add primary team
                 const [primaryTeam] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, projectId))
                 if (primaryTeam?.teamId) projectTeamIds.push(primaryTeam.teamId)
@@ -684,6 +702,18 @@ teamsRoutes.delete('/:id/members/:memberId', async (c) => {
                         eq(projectMembers.userId, memberId)
                     ))
             }
+        }
+
+        // Notify removed user (if not removing self)
+        if (memberId !== userId) {
+            await NotificationService.push(memberId, {
+                type: 'team_removed',
+                title: 'notifications.titles.team_removed',
+                message: `[${user.name}] usunął Cię z zespołu: ${team.name}`,
+                link: `/`, // Link to root since they might not have access to the team anymore
+                actor: { name: user.name, image: user.image || undefined },
+                metadata: { teamId: teamId }
+            })
         }
 
         // TRIGGER WEBHOOK

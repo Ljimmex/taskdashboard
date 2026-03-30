@@ -21,4 +21,5 @@ export * from './webhooks'
 export * from './audit'
 export * from './documents'
 export * from './whiteboards'
+export * from './notifications'
 

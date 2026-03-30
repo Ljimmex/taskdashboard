@@ -13,6 +13,7 @@ import {
 } from '../../lib/permissions'
 
 import { type Auth } from '../../lib/auth'
+import { NotificationService } from '../notifications/service'
 
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
@@ -123,6 +124,27 @@ commentsRoutes.post('/', zValidator('json', createCommentSchema), async (c) => {
             likes: '[]', // Initialize empty likes array
         }
         const [created] = await db.insert(taskComments).values(newComment).returning()
+
+        // Notify task assignees
+        const [task] = await db.select().from(tasks).where(eq(tasks.id, body.taskId)).limit(1)
+        const workspace = await db.query.workspaces.findFirst({
+            where: (w, { eq }) => eq(w.id, workspaceId),
+            columns: { slug: true }
+        })
+
+        const assignees = (task?.assignees || []) as string[]
+        for (const assigneeId of assignees) {
+            if (assigneeId === userId) continue
+            await NotificationService.push(assigneeId, {
+                type: 'task_comment',
+                title: 'notifications.titles.new_comment',
+                message: `[${user.name}] skomentował zadanie: ${task?.title}`,
+                link: `/${workspace?.slug}/tasks/${task?.id}`,
+                actor: { name: user.name, image: user.image || undefined },
+                metadata: { taskId: task?.id, commentId: created.id }
+            })
+        }
+
         return c.json({ success: true, data: created }, 201)
     } catch (error) {
         console.error('Error creating comment:', error)

@@ -1,108 +1,90 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { clsx } from 'clsx'
-import { X, CheckCircle, Search, SlidersHorizontal, Download } from 'lucide-react'
-
-
-interface NotificationItem {
-    id: string
-    type: 'task' | 'comment' | 'system' | 'link' | 'asset'
-    title: string
-    message?: string
-    time: string
-    isRead: boolean
-    actor?: {
-        name: string
-        avatar?: string // Using emoji/letter or url
-    }
-    attachment?: {
-        type: 'file' | 'image'
-        name: string
-        size?: string
-    }
-}
-
-interface NotificationGroup {
-    label: 'Today' | 'Yesterday' | 'Earlier'
-    items: NotificationItem[]
-}
-
-const SAMPLE_NOTIFICATIONS: NotificationGroup[] = [
-    {
-        label: 'Today',
-        items: [
-            {
-                id: '1',
-                type: 'system',
-                title: 'The status of Design Landing Page (Wortix) task has been updated.',
-                time: '5m ago',
-                isRead: false,
-            },
-            {
-                id: '2',
-                type: 'comment',
-                title: 'You have 12 new comments in Lead Sprint Planning Session with Full Dev and Design Team (SkyUp) task',
-                time: '10m ago',
-                isRead: false,
-            },
-            {
-                id: '3',
-                type: 'link',
-                title: 'You have 2 new links in Finalize Pricing Page UI and Logic (Merkitta Site) task',
-                time: '39m ago',
-                isRead: true, // Shown as visited/purple in screenshot, but user has red dot in screenshot... assuming logic.
-            }
-        ]
-    },
-    {
-        label: 'Yesterday',
-        items: [
-            {
-                id: '4',
-                type: 'system',
-                title: 'We are conducting system updates. Some features may be unavailable for a short period. Thank you for your patience.',
-                time: 'Yesterday 12:39 AM',
-                isRead: true,
-            },
-            {
-                id: '5',
-                type: 'asset',
-                title: 'A photo you added to Assets has been deleted by author.',
-                time: 'Yesterday 10:01 AM',
-                isRead: true,
-            },
-            {
-                id: '6',
-                type: 'comment',
-                title: 'Sam Smith shared a file in Create Style Tokens for Design System (DiDastVia) task',
-                time: 'Yesterday 9:13 AM',
-                isRead: true,
-                actor: { name: 'Sam Smith', avatar: 'S' }, // Placeholder
-                attachment: { type: 'file', name: 'Spirit Estimate Name.doc', size: '240 KB' }
-            }
-        ]
-    },
-    {
-        label: 'Earlier',
-        items: [
-            {
-                id: '7',
-                type: 'system',
-                title: 'The deadline for your Deploy to Staging (Content Collection) task is coming up soon. Make sure to complete it by August 3 to stay on track!',
-                time: 'July 28, 2025', // Future date in user screenshot? :)
-                isRead: false,
-            }
-        ]
-    }
-]
+import { X, CheckCircle2, BellOff, Clock, Bell } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { pl, enUS } from 'date-fns/locale'
+import { useTranslation } from 'react-i18next'
+import { sidebarIcons } from '@/components/dashboard/icons/SidebarIcons'
+import { useNotifications, NotificationItem } from '@/hooks/useNotifications'
 
 export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+    const { t, i18n } = useTranslation()
     const [mounted, setMounted] = useState(false)
-    const [activeTab, setActiveTab] = useState<'All' | 'Tasks' | 'Comments' | 'Links' | 'Assets' | 'System'>('All')
+    const [activeTab, setActiveTab] = useState<'All' | 'Tasks' | 'Messages' | 'Comments' | 'Assets' | 'Time'>('All')
+
+    const {
+        notifications,
+        isLoading,
+        markRead,
+        markAllRead
+    } = useNotifications()
+
+    const currentLocale = i18n.language === 'pl' ? pl : enUS
 
     useEffect(() => {
         setMounted(true)
     }, [])
+
+    const filteredNotifications = useMemo(() => {
+        if (activeTab === 'All') return notifications
+        const mapping: Record<string, string[]> = {
+            'Tasks': ['task_created', 'task_assigned', 'task_status_changed', 'subtask_assigned'],
+            'Messages': ['message_new', 'message_pinned', 'conversation_message'],
+            'Comments': ['task_comment'],
+            'Assets': ['file_uploaded'],
+            'Time': ['time_entry_approved', 'time_entry_rejected']
+        }
+        const types = mapping[activeTab] || []
+        return notifications.filter(n => types.includes(n.type))
+    }, [notifications, activeTab])
+
+    const groupedNotifications = useMemo(() => {
+        const groups: { key: string, label: string, items: NotificationItem[] }[] = []
+        const today = new Date().toDateString()
+        const yesterday = new Date(Date.now() - 86400000).toDateString()
+
+        const todayItems = filteredNotifications.filter(n => new Date(n.createdAt).toDateString() === today)
+        const yesterdayItems = filteredNotifications.filter(n => new Date(n.createdAt).toDateString() === yesterday)
+        const earlierItems = filteredNotifications.filter(n => {
+            const date = new Date(n.createdAt).toDateString()
+            return date !== today && date !== yesterday
+        })
+
+        if (todayItems.length > 0) groups.push({ key: 'today', label: t('notifications.groups.today'), items: todayItems })
+        if (yesterdayItems.length > 0) groups.push({ key: 'yesterday', label: t('notifications.groups.yesterday'), items: yesterdayItems })
+        if (earlierItems.length > 0) groups.push({ key: 'earlier', label: t('notifications.groups.earlier'), items: earlierItems })
+
+        return groups
+    }, [filteredNotifications, t])
+
+    const translateTitle = (title: string) => {
+        if (title.startsWith('notifications.titles.')) {
+            return t(title);
+        }
+
+        const legacyMap: Record<string, string> = {
+            'Dodano Cię do projektu': 'notifications.titles.project_access',
+            'Zostałeś usunięty z projektu': 'notifications.titles.project_removed',
+            'Dodano Cię do zespołu': 'notifications.titles.team_access',
+            'Zostałeś usunięty z zespołu': 'notifications.titles.team_removed',
+            'Nowy komentarz w zadaniu': 'notifications.titles.new_comment',
+            'Przesłano nowy plik': 'notifications.titles.file_uploaded',
+            'Twoja prośba o czas została zatwierdzona': 'notifications.titles.time_approved',
+            'Twoja prośba o czas została odrzucona': 'notifications.titles.time_rejected',
+            'Nowe zadanie przypisane do Ciebie': 'notifications.titles.task_assigned',
+            'Nowe podzadanie przypisane do Ciebie': 'notifications.titles.subtask_assigned',
+            'Nowe zadanie utworzone': 'notifications.titles.task_created',
+            'Zmieniono status zadania': 'notifications.titles.task_status_changed',
+            'Zaproszenie do spotkania': 'notifications.titles.meeting_invited',
+            'Nowe wydarzenie': 'notifications.titles.event_created',
+            'Przypomnienie o wydarzeniu': 'notifications.titles.event_reminder',
+            'Nowa wiadomość': 'notifications.titles.message_new',
+            'Przypięto wiadomość': 'notifications.titles.message_pinned'
+        }
+        const key = legacyMap[title]
+        return key ? t(key) : t(title)
+    }
 
     if (!mounted) return null
 
@@ -111,7 +93,7 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
             {/* Backdrop */}
             <div
                 className={clsx(
-                    "fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300",
+                    "fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] transition-opacity duration-300",
                     isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
                 )}
                 onClick={onClose}
@@ -119,114 +101,138 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
 
             {/* Panel */}
             <div className={clsx(
-                "fixed top-4 right-4 bottom-4 w-full max-w-lg bg-[var(--app-bg-card)] rounded-2xl z-[70] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] font-sans overflow-hidden",
-                isOpen ? "translate-x-0" : "translate-x-[calc(100%+2rem)]"
+                "fixed top-4 right-4 bottom-4 w-full max-w-[440px] bg-[var(--app-bg-card)] rounded-3xl z-[70] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-divider)] font-sans overflow-hidden",
+                isOpen ? "translate-x-0" : "translate-x-[calc(100%+3rem)]"
             )}>
                 {/* Header */}
-                <div className="p-6 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-sidebar)] sticky top-0 z-10 transition-colors">
+                <div className="p-6 border-b border-[var(--app-divider)] flex items-center justify-between bg-[var(--app-bg-card)] relative z-10">
                     <div>
-                        <h3 className="text-xl font-bold text-[var(--app-text-primary)]">Notifications</h3>
-                        <p className="text-sm text-[var(--app-text-secondary)] mt-1">Stay updated with your latest activities</p>
+                        <h3 className="text-xl font-extrabold text-[var(--app-text-primary)] tracking-tight">{t('notifications.title')}</h3>
+                        <p className="text-[13px] text-[var(--app-text-secondary)] mt-1 font-medium italic">
+                            {t('notifications.unreadCount', { count: notifications.filter(n => !n.read).length })}
+                        </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <button className="text-xs font-medium text-amber-500 hover:text-amber-400 transition-colors flex items-center gap-1.5 px-3 py-1.5 bg-[var(--app-bg-elevated)] rounded-lg ring-1 ring-amber-500/20">
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            Mark all
-                        </button>
-                        <button onClick={onClose} className="p-2 hover:bg-[var(--app-bg-elevated)] rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors">
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Search & Filters */}
-                <div className="px-6 py-4 gap-3 flex items-center bg-[var(--app-bg-sidebar)] border-b border-[var(--app-border)] transition-colors">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--app-text-muted)] w-4 h-4" />
-                        <input
-                            type="text"
-                            placeholder="Search in notifications..."
-                            className="w-full pl-10 pr-4 py-2 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-sm text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:border-amber-500/50 transition-colors"
-                        />
-                    </div>
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors">
-                        <SlidersHorizontal className="w-4 h-4" />
-                        Filters
-                    </button>
-                </div>
-
-                {/* Tabs / Switcher */}
-                <div className="px-6 border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)] flex gap-6 overflow-x-auto no-scrollbar transition-colors">
-                    {['All', 'Tasks', 'Comments', 'Links', 'Assets', 'System'].map((tab) => (
+                    <div className="flex items-center gap-2">
                         <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab as any)}
-                            className={clsx(
-                                "py-4 text-sm font-medium whitespace-nowrap transition-colors relative",
-                                activeTab === tab ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
-                            )}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                markAllRead();
+                            }}
+                            title={t('notifications.markAllReadTitle')}
+                            disabled={isLoading || notifications.length === 0}
+                            className="p-2 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-accent)] disabled:opacity-50 transition-all shadow-sm group"
                         >
-                            {tab}
-                            {activeTab === tab && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--app-accent)] rounded-t-full" />
-                            )}
+                            <CheckCircle2 size={16} className="group-hover:scale-110 transition-transform" />
                         </button>
-                    ))}
+                        <button
+                            onClick={onClose}
+                            title={t('notifications.closePanel')}
+                            className="p-2 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all shadow-sm"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Tabs */}
+                <div className="px-6 border-b border-[var(--app-divider)] bg-[var(--app-bg-card)] flex gap-6 overflow-x-auto custom-scrollbar no-scrollbar">
+                    {['All', 'Tasks', 'Messages', 'Comments', 'Assets', 'Time'].map((tab) => {
+                        const label = t(`notifications.tabs.${tab.toLowerCase()}`);
+                        return (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab as any)}
+                                className={clsx(
+                                    "py-4 text-[13px] font-bold whitespace-nowrap transition-all relative flex items-center gap-2",
+                                    activeTab === tab ? "text-[var(--app-accent)]" : "text-[var(--app-text-muted)] hover:text-[var(--app-text-secondary)]"
+                                )}
+                            >
+                                {label}
+                                {activeTab === tab && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[var(--app-accent)] rounded-t-full shadow-[0_-2px_10px_var(--app-accent)]" />
+                                )}
+                            </button>
+                        )
+                    })}
                 </div>
 
                 {/* Content List */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar bg-[var(--app-bg-card)] transition-colors">
-                    {SAMPLE_NOTIFICATIONS.map((group) => (
-                        <div key={group.label}>
-                            <h4 className="text-xs font-bold text-[var(--app-text-muted)] mb-4 uppercase tracking-[0.1em]">{group.label}</h4>
-                            <div className="space-y-6">
-                                {group.items.map((item) => (
-                                    <div key={item.id} className="flex gap-4 group relative">
-                                        {/* Unread Dot/Indicator */}
-                                        {item.isRead === false && (
-                                            <div className="absolute -left-2 top-2 w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-                                        )}
-
-                                        {/* Icon */}
-                                        <div className="flex-shrink-0">
-                                            <NotificationIcon type={item.type} />
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="flex-1 space-y-1.5">
-                                            <div className="text-sm text-[var(--app-text-primary)] leading-relaxed">
-                                                {item.actor && <span className="font-bold text-[var(--app-text-primary)]">{item.actor.name} </span>}
-                                                {highlightKeywords(item.title)}
-                                            </div>
-
-                                            {/* Attachment */}
-                                            {item.attachment && (
-                                                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] mt-3 hover:bg-[var(--app-bg-elevated)] transition-colors cursor-pointer group/file">
-                                                    <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
-                                                        📄
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-semibold text-[var(--app-text-primary)] truncate">{item.attachment.name}</p>
-                                                        <p className="text-xs text-[var(--app-text-muted)] font-medium uppercase tracking-wider">{item.attachment.size}</p>
-                                                    </div>
-                                                    <button className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-sidebar)] rounded-lg transition-colors border border-[var(--app-border)]">
-                                                        <Download className="w-4 h-4" />
-                                                    </button>
-                                                </div>
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8 custom-scrollbar bg-[var(--app-bg-sidebar)]/30">
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center h-full text-[var(--app-text-muted)]">
+                            <div className="w-10 h-10 border-[3px] border-[var(--app-accent)] border-t-transparent rounded-full animate-spin mb-4" />
+                            <p className="text-sm font-bold tracking-tight">{t('notifications.loading')}</p>
+                        </div>
+                    ) : groupedNotifications.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-[var(--app-text-muted)] text-center px-8">
+                            <div className="w-20 h-20 rounded-2xl bg-[var(--app-bg-elevated)] flex items-center justify-center border border-[var(--app-border)] mb-6 shadow-card rotate-3">
+                                <BellOff size={32} className="text-[var(--app-text-muted)]/30 -rotate-3" />
+                            </div>
+                            <p className="font-extrabold text-[var(--app-text-primary)] text-lg tracking-tight">{t('notifications.noNotifications')}</p>
+                            <p className="text-sm mt-2 leading-relaxed font-medium text-[var(--app-text-secondary)]">{t('notifications.noNotificationsDesc')}</p>
+                        </div>
+                    ) : (
+                        groupedNotifications.map((group) => (
+                            <div key={group.key} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="flex items-center gap-4 mb-4 px-2">
+                                    <h4 className="text-[11px] font-black text-[var(--app-text-muted)] uppercase tracking-[0.2em]">{group.label}</h4>
+                                    <div className="h-[1px] flex-1 bg-[var(--app-divider)]" />
+                                </div>
+                                <div className="space-y-3">
+                                    {group.items.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className={clsx(
+                                                "flex gap-4 group relative cursor-pointer p-4 rounded-2xl transition-all border",
+                                                !item.read
+                                                    ? "bg-[var(--app-bg-card)] border-[var(--app-divider)] shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_40px_rgb(0,0,0,0.18)]"
+                                                    : "bg-transparent border-transparent hover:bg-[var(--app-bg-card)]/40 hover:border-[var(--app-divider)]"
+                                            )}
+                                            onClick={() => {
+                                                markRead(item.id)
+                                                if (item.link) window.location.href = item.link
+                                            }}
+                                        >
+                                            {!item.read && (
+                                                <div className="absolute top-5 right-5 w-2.5 h-2.5 rounded-full bg-[var(--app-accent)] shadow-[0_0_12px_var(--app-accent)] z-10 animate-pulse" />
                                             )}
 
-                                            <div className="flex items-center gap-2">
-                                                <p className="text-xs text-[var(--app-text-muted)] font-medium">{item.time}</p>
-                                                {item.isRead === false && (
-                                                    <span className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest bg-amber-500/10 px-1.5 py-0.5 rounded">New</span>
+                                            <div className="flex-shrink-0 mt-0.5">
+                                                <NotificationIcon type={item.type} />
+                                            </div>
+
+                                            <div className="flex-1 min-w-0 pr-4">
+                                                <div className="text-[14px] text-[var(--app-text-primary)] leading-tight">
+                                                    {item.actor && <span className="font-black text-[var(--app-accent)] mr-1.5">{item.actor.name}</span>}
+                                                    <span className={clsx("font-medium", !item.read && "font-bold")}>
+                                                        {highlightKeywords(translateTitle(item.title))}
+                                                    </span>
+                                                </div>
+
+                                                {item.message && (
+                                                    <div className="mt-2.5 text-[12.5px] text-[var(--app-text-secondary)] line-clamp-2 border-l-2 border-[var(--app-accent)]/30 pl-3 py-0.5 font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-opacity">
+                                                        {item.message}
+                                                    </div>
                                                 )}
+
+                                                <div className="flex items-center gap-4 mt-3">
+                                                    <span className="text-[11px] font-bold text-[var(--app-text-muted)] flex items-center gap-1.5">
+                                                        <Clock size={12} className="opacity-50" />
+                                                        {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: currentLocale })}
+                                                    </span>
+                                                    {item.metadata?.taskId && (
+                                                        <span className="px-2 py-0.5 rounded-md bg-[var(--app-accent)]/10 border border-[var(--app-accent)]/20 text-[var(--app-accent)] text-[9px] uppercase font-black tracking-widest">
+                                                            {t('notifications.types.task')}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
         </>,
@@ -234,28 +240,59 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
     )
 }
 
-function NotificationIcon({ type }: { type: NotificationItem['type'] }) {
-    switch (type) {
-        case 'system':
-            return <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center text-xs ring-1 ring-red-500/20">🔔</div>
-        case 'comment':
-            return <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-xs ring-1 ring-blue-500/20">💬</div>
-        case 'link':
-            return <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-xs ring-1 ring-purple-500/20">🔗</div>
-        case 'asset':
-            return <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-xs ring-1 ring-yellow-500/20">📂</div>
-        default:
-            return <div className="w-8 h-8 rounded-full bg-gray-500/10 flex items-center justify-center text-xs ring-1 ring-gray-500/20">📝</div>
+function NotificationIcon({ type }: { type: string }) {
+    const isTask = type.includes('task')
+    const isComment = type.includes('comment')
+    const isFile = type.includes('file') || type.includes('asset')
+    const isTime = type.includes('time')
+    const isMeeting = type.includes('meeting') || type.includes('event') || type.includes('reminder')
+    const isMessage = type.includes('message') || type.includes('conversation')
+    const isProject = type.includes('project')
+    const isTeam = type.includes('team')
+
+    let Icon: any = Bell
+    let colorClass = "text-gray-400 bg-gray-500/10 border-gray-500/20"
+
+    if (isTask) {
+        Icon = sidebarIcons.dashboard
+        colorClass = "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
+    } else if (isComment) {
+        Icon = sidebarIcons.messages
+        colorClass = "text-blue-500 bg-blue-500/10 border-blue-500/20"
+    } else if (isMessage) {
+        Icon = sidebarIcons.messages
+        colorClass = "text-blue-400 bg-blue-400/10 border-blue-400/20"
+    } else if (isFile) {
+        Icon = sidebarIcons.files
+        colorClass = "text-purple-500 bg-purple-500/10 border-purple-500/20"
+    } else if (isTime) {
+        Icon = sidebarIcons.timetracker
+        colorClass = "text-amber-500 bg-amber-500/10 border-amber-500/20"
+    } else if (isMeeting) {
+        Icon = sidebarIcons.calendar
+        colorClass = "text-rose-500 bg-rose-500/10 border-rose-500/20"
+    } else if (isProject) {
+        Icon = sidebarIcons.product
+        colorClass = "text-[var(--app-accent)] bg-[var(--app-accent)]/10 border-[var(--app-accent)]/20"
+    } else if (isTeam) {
+        Icon = sidebarIcons.team
+        colorClass = "text-cyan-500 bg-cyan-500/10 border-cyan-500/20"
     }
+
+    return (
+        <div className={clsx("w-10 h-10 rounded-2xl flex items-center justify-center border shadow-sm transition-transform group-hover:scale-105", colorClass)}>
+            <Icon size={18} />
+        </div>
+    )
 }
 
-// Helper to make task names bold or standardizing text
 function highlightKeywords(text: string) {
-    // This is a naive implementation. In a real app one might parse meaningful parts.
-    // For now, we assume key entities are distinct or we just render the text.
-    // However, to match the "richness", we'll just render text. 
-    // In the screenshot, Project names like 'Design Landing Page (Wortix)' are bold.
-    // We can try to regex match text inside parens including the text before it? No, too complex for static strings.
-    // We'll just render user text for now.
-    return <span>{text}</span>
+    if (!text) return null
+    const parts = text.split(/([\[\(].*?[\]\)])/g)
+    return parts.map((part, i) => {
+        if ((part.startsWith('(') && part.endsWith(')')) || (part.startsWith('[') && part.endsWith(']'))) {
+            return <span key={i} className="font-extrabold text-[var(--app-accent)] bg-[var(--app-accent)]/5 px-1 rounded mx-0.5">{part}</span>
+        }
+        return part
+    })
 }

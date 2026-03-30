@@ -11,6 +11,8 @@ import { authMiddleware } from '@/middleware/auth'
 
 import { type Auth } from '../../lib/auth'
 import { triggerWebhook } from '../webhooks/trigger'
+import { NotificationService } from '../notifications/service'
+import { workspaces } from '../../db/schema'
 import type { WorkspaceRole } from '../../lib/permissions'
 
 // type Env removed
@@ -93,6 +95,25 @@ app.post('/upload', zValidator('json', uploadSchema), async (c) => {
     // TRIGGER WEBHOOK
     if (newFile) {
         triggerWebhook('file.uploaded', newFile, body.workspaceId)
+
+        // Notify workspace members
+        const [workspace] = await db.select({ slug: workspaces.slug }).from(workspaces).where(eq(workspaces.id, body.workspaceId)).limit(1)
+        const members = await db.query.workspaceMembers.findMany({
+            where: (wm, { eq, and }) => and(eq(wm.workspaceId, body.workspaceId), eq(wm.status, 'active')),
+            columns: { userId: true }
+        })
+
+        for (const member of members) {
+            if (member.userId === user.id) continue
+            await NotificationService.push(member.userId, {
+                type: 'file_uploaded',
+                title: 'notifications.titles.file_uploaded',
+                message: `[${user.name}] dodał plik: ${body.name}`,
+                link: `/${workspace?.slug}/files`,
+                actor: { name: user.name, image: user.image || undefined },
+                metadata: { fileId: newFile.id, workspaceId: body.workspaceId }
+            })
+        }
     }
 
     return c.json({

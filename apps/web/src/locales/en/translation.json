@@ -248,6 +248,59 @@
         },
         "timeTracker": "Time Tracker"
     },
+    "notifications": {
+        "title": "Notifications",
+        "unreadCount": "You have {{count}} new notifications",
+        "markAllRead": "Mark as read",
+        "markAllReadTitle": "Mark all as read",
+        "closePanel": "Close panel",
+        "searchPlaceholder": "Search in notifications...",
+        "noNotifications": "No new notifications",
+        "noNotificationsDesc": "You are up to date with all events in your projects.",
+        "loading": "Loading notifications...",
+        "tabs": {
+            "all": "All",
+            "tasks": "Tasks",
+            "messages": "Messages",
+            "comments": "Comments",
+            "assets": "Assets",
+            "time": "Time"
+        },
+        "groups": {
+            "today": "Today",
+            "yesterday": "Yesterday",
+            "earlier": "Earlier"
+        },
+        "types": {
+            "task": "Task",
+            "project": "Project",
+            "message": "Message",
+            "comment": "Comment",
+            "asset": "Asset",
+            "time": "Time",
+            "calendar": "Calendar"
+        },
+        "titles": {
+            "project_access": "You were added to project",
+            "project_removed": "You were removed from project",
+            "team_access": "You were added to team",
+            "team_removed": "You were removed from team",
+            "new_comment": "New comment in task",
+            "file_uploaded": "New file uploaded",
+            "time_approved": "Your time request was approved",
+            "time_rejected": "Your time request was rejected",
+            "task_assigned": "New task assigned to you",
+            "subtask_assigned": "New subtask assigned to you",
+            "task_created": "New task created",
+            "task_status_changed": "Task status changed",
+            "meeting_invited": "Meeting invitation",
+            "event_created": "New event",
+            "event_reminder": "Event reminder",
+            "message_new": "New message",
+            "message_pinned": "Message pinned"
+        },
+        "new_notification": "Notification: {{title}}"
+    },
     "timeTracker": {
         "title": "Time Tracker",
         "desc": "Track time and calculate revenue share",

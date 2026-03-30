@@ -12,6 +12,7 @@ import {
 } from '../../lib/permissions'
 import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema'
+import { NotificationService } from '../notifications/service'
 
 type Env = {
     Variables: {
@@ -225,7 +226,8 @@ projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
         const { teamId, workspaceId } = body
 
         // Create project
-        const projectTeamIds = body.teamIds || (teamId ? [teamId] : [])
+        const rawProjectTeamIds = body.teamIds || (teamId ? [teamId] : [])
+        const projectTeamIds = Array.from(new Set(rawProjectTeamIds))
         if (projectTeamIds.length === 0) {
             return c.json({ success: false, error: 'At least one teamId is required' }, 400)
         }
@@ -300,6 +302,30 @@ projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
 
             return created
         })
+
+        // Notify auto-added members
+        const teamMems = await db.query.teamMembers.findMany({
+            where: (tm, { inArray }) => inArray(tm.teamId, projectTeamIds)
+        })
+
+        if (teamMems.length > 0) {
+            const workspace = await db.query.workspaces.findFirst({
+                where: (w, { eq }) => eq(w.id, finalWorkspaceId || ''),
+                columns: { slug: true }
+            })
+
+            const uniqueUserIds = Array.from(new Set(teamMems.map(tm => tm.userId))).filter(uid => uid !== userId)
+            for (const uid of uniqueUserIds) {
+                await NotificationService.push(uid, {
+                    type: 'project_access',
+                    title: 'notifications.titles.project_access',
+                    message: `[${user.name}] utworzył projekt: ${result.name}`,
+                    link: `/${workspace?.slug}/projects/${result.id}`,
+                    actor: { name: user.name, image: user.image || undefined },
+                    metadata: { projectId: result.id }
+                })
+            }
+        }
 
         // TRIGGER WEBHOOK
         let finalWorkspaceId = workspaceId
@@ -397,6 +423,42 @@ projectsRoutes.patch('/:id', zValidator('json', updateProjectSchema), async (c) 
                                 role: 'member'
                             }))
                         )
+
+                        // Notify added users
+                        const [team] = await tx.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, project.teamId)).limit(1)
+                        const workspace = team?.workspaceId ? await tx.query.workspaces.findFirst({
+                            where: (w, { eq }) => eq(w.id, team.workspaceId),
+                            columns: { slug: true }
+                        }) : null
+
+                        for (const uid of toAdd) {
+                            if (uid !== userId) {
+                                await NotificationService.push(uid, {
+                                    type: 'project_access',
+                                    title: 'notifications.titles.project_access',
+                                    message: `[${user.name}] dodał Cię do projektu: ${project.name}`,
+                                    link: `/${workspace?.slug}/projects/${id}`,
+                                    actor: { name: user.name, image: user.image || undefined },
+                                    metadata: { projectId: id }
+                                })
+                            }
+                        }
+                    }
+
+                    // Notify removed users
+                    if (toDelete.length > 0) {
+                        for (const pm of toDelete) {
+                            if (pm.userId !== userId) {
+                                await NotificationService.push(pm.userId, {
+                                    type: 'project_access',
+                                    title: 'notifications.titles.project_removed',
+                                    message: `[${user.name}] usunął Cię z projektu: ${project.name}`,
+                                    link: `/`,
+                                    actor: { name: user.name, image: user.image || undefined },
+                                    metadata: { projectId: id }
+                                })
+                            }
+                        }
                     }
                 }
             })

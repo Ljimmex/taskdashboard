@@ -15,6 +15,7 @@ import {
 import { generateICS } from './ical'
 import { authMiddleware } from '@/middleware/auth'
 import { type Auth } from '../../lib/auth'
+import { NotificationService } from '../notifications/service'
 
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
@@ -540,6 +541,30 @@ calendarRoutes.post('/', zValidator('json', createEventSchema), async (c) => {
         // Webhook (trigger for the first created event)
         if (createdEvents.length > 0) {
             await triggerWebhookWithWorkspace('calendar.created', createdEvents[0], workspaceId)
+
+            // Notify attendees for meetings and reminders
+            const firstEvent = createdEvents[0]
+            if (firstEvent && (firstEvent.type === 'meeting' || firstEvent.type === 'reminder')) {
+                const workspace = await db.query.workspaces.findFirst({
+                    where: (ws, { eq }) => eq(ws.id, workspaceId!),
+                    columns: { slug: true }
+                })
+
+                const attendees = (firstEvent.attendeeIds || []) as string[]
+                for (const attendeeId of attendees) {
+                    if (attendeeId === userId) continue;
+                    await NotificationService.push(attendeeId, {
+                        type: firstEvent.type === 'meeting' ? 'meeting_assigned' : 'reminder_assigned',
+                        title: firstEvent.type === 'meeting' ? 'notifications.titles.meeting_invited' : 'notifications.titles.event_reminder',
+                        message: firstEvent.type === 'meeting'
+                            ? `[${session.user.name}] dodał Cię do spotkania: ${firstEvent.title}`
+                            : `[${session.user.name}] dodał przypomnienie: ${firstEvent.title}`,
+                        link: `/${workspace?.slug}/calendar`,
+                        actor: { name: session.user.name, image: session.user.image || undefined },
+                        metadata: { eventId: firstEvent.id }
+                    })
+                }
+            }
         }
 
         return c.json({

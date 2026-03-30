@@ -249,6 +249,59 @@
         },
         "timeTracker": "Śledzenie Czasu"
     },
+    "notifications": {
+        "title": "Powiadomienia",
+        "unreadCount": "Masz {{count}} nowych powiadomień",
+        "markAllRead": "Oznacz jako przeczytane",
+        "markAllReadTitle": "Oznacz wszystkie jako przeczytane",
+        "closePanel": "Zamknij panel",
+        "searchPlaceholder": "Szukaj w powiadomieniach...",
+        "noNotifications": "Brak nowych powiadomień",
+        "noNotificationsDesc": "Jesteś na bieżąco ze wszystkimi wydarzeniami w swoich projektach.",
+        "loading": "Ładowanie powiadomień...",
+        "tabs": {
+            "all": "Wszystkie",
+            "tasks": "Zadania",
+            "messages": "Wiadomości",
+            "comments": "Komentarze",
+            "assets": "Pliki",
+            "time": "Czas"
+        },
+        "groups": {
+            "today": "Dzisiaj",
+            "yesterday": "Wczoraj",
+            "earlier": "Wcześniej"
+        },
+        "types": {
+            "task": "Zadanie",
+            "project": "Projekt",
+            "message": "Wiadomość",
+            "comment": "Komentarz",
+            "asset": "Plik",
+            "time": "Czas",
+            "calendar": "Kalendarz"
+        },
+        "titles": {
+            "project_access": "Dodano Cię do projektu",
+            "project_removed": "Zostałeś usunięty z projektu",
+            "team_access": "Dodano Cię do zespołu",
+            "team_removed": "Zostałeś usunięty z zespołu",
+            "new_comment": "Nowy komentarz w zadaniu",
+            "file_uploaded": "Przesłano nowy plik",
+            "time_approved": "Twoja prośba o czas została zatwierdzona",
+            "time_rejected": "Twoja prośba o czas została odrzucona",
+            "task_assigned": "Nowe zadanie przypisane do Ciebie",
+            "subtask_assigned": "Nowe podzadanie przypisane do Ciebie",
+            "task_created": "Nowe zadanie utworzone",
+            "task_status_changed": "Zmieniono status zadania",
+            "meeting_invited": "Zaproszenie do spotkania",
+            "event_created": "Nowe wydarzenie",
+            "event_reminder": "Przypomnienie o wydarzeniu",
+            "message_new": "Nowa wiadomość",
+            "message_pinned": "Przypięto wiadomość"
+        },
+        "new_notification": "Powiadomienie: {{title}}"
+    },
     "timeTracker": {
         "title": "Time Tracker",
         "desc": "Śledź czas i obliczaj udział w przychodach",
