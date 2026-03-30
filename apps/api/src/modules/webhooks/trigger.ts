@@ -12,6 +12,8 @@ import { processWebhookQueue } from './worker'
  */
 export async function triggerWebhook(event: string, payload: any, workspaceId: string) {
     try {
+        console.log(`[Webhook Trigger] 🔔 Event: ${event}, Workspace: ${workspaceId}`)
+
         // 1. Find all active webhooks for this workspace that are subscribed to this event
         // or have '*' (wildcard) event.
         const activeWebhooks = await db.select()
@@ -21,6 +23,8 @@ export async function triggerWebhook(event: string, payload: any, workspaceId: s
                 AND ${webhooks.isActive} = true 
                 AND (${webhooks.events} @> ${JSON.stringify([event])}::jsonb OR ${webhooks.events} @> ${JSON.stringify(['*'])}::jsonb)`
             )
+
+        console.log(`[Webhook Trigger] 🔍 Found ${activeWebhooks.length} active webhooks for ${event}`)
 
         if (activeWebhooks.length === 0) return
 
@@ -35,11 +39,12 @@ export async function triggerWebhook(event: string, payload: any, workspaceId: s
 
         if (jobs.length > 0) {
             await db.insert(webhookQueue).values(jobs)
+            console.log(`[Webhook Trigger] ✅ Enqueued ${jobs.length} jobs for ${event}`)
             // Process immediately instead of waiting for worker interval
             processWebhookQueue()
         }
     } catch (error) {
-        console.error(`Failed to trigger webhook ${event}:`, error)
+        console.error(`[Webhook Trigger] ❌ Failed to trigger webhook ${event}:`, error)
     }
 }
 

@@ -9,6 +9,19 @@ import { FilePicker } from '../../files/FilePicker'
 import { useTaskFiles, useAttachFile, useRemoveFileFromTask } from '../../../../hooks/useTaskFiles'
 import { useTasks, isTaskBlocked } from '../../../../hooks/useTasks'
 import {
+    ChevronsRight,
+    CheckCircle2,
+    Maximize2,
+    Minimize2,
+    Link as LinkIcon,
+    Paperclip,
+    MoreHorizontal,
+    Trash2,
+    Archive,
+    Check,
+    ChevronDown
+} from 'lucide-react'
+import {
     DocumentIcon,
     DocumentIconGold,
     PaperclipIcon,
@@ -86,7 +99,6 @@ const TabButton = ({
 
 // Status Selector with dropdown
 import * as Select from '@radix-ui/react-select'
-import { Check, ChevronDown } from 'lucide-react'
 
 const StatusSelector = ({
     status,
@@ -262,6 +274,23 @@ export function EditTaskPanel({
     const [isEditingTitle, setIsEditingTitle] = useState(false)
     const [isEditingDescription, setIsEditingDescription] = useState(false)
     const [showFilePicker, setShowFilePicker] = useState(false)
+    const [isMaximized, setIsMaximized] = useState(false)
+    const [isCopied, setIsCopied] = useState(false)
+    const [showMoreMenu, setShowMoreMenu] = useState(false)
+    const moreMenuRef = useRef<HTMLDivElement>(null)
+
+    // Handle click outside for more menu
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+                setShowMoreMenu(false)
+            }
+        }
+        if (showMoreMenu) {
+            document.addEventListener('mousedown', handleClickOutside)
+            return () => document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showMoreMenu])
 
     // File management
     const { data: taskFiles } = useTaskFiles(task?.id)
@@ -378,24 +407,116 @@ export function EditTaskPanel({
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-lg bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
-                    }`}
+                className={`fixed top-4 right-4 bottom-4 w-full bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-all duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
+                    } ${isMaximized ? 'max-w-5xl' : 'max-w-lg'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-gray-800 rounded-t-2xl">
                     {/* Top row with collapse and actions */}
                     <div className="flex items-center justify-between mb-4">
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
-                            title="Zamknij"
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M13 17L18 12L13 7" />
-                                <path d="M6 17L11 12L6 7" />
-                            </svg>
-                        </button>
-                        <span className="text-xs text-amber-400 font-medium px-2 py-1 bg-amber-500/10 rounded-lg">{t('tasks.edit.edit_mode')}</span>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={onClose}
+                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                title={t('projects.details.close')}
+                            >
+                                <ChevronsRight size={18} />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (!isBlocked) setIsCompleted(!isCompleted)
+                                }}
+                                disabled={isBlocked}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${isCompleted
+                                    ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                                    } ${isBlocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title={isBlocked ? blockedTitle : (isCompleted ? t('tasks.details.mark_incomplete', { defaultValue: 'Oznacz jako niedokończone' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' }))}
+                            >
+                                <CheckCircle2 size={16} className={isCompleted ? 'fill-emerald-500/20' : ''} />
+                                <span>{isCompleted ? t('tasks.status.done', { defaultValue: 'Gotowe' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' })}</span>
+                            </button>
+                            <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-500/50 font-bold bg-amber-500/5 px-2 py-1 rounded border border-amber-500/10">
+                                {t('tasks.edit.edit_mode')}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => setIsMaximized(!isMaximized)}
+                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                title={isMaximized ? t('tasks.details.minimize') : t('tasks.details.maximize')}
+                            >
+                                {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                            </button>
+
+                            <div className="relative flex items-center">
+                                <button
+                                    onClick={() => {
+                                        const url = new URL(window.location.href)
+                                        url.searchParams.set('taskId', task.id)
+                                        navigator.clipboard.writeText(url.toString())
+                                        setIsCopied(true)
+                                        setTimeout(() => setIsCopied(false), 2000)
+                                    }}
+                                    className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                    title={t('tasks.details.copy_link')}
+                                >
+                                    <LinkIcon size={18} />
+                                </button>
+                                {isCopied && (
+                                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-xs px-2.5 py-1.5 rounded-md shadow-xl text-white whitespace-nowrap z-50 animate-in fade-in slide-in-from-bottom-2">
+                                        {t('tasks.details.copied', 'Copied!')}
+                                    </span>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => setActiveTab('shared')}
+                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                title={t('tasks.details.attachments')}
+                            >
+                                <Paperclip size={18} />
+                            </button>
+
+                            <div className="relative" ref={moreMenuRef}>
+                                <button
+                                    onClick={() => setShowMoreMenu(!showMoreMenu)}
+                                    className={`p-2 rounded-lg transition-colors ${showMoreMenu ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}
+                                    title={t('tasks.details.more_options')}
+                                >
+                                    <MoreHorizontal size={18} />
+                                </button>
+
+                                {showMoreMenu && (
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a24] rounded-xl shadow-2xl py-1.5 z-[100] border border-gray-800 animate-in fade-in zoom-in-95 duration-100">
+                                        <button
+                                            onClick={() => {
+                                                setShowMoreMenu(false)
+                                                // Handle archive if needed, or other edit-mode specifics
+                                                console.log('Archive task requested in edit mode')
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 flex items-center gap-2"
+                                        >
+                                            <Archive size={14} />
+                                            {t('common.archive', { defaultValue: 'Archiwizuj' })}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowMoreMenu(false)
+                                                // Handle delete if needed
+                                                console.log('Delete task requested in edit mode')
+                                            }}
+                                            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 flex items-center gap-2"
+                                        >
+                                            <Trash2 size={14} />
+                                            {t('common.delete', { defaultValue: 'Usuń' })}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Task Title - Editable with Checkbox */}
@@ -577,19 +698,19 @@ export function EditTaskPanel({
                             <SubtaskList
                                 subtasks={subtasks}
                                 availableAssignees={teamMembers}
-                                onToggle={isBlocked ? undefined : (subtaskId) => {
+                                onToggle={isBlocked ? undefined : (subtaskId: string) => {
                                     onSubtaskToggle?.(subtaskId)
                                 }}
-                                onReorder={isBlocked ? undefined : (newOrder) => {
+                                onReorder={isBlocked ? undefined : (newOrder: Subtask[]) => {
                                     onSubtasksChange?.(newOrder)
                                 }}
-                                onEdit={isBlocked ? undefined : (id, updates) => {
+                                onEdit={isBlocked ? undefined : (id: string, updates: Partial<Subtask>) => {
                                     onEditSubtask?.(id, updates)
                                 }}
-                                onDelete={isBlocked ? undefined : (id) => {
+                                onDelete={isBlocked ? undefined : (id: string) => {
                                     onDeleteSubtask?.(id)
                                 }}
-                                onAdd={isBlocked ? undefined : (titleStr, _afterId) => {
+                                onAdd={isBlocked ? undefined : (titleStr: string) => {
                                     if (titleStr.trim()) {
                                         const newSubtask: Subtask = {
                                             id: `subtask_${Date.now()}`,
@@ -617,7 +738,7 @@ export function EditTaskPanel({
                             </div>
                             {taskFiles && taskFiles.length > 0 ? (
                                 <div className="space-y-2">
-                                    {taskFiles.map((file) => (
+                                    {taskFiles.map((file: FileRecord) => (
                                         <div key={file.id} className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg">
                                             <PaperclipIcon />
                                             <div className="flex-1 min-w-0">
@@ -687,7 +808,7 @@ export function EditTaskPanel({
                             </div>
                             <LinksList
                                 links={links}
-                                onDelete={(linkId) => setLinks(prev => prev.filter(l => l.id !== linkId))}
+                                onDelete={(linkId: string) => setLinks(prev => prev.filter(l => l.id !== linkId))}
                             />
                         </div>
                     )}
@@ -697,11 +818,11 @@ export function EditTaskPanel({
                 <LinkInput
                     open={showLinkInput}
                     onClose={() => setShowLinkInput(false)}
-                    onAdd={(link) => {
+                    onAdd={(link: { url: string; title?: string }) => {
                         const newLink: TaskLink = {
                             id: crypto.randomUUID(),
                             url: link.url,
-                            title: link.title,
+                            title: link.title || '',
                             addedBy: userId || 'unknown',
                             addedAt: new Date().toISOString()
                         }

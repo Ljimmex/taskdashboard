@@ -34,6 +34,9 @@ import { whiteboardsRoutes } from './modules/whiteboards/routes'
 import { notificationRoutes } from './modules/notifications/routes'
 import annotationsRoutes from './modules/annotations/routes'
 
+// Import Webhook Worker
+import { startWebhookWorker } from './modules/webhooks/worker'
+
 // Create OpenAPI Hono app
 const app = new OpenAPIHono()
 
@@ -304,6 +307,9 @@ app.notFound((c) => {
 const port = Number(process.env.PORT) || 3000
 
 console.log(`🚀 Server running at http://localhost:${port}`)
+
+// Start Background Workers
+startWebhookWorker(60000) // Process every minute
 
 export default {
     port,

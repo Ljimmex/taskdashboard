@@ -1078,6 +1078,16 @@ tasksRoutes.patch('/:id/move', async (c) => {
 tasksRoutes.get('/:id/subtasks', async (c) => {
     try {
         const id = c.req.param('id')
+
+        // 1. Verify task exists first
+        const task = await db.query.tasks.findFirst({
+            where: (t, { eq }) => eq(t.id, id),
+            columns: { id: true, projectId: true }
+        })
+
+        if (!task) return c.json({ success: false, error: 'Task not found' }, 404)
+
+        // 2. Fetch subtasks with same pattern as GET /tasks/:id
         const result = await db.query.subtasks.findMany({
             where: (s, { eq }) => eq(s.taskId, id),
             with: {
@@ -1085,12 +1095,17 @@ tasksRoutes.get('/:id/subtasks', async (c) => {
                     columns: { id: true, name: true, image: true }
                 }
             },
-            orderBy: (s, { asc }) => [asc(s.position)]
+            orderBy: (s, { asc }) => [asc(s.position), asc(s.createdAt)]
         })
+
         return c.json({ success: true, data: result })
     } catch (error) {
-        console.error('Error fetching subtasks:', error)
-        return c.json({ success: false, error: 'Failed to fetch subtasks' }, 500)
+        console.error(`💥 Error fetching subtasks for task ${c.req.param('id')}:`, error)
+        return c.json({
+            success: false,
+            error: 'Failed to fetch subtasks',
+            details: error instanceof Error ? error.message : String(error)
+        }, 500)
     }
 })
 
