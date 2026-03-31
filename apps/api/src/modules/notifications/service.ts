@@ -30,7 +30,7 @@ export const NotificationService = {
                 .onConflictDoUpdate({
                     target: notificationInboxes.userId,
                     set: {
-                        unread: sql`unread || ${JSON.stringify([fullNotification])}::jsonb`,
+                        unread: sql`notification_inboxes.unread || ${JSON.stringify([fullNotification])}::jsonb`,
                         lastUpdated: new Date()
                     }
                 })
@@ -54,8 +54,8 @@ export const NotificationService = {
                 .set({
                     unread: sql`(
                         SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
-                        FROM jsonb_array_elements(unread) AS elem
-                        WHERE NOT (elem->>'id' = ANY(${notificationIds}))
+                        FROM jsonb_array_elements(notification_inboxes.unread) AS elem
+                        WHERE NOT (elem->>'id' = ANY(ARRAY[${sql.join(notificationIds.map(id => sql`${id}`), sql`, `)}]))
                     )`,
                     lastUpdated: new Date()
                 })
