@@ -299,6 +299,22 @@
             "message_new": "New message",
             "message_pinned": "Message pinned"
         },
+        "messages": {
+            "task_assigned": "{{actor}} assigned you to task: {{title}}",
+            "task_status_changed": "{{actor}} changed status of task {{title}} to {{status}}",
+            "subtask_assigned": "{{actor}} assigned you to subtask: {{title}}",
+            "time_approved": "Your time request was approved",
+            "time_rejected": "Your time request was rejected",
+            "project_access": "{{actor}} added you to project: {{title}}",
+            "project_removed": "{{actor}} removed you from project: {{title}}",
+            "team_access": "{{actor}} added you to team: {{title}}",
+            "team_removed": "{{actor}} removed you from team: {{title}}",
+            "new_comment": "{{actor}} commented on task: {{title}}",
+            "file_uploaded": "{{actor}} uploaded file: {{title}}",
+            "new_message": "New message: {{preview}}",
+            "meeting_assigned": "{{actor}} added you to meeting: {{title}}",
+            "reminder_assigned": "{{actor}} added reminder: {{title}}"
+        },
         "new_notification": "Notification: {{title}}"
     },
     "timeTracker": {

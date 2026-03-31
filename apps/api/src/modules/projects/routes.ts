@@ -319,10 +319,10 @@ projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
                 await NotificationService.push(uid, {
                     type: 'project_access',
                     title: 'notifications.titles.project_access',
-                    message: `[${user.name}] utworzył projekt: ${result.name}`,
+                    message: 'notifications.messages.project_access',
                     link: `/${workspace?.slug}/projects/${result.id}`,
                     actor: { name: user.name, image: user.image || undefined },
-                    metadata: { projectId: result.id }
+                    metadata: { projectId: result.id, title: result.name }
                 })
             }
         }
@@ -436,10 +436,10 @@ projectsRoutes.patch('/:id', zValidator('json', updateProjectSchema), async (c) 
                                 await NotificationService.push(uid, {
                                     type: 'project_access',
                                     title: 'notifications.titles.project_access',
-                                    message: `[${user.name}] dodał Cię do projektu: ${project.name}`,
+                                    message: 'notifications.messages.project_access',
                                     link: `/${workspace?.slug}/projects/${id}`,
                                     actor: { name: user.name, image: user.image || undefined },
-                                    metadata: { projectId: id }
+                                    metadata: { projectId: id, title: project.name }
                                 })
                             }
                         }
@@ -452,10 +452,10 @@ projectsRoutes.patch('/:id', zValidator('json', updateProjectSchema), async (c) 
                                 await NotificationService.push(pm.userId, {
                                     type: 'project_access',
                                     title: 'notifications.titles.project_removed',
-                                    message: `[${user.name}] usunął Cię z projektu: ${project.name}`,
+                                    message: 'notifications.messages.project_removed',
                                     link: `/`,
                                     actor: { name: user.name, image: user.image || undefined },
-                                    metadata: { projectId: id }
+                                    metadata: { projectId: id, title: project.name }
                                 })
                             }
                         }

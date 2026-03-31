@@ -300,6 +300,22 @@
             "message_new": "Nowa wiadomość",
             "message_pinned": "Przypięto wiadomość"
         },
+        "messages": {
+            "task_assigned": "{{actor}} przypisał Cię do zadania: {{title}}",
+            "task_status_changed": "{{actor}} zmienił status zadania {{title}} na {{status}}",
+            "subtask_assigned": "{{actor}} przypisał Cię do podzadania: {{title}}",
+            "time_approved": "Twoja prośba o czas została zatwierdzona",
+            "time_rejected": "Twoja prośba o czas została odrzucona",
+            "project_access": "{{actor}} dodał Cię do projektu: {{title}}",
+            "project_removed": "{{actor}} usunął Cię z projektu: {{title}}",
+            "team_access": "{{actor}} dodał Cię do zespołu: {{title}}",
+            "team_removed": "{{actor}} usunął Cię z zespołu: {{title}}",
+            "new_comment": "{{actor}} skomentował zadanie: {{title}}",
+            "file_uploaded": "{{actor}} dodał plik: {{title}}",
+            "new_message": "Nowa wiadomość: {{preview}}",
+            "meeting_assigned": "{{actor}} dodał Cię do spotkania: {{title}}",
+            "reminder_assigned": "{{actor}} dodał przypomnienie: {{title}}"
+        },
         "new_notification": "Powiadomienie: {{title}}"
     },
     "timeTracker": {

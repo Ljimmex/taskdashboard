@@ -138,10 +138,10 @@ commentsRoutes.post('/', zValidator('json', createCommentSchema), async (c) => {
             await NotificationService.push(assigneeId, {
                 type: 'task_comment',
                 title: 'notifications.titles.new_comment',
-                message: `[${user.name}] skomentował zadanie: ${task?.title}`,
+                message: 'notifications.messages.new_comment',
                 link: `/${workspace?.slug}/tasks/${task?.id}`,
                 actor: { name: user.name, image: user.image || undefined },
-                metadata: { taskId: task?.id, commentId: created.id }
+                metadata: { taskId: task?.id, commentId: created.id, title: task?.title }
             })
         }
 

@@ -602,10 +602,10 @@ teamsRoutes.post('/:id/members', zValidator('json', addTeamMemberSchema), async 
             await NotificationService.push(targetUserId, {
                 type: 'team_access',
                 title: 'notifications.titles.team_access',
-                message: `[${user.name}] dodał Cię do zespołu: ${team.name}`,
+                message: 'notifications.messages.team_access',
                 link: `/${workspace?.slug}/teams/${teamId}`,
                 actor: { name: user.name, image: user.image || undefined },
-                metadata: { teamId: teamId }
+                metadata: { teamId: teamId, title: team.name }
             })
         }
 
@@ -709,10 +709,10 @@ teamsRoutes.delete('/:id/members/:memberId', async (c) => {
             await NotificationService.push(memberId, {
                 type: 'team_removed',
                 title: 'notifications.titles.team_removed',
-                message: `[${user.name}] usunął Cię z zespołu: ${team.name}`,
+                message: 'notifications.messages.team_removed',
                 link: `/`, // Link to root since they might not have access to the team anymore
                 actor: { name: user.name, image: user.image || undefined },
-                metadata: { teamId: teamId }
+                metadata: { teamId: teamId, title: team.name }
             })
         }
 

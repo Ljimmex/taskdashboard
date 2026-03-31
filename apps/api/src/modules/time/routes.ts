@@ -593,7 +593,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                     )
                 )
                 .orderBy(desc(timeEntries.startedAt))
-                .limit(10)
+            // .limit(10) // Removed to allow frontend pagination
 
             const recent = await recentQuery
 
@@ -1245,10 +1245,10 @@ timeRoutes.patch('/:id/approve', zValidator('json', approveTimeEntrySchema), asy
             await NotificationService.push(updated.userId, {
                 type: 'time_entry_approved',
                 title: 'notifications.titles.time_approved',
-                message: `Twój wpis czasu (${updated.durationMinutes} min) został zaakceptowany przez [${user.name}]`,
+                message: 'notifications.messages.time_approved',
                 link: `/${workspace?.slug}/time-tracker`,
                 actor: { name: user.name, image: user.image || undefined },
-                metadata: { entryId: updated.id }
+                metadata: { entryId: updated.id, duration: updated.durationMinutes }
             })
         }
 
@@ -1300,10 +1300,10 @@ timeRoutes.patch('/:id/reject', zValidator('json', rejectTimeEntrySchema), async
             await NotificationService.push(updated.userId, {
                 type: 'time_entry_rejected',
                 title: 'notifications.titles.time_rejected',
-                message: `Twój wpis czasu (${updated.durationMinutes} min) został odrzucony przez [${user.name}]. Powód: ${body.rejectionReason}`,
+                message: 'notifications.messages.time_rejected',
                 link: `/${workspace?.slug}/time-tracker`,
                 actor: { name: user.name, image: user.image || undefined },
-                metadata: { entryId: updated.id, reason: body.rejectionReason }
+                metadata: { entryId: updated.id, reason: body.rejectionReason, duration: updated.durationMinutes }
             })
         }
 

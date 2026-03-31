@@ -576,10 +576,10 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
                     await NotificationService.push(assigneeId, {
                         type: 'task_assigned',
                         title: 'notifications.titles.task_assigned',
-                        message: `[${session.user.name}] przypisał Cię do zadania: ${created.title}`,
+                        message: 'notifications.messages.task_assigned',
                         link: `/${workspace?.slug}/tasks/${created.id}`,
                         actor: { name: session.user.name, image: session.user.image || undefined },
-                        metadata: { taskId: created.id, projectId: created.projectId }
+                        metadata: { taskId: created.id, projectId: created.projectId, title: created.title }
                     })
                 }
             }
@@ -799,10 +799,16 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
                     await NotificationService.push(assigneeId, {
                         type: 'task_status_changed',
                         title: 'notifications.titles.task_status_changed',
-                        message: `[${user.name}] zmienił status zadania "${updated.title}" na: ${newStage?.name || updated.status}`,
+                        message: 'notifications.messages.task_status_changed',
                         link: `/${workspace?.slug}/tasks/${updated.id}`,
                         actor: { name: user.name, image: user.image || undefined },
-                        metadata: { taskId: updated.id, oldStatus: task.status, newStatus: updated.status }
+                        metadata: {
+                            taskId: updated.id,
+                            oldStatus: task.status,
+                            newStatus: updated.status,
+                            title: updated.title,
+                            status: newStage?.name || updated.status
+                        }
                     })
                 }
             }
@@ -849,10 +855,10 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
                         await NotificationService.push(assigneeId, {
                             type: 'task_assigned',
                             title: 'notifications.titles.task_assigned',
-                            message: `[${user.name}] przypisał Cię do zadania: ${updated.title}`,
+                            message: 'notifications.messages.task_assigned',
                             link: `/${workspace?.slug}/tasks/${updated.id}`,
                             actor: { name: user.name, image: user.image || undefined },
-                            metadata: { taskId: updated.id }
+                            metadata: { taskId: updated.id, title: updated.title }
                         })
                     }
                 }
@@ -1139,10 +1145,10 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
             await NotificationService.push(created.assigneeId, {
                 type: 'subtask_assigned',
                 title: 'notifications.titles.subtask_assigned',
-                message: `[${user.name}] przypisał Cię do podzadania: ${created.title}`,
+                message: 'notifications.messages.subtask_assigned',
                 link: `/${workspace?.slug}/tasks/${id}`,
                 actor: { name: user.name, image: user.image || undefined },
-                metadata: { taskId: id, subtaskId: created.id }
+                metadata: { taskId: id, subtaskId: created.id, title: created.title }
             })
         }
 

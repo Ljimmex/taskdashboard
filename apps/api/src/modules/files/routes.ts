@@ -108,10 +108,10 @@ app.post('/upload', zValidator('json', uploadSchema), async (c) => {
             await NotificationService.push(member.userId, {
                 type: 'file_uploaded',
                 title: 'notifications.titles.file_uploaded',
-                message: `[${user.name}] dodał plik: ${body.name}`,
+                message: 'notifications.messages.file_uploaded',
                 link: `/${workspace?.slug}/files`,
                 actor: { name: user.name, image: user.image || undefined },
-                metadata: { fileId: newFile.id, workspaceId: body.workspaceId }
+                metadata: { fileId: newFile.id, workspaceId: body.workspaceId, title: body.name }
             })
         }
     }

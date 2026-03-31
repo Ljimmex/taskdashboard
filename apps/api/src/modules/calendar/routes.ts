@@ -557,11 +557,11 @@ calendarRoutes.post('/', zValidator('json', createEventSchema), async (c) => {
                         type: firstEvent.type === 'meeting' ? 'meeting_assigned' : 'reminder_assigned',
                         title: firstEvent.type === 'meeting' ? 'notifications.titles.meeting_invited' : 'notifications.titles.event_reminder',
                         message: firstEvent.type === 'meeting'
-                            ? `[${session.user.name}] dodał Cię do spotkania: ${firstEvent.title}`
-                            : `[${session.user.name}] dodał przypomnienie: ${firstEvent.title}`,
+                            ? 'notifications.messages.meeting_assigned'
+                            : 'notifications.messages.reminder_assigned',
                         link: `/${workspace?.slug}/calendar`,
                         actor: { name: session.user.name, image: session.user.image || undefined },
-                        metadata: { eventId: firstEvent.id }
+                        metadata: { eventId: firstEvent.id, title: firstEvent.title }
                     })
                 }
             }

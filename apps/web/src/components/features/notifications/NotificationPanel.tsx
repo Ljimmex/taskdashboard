@@ -60,33 +60,41 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
         return groups
     }, [filteredNotifications, t])
 
-    const translateTitle = (title: string) => {
-        if (title.startsWith('notifications.titles.')) {
-            return t(title);
+    const translateTitle = (item: NotificationItem): string => {
+        if (item.title.startsWith('notifications.')) {
+            return t(item.title, (item.metadata as any) || {}) as string;
+        }
+        return item.title as string;
+    };
+
+    const translateMessage = (item: NotificationItem): string | null => {
+        if (item.message && item.message.startsWith('notifications.')) {
+            const interpolationData = {
+                ...(item.metadata as any || {}),
+                actor: item.actor?.name || t('common.someone')
+            };
+
+            // Handle new_message preview from metadata
+            if (item.message === 'notifications.messages.new_message' && (item.metadata as any)?.preview) {
+                (interpolationData as any).preview = (item.metadata as any).preview;
+            }
+
+            return t(item.message, interpolationData) as string;
         }
 
-        const legacyMap: Record<string, string> = {
-            'Dodano Cię do projektu': 'notifications.titles.project_access',
-            'Zostałeś usunięty z projektu': 'notifications.titles.project_removed',
-            'Dodano Cię do zespołu': 'notifications.titles.team_access',
-            'Zostałeś usunięty z zespołu': 'notifications.titles.team_removed',
-            'Nowy komentarz w zadaniu': 'notifications.titles.new_comment',
-            'Przesłano nowy plik': 'notifications.titles.file_uploaded',
-            'Twoja prośba o czas została zatwierdzona': 'notifications.titles.time_approved',
-            'Twoja prośba o czas została odrzucona': 'notifications.titles.time_rejected',
-            'Nowe zadanie przypisane do Ciebie': 'notifications.titles.task_assigned',
-            'Nowe podzadanie przypisane do Ciebie': 'notifications.titles.subtask_assigned',
-            'Nowe zadanie utworzone': 'notifications.titles.task_created',
-            'Zmieniono status zadania': 'notifications.titles.task_status_changed',
-            'Zaproszenie do spotkania': 'notifications.titles.meeting_invited',
-            'Nowe wydarzenie': 'notifications.titles.event_created',
-            'Przypomnienie o wydarzeniu': 'notifications.titles.event_reminder',
-            'Nowa wiadomość': 'notifications.titles.message_new',
-            'Przypięto wiadomość': 'notifications.titles.message_pinned'
+        if (item.message && typeof item.message === 'string') {
+            if (item.message.includes('przypisał Cię do zadania:')) {
+                const title = item.message.split('zadańia:')[1] || (item.metadata as any)?.title || '';
+                return t('notifications.messages.task_assigned', { actor: item.actor?.name, title }) as string;
+            }
+            if (item.message.includes('skomentował zadanie:')) {
+                const title = item.message.split('zadanie:')[1] || (item.metadata as any)?.title || '';
+                return t('notifications.messages.new_comment', { actor: item.actor?.name, title }) as string;
+            }
         }
-        const key = legacyMap[title]
-        return key ? t(key) : t(title)
-    }
+
+        return item.message as string | null;
+    };
 
     if (!mounted) return null
 
@@ -210,13 +218,13 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
                                                 <div className="text-[14px] text-[var(--app-text-primary)] leading-tight">
                                                     {item.actor && <span className="font-black text-[var(--app-accent)] mr-1.5">{item.actor.name}</span>}
                                                     <span className={clsx("font-medium", !item.read && "font-bold")}>
-                                                        {highlightKeywords(translateTitle(item.title))}
+                                                        {highlightKeywords(translateTitle(item))}
                                                     </span>
                                                 </div>
 
                                                 {item.message && (
                                                     <div className="mt-2.5 text-[12.5px] text-[var(--app-text-secondary)] line-clamp-2 border-l-2 border-[var(--app-accent)]/30 pl-3 py-0.5 font-medium leading-relaxed italic opacity-80 group-hover:opacity-100 transition-opacity">
-                                                        {item.message}
+                                                        {translateMessage(item)}
                                                     </div>
                                                 )}
 
