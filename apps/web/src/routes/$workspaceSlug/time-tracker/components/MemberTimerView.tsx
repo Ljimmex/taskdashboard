@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
-import { Clock, Play, Pause, Square, ChevronDown, Calendar, CheckSquare, AlignLeft, Activity, SkipForward, Coffee, Brain, ChevronUp } from 'lucide-react'
+import { Clock, Play, Pause, Square, ChevronDown, ChevronLeft, ChevronRight, Calendar, CheckSquare, AlignLeft, Activity, SkipForward, Coffee, Brain, ChevronUp } from 'lucide-react'
 import { formatTime, formatMinutes } from './utils'
 import { MyTask } from './types'
 
@@ -917,44 +917,48 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
             </div>
 
             {totalPages > 1 && (
-              <div className="mt-8 flex justify-center items-center gap-2">
-                <button
-                  onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
-                  disabled={historyPage === 1}
-                  className="px-3 py-1.5 rounded-lg text-sm font-bold bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] hover:bg-[var(--app-bg-card)] disabled:opacity-50 text-[var(--app-text-secondary)] transition-colors"
-                >
-                  {t('common.prev', 'Wstecz')}
-                </button>
-                <div className="flex gap-1">
-                  {/* Uproszczona paginacja, pokazujemy tylko 3 najbliższe strony */}
-                  {Array.from({ length: totalPages }).map((_, i) => {
-                    const page = i + 1;
-                    if (page === 1 || page === totalPages || (page >= historyPage - 1 && page <= historyPage + 1)) {
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => setHistoryPage(page)}
-                          className={`w-8 h-8 rounded-lg text-sm font-bold transition-colors border ${historyPage === page
-                            ? 'bg-[var(--app-accent)] text-[#0a0a0f] border-[var(--app-accent)]'
-                            : 'bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] border-[var(--app-divider)] hover:bg-[var(--app-bg-card)]'
-                            }`}
-                        >
-                          {page}
-                        </button>
-                      )
-                    } else if (page === historyPage - 2 || page === historyPage + 2) {
-                      return <span key={page} className="text-[var(--app-text-muted)] px-1">...</span>
-                    }
-                    return null;
-                  })}
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-[var(--app-divider)]">
+                <span className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-widest">
+                  {t('common.page', 'Strona')} {historyPage} {t('common.of', 'z')} {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                    disabled={historyPage === 1}
+                    className="p-2 rounded-xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--app-bg-card)] transition-all"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <div className="flex items-center gap-1 mx-2">
+                    {Array.from({ length: totalPages }).map((_, i) => {
+                      const page = i + 1;
+                      if (page === 1 || page === totalPages || (page >= historyPage - 1 && page <= historyPage + 1)) {
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setHistoryPage(page)}
+                            className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${historyPage === page
+                              ? 'bg-[var(--app-accent)] text-white shadow-lg shadow-blue-500/20'
+                              : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
+                              }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      } else if (page === historyPage - 2 || page === historyPage + 2) {
+                        return <span key={page} className="text-[var(--app-text-muted)] px-1 self-center">...</span>
+                      }
+                      return null;
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setHistoryPage(p => Math.min(totalPages, p + 1))}
+                    disabled={historyPage === totalPages}
+                    className="p-2 rounded-xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--app-bg-card)] transition-all"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setHistoryPage(p => Math.min(totalPages, p + 1))}
-                  disabled={historyPage === totalPages}
-                  className="px-3 py-1.5 rounded-lg text-sm font-bold bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] hover:bg-[var(--app-card)] disabled:opacity-50 text-[var(--app-text-secondary)] transition-colors"
-                >
-                  {t('common.next', 'Dalej')}
-                </button>
               </div>
             )}
           </>

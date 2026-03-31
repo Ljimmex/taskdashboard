@@ -157,7 +157,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-8 pt-6 border-t border-[var(--app-divider)]">
-                <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-widest">
+                <span className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-widest">
                   {t('common.page', 'Strona')} {currentPage} {t('common.of', 'z')} {totalPages}
                 </span>
                 <div className="flex items-center gap-2">
@@ -169,18 +169,26 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
                     <ChevronLeft size={18} />
                   </button>
                   <div className="flex items-center gap-1 mx-2">
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className={`w-8 h-8 rounded-xl text-[10px] font-black transition-all ${currentPage === i + 1
-                          ? 'bg-[var(--app-accent)] text-[var(--app-bg-deepest)] shadow-lg'
-                          : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
-                          }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
+                    {Array.from({ length: totalPages }).map((_, i) => {
+                      const page = i + 1;
+                      if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${currentPage === page
+                              ? 'bg-[var(--app-accent)] text-white shadow-lg shadow-blue-500/20'
+                              : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
+                              }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      } else if (page === currentPage - 2 || page === currentPage + 2) {
+                        return <span key={page} className="text-[var(--app-text-muted)] px-1 self-center">...</span>
+                      }
+                      return null;
+                    })}
                   </div>
                   <button
                     onClick={() => setCurrentPage(curr => Math.min(totalPages, curr + 1))}

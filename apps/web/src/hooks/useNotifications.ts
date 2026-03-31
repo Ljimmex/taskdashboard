@@ -40,32 +40,41 @@ export function useNotifications() {
     useEffect(() => {
         if (!session?.user?.id) return
 
-        const channel = supabase
-            .channel(`notifications_${session.user.id}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'notification_inboxes',
-                    // Filter removed for maximum reliability
-                },
-                (payload) => {
-                    console.log('[Realtime] Notifications changed:', payload)
-                    // Verify if this update is for the current user (if payload has user_id)
-                    const updatedUserId = (payload.new as any)?.user_id || (payload.old as any)?.user_id
-                    if (updatedUserId && updatedUserId !== session.user.id) return
+        let channel: any = null
+        let retryCount = 0
+        const maxRetries = 5
 
-                    // Force immediate refetch
-                    queryClient.refetchQueries({ queryKey: ['notifications'], type: 'active' })
-                }
-            )
-            .subscribe((status) => {
-                console.log(`[Realtime] Subscription status for notifications: ${status}`)
-            })
+        const subscribe = () => {
+            channel = supabase
+                .channel(`notifications_${session.user.id}_${Math.random().toString(36).substring(7)}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'notification_inboxes',
+                    },
+                    (payload) => {
+                        console.log('[Realtime] Notifications changed:', payload)
+                        const updatedUserId = (payload.new as any)?.user_id || (payload.old as any)?.user_id
+                        if (updatedUserId && updatedUserId !== session.user.id) return
+                        queryClient.refetchQueries({ queryKey: ['notifications'], type: 'active' })
+                    }
+                )
+                .subscribe((status) => {
+                    console.log(`[Realtime] Subscription status for notifications: ${status}`)
+                    if (status === 'CHANNEL_ERROR' && retryCount < maxRetries) {
+                        retryCount++
+                        console.log(`[Realtime] Retrying subscription (${retryCount}/${maxRetries})...`)
+                        setTimeout(subscribe, 2000 * retryCount)
+                    }
+                })
+        }
+
+        subscribe()
 
         return () => {
-            supabase.removeChannel(channel)
+            if (channel) supabase.removeChannel(channel)
         }
     }, [session?.user?.id, queryClient])
 
