@@ -384,7 +384,7 @@ export function DueDatePicker({
                                                 setMinutes(date.getMinutes())
                                                 if (!showTime) setIsOpen(false)
                                             }}
-                                            className="flex-1 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-all border border-[var(--app-border)]/50"
+                                            className="flex-1 px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-all border border-[var(--app-border)]"
                                         >
                                             {label}
                                         </button>
@@ -423,11 +423,10 @@ export function DueDatePicker({
                                             onClick={() => handleDateSelect(dayObj)}
                                             className={cn(
                                                 "h-8 w-8 rounded-full flex items-center justify-center text-sm transition-all relative group",
-                                                dayObj.type !== 'current' && "text-[var(--app-text-muted)]/50 hover:text-[var(--app-text-muted)]",
+                                                dayObj.type !== 'current' && "text-[var(--app-text-muted)] opacity-50 hover:opacity-100",
                                                 // Normal state
                                                 dayObj.type === 'current' && !isSelected(dayObj.day, dayObj.type) && !isToday(dayObj.day, dayObj.type) && "text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-primary)]",
                                                 // Today state (solid circle with different color, or just text color + dot)
-                                                // User requested "different style". Let's try text highlight + small dot
                                                 isToday(dayObj.day, dayObj.type) && !isSelected(dayObj.day, dayObj.type) && "text-amber-500 font-bold",
                                                 // Selected state
                                                 isSelected(dayObj.day, dayObj.type) && "bg-amber-500 text-white shadow-lg shadow-amber-500/25 scale-110 font-medium z-10",
@@ -445,7 +444,7 @@ export function DueDatePicker({
                             {/* Time Column */}
                             {showTime && (
                                 <div className="w-[88px] border-none pl-4 flex flex-col">
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase mb-4 text-center tracking-widest">{t('tasks.datepicker.time', 'Time')}</span>
+                                    <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase mb-4 text-center tracking-widest">{t('tasks.datepicker.time', 'Time')}</span>
 
                                     <div className="flex-1 flex flex-col gap-1 overflow-y-auto time-scrollbar pr-3 max-h-[300px]">
                                         {Array.from({ length: 24 }).map((_, h) => (

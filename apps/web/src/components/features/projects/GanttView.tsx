@@ -192,7 +192,7 @@ export function GanttView({
                         {/* Task Rows */}
                         <div className="flex flex-col">
                             {tasks.map((task) => (
-                                <div key={task.id} className="flex group transition-colors h-12 relative border-b border-[var(--app-divider)]/50 hover:bg-[var(--app-bg-sidebar)]/50">
+                                <div key={task.id} className="flex group transition-colors h-12 relative border-b border-[var(--app-divider)] hover:bg-[var(--app-bg-sidebar)]/50">
                                     {/* Left Side Details (Sticky Left) */}
                                     <div
                                         className="w-[720px] flex-shrink-0 sticky left-0 z-20 flex items-center bg-[var(--app-bg-page)] group-hover:bg-[var(--app-bg-sidebar)] transition-colors border-r border-[var(--app-border)] shadow-[4px_0_24px_rgba(0,0,0,0.1)]"
@@ -260,7 +260,7 @@ export function GanttView({
                                         {days.map((day, idx) => {
                                             const isToday = isSameDay(day, today)
                                             return (
-                                                <div key={idx} className="w-12 h-full flex-shrink-0 border-r border-[var(--app-divider)]/50 relative last:border-0">
+                                                <div key={idx} className="w-12 h-full flex-shrink-0 border-r border-[var(--app-divider)] relative last:border-0">
                                                     {/* Current Time Line Segment */}
                                                     {isToday && (
                                                         <div

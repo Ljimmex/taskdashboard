@@ -3,6 +3,8 @@ import { apiFetchJson } from '@/lib/api'
 import { useEffect, useRef } from 'react'
 import { toast } from './useToast'
 import { useTranslation } from 'react-i18next'
+import { supabase } from '@/lib/supabase'
+import { useSession } from '@/lib/auth'
 
 export interface NotificationItem {
     id: string
@@ -21,6 +23,7 @@ export interface NotificationItem {
 
 export function useNotifications() {
     const { t } = useTranslation()
+    const { data: session } = useSession()
     const queryClient = useQueryClient()
     const previousNotificationsRef = useRef<NotificationItem[]>([])
 
@@ -30,8 +33,34 @@ export function useNotifications() {
             const res = await apiFetchJson<{ success: boolean, data: NotificationItem[] }>('/api/notifications')
             return res.success ? res.data : []
         },
-        refetchInterval: 30000, // Poll every 30s
+        refetchInterval: 60000, // Increase polling interval since we have Realtime now
     })
+
+    // Supabase Realtime Subscription
+    useEffect(() => {
+        if (!session?.user?.id) return
+
+        const channel = supabase
+            .channel(`notifications_${session.user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'notification_inboxes',
+                    filter: `user_id=eq.${session.user.id}`
+                },
+                () => {
+                    // Invalidate and refetch when the inbox changes
+                    queryClient.invalidateQueries({ queryKey: ['notifications'] })
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [session?.user?.id, queryClient])
 
     const unreadCount = notifications.filter(n => !n.read).length
 
@@ -45,7 +74,8 @@ export function useNotifications() {
             // Only show toast if it's a real update (not the first load)
             if (previousNotificationsRef.current.length > 0 && newNotifications.length > 0) {
                 newNotifications.forEach(n => {
-                    toast.info(t('notifications.new_notification', { title: t(n.title) || n.title }))
+                    const translatedTitle = t(n.title) || n.title
+                    toast.info(t('notifications.new_notification', { title: translatedTitle }))
                 })
             }
         }
@@ -56,7 +86,7 @@ export function useNotifications() {
         mutationFn: async (id: string) => {
             return apiFetchJson('/api/notifications/read', {
                 method: 'PATCH',
-                body: JSON.stringify({ notificationIds: [id] })
+                body: JSON.stringify({ ids: [id] })
             })
         },
         onSuccess: () => {

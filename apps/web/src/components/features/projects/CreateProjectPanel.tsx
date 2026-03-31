@@ -260,10 +260,10 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                                         }
                                     }}
                                     className={cn(
-                                        "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border border-[var(--app-border)]",
+                                        "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border",
                                         teamIds.includes(team.id)
-                                            ? "bg-[var(--app-accent)]/10 border-[var(--app-accent)]/30 text-[var(--app-text-primary)]"
-                                            : "bg-[var(--app-bg-input)] text-[var(--app-text-muted)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-secondary)]"
+                                            ? "bg-amber-500/10 border-amber-500/30 text-[var(--app-text-primary)]"
+                                            : "bg-[var(--app-bg-input)] border-[var(--app-border)] text-[var(--app-text-muted)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-secondary)]"
                                     )}
                                 >
                                     <div

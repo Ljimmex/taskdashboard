@@ -36,6 +36,13 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
         enabled: !!workspaceSlug && !!session?.user?.id
     })
 
+    // If workspace fails to load (wrong slug like "messages"), redirect back to dashboard
+    // to re-resolve valid workspace
+    if (workspaceData && (workspaceData.success === false || workspaceData.error)) {
+        window.location.href = '/dashboard'
+        return null
+    }
+
     const userRole = workspaceData?.userRole
     const canManageSettings = userRole === 'owner' || userRole === 'admin'
 

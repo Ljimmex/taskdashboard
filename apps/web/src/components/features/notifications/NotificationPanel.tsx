@@ -5,11 +5,13 @@ import { X, CheckCircle2, BellOff, Clock, Bell } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { pl, enUS } from 'date-fns/locale'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from '@tanstack/react-router'
 import { sidebarIcons } from '@/components/dashboard/icons/SidebarIcons'
 import { useNotifications, NotificationItem } from '@/hooks/useNotifications'
 
 export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
     const { t, i18n } = useTranslation()
+    const navigate = useNavigate()
     const [mounted, setMounted] = useState(false)
     const [activeTab, setActiveTab] = useState<'All' | 'Tasks' | 'Messages' | 'Comments' | 'Assets' | 'Time'>('All')
 
@@ -190,7 +192,10 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
                                             )}
                                             onClick={() => {
                                                 markRead(item.id)
-                                                if (item.link) window.location.href = item.link
+                                                if (item.link) {
+                                                    navigate({ to: item.link })
+                                                }
+                                                onClose()
                                             }}
                                         >
                                             {!item.read && (
@@ -281,7 +286,7 @@ function NotificationIcon({ type }: { type: string }) {
 
     return (
         <div className={clsx("w-10 h-10 rounded-2xl flex items-center justify-center border shadow-sm transition-transform group-hover:scale-105", colorClass)}>
-            <Icon size={18} />
+            {typeof Icon === 'function' ? <Icon size={18} /> : Icon.gold}
         </div>
     )
 }

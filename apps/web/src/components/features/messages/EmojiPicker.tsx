@@ -163,10 +163,10 @@ export function EmojiPicker({ onEmojiSelect, className = '' }: EmojiPickerProps)
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="p-2 hover:bg-gray-800/50 rounded-lg transition-colors"
+                className="p-2 hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-colors"
                 aria-label="Add emoji"
             >
-                <Smile className="w-5 h-5 text-gray-400" />
+                <Smile className="w-5 h-5 text-[var(--app-text-muted)]" />
             </button>
 
             {/* Emoji Popover */}
@@ -179,9 +179,9 @@ export function EmojiPicker({ onEmojiSelect, className = '' }: EmojiPickerProps)
                     />
 
                     {/* Emoji Picker */}
-                    <div className="absolute bottom-full mb-2 right-0 bg-[#1a1a24] border border-gray-800 rounded-xl shadow-2xl z-20 w-72 md:w-80">
+                    <div className="absolute bottom-full mb-2 right-0 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl shadow-2xl z-20 w-72 md:w-80 backdrop-blur-xl">
                         {/* Category Tabs */}
-                        <div className="flex gap-1 p-2 border-b border-gray-800 overflow-x-auto scrollbar-hide">
+                        <div className="flex gap-1 p-2 border-b border-[var(--app-border)] overflow-x-auto scrollbar-hide">
                             {(Object.keys(EMOJI_CATEGORIES) as Array<keyof typeof EMOJI_CATEGORIES>).map((category) => (
                                 <button
                                     key={category}
@@ -189,7 +189,7 @@ export function EmojiPicker({ onEmojiSelect, className = '' }: EmojiPickerProps)
                                     onClick={() => setActiveCategory(category)}
                                     className={`px-3 py-1.5 text-xs rounded-lg transition-colors whitespace-nowrap ${activeCategory === category
                                         ? 'bg-amber-500/20 text-amber-500'
-                                        : 'text-gray-400 hover:bg-gray-800 hover:text-gray-300'
+                                        : 'text-[var(--app-text-muted)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-secondary)]'
                                         }`}
                                 >
                                     {t(`messages.emojiCategories.${category.toLowerCase()}`)}
@@ -205,7 +205,7 @@ export function EmojiPicker({ onEmojiSelect, className = '' }: EmojiPickerProps)
                                         key={`${emoji}-${index}`}
                                         type="button"
                                         onClick={() => handleEmojiClick(emoji)}
-                                        className="text-2xl hover:bg-gray-800/50 rounded p-1 transition-colors aspect-square flex items-center justify-center"
+                                        className="text-2xl hover:bg-[var(--app-bg-sidebar)] rounded p-1 transition-colors aspect-square flex items-center justify-center"
                                         title={emoji}
                                     >
                                         {emoji}

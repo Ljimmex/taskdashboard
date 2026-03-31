@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
-import { conversations, workspaces } from '../../db/schema'
+import { conversations, workspaces, teams } from '../../db/schema'
 import { eq, and, sql } from 'drizzle-orm'
 import type { ConversationMessage } from '@taskdashboard/types'
 import { triggerWebhook } from '../webhooks/trigger'
@@ -440,11 +440,21 @@ conversationsRoutes.post('/:id/messages', zValidator('json', createMessageSchema
 
         const { content, attachments, senderId, replyToId } = body
 
-        const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId))
+        const [data] = await db.select({
+            conversation: conversations,
+            workspaceSlug: workspaces.slug
+        })
+            .from(conversations)
+            .leftJoin(teams, eq(conversations.teamId, teams.id))
+            .leftJoin(workspaces, eq(sql`COALESCE(${conversations.workspaceId}, ${teams.workspaceId})`, workspaces.id))
+            .where(eq(conversations.id, conversationId))
+            .limit(1)
 
-        if (!conversation) {
+        if (!data || !data.conversation) {
             return c.json({ success: false, error: 'Conversation not found' }, 404)
         }
+
+        const { conversation, workspaceSlug } = data
 
         // Check if user is participant
         const participants = (conversation.participants || []) as string[]
@@ -490,12 +500,21 @@ conversationsRoutes.post('/:id/messages', zValidator('json', createMessageSchema
 
         // Notify other participants
         const otherParticipants = (participants as string[] || []).filter(p => p !== effectiveSenderId)
+
+        let preview = 'Wysłano nową wiadomość'
+        if (typeof content === 'string') {
+            const cleanContent = content.trim()
+            preview = cleanContent.length > 100 ? `${cleanContent.substring(0, 97)}...` : cleanContent
+        } else if (content && typeof content === 'object' && 'ct' in content) {
+            preview = '🔒 Wiadomość zaszyfrowana'
+        }
+
         for (const targetId of otherParticipants) {
             await NotificationService.push(targetId, {
                 type: conversation.type === 'direct' ? 'direct_message' : 'group_message',
                 title: 'notifications.titles.message_new',
-                message: typeof content === 'string' ? `[${user.name}]: ${content}` : 'Wysłano nową wiadomość',
-                link: `/messages/${conversationId}`,
+                message: preview,
+                link: workspaceSlug ? `/${workspaceSlug}/messages/${conversationId}` : `/messages/${conversationId}`,
                 actor: { name: user.name, image: user.image || undefined },
                 metadata: { conversationId }
             })
@@ -521,11 +540,21 @@ conversationsRoutes.patch('/:id/messages', zValidator('json', appendMessageSchem
 
         const { content, attachments } = body
 
-        const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId))
+        const [data] = await db.select({
+            conversation: conversations,
+            workspaceSlug: workspaces.slug
+        })
+            .from(conversations)
+            .leftJoin(teams, eq(conversations.teamId, teams.id))
+            .leftJoin(workspaces, eq(sql`COALESCE(${conversations.workspaceId}, ${teams.workspaceId})`, workspaces.id))
+            .where(eq(conversations.id, conversationId))
+            .limit(1)
 
-        if (!conversation) {
+        if (!data || !data.conversation) {
             return c.json({ success: false, error: 'Conversation not found' }, 404)
         }
+
+        const { conversation, workspaceSlug } = data
 
         // Check if user is participant
         const participants = conversation.participants as string[]
@@ -568,12 +597,21 @@ conversationsRoutes.patch('/:id/messages', zValidator('json', appendMessageSchem
 
         // Notify other participants
         const otherParticipants = (participants as string[] || []).filter(p => p !== userId)
+
+        let preview = 'Wysłano nową wiadomość'
+        if (typeof content === 'string') {
+            const cleanContent = content.trim()
+            preview = cleanContent.length > 100 ? `${cleanContent.substring(0, 97)}...` : cleanContent
+        } else if (content && typeof content === 'object' && 'ct' in content) {
+            preview = '🔒 Wiadomość zaszyfrowana'
+        }
+
         for (const targetId of otherParticipants) {
             await NotificationService.push(targetId, {
                 type: conversation.type === 'direct' ? 'direct_message' : 'group_message',
                 title: 'notifications.titles.message_new',
-                message: typeof content === 'string' ? `[${user.name}]: ${content}` : 'Wysłano nową wiadomość',
-                link: `/messages/${conversationId}`,
+                message: preview,
+                link: workspaceSlug ? `/${workspaceSlug}/messages/${conversationId}` : `/messages/${conversationId}`,
                 actor: { name: user.name, image: user.image || undefined },
                 metadata: { conversationId }
             })
