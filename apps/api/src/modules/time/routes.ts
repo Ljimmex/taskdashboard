@@ -720,8 +720,14 @@ timeRoutes.get('/project/:projectId', async (c) => {
 
         // --- FILTER ENTRIES BY RANGE (Work Timeline Fix) ---
         let filteredEntries = entries
-        if (month) {
-            const [yearStr, monthStr] = month.split('-')
+        if (month !== undefined) {
+            // Default to current month if specifically requested as empty/invalid
+            let monthToUse = month
+            if (!monthToUse || monthToUse === 'null' || monthToUse === '') {
+                monthToUse = new Date().toISOString().slice(0, 7)
+            }
+
+            const [yearStr, monthStr] = monthToUse.split('-')
             const yr = parseInt(yearStr, 10)
             const mo = parseInt(monthStr, 10) - 1
             const startOfMonth = new Date(yr, mo, 1)

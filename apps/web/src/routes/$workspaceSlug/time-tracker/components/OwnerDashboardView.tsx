@@ -83,10 +83,14 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
         queryKey: ['project-time-entries', selectedProjectId, dashboardMode, dateFrom, dateTo], // Added filters to query key
         queryFn: () => {
             const params = new URLSearchParams()
-            if (dashboardMode === 'monthly') params.append('month', (dateFrom as any)?.toISOString().slice(0, 7) || '')
+            if (dashboardMode === 'monthly') {
+                // If dateFrom is not set, use current month
+                const monthStr = dateFrom ? dateFrom.slice(0, 7) : new Date().toISOString().slice(0, 7)
+                params.append('month', monthStr)
+            }
             else if (dashboardMode === 'custom' && dateFrom && dateTo) {
-                params.append('startDate', (dateFrom as any).toISOString())
-                params.append('endDate', (dateTo as any).toISOString())
+                params.append('startDate', dateFrom)
+                params.append('endDate', dateTo)
             }
             return apiFetchJson<{ success: boolean; data: any[] }>(`/api/time/project/${selectedProjectId}?${params.toString()}`)
         },
@@ -132,8 +136,6 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
     }, [participants])
 
     const timelineData = useMemo(() => {
-        if (!entries.length) return []
-
         const formatDateLocal = (d: Date) => {
             const year = d.getFullYear()
             const month = String(d.getMonth() + 1).padStart(2, '0')
@@ -141,15 +143,29 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
             return `${year}-${month}-${day}`
         }
 
-        const daily = entries.reduce((acc: any, e: any) => {
+        const daily: Record<string, number> = {}
+
+        // If monthly mode, fill all days of that month
+        if (dashboardMode === 'monthly') {
+            const now = new Date()
+            const monthStr = dateFrom ? dateFrom.slice(0, 7) : now.toISOString().slice(0, 7)
+            const [yr, mo] = monthStr.split('-').map(Number)
+            const daysInMonth = new Date(yr, mo, 0).getDate()
+            for (let i = 1; i <= daysInMonth; i++) {
+                const ds = `${yr}-${String(mo).padStart(2, '0')}-${String(i).padStart(2, '0')}`
+                daily[ds] = 0
+            }
+        }
+
+        entries.forEach((e: any) => {
             const dateStr = formatDateLocal(new Date(e.startedAt))
-            acc[dateStr] = (acc[dateStr] || 0) + (e.durationMinutes / 60)
-            return acc
-        }, {})
+            daily[dateStr] = (daily[dateStr] || 0) + (e.durationMinutes / 60)
+        })
+
         return Object.entries(daily)
             .map(([date, hours]) => ({ date, hours: Number((hours as number).toFixed(1)) }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    }, [entries])
+    }, [entries, dashboardMode, dateFrom])
 
     const heatmapData = useMemo(() => {
         // Generujemy obecny rok (od 1 stycznia do 31 grudnia)

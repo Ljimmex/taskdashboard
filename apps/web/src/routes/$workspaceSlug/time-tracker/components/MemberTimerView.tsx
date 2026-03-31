@@ -67,9 +67,11 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
           setSelectedMeetingId(data.meetingId || null)
           setSelectedEntryType(data.entryType || 'task')
           setDescription(data.description || '')
-          setIsRunning(data.isPaused ? false : true) // If was paused, don't tick
+          setIsRunning(data.isPaused ? false : true)
           setIsPaused(data.isPaused || false)
           startTimeRef.current = data.startTime
+          // If it was paused, we don't need to do anything with elapsed yet as the interval isn't running
+          // But when we resume, we'll need to know how much time to "shift"
           if (data.clockType === 'pomodoro') {
             setClockType('pomodoro')
             setPomodoroMode(data.pomodoroMode || 'work')
@@ -189,8 +191,9 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
       if (res.success) {
         setIsRunning(false)
         setIsPaused(true)
+        const now = Date.now()
         const saved = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
-        localStorage.setItem(`tt_${userId}`, JSON.stringify({ ...saved, isPaused: true }))
+        localStorage.setItem(`tt_${userId}`, JSON.stringify({ ...saved, isPaused: true, pausedAt: now }))
         queryClient.invalidateQueries({ queryKey: ['active-time-entry', activeEntryId] })
       }
     }
@@ -201,10 +204,22 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
       apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/resume`, { method: 'PATCH' }),
     onSuccess: (res) => {
       if (res.success) {
+        const saved = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
+        const pausedAt = saved.pausedAt || Date.now()
+        const pauseDuration = Date.now() - pausedAt
+
+        // SHIFT the start time forward by the duration of the pause
+        // so that (Date.now() - startTimeRef.current) results in the correct elapsed time
+        startTimeRef.current += pauseDuration
+
         setIsRunning(true)
         setIsPaused(false)
-        const saved = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
-        localStorage.setItem(`tt_${userId}`, JSON.stringify({ ...saved, isPaused: false }))
+        localStorage.setItem(`tt_${userId}`, JSON.stringify({
+          ...saved,
+          isPaused: false,
+          pausedAt: null,
+          startTime: startTimeRef.current
+        }))
         queryClient.invalidateQueries({ queryKey: ['active-time-entry', activeEntryId] })
       }
     }
@@ -750,9 +765,9 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
             <button
               onClick={handlePause}
               disabled={pauseMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-amber-500 text-white border border-amber-500/30 font-bold text-lg hover:bg-amber-600 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group shadow-sm"
+              className="flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-amber-500 font-bold text-lg hover:bg-amber-500/5 hover:border-amber-500/30 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group shadow-sm"
             >
-              <Pause size={24} className="fill-white transition-colors" />
+              <Pause size={24} className="fill-amber-500 transition-colors" />
               {t('timeTracker.timer.pause', 'Pauza')}
             </button>
           )}
@@ -761,7 +776,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
             <button
               onClick={handleStop}
               disabled={stopMutation.isPending}
-              className="flex-[0.7] flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[var(--app-bg-deepest)] text-rose-500 border border-rose-500/30 font-bold text-lg hover:bg-rose-500/10 hover:border-rose-500 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group shadow-sm"
+              className="flex-[0.7] flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-rose-500 font-bold text-lg hover:bg-rose-500/5 hover:border-rose-500/30 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group shadow-sm"
             >
               <Square size={24} className="fill-rose-500 transition-colors" />
               {clockType === 'pomodoro' ? 'Zakończ' : t('timeTracker.timer.stop', 'Stop')}
