@@ -30,7 +30,7 @@ export const NotificationService = {
                 .onConflictDoUpdate({
                     target: notificationInboxes.userId,
                     set: {
-                        unread: sql`notification_inboxes.unread || ${JSON.stringify([fullNotification])}::jsonb`,
+                        unread: sql`${notificationInboxes.unread} || ${JSON.stringify([fullNotification])}::jsonb`,
                         lastUpdated: new Date()
                     }
                 })

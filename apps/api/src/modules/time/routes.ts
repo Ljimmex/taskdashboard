@@ -701,6 +701,8 @@ timeRoutes.get('/project/:projectId', async (c) => {
         }))
 
         // Get all time entries for these tasks + standalone meetings of the same workspace
+        const { month, startDate, endDate } = c.req.query()
+
         const entries = await db.select().from(timeEntries)
             .where(
                 and(
@@ -716,8 +718,30 @@ timeRoutes.get('/project/:projectId', async (c) => {
             )
             .orderBy(desc(timeEntries.startedAt))
 
+        // --- FILTER ENTRIES BY RANGE (Work Timeline Fix) ---
+        let filteredEntries = entries
+        if (month) {
+            const [yearStr, monthStr] = month.split('-')
+            const yr = parseInt(yearStr, 10)
+            const mo = parseInt(monthStr, 10) - 1
+            const startOfMonth = new Date(yr, mo, 1)
+            const endOfMonth = new Date(yr, mo + 1, 0, 23, 59, 59)
+            filteredEntries = entries.filter(e => {
+                const d = new Date(e.startedAt)
+                return d >= startOfMonth && d <= endOfMonth
+            })
+        } else if (startDate && endDate) {
+            const start = new Date(startDate)
+            const end = new Date(endDate)
+            end.setHours(23, 59, 59, 999)
+            filteredEntries = entries.filter(e => {
+                const d = new Date(e.startedAt)
+                return d >= start && d <= end
+            })
+        }
+
         // Get subtask info
-        const subtaskIds = entries.filter(e => e.subtaskId).map(e => e.subtaskId!) as string[]
+        const subtaskIds = filteredEntries.filter(e => e.subtaskId).map(e => e.subtaskId!) as string[]
         let subtaskMap: Record<string, any> = {}
         if (subtaskIds.length > 0) {
             const subtaskList = await db.select({ id: subtasks.id, title: subtasks.title }).from(subtasks).where(inArray(subtasks.id, subtaskIds))
@@ -725,13 +749,13 @@ timeRoutes.get('/project/:projectId', async (c) => {
         }
 
         // Get user info
-        const userIds = [...new Set(entries.map(e => e.userId))]
+        const userIds = [...new Set(filteredEntries.map(e => e.userId))]
         const userDetails = userIds.length > 0
             ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, userIds))
             : []
         const userMap = Object.fromEntries(userDetails.map(u => [u.id, u]))
 
-        const result = entries.map(e => {
+        const result = filteredEntries.map(e => {
             const effective = e.entryType === 'meeting' ? e.durationMinutes * 0.5 : e.durationMinutes
             const currentResolvedRole = memberRoleMap[e.userId] || e.projectRole || 'participant'
             const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
@@ -930,8 +954,26 @@ timeRoutes.patch('/:id/stop', async (c) => {
         }
 
         const endedAt = new Date()
-        const durationMinutes = Math.round((endedAt.getTime() - new Date(entry.startedAt).getTime()) / 60000)
-        const [updated] = await db.update(timeEntries).set({ endedAt, durationMinutes }).where(eq(timeEntries.id, id)).returning()
+        const startedAt = new Date(entry.startedAt)
+
+        // Calculate total pause duration
+        let finalPausedMinutes = entry.totalPausedMinutes
+        if (entry.isPaused && entry.pausedAt) {
+            finalPausedMinutes += Math.round((endedAt.getTime() - new Date(entry.pausedAt).getTime()) / 60000)
+        }
+
+        const durationMinutes = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 60000) - finalPausedMinutes)
+
+        const [updated] = await db.update(timeEntries)
+            .set({
+                endedAt,
+                durationMinutes,
+                isPaused: false,
+                pausedAt: null,
+                totalPausedMinutes: finalPausedMinutes
+            })
+            .where(eq(timeEntries.id, id))
+            .returning()
 
         // Notify HR/Admins about new pending entry
         if (updated && updated.workspaceId && updated.durationMinutes > 0) {
@@ -946,6 +988,60 @@ timeRoutes.patch('/:id/stop', async (c) => {
     } catch (error) {
         console.error('Error stopping timer:', error)
         return c.json({ success: false, error: 'Failed to stop timer' }, 500)
+    }
+})
+
+// PATCH /api/time/:id/pause - Pause timer
+timeRoutes.patch('/:id/pause', async (c) => {
+    try {
+        const id = c.req.param('id')
+        const user = c.get('user')
+
+        const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
+        if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
+        if (entry.userId !== user.id) return c.json({ success: false, error: 'Unauthorized' }, 403)
+        if (entry.isPaused) return c.json({ success: false, error: 'Timer already paused' }, 400)
+        if (entry.endedAt) return c.json({ success: false, error: 'Timer already finished' }, 400)
+
+        const [updated] = await db.update(timeEntries)
+            .set({ isPaused: true, pausedAt: new Date() })
+            .where(eq(timeEntries.id, id))
+            .returning()
+
+        return c.json({ success: true, data: updated })
+    } catch (error) {
+        console.error('Error pausing timer:', error)
+        return c.json({ success: false, error: 'Failed' }, 500)
+    }
+})
+
+// PATCH /api/time/:id/resume - Resume timer
+timeRoutes.patch('/:id/resume', async (c) => {
+    try {
+        const id = c.req.param('id')
+        const user = c.get('user')
+
+        const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
+        if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
+        if (entry.userId !== user.id) return c.json({ success: false, error: 'Unauthorized' }, 403)
+        if (!entry.isPaused || !entry.pausedAt) return c.json({ success: false, error: 'Timer not paused' }, 400)
+
+        const now = new Date()
+        const pausedDurationMinutes = Math.round((now.getTime() - new Date(entry.pausedAt).getTime()) / 60000)
+
+        const [updated] = await db.update(timeEntries)
+            .set({
+                isPaused: false,
+                pausedAt: null,
+                totalPausedMinutes: entry.totalPausedMinutes + pausedDurationMinutes
+            })
+            .where(eq(timeEntries.id, id))
+            .returning()
+
+        return c.json({ success: true, data: updated })
+    } catch (error) {
+        console.error('Error resuming timer:', error)
+        return c.json({ success: false, error: 'Failed' }, 500)
     }
 })
 

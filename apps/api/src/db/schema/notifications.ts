@@ -1,5 +1,6 @@
-import { pgTable, text, timestamp, jsonb } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, jsonb, pgPolicy } from 'drizzle-orm/pg-core'
 import { users } from './users'
+import { sql } from 'drizzle-orm'
 
 // =============================================================================
 // NOTIFICATION INBOXES TABLE
@@ -16,7 +17,28 @@ export const notificationInboxes = pgTable('notification_inboxes', {
     unread: jsonb('unread').default([]).notNull(),
 
     lastUpdated: timestamp('last_updated').defaultNow().notNull(),
-})
+}, (table) => [
+    pgPolicy("notification_inboxes_select_policy", {
+        for: "select",
+        to: "authenticated",
+        using: sql`auth.uid()::text = ${table.userId}`,
+    }),
+    pgPolicy("notification_inboxes_insert_policy", {
+        for: "insert",
+        to: "authenticated",
+        withCheck: sql`auth.uid()::text = ${table.userId}`,
+    }),
+    pgPolicy("notification_inboxes_update_policy", {
+        for: "update",
+        to: "authenticated",
+        using: sql`auth.uid()::text = ${table.userId}`,
+    }),
+    pgPolicy("notification_inboxes_delete_policy", {
+        for: "delete",
+        to: "authenticated",
+        using: sql`auth.uid()::text = ${table.userId}`,
+    }),
+])
 
 export type NotificationInbox = typeof notificationInboxes.$inferSelect
 export type NewNotificationInbox = typeof notificationInboxes.$inferInsert

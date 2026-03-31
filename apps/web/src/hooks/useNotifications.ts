@@ -48,12 +48,16 @@ export function useNotifications() {
                     event: '*',
                     schema: 'public',
                     table: 'notification_inboxes',
-                    filter: `user_id=eq.${session.user.id}`
+                    // Filter removed for maximum reliability
                 },
                 (payload) => {
                     console.log('[Realtime] Notifications changed:', payload)
-                    // Invalidate and refetch when the inbox changes
-                    queryClient.invalidateQueries({ queryKey: ['notifications'] })
+                    // Verify if this update is for the current user (if payload has user_id)
+                    const updatedUserId = (payload.new as any)?.user_id || (payload.old as any)?.user_id
+                    if (updatedUserId && updatedUserId !== session.user.id) return
+
+                    // Force immediate refetch
+                    queryClient.refetchQueries({ queryKey: ['notifications'], type: 'active' })
                 }
             )
             .subscribe((status) => {
@@ -81,9 +85,12 @@ export function useNotifications() {
         }
 
         if (notifications.length > previousNotificationsRef.current.length) {
+            console.log(`[Notifications] Count increased from ${previousNotificationsRef.current.length} to ${notifications.length}`)
             const newNotifications = notifications.filter(
                 n => !previousNotificationsRef.current.find(prev => prev.id === n.id)
             )
+
+            console.log(`[Notifications] New items found:`, newNotifications.length)
 
             // Show toast for each really NEW notification
             if (newNotifications.length > 0) {
@@ -92,6 +99,9 @@ export function useNotifications() {
                     toast.info(t('notifications.new_notification', { title: translatedTitle }))
                 })
             }
+        } else {
+            // Debug log if needed
+            // console.log(`[Notifications] No increase in count. Current: ${notifications.length}, Prev: ${previousNotificationsRef.current.length}`)
         }
         previousNotificationsRef.current = notifications
     }, [notifications, isLoading, t])

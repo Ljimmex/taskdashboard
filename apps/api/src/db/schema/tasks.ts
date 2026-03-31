@@ -159,6 +159,11 @@ export const timeEntries = pgTable('time_entries', {
     rejectionReason: varchar('rejection_reason', { length: 500 }),
     bonusPoints: integer('bonus_points'),
 
+    // --- Pause/Resume Columns ---
+    isPaused: boolean('is_paused').default(false).notNull(),
+    pausedAt: timestamp('paused_at'),
+    totalPausedMinutes: integer('total_paused_minutes').default(0).notNull(),
+
     createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

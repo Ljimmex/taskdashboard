@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
-import { Clock, Play, Square, ChevronDown, Calendar, CheckSquare, AlignLeft, Activity, SkipForward, Coffee, Brain, ChevronUp } from 'lucide-react'
+import { Clock, Play, Pause, Square, ChevronDown, Calendar, CheckSquare, AlignLeft, Activity, SkipForward, Coffee, Brain, ChevronUp } from 'lucide-react'
 import { formatTime, formatMinutes } from './utils'
 import { MyTask } from './types'
 
@@ -15,6 +15,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null)
   const [selectedEntryType, setSelectedEntryType] = useState<'task' | 'meeting'>('task')
   const [isRunning, setIsRunning] = useState(false)
+  const [isPaused, setIsPaused] = useState(false) // Added isPaused state
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [taskDropdownOpen, setTaskDropdownOpen] = useState(false)
@@ -66,7 +67,8 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
           setSelectedMeetingId(data.meetingId || null)
           setSelectedEntryType(data.entryType || 'task')
           setDescription(data.description || '')
-          setIsRunning(true)
+          setIsRunning(data.isPaused ? false : true) // If was paused, don't tick
+          setIsPaused(data.isPaused || false)
           startTimeRef.current = data.startTime
           if (data.clockType === 'pomodoro') {
             setClockType('pomodoro')
@@ -180,11 +182,40 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     }
   })
 
+  const pauseMutation = useMutation({
+    mutationFn: (entryId: string) =>
+      apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/pause`, { method: 'PATCH' }),
+    onSuccess: (res) => {
+      if (res.success) {
+        setIsRunning(false)
+        setIsPaused(true)
+        const saved = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
+        localStorage.setItem(`tt_${userId}`, JSON.stringify({ ...saved, isPaused: true }))
+        queryClient.invalidateQueries({ queryKey: ['active-time-entry', activeEntryId] })
+      }
+    }
+  })
+
+  const resumeMutation = useMutation({
+    mutationFn: (entryId: string) =>
+      apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/resume`, { method: 'PATCH' }),
+    onSuccess: (res) => {
+      if (res.success) {
+        setIsRunning(true)
+        setIsPaused(false)
+        const saved = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
+        localStorage.setItem(`tt_${userId}`, JSON.stringify({ ...saved, isPaused: false }))
+        queryClient.invalidateQueries({ queryKey: ['active-time-entry', activeEntryId] })
+      }
+    }
+  })
+
   const stopMutation = useMutation({
     mutationFn: (entryId: string) =>
       apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/stop`, { method: 'PATCH' }),
     onSuccess: () => {
       setIsRunning(false)
+      setIsPaused(false) // Clear pause state
       setActiveEntryId(null)
       setElapsed(0)
       setDescription('')
@@ -227,6 +258,16 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     if (!activeEntryId) return
     stopMutation.mutate(activeEntryId)
   }, [activeEntryId, stopMutation])
+
+  const handlePause = useCallback(() => {
+    if (!activeEntryId) return
+    pauseMutation.mutate(activeEntryId)
+  }, [activeEntryId, pauseMutation])
+
+  const handleResume = useCallback(() => {
+    if (!activeEntryId) return
+    resumeMutation.mutate(activeEntryId)
+  }, [activeEntryId, resumeMutation])
 
   // Pomodoro Logic
   const handleSkip = useCallback(() => {
@@ -660,6 +701,13 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
                 )}
               </div>
             )}
+            {isPaused && (
+              <div className="flex flex-col items-center gap-2 mt-2">
+                <div className="text-amber-500 font-bold uppercase tracking-[0.3em] text-xs">
+                  {t('timeTracker.timer.paused', 'Wstrzymano')}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -679,8 +727,8 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
           </div>
         )}
 
-        <div className="flex items-center justify-center w-full max-w-md mt-2 gap-4">
-          {!isRunning ? (
+        <div className="flex items-center justify-center w-full max-w-xl mt-2 gap-4">
+          {!isRunning && !isPaused ? (
             <button
               onClick={handleStart}
               disabled={!selectedTaskId || startMutation.isPending || (clockType === 'pomodoro' && pomodoroMode !== 'work')}
@@ -689,14 +737,34 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
               <Play size={24} className="fill-[var(--app-accent-text)] transition-colors" />
               {clockType === 'pomodoro' ? 'Zacznij Sesję' : t('timeTracker.timer.start', 'Start Pracy')}
             </button>
+          ) : isPaused ? (
+            <button
+              onClick={handleResume}
+              disabled={resumeMutation.isPending}
+              className="flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[var(--app-accent)] text-[var(--app-accent-text)] border border-[var(--app-accent)] font-bold text-lg hover:bg-[var(--app-accent-hover)] hover:shadow-[0_10px_30px_rgba(242,206,136,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group"
+            >
+              <Play size={24} className="fill-[var(--app-accent-text)] transition-colors" />
+              {t('timeTracker.timer.resume', 'Wznów Pracę')}
+            </button>
           ) : (
+            <button
+              onClick={handlePause}
+              disabled={pauseMutation.isPending}
+              className="flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-amber-500 text-white border border-amber-500/30 font-bold text-lg hover:bg-amber-600 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group shadow-sm"
+            >
+              <Pause size={24} className="fill-white transition-colors" />
+              {t('timeTracker.timer.pause', 'Pauza')}
+            </button>
+          )}
+
+          {(isRunning || isPaused) && (
             <button
               onClick={handleStop}
               disabled={stopMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[var(--app-bg-deepest)] text-rose-500 border border-rose-500/30 font-bold text-lg hover:bg-rose-500/10 hover:border-rose-500 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group animate-pulse-slow shadow-sm"
+              className="flex-[0.7] flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[var(--app-bg-deepest)] text-rose-500 border border-rose-500/30 font-bold text-lg hover:bg-rose-500/10 hover:border-rose-500 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group shadow-sm"
             >
               <Square size={24} className="fill-rose-500 transition-colors" />
-              {clockType === 'pomodoro' ? 'Przerwij i Zapisz' : t('timeTracker.timer.stop', 'Zakończ i Zapisz')}
+              {clockType === 'pomodoro' ? 'Zakończ' : t('timeTracker.timer.stop', 'Stop')}
             </button>
           )}
 

@@ -14,7 +14,6 @@ import {
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatHours } from './utils'
-import { TimeEntryRaw } from './types'
 
 export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug }: { selectedProjectId: string | null; projects: any[]; workspaceSlug: string }) {
     const { t, i18n } = useTranslation()
@@ -81,8 +80,16 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
     })
 
     const { data: entriesData } = useQuery({
-        queryKey: ['project-time-entries', selectedProjectId],
-        queryFn: () => apiFetchJson<{ success: boolean; data: TimeEntryRaw[] }>(`/api/time/project/${selectedProjectId}`),
+        queryKey: ['project-time-entries', selectedProjectId, dashboardMode, dateFrom, dateTo], // Added filters to query key
+        queryFn: () => {
+            const params = new URLSearchParams()
+            if (dashboardMode === 'monthly') params.append('month', (dateFrom as any)?.toISOString().slice(0, 7) || '')
+            else if (dashboardMode === 'custom' && dateFrom && dateTo) {
+                params.append('startDate', (dateFrom as any).toISOString())
+                params.append('endDate', (dateTo as any).toISOString())
+            }
+            return apiFetchJson<{ success: boolean; data: any[] }>(`/api/time/project/${selectedProjectId}?${params.toString()}`)
+        },
         enabled: !!selectedProjectId,
     })
 
