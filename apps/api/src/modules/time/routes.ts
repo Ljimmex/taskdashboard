@@ -831,6 +831,16 @@ timeRoutes.post('/', zValidator('json', createTimeEntrySchema), async (c) => {
             approvalStatus: 'pending'
         }
         const [created] = await db.insert(timeEntries).values(newEntry).returning()
+
+        // Notify HR/Admins about new pending entry
+        if (created && created.workspaceId) {
+            notifyHR(created.workspaceId, {
+                id: currentUser.id,
+                name: currentUser.name,
+                image: currentUser.image || undefined
+            }, created.durationMinutes).catch(err => console.error('[Time] notifyHR error:', err))
+        }
+
         return c.json({ success: true, data: created }, 201)
     } catch (error: any) {
         console.error('Error creating time entry:', error)
@@ -922,6 +932,16 @@ timeRoutes.patch('/:id/stop', async (c) => {
         const endedAt = new Date()
         const durationMinutes = Math.round((endedAt.getTime() - new Date(entry.startedAt).getTime()) / 60000)
         const [updated] = await db.update(timeEntries).set({ endedAt, durationMinutes }).where(eq(timeEntries.id, id)).returning()
+
+        // Notify HR/Admins about new pending entry
+        if (updated && updated.workspaceId && updated.durationMinutes > 0) {
+            notifyHR(updated.workspaceId, {
+                id: user.id,
+                name: user.name,
+                image: user.image || undefined
+            }, updated.durationMinutes).catch(err => console.error('[Time] notifyHR error:', err))
+        }
+
         return c.json({ success: true, data: updated })
     } catch (error) {
         console.error('Error stopping timer:', error)
@@ -1191,3 +1211,36 @@ timeRoutes.patch('/:id/reject', zValidator('json', rejectTimeEntrySchema), async
         return c.json({ success: false, error: 'Failed to reject entry' }, 500)
     }
 })
+
+/**
+ * Notifies HR/Admins about a new pending time entry.
+ */
+async function notifyHR(workspaceId: string, actor: { id: string, name: string, image?: string }, durationMinutes: number) {
+    try {
+        const hrUsers = await db.select({ userId: workspaceMembers.userId })
+            .from(workspaceMembers)
+            .where(and(
+                eq(workspaceMembers.workspaceId, workspaceId),
+                inArray(workspaceMembers.role, ['owner', 'admin', 'hr_manager']),
+                eq(workspaceMembers.status, 'active')
+            ))
+
+        const [workspace] = await db.select({ slug: workspaces.slug }).from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1)
+
+        for (const hr of hrUsers) {
+            // Don't notify the actor themselves
+            if (hr.userId === actor.id) continue
+
+            await NotificationService.push(hr.userId, {
+                type: 'time_entry_pending',
+                title: 'notifications.titles.time_pending',
+                message: `Nowy wpis czasu do zaakceptowania (${durationMinutes} min) od [${actor.name}]`,
+                link: `/${workspace?.slug}/hr/time-tracker`,
+                actor: { name: actor.name, image: actor.image },
+                metadata: { workspaceId }
+            })
+        }
+    } catch (error) {
+        console.error('[TimeRoutes] Failed to notify HR:', error)
+    }
+}
