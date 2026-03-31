@@ -114,14 +114,57 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     refetchInterval: 5000,
   })
 
-  // Verify Active Entry Existence (Keep it for info, but don't clear automatically)
-  const { error: activeEntryError } = useQuery({
+  // Fetch active time entry from server to sync state
+  const { data: activeEntryData, error: activeEntryError } = useQuery({
     queryKey: ['active-time-entry', activeEntryId],
     queryFn: () => apiFetchJson<{ success: boolean; data: any }>(`/api/time/${activeEntryId}`),
     enabled: !!activeEntryId,
-    refetchInterval: 15000,
+    refetchInterval: 5000, // Frequent sync
     retry: false,
   })
+
+  // Sync active entry from server to local state
+  useEffect(() => {
+    if (activeEntryData?.success && activeEntryData.data) {
+      const serverEntry = activeEntryData.data
+      const serverStartedAt = new Date(serverEntry.startedAt).getTime()
+      const serverIsPaused = serverEntry.isPaused
+      const serverPausedAt = serverEntry.pausedAt ? new Date(serverEntry.pausedAt).getTime() : null
+      const totalPausedMs = (serverEntry.totalPausedMinutes || 0) * 60000
+
+      // Update local flags
+      setIsRunning(!serverIsPaused)
+      setIsPaused(serverIsPaused)
+
+      // Calculate the "apparent" startTimeRef.current so that (Date.now() - startTimeRef.current) gives the worked time
+      // Logic: WorkedTime = (Now - StartedAt) - TotalPaused
+      // So, apparentStartTime = StartedAt + TotalPaused
+      startTimeRef.current = serverStartedAt + totalPausedMs
+
+      // If currently paused, elapsed should reflect the static time up to the pause
+      if (serverIsPaused && serverPausedAt) {
+        setElapsed((serverPausedAt - startTimeRef.current) / 1000)
+      }
+
+      // Sync IDs and metadata
+      setSelectedTaskId(serverEntry.taskId)
+      setSelectedSubtaskId(serverEntry.subtaskId || null)
+      setSelectedMeetingId(serverEntry.meetingId || null)
+      setSelectedEntryType(serverEntry.entryType || 'task')
+
+      // Update localStorage to match server
+      const saved = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
+      localStorage.setItem(`tt_${userId}`, JSON.stringify({
+        ...saved,
+        entryId: serverEntry.id,
+        taskId: serverEntry.taskId,
+        subtaskId: serverEntry.subtaskId,
+        startTime: startTimeRef.current,
+        isPaused: serverIsPaused,
+        pausedAt: serverPausedAt
+      }))
+    }
+  }, [activeEntryData, userId])
 
   // We no longer clear the timer automatically on 404 to be resilient to accidental deletions
   const myHistory = historyData?.data || []

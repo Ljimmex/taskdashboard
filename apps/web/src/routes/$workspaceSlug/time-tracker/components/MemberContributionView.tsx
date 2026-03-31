@@ -1,11 +1,14 @@
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
-import { Clock, AlertCircle, Calendar } from 'lucide-react'
+import { Clock, AlertCircle, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatMinutes, formatHours } from './utils'
 
 export function MemberContributionView({ userId, selectedProjectId }: { userId: string; selectedProjectId: string | null }) {
   const { t } = useTranslation()
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const { data: contribData, isLoading } = useQuery({
     queryKey: ['revshare-member', selectedProjectId, userId],
@@ -47,6 +50,12 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
   const summary = contribData?.data?.summary
   const recent = contribData?.data?.recentEntries || []
   const hourThreshold = contribData?.data?.hourThreshold || 200
+
+  const totalPages = Math.ceil(recent.length / itemsPerPage)
+  const paginatedRecent = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return recent.slice(start, start + itemsPerPage)
+  }, [recent, currentPage])
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
@@ -138,11 +147,52 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {recent.map((entry: any) => (
-              <HistoryEntry key={entry.id} entry={entry} />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {paginatedRecent.map((entry: any) => (
+                <HistoryEntry key={entry.id} entry={entry} />
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-[var(--app-divider)]">
+                <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-widest">
+                  {t('common.page', 'Strona')} {currentPage} {t('common.of', 'z')} {totalPages}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(curr => Math.max(1, curr - 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--app-bg-card)] transition-all"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <div className="flex items-center gap-1 mx-2">
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`w-8 h-8 rounded-xl text-[10px] font-black transition-all ${currentPage === i + 1
+                          ? 'bg-[var(--app-accent)] text-[var(--app-bg-deepest)] shadow-lg'
+                          : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
+                          }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(curr => Math.min(totalPages, curr + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--app-bg-card)] transition-all"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
