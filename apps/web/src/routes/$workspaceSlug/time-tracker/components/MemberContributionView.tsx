@@ -17,6 +17,16 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
     refetchInterval: 5000,
   })
 
+  const summary = contribData?.data?.summary
+  const recent = contribData?.data?.recentEntries || []
+  const hourThreshold = contribData?.data?.hourThreshold || 200
+
+  const totalPages = Math.ceil(recent.length / itemsPerPage)
+  const paginatedRecent = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return recent.slice(start, start + itemsPerPage)
+  }, [recent, currentPage])
+
   if (!selectedProjectId) {
     return (
       <div className="flex flex-col items-center justify-center py-24 bg-[var(--app-bg-card)]/50 rounded-3xl backdrop-blur-sm">
@@ -46,16 +56,6 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
       </div>
     )
   }
-
-  const summary = contribData?.data?.summary
-  const recent = contribData?.data?.recentEntries || []
-  const hourThreshold = contribData?.data?.hourThreshold || 200
-
-  const totalPages = Math.ceil(recent.length / itemsPerPage)
-  const paginatedRecent = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    return recent.slice(start, start + itemsPerPage)
-  }, [recent, currentPage])
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
