@@ -50,12 +50,15 @@ export function useNotifications() {
                     table: 'notification_inboxes',
                     filter: `user_id=eq.${session.user.id}`
                 },
-                () => {
+                (payload) => {
+                    console.log('[Realtime] Notifications changed:', payload)
                     // Invalidate and refetch when the inbox changes
                     queryClient.invalidateQueries({ queryKey: ['notifications'] })
                 }
             )
-            .subscribe()
+            .subscribe((status) => {
+                console.log(`[Realtime] Subscription status for notifications: ${status}`)
+            })
 
         return () => {
             supabase.removeChannel(channel)
@@ -64,15 +67,26 @@ export function useNotifications() {
 
     const unreadCount = notifications.filter(n => !n.read).length
 
+    const hasInitialDataRef = useRef(false)
+
     // Toasts for new notifications
     useEffect(() => {
+        if (isLoading) return
+
+        // Skip the very first time we get data (initial load)
+        if (!hasInitialDataRef.current) {
+            hasInitialDataRef.current = true
+            previousNotificationsRef.current = notifications
+            return
+        }
+
         if (notifications.length > previousNotificationsRef.current.length) {
             const newNotifications = notifications.filter(
                 n => !previousNotificationsRef.current.find(prev => prev.id === n.id)
             )
 
-            // Only show toast if it's a real update (not the first load)
-            if (previousNotificationsRef.current.length > 0 && newNotifications.length > 0) {
+            // Show toast for each really NEW notification
+            if (newNotifications.length > 0) {
                 newNotifications.forEach(n => {
                     const translatedTitle = t(n.title) || n.title
                     toast.info(t('notifications.new_notification', { title: translatedTitle }))
@@ -80,7 +94,7 @@ export function useNotifications() {
             }
         }
         previousNotificationsRef.current = notifications
-    }, [notifications, t])
+    }, [notifications, isLoading, t])
 
     const markReadMutation = useMutation({
         mutationFn: async (id: string) => {
