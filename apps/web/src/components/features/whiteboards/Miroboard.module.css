@@ -1,5 +1,6 @@
 /* =============================================================================
-   EXCALIDRAW CUSTOM THEME OVERRIDES (Adapted for Miroboard)
+   EXCALIDRAW CUSTOM THEME OVERRIDES (Miroboard)
+   - All native Excalidraw UI is hidden; we use our own custom toolbar/controls
    ============================================================================= */
 
 .miroboardWrapper {
@@ -11,7 +12,38 @@
     overflow: hidden;
 }
 
-/* Theme Variables Bridge - Applies to both Light and Dark using standard App styles */
+/* Canvas container - hides ALL native Excalidraw UI */
+.excalidrawCanvas {
+    height: 100%;
+    width: 100%;
+}
+
+.excalidrawCanvas :global(.excalidraw) {
+    height: 100%;
+}
+
+/* Hide ALL native Excalidraw UI elements */
+.excalidrawCanvas :global(.excalidraw .App-menu_top),
+.excalidrawCanvas :global(.excalidraw .App-toolbar-container),
+.excalidrawCanvas :global(.excalidraw .layer-ui__wrapper__footer-left),
+.excalidrawCanvas :global(.excalidraw .layer-ui__wrapper__footer-right),
+.excalidrawCanvas :global(.excalidraw .zen-mode-transition),
+.excalidrawCanvas :global(.excalidraw .zen-mode-transition--active),
+.excalidrawCanvas :global(.excalidraw .disable-zen-mode),
+.excalidrawCanvas :global(.excalidraw button[aria-label='Exit zen mode']),
+.excalidrawCanvas :global(.excalidraw .App-bottom-bar) {
+    display: none !important;
+}
+
+/* Ensure text editor remains accessible above our custom UI */
+.excalidrawCanvas :global(.excalidraw-textEditorContainer) {
+    z-index: 100 !important;
+}
+
+/* =============================================================================
+   Theme Variables Bridge
+   ============================================================================= */
+
 .miroboardWrapper :global(.excalidraw) {
     --color-primary: var(--app-accent);
     --color-primary-light: color-mix(in srgb, var(--app-accent) 20%, transparent);
@@ -60,10 +92,11 @@
     --color-surface-highest: rgba(0, 0, 0, 0.12);
 }
 
-/* Glassmorphism on Island Panes */
+/* =============================================================================
+   Glassmorphism for any remaining native panels (sidebar, popups)
+   ============================================================================= */
+
 .miroboardWrapper :global(.excalidraw .Island),
-.miroboardWrapper :global(.excalidraw .App-bottom-bar),
-.miroboardWrapper :global(.excalidraw .layer-ui__wrapper .zen-mode-transition),
 .miroboardWrapper :global(.excalidraw .sidebar) {
     border-radius: 16px !important;
     border: 1px solid var(--app-border) !important;
@@ -73,130 +106,60 @@
     transition: background 0.2s ease, transform 0.2s ease !important;
 }
 
-/* 
- * HIDE NATIVE TOOLBAR
- * We are using our own custom floating toolbar instead
- */
-.miroboardWrapper :global(.excalidraw .App-toolbar-container) {
-    display: none !important;
-}
-
-/* Hide the unused right part of the top menu */
-.miroboardWrapper :global(.excalidraw .App-menu_top__right) {
-    display: none !important;
-}
-
-/* Keep the hamburger menu / left part at the top left */
-.miroboardWrapper :global(.excalidraw .App-menu_top__left) {
-    background-color: color-mix(in srgb, var(--app-bg-card) 85%, transparent) !important;
-    backdrop-filter: blur(16px) saturate(180%) !important;
-    border-radius: 12px !important;
-    border: 1px solid var(--app-border) !important;
-    box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.1) !important;
-    padding: 2px !important;
-}
-
-/* Ensure the top menu container itself doesn't block clicks in the center */
-.miroboardWrapper :global(.excalidraw .App-menu_top) {
-    pointer-events: none !important;
-}
-
-.miroboardWrapper :global(.excalidraw .App-menu_top > *) {
-    pointer-events: auto !important;
-}
-
 /* Remove default background from properties panel */
 .miroboardWrapper :global(.excalidraw .p-1) {
     background: transparent !important;
 }
 
-/* CUSTOM BOTTOM RIGHT CONTROLS */
-.miroboardWrapper :global(.excalidraw .App-bottom-bar),
-.miroboardWrapper :global(.excalidraw .layer-ui__wrapper__footer-left) {
-    position: absolute !important;
-    bottom: 24px !important;
-    right: 24px !important;
-    left: auto !important;
-    top: auto !important;
-    display: flex !important;
-    flex-direction: row-reverse !important;
-    align-items: flex-end !important;
-    gap: 12px !important;
-    z-index: 50 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    pointer-events: none !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    width: auto !important;
-    height: auto !important;
-}
+/* =============================================================================
+   Rounded Buttons & Icons (for any native UI that might appear in popups)
+   ============================================================================= */
 
-.miroboardWrapper :global(.excalidraw .App-bottom-bar > *),
-.miroboardWrapper :global(.excalidraw .layer-ui__wrapper__footer-left > *) {
-    pointer-events: auto !important;
-}
-
-.miroboardWrapper :global(.excalidraw .zoom-actions) {
-    display: flex !important;
-    flex-direction: column-reverse !important;
-    background-color: color-mix(in srgb, var(--app-bg-card) 95%, transparent) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid var(--app-border) !important;
-    border-radius: 14px !important;
-    padding: 4px !important;
-    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.3) !important;
-    margin: 0 !important;
-}
-
-.miroboardWrapper :global(.excalidraw .zoom-actions .zoom-reset-button) {
-    display: none !important;
-}
-
-.miroboardWrapper :global(.excalidraw .undo-redo-buttons),
-.miroboardWrapper :global(.excalidraw .App-bottom-bar > div:not(.zoom-actions)) {
-    display: flex !important;
-    flex-direction: row !important;
-    background-color: color-mix(in srgb, var(--app-bg-card) 95%, transparent) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid var(--app-border) !important;
-    border-radius: 14px !important;
-    padding: 4px !important;
-    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.3) !important;
-    margin: 0 !important;
-}
-
-.miroboardWrapper :global(.excalidraw .App-bottom-bar button),
-.miroboardWrapper :global(.excalidraw .layer-ui__wrapper__footer-left button) {
-    background: transparent !important;
-    border: none !important;
+.miroboardWrapper :global(.excalidraw .ToolIcon__icon) {
     border-radius: 8px !important;
-    transition: all 0.2s ease !important;
-    width: 2.2rem !important;
-    height: 2.2rem !important;
-    margin: 0 !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    margin: 2px !important;
+    width: 2rem !important;
+    height: 2rem !important;
 }
 
-.miroboardWrapper :global(.excalidraw .App-bottom-bar button:hover),
-.miroboardWrapper :global(.excalidraw .layer-ui__wrapper__footer-left button:hover) {
+.miroboardWrapper :global(.excalidraw .ToolIcon_type_button:hover .ToolIcon__icon) {
     background-color: color-mix(in srgb, var(--app-text-primary) 8%, transparent) !important;
 }
 
-.miroboardWrapper :global(.excalidraw .layer-ui__wrapper__footer-right),
-.miroboardWrapper :global(.excalidraw .FixedSideContainer--bottom-right) {
-    position: absolute !important;
-    bottom: 24px !important;
-    right: 170px !important;
-    z-index: 50 !important;
+.miroboardWrapper :global(.excalidraw .ToolIcon_type_radio:checked + .ToolIcon__icon),
+.miroboardWrapper :global(.excalidraw .ToolIcon_type_checkbox:checked + .ToolIcon__icon),
+.miroboardWrapper :global(.excalidraw .ToolIcon_type_button:active .ToolIcon__icon),
+.miroboardWrapper :global(.excalidraw .ToolIcon_type_button.active .ToolIcon__icon) {
+    background-color: var(--app-accent) !important;
+    color: var(--app-accent-text) !important;
+    box-shadow: 0 2px 8px -1px color-mix(in srgb, var(--app-accent) 50%, transparent) !important;
 }
 
-.miroboardWrapper :global(.excalidraw .App-menu__left > p),
-.miroboardWrapper :global(.excalidraw .FixedSideContainer .hint) {
-    display: none !important;
+/* Style for input fields inside panels */
+.miroboardWrapper :global(.excalidraw input[type='text']),
+.miroboardWrapper :global(.excalidraw input[type='number']) {
+    border-radius: 8px !important;
+    background-color: color-mix(in srgb, var(--app-bg-deepest) 50%, transparent) !important;
+    border: 1px solid var(--app-border) !important;
+    color: var(--app-text-primary) !important;
 }
 
-.miroboardWrapper :global(.excalidraw .layer-ui__wrapper .zen-mode-transition) {
-    margin-bottom: 24px !important;
-    margin-right: 24px !important;
+/* Main Menu / Dropdown Overrides */
+.miroboardWrapper :global(.excalidraw .dropdown-menu) {
+    background: color-mix(in srgb, var(--app-bg-elevated) 95%, transparent) !important;
+    border: 1px solid var(--app-border) !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(20px) !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2) !important;
+}
+
+.miroboardWrapper :global(.excalidraw .dropdown-menu-item) {
+    border-radius: 8px !important;
+    margin: 2px 6px !important;
+    color: var(--app-text-primary) !important;
+}
+
+.miroboardWrapper :global(.excalidraw .dropdown-menu-item:hover) {
+    background-color: color-mix(in srgb, var(--app-text-primary) 5%, transparent) !important;
 }

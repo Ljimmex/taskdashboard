@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Excalidraw, WelcomeScreen } from "@excalidraw/excalidraw";
+import { Excalidraw } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import { useThemeStore } from "@/lib/themeStore";
-import { Loader2, Timer as TimerIcon } from "lucide-react";
+import { Loader2, Timer as TimerIcon, ZoomIn, ZoomOut, Undo2, Redo2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import styles from "./Miroboard.module.css";
 
@@ -12,6 +12,7 @@ import { useWhiteboardUI } from "./hooks/useWhiteboardUI";
 
 import { WhiteboardToolbar } from "./ui/WhiteboardToolbar";
 import { WhiteboardContextMenu } from "./ui/WhiteboardContextMenu";
+import { SmallButton } from "./ui/WhiteboardComponents";
 
 export interface MiroBoardProps {
   boardId?: string;
@@ -37,41 +38,11 @@ export function MiroBoard({ boardId, boardName: _boardName, initialData, onSave,
   // Realtime Supabase Collaboration hook
   const { broadcastBoardUpdate, broadcastPointerUpdate } = useWhiteboardRealtime(boardId, excalidrawAPI, readOnly);
 
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Timer logic - unified here to avoid duplicate intervals
-  useEffect(() => {
-    if (uiState.timerRunning) {
-      timerIntervalRef.current = setInterval(() => {
-        uiState.setTimerSeconds((prev: number) => {
-          if (prev === 0) {
-            uiState.setTimerMinutes((mins: number) => {
-              if (mins === 0) {
-                uiState.setTimerRunning(false);
-                return 0;
-              }
-              return mins - 1;
-            });
-            return 59;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-    }
-    return () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); };
-  }, [uiState.timerRunning]);
-
-  useEffect(() => {
-    const mins = String(uiState.timerMinutes).padStart(2, "0");
-    const secs = String(uiState.timerSeconds).padStart(2, "0");
-    uiState.setTimerDisplay(`${mins}:${secs}`);
-  }, [uiState.timerMinutes, uiState.timerSeconds]);
 
   const [excalidrawInitialData] = useState(() => {
     const appState = initialData?.appState ? { ...initialData.appState } : {};
@@ -139,8 +110,38 @@ export function MiroBoard({ boardId, boardName: _boardName, initialData, onSave,
       uiState.setActiveTool(appState.activeTool.type);
     }
 
-    if (onSave) onSave({ elements, appState, files });
-  }, [readOnly, uiState.activeTool, selectedElement, onSave, broadcastBoardUpdate]);
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+    debounceTimeoutRef.current = setTimeout(() => {
+      if (onSave) onSave({ elements, appState, files });
+    }, 1000);
+
+  }, [uiState.activeTool, selectedElement, onSave]);
+
+  const handleZoom = useCallback((delta: number) => {
+    if (!excalidrawAPI) return;
+    const appState = excalidrawAPI.getAppState();
+    const newZoom = Math.min(Math.max(appState.zoom.value + delta, 0.1), 5);
+    excalidrawAPI.updateScene({ appState: { zoom: { value: newZoom } } });
+    uiState.setZoomLevel(Math.round(newZoom * 100));
+  }, [excalidrawAPI]);
+
+  const handleUndo = useCallback(() => {
+    if (!excalidrawAPI) return;
+    if (typeof excalidrawAPI.undo === "function") { excalidrawAPI.undo(); return; }
+    excalidrawAPI.history?.undo?.();
+  }, [excalidrawAPI]);
+
+  const handleRedo = useCallback(() => {
+    if (!excalidrawAPI) return;
+    if (typeof excalidrawAPI.redo === "function") { excalidrawAPI.redo(); return; }
+    excalidrawAPI.history?.redo?.();
+  }, [excalidrawAPI]);
+
+  const resetZoom = useCallback(() => {
+    if (!excalidrawAPI) return;
+    excalidrawAPI.updateScene({ appState: { zoom: { value: 1 } } });
+    uiState.setZoomLevel(100);
+  }, [excalidrawAPI]);
 
   if (!mounted) {
     return (
@@ -171,7 +172,7 @@ export function MiroBoard({ boardId, boardName: _boardName, initialData, onSave,
       )}
 
       {/* Excalidraw Canvas */}
-      <div className="absolute inset-0 z-0">
+      <div className={styles.excalidrawCanvas} onContextMenu={(e) => e.preventDefault()}>
         <Excalidraw
           excalidrawAPI={(api) => {
             setExcalidrawAPI(api);
@@ -183,35 +184,54 @@ export function MiroBoard({ boardId, boardName: _boardName, initialData, onSave,
           viewModeEnabled={readOnly || uiState.isLocked}
           theme={theme === "dark" ? "dark" : "light"}
           langCode="pl-PL"
+          zenModeEnabled={false}
+          gridModeEnabled={false}
           UIOptions={{
             canvasActions: { changeViewBackgroundColor: false, clearCanvas: true, loadScene: false, export: { saveFileToDisk: true }, toggleTheme: false, },
             tools: { image: true },
           }}
-        >
-          <WelcomeScreen>
-            <WelcomeScreen.Hints.MenuHint />
-            <WelcomeScreen.Hints.ToolbarHint />
-            <WelcomeScreen.Hints.HelpHint />
-          </WelcomeScreen>
-        </Excalidraw>
+        />
       </div>
 
       {/* Floating UI */}
       {!readOnly && (
         <>
           <WhiteboardToolbar theme={theme} uiState={uiState} actions={actions} excalidrawAPI={excalidrawAPI} />
-          <WhiteboardContextMenu selectedElement={selectedElement} popupCoords={popupCoords} updateSelected={updateSelected} excalidrawAPI={excalidrawAPI} />
+          <WhiteboardContextMenu selectedElement={selectedElement} popupCoords={popupCoords} updateSelected={updateSelected} excalidrawAPI={excalidrawAPI} theme={theme} />
         </>
       )}
 
-      {/* Navigation Controls (Bottom Right) */}
+      {/* Bottom Right Controls */}
       <div className={cn(
         "absolute bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl p-1.5 shadow-lg backdrop-blur-xl",
         theme === "dark" ? "border border-white/10 bg-[#2d2d44]/95" : "border border-black/5 bg-white/95"
       )}>
-        <button onClick={() => excalidrawAPI?.updateScene({ appState: { zoom: { value: Math.max(0.1, excalidrawAPI.getAppState().zoom.value - 0.1) } } })} className="p-2 hover:bg-gray-100/10 rounded-lg">Zoom Out</button>
-        <span className="text-xs font-bold min-w-[40px] text-center">{uiState.zoomLevel}%</span>
-        <button onClick={() => excalidrawAPI?.updateScene({ appState: { zoom: { value: Math.min(5, excalidrawAPI.getAppState().zoom.value + 0.1) } } })} className="p-2 hover:bg-gray-100/10 rounded-lg">Zoom In</button>
+        <div className="flex">
+          <SmallButton onClick={handleUndo} icon={<Undo2 size={16} />} tooltip="Undo" theme={theme === "dark" ? "dark" : "light"} />
+          <SmallButton onClick={handleRedo} icon={<Redo2 size={16} />} tooltip="Redo" theme={theme === "dark" ? "dark" : "light"} />
+        </div>
+        <div className={cn("h-5 w-px", theme === "dark" ? "bg-white/20" : "bg-black/10")} />
+        <div className="flex items-center">
+          <SmallButton onClick={() => handleZoom(-0.1)} icon={<ZoomOut size={16} />} tooltip="Zoom Out" theme={theme === "dark" ? "dark" : "light"} />
+          <button onClick={resetZoom} className={cn("min-w-[52px] px-2 py-1 text-xs font-semibold transition-colors", theme === "dark" ? "text-white/80 hover:text-white" : "text-gray-600 hover:text-gray-900")}>
+            {uiState.zoomLevel}%
+          </button>
+          <SmallButton onClick={() => handleZoom(0.1)} icon={<ZoomIn size={16} />} tooltip="Zoom In" theme={theme === "dark" ? "dark" : "light"} />
+        </div>
+        <div className={cn("h-5 w-px mx-1", theme === "dark" ? "bg-white/20" : "bg-black/10")} />
+        <div className="flex items-center gap-1">
+          <div title="Ustaw czas" onClick={() => {
+            const m = window.prompt("Podaj ile minut ma trwać timer:", "5");
+            if (m && !isNaN(Number(m)) && Number(m) > 0) {
+              uiState.setTimerDuration(Number(m));
+            }
+          }}>
+            <Clock size={16} className={cn("mr-1 cursor-pointer", uiState.timerRunning ? "text-red-500 animate-pulse" : theme === "dark" ? "text-white/70 hover:text-white" : "text-gray-600 hover:text-gray-900")} />
+          </div>
+          <button onClick={() => uiState.setTimerRunning(!uiState.timerRunning)} className={cn("px-2 py-1 text-xs font-semibold rounded-md transition-colors", uiState.timerRunning ? "bg-red-500/20 text-red-500" : theme === "dark" ? "hover:bg-white/10 text-white/90" : "hover:bg-black/5 text-gray-900")}>
+            {uiState.timerDisplay}
+          </button>
+        </div>
       </div>
     </div>
   );

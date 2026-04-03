@@ -344,15 +344,7 @@ function BoardPage() {
                         <span>{isSaving ? 'Zapisywanie...' : 'Zapisano automatycznie'}</span>
                     </div>
                 )}
-                {isWhiteboardSelected && (
-                    <div className="flex-none h-8 border-t border-[var(--app-border)] bg-[var(--app-bg-card)] px-4 text-xs text-[var(--app-text-muted)] flex items-center justify-between">
-                        <span>Last saved: {format(new Date(selectedResource.updatedAt), 'HH:mm')}</span>
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            Connected • {activeCollaborators.length} online
-                        </span>
-                    </div>
-                )}
+
             </div>
         )
     }

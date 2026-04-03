@@ -288,6 +288,7 @@
             "team_removed": "Zostałeś usunięty z zespołu",
             "new_comment": "Nowy komentarz w zadaniu",
             "file_uploaded": "Przesłano nowy plik",
+            "time_pending": "Oczekująca prośba o czas",
             "time_approved": "Twoja prośba o czas została zatwierdzona",
             "time_rejected": "Twoja prośba o czas została odrzucona",
             "task_assigned": "Nowe zadanie przypisane do Ciebie",

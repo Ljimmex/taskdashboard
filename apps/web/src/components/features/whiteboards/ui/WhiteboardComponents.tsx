@@ -118,7 +118,7 @@ export const DropdownPanel = ({ children, theme = "light", position = "right" }:
     <div
         className={cn(
             "absolute min-w-[200px] animate-in fade-in slide-in-from-left-2 rounded-2xl shadow-xl duration-200 z-[100]",
-            position === "right" ? "left-full top-0 ml-3" : "bottom-full left-0 mb-3",
+            position === "right" ? "left-full top-0 ml-3" : "left-full bottom-0 ml-3",
             theme === "dark" ? "border border-white/10 bg-[#2d2d44]" : "border border-black/5 bg-white"
         )}
     >

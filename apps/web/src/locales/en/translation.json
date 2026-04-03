@@ -287,6 +287,7 @@
             "team_removed": "You were removed from team",
             "new_comment": "New comment in task",
             "file_uploaded": "New file uploaded",
+            "time_pending": "New time request pending",
             "time_approved": "Your time request was approved",
             "time_rejected": "Your time request was rejected",
             "task_assigned": "New task assigned to you",

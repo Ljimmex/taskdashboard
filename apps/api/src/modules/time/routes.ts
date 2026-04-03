@@ -1337,7 +1337,7 @@ async function notifyHR(workspaceId: string, actor: { id: string, name: string, 
                 type: 'time_entry_pending',
                 title: 'notifications.titles.time_pending',
                 message: `Nowy wpis czasu do zaakceptowania (${durationMinutes} min) od [${actor.name}]`,
-                link: `/${workspace?.slug}/hr/time-tracker`,
+                link: `/${workspace?.slug}/time-tracker`,
                 actor: { name: actor.name, image: actor.image },
                 metadata: { workspaceId }
             })

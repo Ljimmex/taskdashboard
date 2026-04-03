@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 export function useWhiteboardUI() {
     const [activeTool, setActiveTool] = useState("selection");
@@ -23,10 +23,37 @@ export function useWhiteboardUI() {
     const [strokeColor, setStrokeColor] = useState("#1e1e1e");
 
     // Timer state
-    const [timerMinutes, setTimerMinutes] = useState(5);
-    const [timerSeconds, setTimerSeconds] = useState(0);
+    const [timerTotalSeconds, setTimerTotalSeconds] = useState(5 * 60);
     const [timerRunning, setTimerRunning] = useState(false);
     const [timerDisplay, setTimerDisplay] = useState("05:00");
+
+    const setTimerDuration = useCallback((minutes: number) => {
+        setTimerTotalSeconds(minutes * 60);
+        setTimerRunning(false);
+    }, []);
+
+    // Timer logic
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (timerRunning) {
+            interval = setInterval(() => {
+                setTimerTotalSeconds((prev) => {
+                    if (prev <= 1) {
+                        setTimerRunning(false);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [timerRunning]);
+
+    useEffect(() => {
+        const m = Math.floor(timerTotalSeconds / 60).toString().padStart(2, "0");
+        const s = (timerTotalSeconds % 60).toString().padStart(2, "0");
+        setTimerDisplay(`${m}:${s}`);
+    }, [timerTotalSeconds]);
 
     const [showImageHint, setShowImageHint] = useState(false);
     const [stickyColor, setStickyColor] = useState("#fef08a");
@@ -86,8 +113,7 @@ export function useWhiteboardUI() {
         zoomLevel, setZoomLevel,
         strokeWidth, setStrokeWidth,
         strokeColor, setStrokeColor,
-        timerMinutes, setTimerMinutes,
-        timerSeconds, setTimerSeconds,
+        timerTotalSeconds, setTimerTotalSeconds, setTimerDuration,
         timerRunning, setTimerRunning,
         timerDisplay, setTimerDisplay,
         showImageHint, setShowImageHint,
