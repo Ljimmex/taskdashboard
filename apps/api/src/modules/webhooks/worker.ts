@@ -22,25 +22,25 @@ function isPrivateUrl(urlStr: string): boolean {
         // 192.168.x.x
         // 127.x.x.x (Loopback)
         // 169.254.x.x (Link-local / Cloud Metadata)
-        
+
         // Simple check if it looks like an IP
         const isIP = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)
-        
+
         if (isIP) {
             const parts = hostname.split('.').map(Number)
-            
+
             // 10.0.0.0/8
             if (parts[0] === 10) return true
-            
+
             // 172.16.0.0/12
             if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true
-            
+
             // 192.168.0.0/16
             if (parts[0] === 192 && parts[1] === 168) return true
-            
+
             // 127.0.0.0/8
             if (parts[0] === 127) return true
-            
+
             // 169.254.0.0/16
             if (parts[0] === 169 && parts[1] === 254) return true
         }
@@ -56,39 +56,62 @@ function isPrivateUrl(urlStr: string): boolean {
     }
 }
 
+import { inArray } from 'drizzle-orm'
+
+let isProcessingWebhookQueue = false;
+
 /**
  * The Webhook Worker processes the persistent job queue.
- * It uses a "FOR UPDATE SKIP LOCKED" strategy to safely allow multiple 
+ * It uses a concurrency lock and 'processing' state to safely allow multiple 
  * instances to process the same queue without race conditions.
  */
 export async function processWebhookQueue() {
+    if (isProcessingWebhookQueue) return;
+    isProcessingWebhookQueue = true;
+
     try {
-        const now = new Date()
-        console.log(`[Webhook Worker] Processing queue at ${now.toISOString()}`)
+        while (true) {
+            const now = new Date()
 
-        // 1. Find jobs that are due for processing
-        // We use skipLocked to allow horizontal scaling of the API
-        const jobs = await db.select()
-            .from(webhookQueue)
-            .where(
-                and(
-                    eq(webhookQueue.status, 'pending'),
-                    lte(webhookQueue.nextRunAt, now)
+            // 1. Find jobs that are due for processing
+            const jobs = await db.select()
+                .from(webhookQueue)
+                .where(
+                    and(
+                        eq(webhookQueue.status, 'pending'),
+                        lte(webhookQueue.nextRunAt, now)
+                    )
                 )
-            )
-            .limit(10) // Process in chunks
-        // .forUpdate({ skipLocked: true }) // Drizzle ORM might need raw SQL for this if not supported yet
+                .limit(10) // Process in chunks
 
-        console.log(`[Webhook Worker] Found ${jobs.length} pending jobs`)
+            if (jobs.length === 0) break;
 
-        if (jobs.length === 0) return
+            // 2. Atomically lock the jobs by changing status to 'processing'
+            const jobIds = jobs.map(j => j.id)
+            const lockedJobs = await db.update(webhookQueue)
+                .set({ status: 'processing', updatedAt: new Date() })
+                .where(
+                    and(
+                        inArray(webhookQueue.id, jobIds),
+                        eq(webhookQueue.status, 'pending') // Double check they are still pending
+                    )
+                )
+                .returning()
 
-        for (const job of jobs) {
-            console.log(`[Webhook Worker] Delivering job ${job.id} for webhook ${job.webhookId}`)
-            await deliverWebhook(job)
+            if (lockedJobs.length === 0) {
+                // All jobs were taken by another worker
+                break;
+            }
+
+            for (const job of lockedJobs) {
+                console.log(`[Webhook Worker] Delivering job ${job.id} for webhook ${job.webhookId}`)
+                await deliverWebhook(job)
+            }
         }
     } catch (error) {
         console.error('[Webhook Worker] Error:', error)
+    } finally {
+        isProcessingWebhookQueue = false;
     }
 }
 
