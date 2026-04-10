@@ -143,20 +143,20 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl z-[70] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-none sm:rounded-2xl z-[70] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-[var(--app-border)]">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors"
+                            className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors flex-shrink-0"
                         >
                             <ChevronDoubleRightIcon />
                         </button>
-                        <div>
-                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.organization.members.invite_panel.title', { name: workspace.name })}</h2>
-                            <p className="text-xs text-[var(--app-text-secondary)]">{t('settings.organization.members.invite_panel.subtitle')}</p>
+                        <div className="min-w-0 flex-1">
+                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)] truncate">{t('settings.organization.members.invite_panel.title', { name: workspace.name })}</h2>
+                            <p className="text-xs text-[var(--app-text-secondary)] truncate">{t('settings.organization.members.invite_panel.subtitle')}</p>
                         </div>
                     </div>
                 </div>
@@ -200,7 +200,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder={t('settings.organization.members.invite_panel.email_placeholder')}
-                                    className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-elevated)] border border-[var(--app-border)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-xl focus:border-[var(--app-accent)] transition-colors"
+                                    className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-elevated)] border border-[var(--app-border)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-none sm:rounded-xl focus:border-[var(--app-accent)] transition-colors"
                                 />
                             </div>
                         ) : (
@@ -214,11 +214,11 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                                 type="text"
                                                 readOnly
                                                 value={inviteLink}
-                                                className="flex-1 text-sm text-[var(--app-text-primary)] bg-[var(--app-accent)]/5 border border-[var(--app-accent)]/20 outline-none px-4 py-3 rounded-xl cursor-text select-all"
+                                                className="flex-1 text-sm text-[var(--app-text-primary)] bg-[var(--app-accent)]/5 border border-[var(--app-accent)]/20 outline-none px-4 py-3 rounded-none sm:rounded-xl cursor-text select-all"
                                             />
                                             <button
                                                 onClick={handleCopyLink}
-                                                className="px-4 py-2 bg-[var(--app-accent)] text-[var(--app-accent-text)] border border-[var(--app-accent)] rounded-xl hover:opacity-90 transition-colors flex items-center justify-center min-w-[3rem]"
+                                                className="px-4 py-2 bg-[var(--app-accent)] text-[var(--app-accent-text)] border border-[var(--app-accent)] rounded-none sm:rounded-xl hover:opacity-90 transition-colors flex items-center justify-center min-w-[3rem]"
                                                 title={t('settings.organization.members.invite_panel.copy_link_title')}
                                             >
                                                 {isCopied ? (
@@ -241,7 +241,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                     <button
                                         onClick={handleGenerateLink}
                                         disabled={isCreating}
-                                        className="px-6 py-2.5 bg-[var(--app-accent)] text-[var(--app-accent-text)] text-sm font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-50"
+                                        className="px-6 py-2.5 bg-[var(--app-accent)] text-[var(--app-accent-text)] text-sm font-semibold rounded-none sm:rounded-xl hover:opacity-90 transition-all disabled:opacity-50"
                                     >
                                         {isCreating ? t('settings.organization.members.invite_panel.generating') : t('settings.organization.members.invite_panel.generate_button')}
                                     </button>
@@ -262,7 +262,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                                         invite.status === 'revoked' ? 'text-red-500' :
                                                             'text-gray-500'
                                                 return (
-                                                    <div key={invite.id} className="bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl p-3 space-y-2 group/invite hover:border-[var(--app-border-hover)] transition-all">
+                                                    <div key={invite.id} className="bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-none sm:rounded-xl p-3 space-y-2 group/invite hover:border-[var(--app-border-hover)] transition-all">
                                                         <div className="flex items-center justify-between text-xs">
                                                             <span className="text-[var(--app-text-muted)]">
                                                                 {t('settings.organization.members.invite_panel.role_label_with_value', { value: t(`settings.organization.members.roles.${invite.role}`) })}
@@ -314,7 +314,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                             <div className="relative">
                                 <button
                                     onClick={() => setActiveDropdown(!activeDropdown)}
-                                    className="w-full flex items-center justify-between bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-sm text-[var(--app-text-primary)] hover:border-[var(--app-border-hover)] transition-colors"
+                                    className="w-full flex items-center justify-between bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-none sm:rounded-xl px-4 py-3 text-sm text-[var(--app-text-primary)] hover:border-[var(--app-border-hover)] transition-colors"
                                 >
                                     <span className="capitalize">{t(`settings.organization.members.roles.${role}`)}</span>
                                     <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" className={`transition-transform ${activeDropdown ? 'rotate-180' : ''}`}>
@@ -325,7 +325,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                                 {activeDropdown && (
                                     <>
                                         <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(false)} />
-                                        <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-xl shadow-xl overflow-hidden z-20 py-1">
+                                        <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-none sm:rounded-xl shadow-xl overflow-hidden z-20 py-1">
                                             {['admin', 'project_manager', 'hr_manager', 'member', 'guest'].map((r) => (
                                                 <button
                                                     key={r}
@@ -349,7 +349,7 @@ export function InviteWorkspaceMemberPanel({ isOpen, onClose, workspace }: Invit
                             <select
                                 value={expiresDays}
                                 onChange={(e) => setExpiresDays(Number(e.target.value))}
-                                className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-sm text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
+                                className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-none sm:rounded-xl px-4 py-3 text-sm text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
                             >
                                 <option value={1}>{t('settings.organization.members.invite_panel.expire_options.1_day')}</option>
                                 <option value={7}>{t('settings.organization.members.invite_panel.expire_options.7_days')}</option>

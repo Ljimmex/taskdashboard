@@ -172,7 +172,7 @@ const Dropdown = ({
     return (
         <div
             ref={ref}
-            className={`absolute top-full left-0 mt-2 bg-[#1a1a24] rounded-xl shadow-2xl z-50 overflow-hidden ${className}`}
+            className={`absolute top-full left-0 mt-2 bg-[#1a1a24] rounded-none sm:rounded-xl shadow-2xl z-50 overflow-hidden ${className}`}
         >
             {children}
         </div>
@@ -493,7 +493,7 @@ export function CreateTaskPanel({
             <div
                 ref={panelRef}
                 onKeyDown={handleKeyDown}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[#12121a] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'
                     }`}
             >
                 {/* Header */}
@@ -501,7 +501,7 @@ export function CreateTaskPanel({
                     <div className="flex items-center gap-4">
                         <button
                             onClick={onClose}
-                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex-shrink-0"
                             title="Zamknij"
                         >
                             <ChevronDoubleRightIcon />
@@ -509,14 +509,14 @@ export function CreateTaskPanel({
 
                         {/* Project Selector - in same row */}
                         {!defaultProject && (
-                            <div className="relative">
+                            <div className="relative flex-shrink-0">
                                 <button
                                     onClick={() => setShowProjectDropdown(!showProjectDropdown)}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 text-sm text-gray-300 transition-colors"
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 text-sm text-gray-300 transition-colors min-w-0 max-w-[140px] ${showProjectDropdown ? 'bg-gray-800 text-white' : ''}`}
                                 >
-                                    <span className="text-lg">📁</span>
-                                    <span>{selectedProject?.name || t('tasks.create.select_project')}</span>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <span className="text-lg flex-shrink-0">📁</span>
+                                    <span className="truncate">{selectedProject?.name || t('tasks.create.select_project')}</span>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
                                         <path d="M6 9L12 15L18 9" />
                                     </svg>
                                 </button>
@@ -542,43 +542,45 @@ export function CreateTaskPanel({
                             </div>
                         )}
 
-                        <h2 className="text-lg font-semibold text-white flex-1">
+                        <h2 className="text-lg font-semibold text-white flex-1 min-w-0 truncate">
                             {t('tasks.create.title')}
                         </h2>
 
                         {/* Template Selector - for tasks */}
                         {workspaceSlug && (
-                            <TemplateSelector
-                                workspaceSlug={workspaceSlug}
-                                userId={userId}
-                                onApplyTemplate={(templateData) => {
-                                    // Apply template values to form
-                                    if (templateData.titlePrefix) {
-                                        setTitle(templateData.titlePrefix)
-                                    }
-                                    if (templateData.description) {
-                                        setDescription(templateData.description)
-                                    }
-                                    // Ignore type from template as we only support tasks
-                                    if (templateData.priority) {
-                                        setPriority(templateData.priority)
-                                    }
-                                    if (templateData.labels && templateData.labels.length > 0) {
-                                        // Find matching labels from available labels
-                                        const matchedLabels = availableLabels.filter(l =>
-                                            templateData.labels?.includes(l.id) || templateData.labels?.includes(l.name)
-                                        )
-                                        setLabels(matchedLabels)
-                                    }
-                                    if (templateData.subtasks && templateData.subtasks.length > 0) {
-                                        setSubtasks(templateData.subtasks.map(s => ({
-                                            title: s.title,
-                                            description: s.description || '',
-                                        })))
-                                        setShowMore(true) // Expand to show subtasks
-                                    }
-                                }}
-                            />
+                            <div className="flex-shrink-0">
+                                <TemplateSelector
+                                    workspaceSlug={workspaceSlug}
+                                    userId={userId}
+                                    onApplyTemplate={(templateData) => {
+                                        // Apply template values to form
+                                        if (templateData.titlePrefix) {
+                                            setTitle(templateData.titlePrefix)
+                                        }
+                                        if (templateData.description) {
+                                            setDescription(templateData.description)
+                                        }
+                                        // Ignore type from template as we only support tasks
+                                        if (templateData.priority) {
+                                            setPriority(templateData.priority)
+                                        }
+                                        if (templateData.labels && templateData.labels.length > 0) {
+                                            // Find matching labels from available labels
+                                            const matchedLabels = availableLabels.filter(l =>
+                                                templateData.labels?.includes(l.id) || templateData.labels?.includes(l.name)
+                                            )
+                                            setLabels(matchedLabels)
+                                        }
+                                        if (templateData.subtasks && templateData.subtasks.length > 0) {
+                                            setSubtasks(templateData.subtasks.map(s => ({
+                                                title: s.title,
+                                                description: s.description || '',
+                                            })))
+                                            setShowMore(true) // Expand to show subtasks
+                                        }
+                                    }}
+                                />
+                            </div>
                         )}
                     </div>
                 </div>
@@ -595,7 +597,7 @@ export function CreateTaskPanel({
                             onChange={(e) => setTitle(e.target.value)}
                             onKeyDown={handleTitleKeyDown}
                             placeholder={t('tasks.create.task_title_placeholder')}
-                            className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
+                            className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-none sm:rounded-xl focus:border-amber-500/50 transition-colors"
                         />
                     </div>
 
@@ -607,7 +609,7 @@ export function CreateTaskPanel({
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={t('tasks.create.description_placeholder')}
                             rows={4}
-                            className="w-full text-sm text-gray-300 bg-[#1a1a24] rounded-xl p-4 placeholder-gray-500 outline-none resize-none transition-colors"
+                            className="w-full text-sm text-gray-300 bg-[#1a1a24] rounded-none sm:rounded-xl p-4 placeholder-gray-500 outline-none resize-none transition-colors"
                         />
                         <p className="text-xs text-gray-600 mt-2">
                             {t('tasks.create.markdown_hint')}
@@ -746,7 +748,7 @@ export function CreateTaskPanel({
                                         {subtasks.map((subtask, index) => (
                                             <div
                                                 key={index}
-                                                className="bg-gray-800/50 rounded-xl overflow-hidden"
+                                                className="bg-gray-800/50 rounded-none sm:rounded-xl overflow-hidden"
                                             >
                                                 <div className="flex items-center gap-3 px-4 py-3">
                                                     {subtask.assigneeId ? (
@@ -828,12 +830,12 @@ export function CreateTaskPanel({
                                                 onChange={(e) => setNewSubtask(e.target.value)}
                                                 onKeyDown={(e) => e.key === 'Enter' && addSubtask()}
                                                 placeholder={t('tasks.create.add_subtask_placeholder')}
-                                                className="flex-1 px-4 py-3 bg-gray-800/50 rounded-xl text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500/50 transition-colors"
+                                                className="flex-1 px-4 py-3 bg-gray-800/50 rounded-none sm:rounded-xl text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500/50 transition-colors"
                                             />
                                             <button
                                                 onClick={addSubtask}
                                                 disabled={!newSubtask.trim()}
-                                                className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${newSubtask.trim() ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'text-gray-600 cursor-not-allowed'}`}
+                                                className={`px-4 py-3 rounded-none sm:rounded-xl text-sm font-medium transition-all ${newSubtask.trim() ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'text-gray-600 cursor-not-allowed'}`}
                                             >
                                                 {t('tasks.create.add_subtask_button')}
                                             </button>
@@ -878,7 +880,7 @@ export function CreateTaskPanel({
                                 {attachments.length > 0 && (
                                     <div className="space-y-2 mb-3">
                                         {attachments.map((file, index) => (
-                                            <div key={index} className="flex items-center gap-3 px-4 py-3 bg-gray-800/50 rounded-xl">
+                                            <div key={index} className="flex items-center gap-3 px-4 py-3 bg-gray-800/50 rounded-none sm:rounded-xl">
                                                 <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
                                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2CE88" strokeWidth="2">
                                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -904,7 +906,7 @@ export function CreateTaskPanel({
 
                                 {/* Drop zone */}
                                 <div
-                                    className={`rounded-xl p-6 text-center cursor-pointer transition-all ${isDragging
+                                    className={`rounded-none sm:rounded-xl p-6 text-center cursor-pointer transition-all ${isDragging
                                         ? 'bg-amber-500/10'
                                         : 'hover:bg-gray-800/30'
                                         }`}

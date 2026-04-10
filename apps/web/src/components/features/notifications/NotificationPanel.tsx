@@ -112,18 +112,18 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
 
             {/* Panel */}
             <div className={clsx(
-                "fixed top-4 right-4 bottom-4 w-full max-w-[440px] bg-[var(--app-bg-card)] rounded-3xl z-[70] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-divider)] font-sans overflow-hidden",
+                "fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-[440px] bg-[var(--app-bg-card)] rounded-none sm:rounded-3xl z-[70] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-divider)] font-sans overflow-hidden",
                 isOpen ? "translate-x-0" : "translate-x-[calc(100%+3rem)]"
             )}>
                 {/* Header */}
-                <div className="p-6 border-b border-[var(--app-divider)] flex items-center justify-between bg-[var(--app-bg-card)] relative z-10">
-                    <div>
-                        <h3 className="text-xl font-extrabold text-[var(--app-text-primary)] tracking-tight">{t('notifications.title')}</h3>
-                        <p className="text-[13px] text-[var(--app-text-secondary)] mt-1 font-medium italic">
+                <div className="p-6 border-b border-[var(--app-divider)] flex items-center justify-between gap-4 bg-[var(--app-bg-card)] relative z-10">
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-xl font-extrabold text-[var(--app-text-primary)] tracking-tight truncate">{t('notifications.title')}</h3>
+                        <p className="text-[13px] text-[var(--app-text-secondary)] mt-1 font-medium italic truncate">
                             {t('notifications.unreadCount', { count: notifications.filter(n => !n.read).length })}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -131,14 +131,14 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
                             }}
                             title={t('notifications.markAllReadTitle')}
                             disabled={isLoading || notifications.length === 0}
-                            className="p-2 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-accent)] disabled:opacity-50 transition-all shadow-sm group"
+                            className="p-2 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-none sm:rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-accent)] disabled:opacity-50 transition-all shadow-sm group"
                         >
                             <CheckCircle2 size={16} className="group-hover:scale-110 transition-transform" />
                         </button>
                         <button
                             onClick={onClose}
                             title={t('notifications.closePanel')}
-                            className="p-2 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all shadow-sm"
+                            className="p-2 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-none sm:rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-all shadow-sm"
                         >
                             <X size={16} />
                         </button>
@@ -176,7 +176,7 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
                         </div>
                     ) : groupedNotifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-[var(--app-text-muted)] text-center px-8">
-                            <div className="w-20 h-20 rounded-2xl bg-[var(--app-bg-elevated)] flex items-center justify-center border border-[var(--app-border)] mb-6 shadow-card rotate-3">
+                            <div className="w-20 h-20 rounded-none sm:rounded-2xl bg-[var(--app-bg-elevated)] flex items-center justify-center border border-[var(--app-border)] mb-6 shadow-card rotate-3">
                                 <BellOff size={32} className="text-[var(--app-text-muted)]/30 -rotate-3" />
                             </div>
                             <p className="font-extrabold text-[var(--app-text-primary)] text-lg tracking-tight">{t('notifications.noNotifications')}</p>
@@ -194,7 +194,7 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
                                         <div
                                             key={item.id}
                                             className={clsx(
-                                                "flex gap-4 group relative cursor-pointer p-4 rounded-2xl transition-all border",
+                                                "flex gap-4 group relative cursor-pointer p-4 rounded-none sm:rounded-2xl transition-all border",
                                                 !item.read
                                                     ? "bg-[var(--app-bg-card)] border-[var(--app-divider)] shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_40px_rgb(0,0,0,0.18)]"
                                                     : "bg-transparent border-transparent hover:bg-[var(--app-bg-card)]/40 hover:border-[var(--app-divider)]"
@@ -298,7 +298,7 @@ function NotificationIcon({ type }: { type: string }) {
     }
 
     return (
-        <div className={clsx("w-10 h-10 rounded-2xl flex items-center justify-center border shadow-sm transition-transform group-hover:scale-105", colorClass)}>
+        <div className={clsx("w-10 h-10 rounded-none sm:rounded-2xl flex items-center justify-center border shadow-sm transition-transform group-hover:scale-105", colorClass)}>
             {typeof Icon === 'function' ? <Icon size={18} /> : Icon.gold}
         </div>
     )

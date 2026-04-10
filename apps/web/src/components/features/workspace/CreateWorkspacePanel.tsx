@@ -103,7 +103,7 @@ export function CreateWorkspacePanel({ isOpen, onClose, onWorkspaceCreated }: Cr
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[#12121a] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-gray-800">
@@ -137,7 +137,7 @@ export function CreateWorkspacePanel({ isOpen, onClose, onWorkspaceCreated }: Cr
                                 type="text"
                                 value={workspaceName}
                                 onChange={(e) => setWorkspaceName(e.target.value)}
-                                className="border-gray-800 bg-[#1a1a24] text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 rounded-xl py-5"
+                                className="border-gray-800 bg-[#1a1a24] text-white placeholder-gray-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 rounded-none sm:rounded-xl py-5"
                                 placeholder="My Company"
                                 required
                             />
@@ -150,7 +150,7 @@ export function CreateWorkspacePanel({ isOpen, onClose, onWorkspaceCreated }: Cr
                                     id="teamSize"
                                     value={teamSize}
                                     onChange={(e) => setTeamSize(e.target.value)}
-                                    className="w-full bg-[#1a1a24] border border-gray-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-colors appearance-none cursor-pointer"
+                                    className="w-full bg-[#1a1a24] border border-gray-800 text-white rounded-none sm:rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-colors appearance-none cursor-pointer"
                                     required
                                 >
                                     <option value="1-10">1-10 people</option>
@@ -173,7 +173,7 @@ export function CreateWorkspacePanel({ isOpen, onClose, onWorkspaceCreated }: Cr
                                     id="industry"
                                     value={industry}
                                     onChange={(e) => setIndustry(e.target.value)}
-                                    className="w-full bg-[#1a1a24] border border-gray-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-colors appearance-none cursor-pointer"
+                                    className="w-full bg-[#1a1a24] border border-gray-800 text-white rounded-none sm:rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-colors appearance-none cursor-pointer"
                                     required
                                 >
                                     <option value="Technology">Technology / IT</option>

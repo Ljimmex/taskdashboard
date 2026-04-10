@@ -55,12 +55,12 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
             />
 
             {/* Modal */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="relative w-full max-w-md bg-[var(--app-bg-card)] border border-white/5 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+                <div className="relative w-full max-w-md bg-[var(--app-bg-card)] border border-white/5 rounded-t-3xl rounded-b-none sm:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
                     {/* Header */}
                     <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[var(--app-accent)]/10 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-t-3xl rounded-b-none sm:rounded-xl bg-[var(--app-accent)]/10 flex items-center justify-center">
                                 <FolderOpen className="w-5 h-5 text-[var(--app-accent)]" />
                             </div>
                             <div>
@@ -88,7 +88,7 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                                 <button
                                     onClick={() => setSelectedFolderId(null)}
                                     disabled={currentFolderId === null}
-                                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all border ${selectedFolderId === null
+                                    className={`w-full flex items-center gap-3 p-3 rounded-t-3xl rounded-b-none sm:rounded-xl transition-all border ${selectedFolderId === null
                                         ? 'bg-[var(--app-accent)]/10 border-[var(--app-accent)]/50'
                                         : 'bg-[var(--app-bg-elevated)] border-white/5 hover:border-[var(--app-accent)]/30 hover:bg-[var(--app-bg-card)]'
                                         } ${currentFolderId === null ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
@@ -108,7 +108,7 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                                         key={folder.id}
                                         onClick={() => setSelectedFolderId(folder.id)}
                                         disabled={folder.id === currentFolderId}
-                                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all border ${selectedFolderId === folder.id
+                                        className={`w-full flex items-center gap-3 p-3 rounded-t-3xl rounded-b-none sm:rounded-xl transition-all border ${selectedFolderId === folder.id
                                             ? 'bg-[var(--app-accent)]/10 border-[var(--app-accent)]/50'
                                             : 'bg-[var(--app-bg-elevated)] border-[var(--app-divider)] hover:border-[var(--app-accent)]/30 hover:bg-[var(--app-bg-card)]'
                                             } ${folder.id === currentFolderId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
@@ -137,14 +137,14 @@ export function MoveToFolderModal({ isOpen, onClose, fileId, fileName, currentFo
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2.5 text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl font-medium hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] transition-colors"
+                            className="flex-1 px-4 py-2.5 text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-t-3xl rounded-b-none sm:rounded-xl font-medium hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] transition-colors"
                         >
                             {t('files.modals.move.cancel')}
                         </button>
                         <button
                             onClick={handleMove}
                             disabled={selectedFolderId === undefined || moveFile.isPending || (selectedFolderId === null && currentFolderId === null)}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--app-accent)] text-white rounded-xl font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--app-accent)] text-white rounded-t-3xl rounded-b-none sm:rounded-xl font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                         >
                             {moveFile.isPending ? (
                                 <>

@@ -195,21 +195,21 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                 onClick={onClose}
             />
 
-            <div className="fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-card)] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right">
-                <div className="flex items-center justify-between p-6 border-b border-[var(--app-border)]">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <div className="fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-card)] rounded-none sm:rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right">
+                <div className="flex items-center justify-between p-6 border-b border-[var(--app-border)] gap-4">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 rounded-none sm:rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
                             <FolderOpen className="w-5 h-5 text-amber-500" />
                         </div>
-                        <div>
-                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('projects.create.title')}</h2>
-                            <p className="text-sm text-[var(--app-text-muted)]">{t('projects.create.subtitle')}</p>
+                        <div className="min-w-0 flex-1">
+                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)] truncate">{t('projects.create.title')}</h2>
+                            <p className="text-sm text-[var(--app-text-muted)] truncate">{t('projects.create.subtitle')}</p>
                         </div>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-colors"
+                        className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-sidebar)] rounded-lg transition-colors flex-shrink-0"
                     >
                         <X size={20} />
                     </button>
@@ -225,7 +225,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder={t('projects.create.name_placeholder')}
-                            className="w-full px-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all font-medium border border-[var(--app-border)]"
+                            className="w-full px-4 py-3 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all font-medium border border-[var(--app-border)]"
                             required
                         />
                     </div>
@@ -239,7 +239,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={t('projects.create.description_placeholder')}
                             rows={3}
-                            className="w-full px-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none text-sm border border-[var(--app-border)]"
+                            className="w-full px-4 py-3 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all resize-none text-sm border border-[var(--app-border)]"
                         />
                     </div>
 
@@ -260,7 +260,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                                         }
                                     }}
                                     className={cn(
-                                        "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border",
+                                        "flex items-center gap-3 p-3 rounded-none sm:rounded-xl cursor-pointer transition-all border",
                                         teamIds.includes(team.id)
                                             ? "bg-amber-500/10 border-amber-500/30 text-[var(--app-text-primary)]"
                                             : "bg-[var(--app-bg-input)] border-[var(--app-border)] text-[var(--app-text-muted)] hover:bg-[var(--app-bg-sidebar)] hover:text-[var(--app-text-secondary)]"
@@ -297,7 +297,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                             {t('projects.create.template')}
                         </label>
                         <Select value={industryTemplateId} onValueChange={setIndustryTemplateId}>
-                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-[var(--app-text-primary)] focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all">
+                            <SelectTrigger className="w-full h-auto px-4 py-3 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-[var(--app-text-primary)] focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/50 transition-all">
                                 <SelectValue placeholder={t('projects.create.select_template')} />
                             </SelectTrigger>
                             <SelectContent className="bg-[var(--app-bg-elevated)] border border-[var(--app-border)] text-[var(--app-text-primary)]">
@@ -374,7 +374,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     </div>
 
                     {error && (
-                        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                        <div className="p-4 rounded-none sm:rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                             {error}
                         </div>
                     )}
@@ -384,7 +384,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-4 py-3 rounded-xl border border-[var(--app-border)] text-[var(--app-text-secondary)] font-medium hover:bg-[var(--app-bg-sidebar)] transition-colors"
+                        className="flex-1 px-4 py-3 rounded-none sm:rounded-xl border border-[var(--app-border)] text-[var(--app-text-secondary)] font-medium hover:bg-[var(--app-bg-sidebar)] transition-colors"
                     >
                         {t('projects.create.cancel')}
                     </button>
@@ -392,7 +392,7 @@ export function CreateProjectPanel({ isOpen, onClose, onSuccess, workspaceId }: 
                         type="submit"
                         onClick={handleSubmit}
                         disabled={loading || !name.trim() || teamIds.length === 0}
-                        className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/20"
+                        className="flex-1 px-4 py-3 rounded-none sm:rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-500/20"
                     >
                         {loading ? t('projects.create.creating') : t('projects.create.submit')}
                     </button>

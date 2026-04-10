@@ -195,12 +195,12 @@ export function ProjectTimelineView({
     return (
         <div className="flex flex-col h-full w-full">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4 flex-shrink-0 px-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-2 mb-4 flex-shrink-0 px-2">
                 <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold text-white">{headerLabel}</h2>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
                     {/* Hour Range Selector (only for day view) */}
                     {viewMode === 'day' && (
                         <div className="relative">

@@ -162,7 +162,7 @@ function FilesPage() {
 
     return (
         <div
-            className="flex flex-col h-full relative"
+            className="flex flex-col h-[calc(100vh-64px)] -m-4 -mb-24 lg:-m-6 lg:-mb-6 relative overflow-hidden"
             onDragOver={handlePageDragOver}
             onDragLeave={handlePageDragLeave}
             onDrop={handlePageDrop}

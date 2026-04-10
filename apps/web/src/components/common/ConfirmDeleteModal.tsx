@@ -50,11 +50,11 @@ export function ConfirmDeleteModal({
     return (
         <>
             {/* Backdrop */}
-            <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/60 z-[100] flex items-end sm:items-center justify-center">
                 {/* Modal */}
                 <div
                     ref={modalRef}
-                    className="bg-[#1a1a24] rounded-2xl w-full max-w-md mx-4 shadow-2xl border border-gray-800 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+                    className="bg-[#1a1a24] rounded-t-3xl rounded-b-none sm:rounded-2xl w-full max-w-md mx-0 sm:mx-4 shadow-2xl border border-gray-800 overflow-hidden animate-in fade-in slide-in-from-bottom sm:zoom-in-95 duration-200"
                 >
                     {/* Icon */}
                     <div className="pt-8 pb-4 flex justify-center">
@@ -80,7 +80,7 @@ export function ConfirmDeleteModal({
                     <div className="p-6 border-t border-gray-800 flex gap-3">
                         <button
                             onClick={onClose}
-                            className="flex-1 px-4 py-3 bg-gray-800 text-gray-300 rounded-xl font-medium hover:bg-gray-700 transition-colors"
+                            className="flex-1 px-4 py-3 bg-gray-800 text-gray-300 rounded-t-3xl rounded-b-none sm:rounded-xl font-medium hover:bg-gray-700 transition-colors"
                         >
                             {cancelText}
                         </button>
@@ -89,7 +89,7 @@ export function ConfirmDeleteModal({
                                 onConfirm()
                                 onClose()
                             }}
-                            className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors"
+                            className="flex-1 px-4 py-3 bg-red-500 text-white rounded-t-3xl rounded-b-none sm:rounded-xl font-bold hover:bg-red-600 transition-colors"
                         >
                             {confirmText}
                         </button>

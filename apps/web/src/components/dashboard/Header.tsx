@@ -9,7 +9,7 @@ import { UserSettingsPanel } from '@/components/features/settings/panels/UserSet
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { useNotifications } from '@/hooks/useNotifications'
 
-export function Header() {
+export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     const { t } = useTranslation()
     const { data: session } = useSession()
     const [showUserMenu, setShowUserMenu] = useState(false)
@@ -54,25 +54,40 @@ export function Header() {
     const baseUrl = workspaceSlug ? `/${workspaceSlug}` : '/dashboard'
 
     return (
-        <header className="h-16 bg-[var(--app-bg-sidebar)] flex items-center justify-between px-6 transition-colors duration-300">
-            {/* Search Bar with SVG icon */}
-            <div className="flex-1 max-w-md">
-                <div className="relative group">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="group-focus-within:hidden">
-                            <circle cx="14" cy="14" r="8" stroke="#9E9E9E" strokeWidth="4" />
-                            <path d="M21 21L27 27" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
-                        </svg>
-                        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="hidden group-focus-within:block">
-                            <circle cx="14" cy="14" r="8" stroke="#F2CE88" strokeWidth="4" />
-                            <path d="M21 21L27 27" stroke="#7A664E" strokeWidth="4" strokeLinecap="round" />
-                        </svg>
+        <header className="h-16 bg-[var(--app-bg-sidebar)] flex items-center justify-between lg:justify-between px-4 lg:px-6 gap-2 lg:gap-4 transition-colors duration-300 relative z-40">
+            {/* Left side: Mobile Menu + Search */}
+            <div className="flex items-center gap-2 lg:gap-4 flex-1">
+                {/* Hamburger Layout Toggle */}
+                <button
+                    onClick={onMenuClick}
+                    className="lg:hidden p-2 -ml-2 text-[var(--app-text-secondary)] hover:text-amber-500 rounded-lg hover:bg-[var(--app-bg-elevated)]"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+
+                {/* Search Bar with SVG icon */}
+                <div className="max-w-md w-full hidden md:block">
+                    <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="group-focus-within:hidden">
+                                <circle cx="14" cy="14" r="8" stroke="#9E9E9E" strokeWidth="4" />
+                                <path d="M21 21L27 27" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
+                            </svg>
+                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="hidden group-focus-within:block">
+                                <circle cx="14" cy="14" r="8" stroke="#F2CE88" strokeWidth="4" />
+                                <path d="M21 21L27 27" stroke="#7A664E" strokeWidth="4" strokeLinecap="round" />
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:border-amber-500/50 transition-colors duration-300"
+                        />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:border-amber-500/50 transition-colors duration-300"
-                    />
                 </div>
             </div>
 

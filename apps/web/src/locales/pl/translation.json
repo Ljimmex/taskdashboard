@@ -164,7 +164,7 @@
         "type_select": "Wybierz typ",
         "document": "Nowy Dokument",
         "document_desc": "Notatki, plany i dokumentacja tekstowa",
-        "board": "Nowa Tablica",
+        "board": "Tablica",
         "board_desc": "Szkice, diagramy i wizualna praca z zespołem",
         "name_label": "Nazwa",
         "name_placeholder": "Wpisz nazwę...",
@@ -173,6 +173,7 @@
     },
     "dashboard": {
         "title": "Panel główny",
+        "board": "Tablica",
         "team": "Zespół",
         "projects": "Projekty",
         "messages": "Wiadomości",

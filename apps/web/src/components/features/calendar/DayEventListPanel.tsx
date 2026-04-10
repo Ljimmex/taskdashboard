@@ -100,13 +100,13 @@ export function DayEventListPanel({
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-sidebar)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-sidebar)] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-[var(--app-border)] rounded-t-2xl bg-[var(--app-bg-sidebar)]">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[var(--app-bg-input)] flex items-center justify-center border border-[var(--app-border)]">
+                            <div className="w-10 h-10 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] flex items-center justify-center border border-[var(--app-border)]">
                                 <Calendar size={20} className="text-[var(--app-text-muted)]" />
                             </div>
                             <h2 className="text-xl font-bold text-[var(--app-text-primary)]">{t('calendar.panels.day_list.title')}</h2>
@@ -131,7 +131,7 @@ export function DayEventListPanel({
                     {events.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-[var(--app-text-muted)] text-sm">
                             <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                                <div className="w-16 h-16 rounded-2xl bg-[var(--app-bg-input)] flex items-center justify-center mb-4 border border-[var(--app-border)]">
+                                <div className="w-16 h-16 rounded-none sm:rounded-2xl bg-[var(--app-bg-input)] flex items-center justify-center mb-4 border border-[var(--app-border)]">
                                     <Calendar className="w-8 h-8 text-[var(--app-text-muted)]" />
                                 </div>
                                 <h3 className="text-sm font-semibold text-[var(--app-text-primary)] mb-1">{t('calendar.no_events')}</h3>
@@ -145,7 +145,7 @@ export function DayEventListPanel({
                             <div
                                 key={event.id}
                                 onClick={() => onEventClick(event)}
-                                className="group p-4 rounded-xl bg-[var(--app-bg-card)] border border-[var(--app-border)] hover:border-amber-500/50 cursor-pointer transition-all hover:bg-[var(--app-bg-elevated)]"
+                                className="group p-4 rounded-none sm:rounded-xl bg-[var(--app-bg-card)] border border-[var(--app-border)] hover:border-amber-500/50 cursor-pointer transition-all hover:bg-[var(--app-bg-elevated)]"
                             >
                                 <div className="flex items-start gap-3">
                                     {/* Type indicator */}

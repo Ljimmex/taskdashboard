@@ -125,9 +125,9 @@ function DocsPage() {
     }
 
     return (
-        <div className="flex h-full overflow-hidden bg-[var(--app-bg-deepest)]">
+        <div className="flex h-[calc(100vh-64px)] relative overflow-hidden bg-[var(--app-bg-deepest)] -m-4 -mb-24 lg:-m-6 lg:-mb-6">
             {/* Sidebar List */}
-            <div className="w-80 flex flex-col border-r border-[var(--app-border)] bg-[var(--app-bg-sidebar)]">
+            <div className={`absolute lg:static inset-0 z-20 transition-transform duration-300 md:translate-x-0 ${selectedDocId ? '-translate-x-full' : 'translate-x-0'} w-full lg:w-80 flex-shrink-0 flex flex-col border-r border-[var(--app-border)] bg-[var(--app-bg-sidebar)]`}>
                 <div className="p-4 flex items-center justify-between border-b border-[var(--app-border)]">
                     <h2 className="font-bold text-[var(--app-text-primary)]">Dokumenty</h2>
                     <button
@@ -182,20 +182,23 @@ function DocsPage() {
             </div>
 
             {/* Editor Area */}
-            <div className="flex-1 flex flex-col bg-[var(--app-bg-page)] overflow-hidden">
+            <div className={`flex-1 flex flex-col h-full min-w-0 bg-[var(--app-bg-page)] overflow-hidden ${selectedDocId ? 'block' : 'hidden lg:flex'}`}>
                 {selectedDoc ? (
                     <div className="flex-1 flex flex-col overflow-hidden relative">
                         {/* Board-like Header Overlay */}
-                        <div className="absolute top-4 left-4 right-4 z-[50] flex items-center justify-between pointer-events-none">
+                        <div className="absolute top-4 left-4 right-4 z-[50] flex flex-col lg:flex-row lg:items-center justify-between pointer-events-none gap-2">
                             {/* Left side: Title & Actions */}
                             <div className="flex items-center gap-2 pointer-events-auto">
+                                <button onClick={() => setSelectedDocId(null)} className="lg:hidden p-2 bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl shadow-sm text-[var(--app-text-muted)] hover:text-white transition-colors">
+                                    <Undo2 size={16} />
+                                </button>
                                 <div className="flex items-center bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl shadow-sm p-1">
                                     <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--app-accent)]/10 text-[var(--app-accent)] mr-1">
                                         <FileText size={16} />
                                     </div>
                                     <input
                                         type="text"
-                                        className="text-sm font-semibold bg-transparent border-none outline-none text-[var(--app-text-primary)] w-[200px] focus:ring-0 px-2 leading-none"
+                                        className="text-sm font-semibold bg-transparent border-none outline-none text-[var(--app-text-primary)] w-24 lg:w-[200px] focus:ring-0 px-2 leading-none"
                                         value={selectedDoc.title}
                                         onChange={(e) => queueSave(selectedDoc.id, { title: e.target.value })}
                                         placeholder="Tytuł dokumentu..."
@@ -249,11 +252,11 @@ function DocsPage() {
                         </div>
 
                         {/* Floating Bottom Info & Undo/Redo */}
-                        <div className="absolute bottom-6 w-full px-6 flex items-end justify-between pointer-events-none z-[50]">
+                        <div className="absolute bottom-6 w-full px-2 lg:px-6 flex flex-col lg:flex-row items-end lg:justify-between pointer-events-none z-[50] gap-4">
                             {/* Status Info */}
-                            <div className="pointer-events-auto bg-[var(--app-bg-elevated)]/80 backdrop-blur-md border border-[var(--app-border)] rounded-lg px-4 py-2 flex items-center gap-4 text-[11px] text-[var(--app-text-secondary)] shadow-sm">
-                                <span>Ostatnia edycja: {format(lastSavedAt ? new Date(lastSavedAt) : new Date(selectedDoc.updatedAt), 'HH:mm', { locale: pl })}</span>
-                                <span>{characterCount} znaków</span>
+                            <div className="pointer-events-auto bg-[var(--app-bg-elevated)]/80 backdrop-blur-md border border-[var(--app-border)] rounded-lg px-4 py-2 flex items-center gap-2 lg:gap-4 text-[10px] lg:text-[11px] text-[var(--app-text-secondary)] shadow-sm truncate">
+                                <span className="hidden lg:inline">Ostatnia edycja: {format(lastSavedAt ? new Date(lastSavedAt) : new Date(selectedDoc.updatedAt), 'HH:mm', { locale: pl })}</span>
+                                <span className="hidden lg:inline">{characterCount} znaków</span>
                                 <span className="font-medium text-[var(--app-text-muted)] flex items-center gap-1">
                                     {isSaving ? (
                                         <>Zapisywanie<span className="animate-pulse">...</span></>

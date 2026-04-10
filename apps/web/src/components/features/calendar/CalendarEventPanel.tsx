@@ -223,11 +223,11 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
             />
 
             {/* Panel */}
-            <div className="fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[var(--app-bg-card)] rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right border border-[var(--app-border)]">
+            <div className="fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-xl bg-[var(--app-bg-card)] rounded-none sm:rounded-2xl shadow-2xl z-50 flex flex-col animate-slide-in-right border border-[var(--app-border)]">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)] rounded-t-2xl">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-none sm:rounded-xl bg-amber-500/10 flex items-center justify-center">
                             {getTypeIcon(selectedType)}
                         </div>
                         <div>
@@ -278,7 +278,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder={selectedType === CalendarEventType.REMINDER ? t('calendar.panels.common.title_placeholder_reminder') : t('calendar.panels.common.title_placeholder_event')}
-                            className="w-full text-xl font-semibold text-[var(--app-text-primary)] bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors"
+                            className="w-full text-xl font-semibold text-[var(--app-text-primary)] bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-none sm:rounded-xl focus:border-amber-500/50 transition-colors"
                             autoFocus
                         />
                     </div>
@@ -290,7 +290,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={t('calendar.panels.common.desc_placeholder')}
                             rows={3}
-                            className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-xl focus:border-amber-500/50 transition-colors resize-none"
+                            className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 rounded-none sm:rounded-xl focus:border-amber-500/50 transition-colors resize-none"
                         />
                     </div>
 
@@ -361,7 +361,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                     placeholder={t('calendar.panels.starts')}
                                     showTime={!isAllDay && selectedType === CalendarEventType.EVENT}
                                     className="w-full"
-                                    triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
+                                    triggerClassName="w-full pl-4 pr-4 py-3 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
                                 />
                             </div>
 
@@ -374,7 +374,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                         placeholder={t('calendar.panels.ends')}
                                         showTime={!isAllDay}
                                         className="w-full"
-                                        triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
+                                        triggerClassName="w-full pl-4 pr-4 py-3 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
                                     />
                                 </div>
                             )}
@@ -421,7 +421,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                 <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
                                     {meetingType === 'physical' ? t('calendar.panels.location') : t('calendar.panels.meeting_link')}
                                 </label>
-                                <div className="relative group focus-within:ring-2 ring-amber-500/30 rounded-xl transition-all">
+                                <div className="relative group focus-within:ring-2 ring-amber-500/30 rounded-none sm:rounded-xl transition-all">
                                     {meetingType === 'physical' ? (
                                         <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-[var(--app-text-muted)] group-focus-within:text-amber-500 transition-colors" />
                                     ) : (
@@ -432,7 +432,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                         value={meetingType === 'physical' ? location : meetingLink}
                                         onChange={(e) => meetingType === 'physical' ? setLocation(e.target.value) : setMeetingLink(e.target.value)}
                                         placeholder={meetingType === 'physical' ? t('calendar.panels.location_placeholder') : t('calendar.panels.meeting_link_placeholder')}
-                                        className="w-full pl-11 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:bg-[var(--app-bg-elevated)] transition-all"
+                                        className="w-full pl-11 pr-4 py-3 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:bg-[var(--app-bg-elevated)] transition-all"
                                     />
                                 </div>
                             </div>
@@ -445,7 +445,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                             {t('calendar.panels.repeat')}
                         </label>
                         <Select value={recurrence} onValueChange={(val) => { setRecurrence(val) }}>
-                            <SelectTrigger className="w-full h-11 px-4 rounded-xl bg-[var(--app-bg-input)] border-none text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors focus:ring-0">
+                            <SelectTrigger className="w-full h-11 px-4 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] border-none text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors focus:ring-0">
                                 <div className="flex items-center gap-3">
                                     <RotateCw size={18} className="text-[var(--app-text-muted)]" />
                                     <span>
@@ -481,7 +481,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                                 onChange={(date) => setRecurrenceEnd(date || '')}
                                 placeholder={t('calendar.panels.until')}
                                 className="w-full"
-                                triggerClassName="w-full pl-4 pr-4 py-3 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
+                                triggerClassName="w-full pl-4 pr-4 py-3 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)] placeholder-[var(--app-text-muted)] border-none justify-start text-left font-normal shadow-none"
                             />
                         </div>
                     )}
@@ -493,7 +493,7 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                         </label>
                         <div className="relative group">
                             <div className={cn(
-                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                "w-full min-h-[48px] px-4 py-2.5 rounded-none sm:rounded-xl bg-[var(--app-bg-input)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
                                 scope === 'team' && teamIds.length === 0 && "text-[var(--app-text-muted)]",
                                 scope === 'personal' && selectedMembers.length === 0 && "text-[var(--app-text-muted)]",
                                 isRestrictedMember && "cursor-default opacity-80"
@@ -625,14 +625,14 @@ export function CalendarEventPanel({ isOpen, onClose, defaultType = CalendarEven
                     <div className="p-6 border-t border-[var(--app-border)] flex gap-3 bg-[var(--app-bg-card)] rounded-b-2xl">
                         <button
                             onClick={onClose}
-                            className="flex-1 px-4 py-3 rounded-xl border border-[var(--app-border)] text-[var(--app-text-secondary)] font-medium hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)] transition-colors"
+                            className="flex-1 px-4 py-3 rounded-none sm:rounded-xl border border-[var(--app-border)] text-[var(--app-text-secondary)] font-medium hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)] transition-colors"
                         >
                             {t('calendar.actions.cancel')}
                         </button>
                         <button
                             onClick={handleCreate}
                             disabled={loading || (isCalendarEventType && !canCreateCalendarEvents)}
-                            className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                            className="flex-1 px-4 py-3 rounded-none sm:rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-semibold transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50"
                         >
                             {loading ? t('calendar.actions.creating') : selectedType === CalendarEventType.EVENT ? t('calendar.actions.add_event') : t('calendar.actions.set_reminder')}
                         </button>

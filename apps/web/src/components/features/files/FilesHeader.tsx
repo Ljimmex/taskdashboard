@@ -244,14 +244,14 @@ export function FilesHeader({
     const selectedSortLabel = selectedSort ? t(selectedSort.labelKey) : t('files.sort.date')
 
     return (
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between px-4 lg:px-6 py-4 gap-4 lg:gap-0">
             {/* Left side: Date picker and type filter */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 lg:gap-3 flex-wrap w-full lg:w-auto">
                 {/* Date Range Picker */}
                 <button
                     ref={dateButtonRef}
                     onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
+                    className="flex items-center gap-2 px-3 lg:px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
                 >
                     <Calendar size={14} />
                     <span>{formatDate(startDate)} / {formatDate(endDate)}</span>
@@ -271,15 +271,16 @@ export function FilesHeader({
                 <button
                     ref={sortButtonRef}
                     onClick={() => setIsSortOpen(!isSortOpen)}
-                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
+                    className="flex items-center gap-2 px-3 lg:px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
                 >
-                    <span>{t('files.header.sort_by', { value: selectedSortLabel })}</span>
+                    <span className="hidden sm:inline">{t('files.header.sort_by', { value: selectedSortLabel })}</span>
+                    <span className="sm:hidden">{selectedSortLabel}</span>
                     <ChevronDown size={14} className={`transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
                 </button>
             </div>
 
             {/* Right side: View switcher and Upload */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 lg:gap-3 justify-between lg:justify-end w-full lg:w-auto">
                 {/* View Switcher */}
                 <div className="flex bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] p-1 rounded-full">
                     <button

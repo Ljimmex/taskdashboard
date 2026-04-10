@@ -262,7 +262,7 @@ export function EditMemberPanel({
             {/* Main Edit Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-deepest)] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-[var(--app-border)] flex items-center justify-between">
@@ -409,7 +409,7 @@ export function EditMemberPanel({
                         <Label className="text-[var(--app-text-secondary)] text-xs font-medium tracking-wide uppercase">{t('teams.edit_panel.team_groups')}</Label>
                         <div className="relative group">
                             <div className={cn(
-                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                "w-full min-h-[48px] px-4 py-2.5 rounded-none sm:rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
                                 teams.length === 0 && "text-[var(--app-text-muted)]"
                             )}>
                                 <Select value="" onValueChange={(val) => {
@@ -470,7 +470,7 @@ export function EditMemberPanel({
                         <Label className="text-[var(--app-text-secondary)] text-xs font-medium tracking-wide uppercase">{t('teams.edit_panel.projects')}</Label>
                         <div className="relative group">
                             <div className={cn(
-                                "w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
+                                "w-full min-h-[48px] px-4 py-2.5 rounded-none sm:rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] cursor-pointer flex flex-wrap gap-2 items-center transition-all border border-transparent ring-0 outline-none focus-within:border-amber-500/30",
                                 projectNames.length === 0 && "text-[var(--app-text-muted)]"
                             )}>
                                 <Select value="" onValueChange={(val) => {
@@ -560,7 +560,7 @@ export function EditMemberPanel({
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => setShowDeleteConfirm(false)} />
 
                     {/* Simplified Modal */}
-                    <div className="relative bg-[var(--app-bg-deepest)] rounded-xl shadow-2xl w-full max-w-sm border border-[var(--app-border)] overflow-hidden transform scale-100 transition-all">
+                    <div className="relative bg-[var(--app-bg-deepest)] rounded-none sm:rounded-xl shadow-2xl w-full max-w-sm border border-[var(--app-border)] overflow-hidden transform scale-100 transition-all">
                         <div className="p-6 text-center">
                             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-900/30 mb-4">
                                 <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

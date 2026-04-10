@@ -318,7 +318,7 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                 {/* Members List (Collapsible) */}
                 {isExpanded && team.members.length > 0 && (
                     <div className="overflow-x-auto">
-                        <table className="w-full">
+                        <table className="w-full min-w-[900px]">
                             <thead className="bg-[var(--app-bg-elevated)]/80 text-xs text-[var(--app-text-muted)] font-medium">
                                 <tr>
                                     {canManage && (
@@ -333,19 +333,19 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                         </th>
                                     )}
                                     <th
-                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
+                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors min-w-[200px]"
                                         onClick={() => handleSort('name')}
                                     >
                                         <div className="flex items-center gap-2">{t('teams.table.name')} <SortIcon direction={getSortDirection('name')} /></div>
                                     </th>
                                     <th
-                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
+                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors min-w-[220px]"
                                         onClick={() => handleSort('email')}
                                     >
                                         <div className="flex items-center gap-2">{t('teams.table.email')} <SortIcon direction={getSortDirection('email')} /></div>
                                     </th>
                                     <th
-                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors"
+                                        className="p-3 text-left cursor-pointer hover:text-[var(--app-text-primary)] transition-colors min-w-[150px]"
                                         onClick={() => handleSort('role')}
                                     >
                                         <div className="flex items-center gap-2">{t('teams.table.job_title')} <SortIcon direction={getSortDirection('role')} /></div>
@@ -396,11 +396,11 @@ export function TeamTable({ team, userRole, onInvite, onEditMember, onViewMember
                                                             member.name.charAt(0)
                                                         )}
                                                     </div>
-                                                    <span className={`text-sm font-medium ${isSelected ? 'text-amber-100' : 'text-[var(--app-text-primary)]'}`}>{member.name}</span>
+                                                    <span className={`text-sm font-medium truncate ${isSelected ? 'text-amber-100' : 'text-[var(--app-text-primary)]'}`}>{member.name}</span>
                                                 </div>
                                             </td>
-                                            <td className="p-3 text-sm text-[var(--app-text-secondary)]">{member.email}</td>
-                                            <td className="p-3 text-sm text-[var(--app-text-secondary)]">{member.role}</td>
+                                            <td className="p-3 text-sm text-[var(--app-text-secondary)] truncate max-w-[220px]">{member.email}</td>
+                                            <td className="p-3 text-sm text-[var(--app-text-secondary)] truncate max-w-[150px]">{member.role}</td>
                                             <td className="p-3">
                                                 <div className="flex items-center gap-1.5">
                                                     {member.projects.slice(0, 2).map((proj: string, i: number) => (

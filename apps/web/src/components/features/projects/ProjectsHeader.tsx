@@ -319,7 +319,7 @@ export function ProjectsHeader({
     const [showSort, setShowSort] = useState(false)
 
     return (
-        <div className="flex items-center justify-between mb-6 relative z-50">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 md:gap-0 relative z-50">
             {/* Left side - View Toggle */}
             <div className="flex bg-[var(--app-bg-elevated)] p-1 rounded-full">
                 <button
@@ -345,7 +345,7 @@ export function ProjectsHeader({
             </div>
 
             {/* Right side - Search, Filters, Sort, New Project */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center flex-wrap gap-2 md:gap-3">
                 {/* Search */}
                 <div className="relative">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -358,7 +358,7 @@ export function ProjectsHeader({
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
                         onBlur={() => setSearchFocused(false)}
-                        className="w-48 pl-10 pr-4 py-2 rounded-xl bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
+                        className="w-[140px] md:w-48 pl-10 pr-2 md:pr-4 py-2 rounded-xl bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
                     />
                 </div>
 

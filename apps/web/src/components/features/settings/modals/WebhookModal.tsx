@@ -189,8 +189,8 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-[var(--app-bg-card)] rounded-2xl w-full max-w-lg shadow-2xl border border-[var(--app-border)] flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
+            <div className="bg-[var(--app-bg-card)] rounded-t-3xl rounded-b-none sm:rounded-2xl w-full max-w-lg shadow-2xl border border-[var(--app-border)] flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in slide-in-from-bottom sm:zoom-in duration-200">
                 {/* Header */}
                 <div className="p-6 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-card)] rounded-t-2xl">
                     <h2 className="text-xl font-bold text-[var(--app-text-primary)]">

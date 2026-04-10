@@ -126,7 +126,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-card)] border border-white/5 rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} `}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-card)] border border-white/5 rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} `}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-white/5 flex items-center justify-between">
@@ -142,7 +142,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                 {/* Content */}
                 <div className="flex-1 px-6 py-6 overflow-y-auto space-y-6">
                     {/* Preview Thumbnail */}
-                    <div className="aspect-video bg-[var(--app-bg-elevated)]/50 rounded-xl flex items-center justify-center border border-[var(--app-divider)]">
+                    <div className="aspect-video bg-[var(--app-bg-elevated)]/50 rounded-none sm:rounded-xl flex items-center justify-center border border-[var(--app-divider)]">
                         {isImage && file.thumbnailUrl ? (
                             <img
                                 src={file.thumbnailUrl}
@@ -165,7 +165,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                         {onDownload && (
                             <button
                                 onClick={() => onDownload(file.id)}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--app-accent)] text-white rounded-xl font-medium hover:opacity-90 transition-all shadow-sm"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--app-accent)] text-white rounded-none sm:rounded-xl font-medium hover:opacity-90 transition-all shadow-sm"
                             >
                                 <Download size={18} />
                                 {t('files.actions.download')}
@@ -174,7 +174,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                         {onRename && (
                             <button
                                 onClick={() => onRename(file.id)}
-                                className="p-2.5 rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] transition-colors"
+                                className="p-2.5 rounded-none sm:rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] transition-colors"
                                 title={t('files.actions.rename')}
                             >
                                 <Pencil size={18} />
@@ -183,7 +183,7 @@ export function FileInfoPanel({ file, isOpen, onClose, onDownload, onDelete, onR
                         {onDelete && (
                             <button
                                 onClick={() => onDelete(file.id)}
-                                className="p-2.5 rounded-xl text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors"
+                                className="p-2.5 rounded-none sm:rounded-xl text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-colors"
                                 title={t('files.actions.delete')}
                             >
                                 <Trash2 size={18} />

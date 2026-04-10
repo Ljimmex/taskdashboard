@@ -924,30 +924,32 @@ function ProjectDetailPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header - Project Info and View Switcher */}
-      <div className="flex-none px-6 pt-5 pb-8">
+      <div className="flex-none px-4 sm:px-6 pt-4 sm:pt-5 pb-6 sm:pb-8">
         {/* Top row: Back + Project Name */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center justify-center lg:justify-start gap-3 mb-4 relative h-10">
           <button
             onClick={() => navigate({ to: `/${workspaceSlug}/projects` })}
-            className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-[#1a1a24] transition-colors"
+            className="absolute left-0 lg:static p-2 rounded-full text-gray-400 hover:text-white hover:bg-[#1a1a24] transition-colors"
           >
             <ChevronLeft size={18} />
           </button >
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: project.color || '#6366f1' }}
-          />
-          <h1 className="text-lg font-semibold text-white">{project.name}</h1>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: project.color || '#6366f1' }}
+            />
+            <h1 className="text-lg font-semibold text-white">{project.name}</h1>
+          </div>
         </div >
 
         {/* View Switcher + KanbanBoardHeader - same row */}
-        < div className="flex items-center justify-between" >
-          <div className="flex bg-[#1a1a24] p-1 rounded-full w-fit">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-0">
+          <div className="flex bg-[#1a1a24] p-1 rounded-full w-full max-w-full overflow-x-auto min-w-0" style={{ scrollbarWidth: 'none' }}>
             {VIEW_TABS.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setViewMode(tab.id)}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === tab.id
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === tab.id
                   ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
                   : 'text-gray-500 hover:text-white'
                   }`}
@@ -980,8 +982,8 @@ function ProjectDetailPage() {
               />
             )
           }
-        </div >
-      </div >
+        </div>
+      </div>
 
       {/* Content - Full width for Kanban */}
       < div className="flex-1 min-h-0 overflow-auto" >

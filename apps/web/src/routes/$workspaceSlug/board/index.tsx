@@ -352,25 +352,25 @@ function BoardPage() {
     return (
         <div className="flex flex-col h-full bg-[var(--app-bg-deepest)]">
             {/* Header */}
-            <div className="flex-none px-6 pt-5 pb-4 flex items-center justify-between border-b border-[var(--app-border)]">
+            <div className="flex-none px-4 lg:px-6 pt-5 pb-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 lg:gap-0 border-b border-[var(--app-border)]">
                 <h1 className="text-2xl font-bold text-[var(--app-text-primary)]">{t('resources.title')}</h1>
-                <div className="flex items-center gap-3">
-                    <div className="relative">
+                <div className="flex items-center gap-2 lg:gap-3 w-full lg:w-auto">
+                    <div className="relative flex-1 lg:flex-none">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--app-text-muted)]" />
                         <input
                             type="text"
                             placeholder={t('resources.search_placeholder')}
-                            className="bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-full py-1.5 pl-9 pr-4 text-xs focus:ring-1 focus:ring-[var(--app-accent)] outline-none min-w-[200px]"
+                            className="bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-full w-full py-1.5 pl-9 pr-4 text-xs focus:ring-1 focus:ring-[var(--app-accent)] outline-none min-w-0 md:min-w-[200px]"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                     <button
                         onClick={() => setIsCreationModalOpen(true)}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--app-accent)] text-[var(--app-accent-text)] text-xs font-bold hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-amber-500/20 border border-white/10"
+                        className="inline-flex flex-shrink-0 items-center justify-center gap-2 w-9 lg:w-auto px-0 lg:px-5 py-2.5 rounded-full bg-[var(--app-accent)] text-[var(--app-accent-text)] text-xs font-bold hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-amber-500/20 border border-white/10"
                     >
                         <Plus size={16} strokeWidth={3} />
-                        {t('resources.new_content')}
+                        <span className="hidden sm:inline">{t('resources.new_content')}</span>
                     </button>
                 </div>
             </div>

@@ -108,18 +108,18 @@ export function ViewEventPanel({
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[var(--app-bg-card)] rounded-2xl shadow-2xl z-50 flex flex-col border border-[var(--app-border)] transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-xl bg-[var(--app-bg-card)] rounded-none sm:rounded-2xl shadow-2xl z-50 flex flex-col border border-[var(--app-border)] transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)] rounded-t-2xl">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center`}>
+                <div className="flex items-center justify-between p-6 border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)] rounded-t-2xl gap-4">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`w-10 h-10 rounded-none sm:rounded-xl ${colors.bg} flex items-center justify-center flex-shrink-0`}>
                             {getTypeIcon(event.type)}
                         </div>
-                        <div>
-                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('calendar.panels.view_event.title')}</h2>
+                        <div className="min-w-0 flex-1">
+                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)] truncate">{t('calendar.panels.view_event.title')}</h2>
                             <div className="flex items-center gap-2 mt-0.5">
-                                <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium uppercase tracking-wider ${colors.bg} ${colors.text}`}>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium uppercase tracking-wider ${colors.bg} ${colors.text} truncate`}>
                                     {getTypeLabel(event.type, t)}
                                 </span>
                             </div>
@@ -162,7 +162,7 @@ export function ViewEventPanel({
 
                     {/* Description */}
                     {event.description && (
-                        <div className="bg-[var(--app-bg-input)] rounded-xl p-4">
+                        <div className="bg-[var(--app-bg-input)] rounded-none sm:rounded-xl p-4">
                             <p className="text-sm text-[var(--app-text-secondary)] leading-relaxed whitespace-pre-wrap">{event.description}</p>
                         </div>
                     )}
@@ -170,7 +170,7 @@ export function ViewEventPanel({
                     {/* Date & Time */}
                     <div className="space-y-3">
                         <h3 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">{t('calendar.panels.date_time')}</h3>
-                        <div className="bg-[var(--app-bg-input)] rounded-xl p-4 space-y-3">
+                        <div className="bg-[var(--app-bg-input)] rounded-none sm:rounded-xl p-4 space-y-3">
                             <div className="flex items-center gap-3">
                                 <Calendar size={16} className="text-[var(--app-text-muted)]" />
                                 <span className="text-sm text-[var(--app-text-primary)]">
@@ -198,7 +198,7 @@ export function ViewEventPanel({
                     {event.location && (
                         <div className="space-y-3">
                             <h3 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">{t('calendar.panels.location')}</h3>
-                            <div className="bg-[var(--app-bg-input)] rounded-xl p-4">
+                            <div className="bg-[var(--app-bg-input)] rounded-none sm:rounded-xl p-4">
                                 <div className="flex items-center gap-3">
                                     <MapPin size={16} className="text-[var(--app-text-muted)]" />
                                     <span className="text-sm text-[var(--app-text-primary)]">{event.location}</span>
@@ -211,7 +211,7 @@ export function ViewEventPanel({
                     {event.meetingLink && (
                         <div className="space-y-3">
                             <h3 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">{t('calendar.panels.meeting_link')}</h3>
-                            <div className="bg-[var(--app-bg-input)] rounded-xl p-4">
+                            <div className="bg-[var(--app-bg-input)] rounded-none sm:rounded-xl p-4">
                                 <a
                                     href={event.meetingLink}
                                     target="_blank"
@@ -230,7 +230,7 @@ export function ViewEventPanel({
                     {event.creator && (
                         <div className="space-y-3">
                             <h3 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">{t('calendar.panels.created_by')}</h3>
-                            <div className="bg-[var(--app-bg-input)] rounded-xl p-4">
+                            <div className="bg-[var(--app-bg-input)] rounded-none sm:rounded-xl p-4">
                                 <div className="flex items-center gap-3">
                                     {event.creator.image ? (
                                         <img src={event.creator.image} alt={event.creator.name} className="w-8 h-8 rounded-full object-cover" />

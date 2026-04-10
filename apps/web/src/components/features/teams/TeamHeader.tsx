@@ -139,10 +139,10 @@ export function TeamHeader({
     }, [userRole])
 
     return (
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 md:gap-0">
             <h1 className="text-2xl font-bold text-[var(--app-text-primary)]">{t('teams.title')}</h1>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center flex-wrap gap-2 md:gap-3">
                 {/* Search */}
                 <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -155,7 +155,7 @@ export function TeamHeader({
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
                         onBlur={() => setSearchFocused(false)}
-                        className="w-56 pl-10 pr-4 py-2 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
+                        className="w-[150px] md:w-56 pl-10 pr-2 md:pr-4 py-2 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
                     />
                 </div>
 

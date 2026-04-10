@@ -72,35 +72,37 @@ export function TimeTrackerPage() {
     ]
 
     return (
-        <div className="min-h-screen bg-[var(--app-bg-deepest)] text-[var(--app-text-primary)] pb-20">
+        <div className="min-h-[calc(100vh-64px)] bg-[var(--app-bg-deepest)] text-[var(--app-text-primary)] pb-20 -m-4 -mb-24 lg:-m-6 lg:-mb-6 pt-4 lg:pt-0">
             {/* Header - Minimalist & Compact */}
-            <div className="relative">
-                <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+            <div className="relative pb-2 lg:pb-0 mb-4 lg:mb-0">
+                <div className="max-w-7xl mx-auto px-4 h-auto lg:h-16 py-2 lg:py-0 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 lg:gap-0">
+                    <div className="flex flex-col items-start gap-4 w-full">
                         {/* View Switcher - Labeled, Pill Style, positioned on the left */}
-                        <div className="bg-[var(--app-bg-card)] p-1 rounded-full flex gap-0.5 border border-[var(--app-border)] shadow-sm">
-                            {navItems.filter(i => i.show).map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => setView(item.id as any)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${view === item.id
-                                        ? 'bg-[var(--app-bg-elevated)] text-[var(--app-accent)] shadow-md'
-                                        : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'
-                                        }`}
-                                >
-                                    <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-                                        {view === item.id
-                                            ? sidebarIcons[item.iconKey as keyof typeof sidebarIcons].gold
-                                            : sidebarIcons[item.iconKey as keyof typeof sidebarIcons].gray
-                                        }
-                                    </div>
-                                    <span>{item.label}</span>
-                                </button>
-                            ))}
+                        <div className="w-full max-w-full overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                            <div className="bg-[var(--app-bg-card)] p-1 rounded-full flex gap-0.5 border border-[var(--app-border)] shadow-sm w-fit">
+                                {navItems.filter(i => i.show).map((item) => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setView(item.id as any)}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${view === item.id
+                                            ? 'bg-[var(--app-bg-elevated)] text-[var(--app-accent)] shadow-md'
+                                            : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'
+                                            }`}
+                                    >
+                                        <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+                                            {view === item.id
+                                                ? sidebarIcons[item.iconKey as keyof typeof sidebarIcons].gold
+                                                : sidebarIcons[item.iconKey as keyof typeof sidebarIcons].gray
+                                            }
+                                        </div>
+                                        <span>{item.label}</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center">
+                    <div className="flex justify-end w-full lg:w-auto">
                         {/* Project Selector - Only visible in Contribution and Dashboard */}
                         {projects.length > 1 && (view === 'contribution' || view === 'dashboard') && (
                             <div className="relative">

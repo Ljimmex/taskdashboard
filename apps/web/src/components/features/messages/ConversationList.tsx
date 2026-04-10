@@ -98,7 +98,7 @@ export function ConversationList({
         }) || []
 
     return (
-        <div className="w-80 bg-[var(--app-bg-sidebar)] flex flex-col h-full border-r border-[var(--app-border)]">
+        <div className="w-full md:w-80 bg-[var(--app-bg-sidebar)] flex flex-col h-full border-r border-[var(--app-border)]">
             {/* Header */}
             <div className="p-4">
                 {/* Search + Sort */}
@@ -223,7 +223,7 @@ export function ConversationList({
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-0.5">
-                                        <h3 className={`font-semibold truncate pr-2 ${unreadCount > 0 ? 'text-[var(--app-text-primary)]' : 'text-[var(--app-text-primary)]'}`}>
+                                        <h3 className={`font-semibold truncate pr-2 min-w-0 ${unreadCount > 0 ? 'text-[var(--app-text-primary)]' : 'text-[var(--app-text-primary)]'}`}>
                                             {member.name}
                                         </h3>
                                         {/* Timestamp: Show last message time if exists, else last active */}

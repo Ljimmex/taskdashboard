@@ -48,7 +48,7 @@ export function ChannelSettingsPanel({
     }
 
     return (
-        <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-xl border-l border-gray-200 z-40 flex flex-col">
+        <div className="fixed inset-0 sm:inset-y-0 sm:inset-x-auto sm:right-0 w-full sm:w-96 bg-white shadow-xl border-l border-gray-200 z-50 flex flex-col animate-in slide-in-from-right duration-300">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">{t('messages.settings')}</h2>

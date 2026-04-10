@@ -334,22 +334,23 @@ export function TaskDetailsPanel({
             <div
                 className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                     }`}
+                onClick={onClose}
             />
 
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-all duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[#12121a] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-all duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'
                     } ${isMaximized ? 'max-w-5xl' : 'max-w-lg'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-gray-800 rounded-t-2xl">
                     {/* Top row with collapse and actions */}
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                             <button
                                 onClick={onClose}
-                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex-shrink-0"
                                 title={t('projects.details.close')}
                             >
                                 <ChevronsRight size={18} />
@@ -359,18 +360,18 @@ export function TaskDetailsPanel({
                                     e.stopPropagation()
                                     if (onToggleStatus) onToggleStatus()
                                 }}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${task.isCompleted
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all min-w-0 max-w-[180px] ${task.isCompleted
                                     ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
                                     : 'text-gray-400 hover:text-white hover:bg-gray-800'
                                     }`}
                                 title={task.isCompleted ? t('tasks.details.mark_incomplete', { defaultValue: 'Oznacz jako niedokończone' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' })}
                             >
-                                <CheckCircle2 size={16} className={task.isCompleted ? 'fill-emerald-500/20' : ''} />
-                                <span>{task.isCompleted ? t('tasks.status.done', { defaultValue: 'Gotowe' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' })}</span>
+                                <CheckCircle2 size={16} className={`flex-shrink-0 ${task.isCompleted ? 'fill-emerald-500/20' : ''}`} />
+                                <span className="truncate">{task.isCompleted ? t('tasks.status.done', { defaultValue: 'Gotowe' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' })}</span>
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                             <button
                                 onClick={() => setIsMaximized(!isMaximized)}
                                 className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
@@ -418,7 +419,7 @@ export function TaskDetailsPanel({
                                 </button>
 
                                 {showMoreMenu && (
-                                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a24] rounded-xl shadow-2xl py-1.5 z-[100]">
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a24] rounded-none sm:rounded-xl shadow-2xl py-1.5 z-[100]">
                                         {(onEditTask !== undefined) && (
                                             <button
                                                 onClick={() => {
@@ -485,8 +486,8 @@ export function TaskDetailsPanel({
                         {/* Project */}
                         {task.projectName && (
                             <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('projects.details.meta.project')}</span>
-                                <div className="w-64 overflow-hidden border-b border-gray-800/30">
+                                <span className="text-sm text-gray-500 w-28 flex-shrink-0">{t('projects.details.meta.project')}</span>
+                                <div className="flex-1 min-w-0 border-b border-gray-800/30">
                                     <Marquee className="text-sm text-white" speed={25}>
                                         {task.projectName}
                                     </Marquee>
@@ -496,10 +497,10 @@ export function TaskDetailsPanel({
 
                         {/* Assignees - Read Only */}
                         <div className="flex items-start gap-4 h-8">
-                            <span className="text-sm text-gray-500 w-24 pt-[5px] flex-shrink-0">{t('projects.details.meta.assignee')}</span>
-                            <div className="flex-1">
+                            <span className="text-sm text-gray-500 w-28 pt-[5px] flex-shrink-0">{t('projects.details.meta.assignee')}</span>
+                            <div className="flex-1 min-w-0">
                                 {assignees.length > 0 ? (
-                                    <div className="flex flex-row items-center gap-1">
+                                    <div className="flex flex-row items-center gap-1 overflow-hidden">
                                         {assignees.slice(0, 2).map((a: any) => (
                                             <div key={a.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-[#1a1a24] rounded-full">
                                                 {a.avatar || (a as any).image ? (
@@ -509,7 +510,7 @@ export function TaskDetailsPanel({
                                                         {a.name.charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
-                                                <span className="text-sm font-medium text-gray-200">{a.name}</span>
+                                                <span className="text-sm font-medium text-gray-200 truncate max-w-[120px] whitespace-nowrap">{a.name.split(' ')[0]}</span>
                                             </div>
                                         ))}
                                         {assignees.length > 2 && (
@@ -517,7 +518,7 @@ export function TaskDetailsPanel({
                                                 <div className="flex items-center justify-center w-7 h-7 bg-gray-800 rounded-full cursor-default">
                                                     <span className="text-xs font-medium text-gray-300">+{assignees.length - 2}</span>
                                                 </div>
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 py-2 px-3 bg-[#1a1a24] border border-gray-800 shadow-xl rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[150px] flex flex-col gap-2">
+                                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 py-2 px-3 bg-[#1a1a24] border border-gray-800 shadow-xl rounded-none sm:rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[150px] flex flex-col gap-2">
                                                     {assignees.slice(2).map((a: any) => (
                                                         <div key={a.id} className="flex items-center gap-2">
                                                             {a.avatar || (a as any).image ? (
@@ -527,7 +528,7 @@ export function TaskDetailsPanel({
                                                                     {a.name.charAt(0).toUpperCase()}
                                                                 </div>
                                                             )}
-                                                            <span className="text-xs text-gray-300 truncate">{a.name}</span>
+                                                            <span className="text-xs text-gray-300 truncate">{a.name.split(' ')[0]}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -542,8 +543,8 @@ export function TaskDetailsPanel({
 
                         {/* Status */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('projects.details.meta.status')}</span>
-                            <div className="w-64 text-left">
+                            <span className="text-sm text-gray-500 w-28 flex-shrink-0">{t('projects.details.meta.status')}</span>
+                            <div className="flex-1 min-w-0 text-left">
                                 <StatusBadge status={task.status} stages={stages} />
                             </div>
                         </div>
@@ -551,8 +552,8 @@ export function TaskDetailsPanel({
                         {/* Due Date */}
                         {task.dueDate && (
                             <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('projects.details.meta.end_date')}</span>
-                                <div className="w-64 overflow-hidden">
+                                <span className="text-sm text-gray-500 w-28 flex-shrink-0">{t('projects.details.meta.end_date')}</span>
+                                <div className="flex-1 min-w-0 overflow-hidden">
                                     <span className="text-sm text-white block truncate">
                                         {new Date(task.dueDate).toLocaleDateString(i18n.language, {
                                             day: 'numeric',
@@ -566,16 +567,16 @@ export function TaskDetailsPanel({
 
                         {/* Priority */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('projects.details.meta.priority')}</span>
-                            <div className="w-64 text-left">
+                            <span className="text-sm text-gray-500 w-28 flex-shrink-0">{t('projects.details.meta.priority')}</span>
+                            <div className="flex-1 min-w-0 text-left">
                                 <PriorityBadge priority={task.priority} />
                             </div>
                         </div>
 
                         {/* Labels - Read Only */}
                         <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-24 pt-0.5 flex-shrink-0">{t('projects.details.meta.labels')}</span>
-                            <div className="w-64">
+                            <span className="text-sm text-gray-500 w-28 pt-0.5 flex-shrink-0">{t('projects.details.meta.labels')}</span>
+                            <div className="flex-1 min-w-0">
                                 {taskLabels.length > 0 ? (
                                     <div className="flex items-center gap-1 flex-wrap">
                                         {taskLabels.map(label => (
@@ -597,14 +598,14 @@ export function TaskDetailsPanel({
                         {/* Depends On - Read Only */}
                         {dependentTasks.length > 0 && (
                             <div className="flex items-start gap-4">
-                                <span className="text-sm text-gray-500 w-24 pt-0.5 flex-shrink-0">{t('tasks.create.dependencies')}</span>
-                                <div className="w-64">
+                                <span className="text-sm text-gray-500 w-28 pt-0.5 flex-shrink-0">{t('tasks.create.dependencies')}</span>
+                                <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-1 flex-wrap">
                                         {dependentTasks.slice(0, 3).map(t => (
                                             <div
                                                 key={t.id}
                                                 onClick={() => onTaskClick?.(t.id)}
-                                                className={`flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded-full max-w-[220px] overflow-hidden transition-colors ${onTaskClick ? 'cursor-pointer hover:bg-gray-700' : ''}`}
+                                                className={`flex items-center gap-1.5 px-2 py-1 bg-gray-800 rounded-full max-w-full overflow-hidden transition-colors ${onTaskClick ? 'cursor-pointer hover:bg-gray-700' : ''}`}
                                             >
                                                 <div className="w-4 h-4 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
                                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
@@ -612,7 +613,7 @@ export function TaskDetailsPanel({
                                                         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                                                     </svg>
                                                 </div>
-                                                <div className="flex-1 min-w-0" style={{ maxWidth: '100%' }}>
+                                                <div className="flex-1 min-w-0">
                                                     {t.title.length > 20 ? (
                                                         <Marquee className="text-xs text-gray-300 font-medium" speed={20}>
                                                             <span className="mr-8">{t.title}</span>
@@ -625,7 +626,7 @@ export function TaskDetailsPanel({
                                         ))}
                                         {dependentTasks.length > 3 && (
                                             <div className="relative group">
-                                                <span className="inline-flex items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider px-2 py-1 bg-gray-800 rounded-full cursor-default mt-1 opacity-80 hover:opacity-100 transition-opacity">
+                                                <span className="inline-flex items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider px-2 py-1 bg-gray-800 rounded-full cursor-default mt-1 opacity-80 hover:opacity-100 transition-opacity whitespace-nowrap">
                                                     {t('tasks.details.dependencies_more', { count: dependentTasks.length - 3 })}
                                                 </span>
                                                 <div className="absolute left-0 top-full mt-1 w-64 bg-[#1a1a24] rounded-lg border border-gray-800 shadow-xl p-2 z-50 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity">

@@ -17,13 +17,15 @@ interface ChatWindowProps {
     currentUserId: string
     workspaceId: string
     workspaceSlug: string
+    onBack?: () => void
 }
 
 export function ChatWindow({
     recipientUserId,
     currentUserId,
     workspaceId,
-    workspaceSlug
+    workspaceSlug,
+    onBack
 }: ChatWindowProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const [isSending, setIsSending] = useState(false)
@@ -247,7 +249,7 @@ export function ChatWindow({
     // EARLY UI RETURN (After all hooks)
     if (!recipientUserId) {
         return (
-            <div className="flex-1 flex items-center justify-center bg-[var(--app-bg-card)] text-[var(--app-text-secondary)]">
+            <div className="flex-1 items-center justify-center bg-[var(--app-bg-card)] text-[var(--app-text-secondary)] hidden md:flex">
                 {t('messages.selectMember')}
             </div>
         )
@@ -452,8 +454,13 @@ export function ChatWindow({
     return (
         <div className="flex-1 flex flex-col bg-[var(--app-bg-deepest)]">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-card)] relative z-20">
-                <div className="flex items-center gap-4">
+            <div className="px-4 md:px-6 py-4 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-card)] relative z-20">
+                <div className="flex items-center gap-2 md:gap-4">
+                    {onBack && (
+                        <button onClick={onBack} className="md:hidden p-2 -ml-2 mr-1 rounded-lg text-[var(--app-text-muted)] hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)] transition-colors">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                    )}
                     {showSearch ? (
                         <div className="flex items-center bg-[var(--app-bg-input)] rounded-lg px-3 py-2 border border-[var(--app-border)] w-full md:w-64 animate-in fade-in slide-in-from-left duration-200">
                             <Search className="w-4 h-4 text-gray-500 mr-2" />

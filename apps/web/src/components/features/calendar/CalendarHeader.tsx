@@ -221,7 +221,7 @@ export function CalendarHeader({
             </div>
 
             {/* Prawa strona: Przyciski Funkcyjne i Nawigacja */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center flex-wrap gap-2 sm:gap-3">
                 {/* View Mode Selector */}
                 <div className="flex items-center bg-[var(--app-bg-input)] p-1 rounded-full mr-2 border border-[var(--app-border)]">
                     <button

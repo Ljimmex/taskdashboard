@@ -103,7 +103,7 @@ export function EditTeamPanel({ isOpen, onClose, team, onSave }: EditTeamPanelPr
             <div
                 ref={panelRef}
                 onKeyDown={handleKeyDown}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-deepest)] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-[var(--app-border)]">
@@ -130,7 +130,7 @@ export function EditTeamPanel({ isOpen, onClose, team, onSave }: EditTeamPanelPr
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder={t('teams.edit_panel.team_name_placeholder')}
-                            className="w-full text-lg font-semibold text-[var(--app-text-primary)] bg-[var(--app-bg-sidebar)] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-transparent focus:border-amber-500/50 transition-colors"
+                            className="w-full text-lg font-semibold text-[var(--app-text-primary)] bg-[var(--app-bg-sidebar)] placeholder-gray-500 outline-none px-4 py-3 rounded-none sm:rounded-xl border border-transparent focus:border-amber-500/50 transition-colors"
                         />
                     </div>
 
@@ -142,7 +142,7 @@ export function EditTeamPanel({ isOpen, onClose, team, onSave }: EditTeamPanelPr
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder={t('teams.edit_panel.description_placeholder')}
                             rows={3}
-                            className="w-full text-sm text-[var(--app-text-secondary)] bg-[var(--app-bg-sidebar)] rounded-xl p-4 placeholder-gray-500 outline-none resize-none border border-transparent focus:border-amber-500/50 transition-colors"
+                            className="w-full text-sm text-[var(--app-text-secondary)] bg-[var(--app-bg-sidebar)] rounded-none sm:rounded-xl p-4 placeholder-gray-500 outline-none resize-none border border-transparent focus:border-amber-500/50 transition-colors"
                         />
                     </div>
 

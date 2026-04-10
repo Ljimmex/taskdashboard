@@ -393,21 +393,22 @@ export function EditTaskPanel({
             {/* Backdrop */}
             <div
                 className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                onClick={onClose}
             />
 
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full bg-[#12121a] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-all duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} ${isMaximized ? 'max-w-5xl' : 'max-w-lg'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[#12121a] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-all duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'} ${isMaximized ? 'max-w-5xl' : 'max-w-lg'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-gray-800 rounded-t-2xl">
                     {/* Top row with actions synced with Details Panel style */}
-                    <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between gap-4 mb-8">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
                             <button
                                 onClick={onClose}
-                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex-shrink-0"
                                 title={t('projects.details.close')}
                             >
                                 <ChevronsRight size={18} />
@@ -418,21 +419,21 @@ export function EditTaskPanel({
                                     if (!isBlocked) setIsCompleted(!isCompleted)
                                 }}
                                 disabled={isBlocked}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${isCompleted
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all min-w-0 max-w-[180px] ${isCompleted
                                     ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
                                     : 'text-gray-400 hover:text-white hover:bg-gray-800'
                                     } ${isBlocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 title={isBlocked ? blockedTitle : (isCompleted ? t('tasks.details.mark_incomplete', { defaultValue: 'Oznacz jako niedokończone' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' }))}
                             >
-                                <CheckCircle2 size={16} className={isCompleted ? 'fill-emerald-500/20' : ''} />
-                                <span>{isCompleted ? t('tasks.status.done', { defaultValue: 'Gotowe' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' })}</span>
+                                <CheckCircle2 size={16} className={`flex-shrink-0 ${isCompleted ? 'fill-emerald-500/20' : ''}`} />
+                                <span className="truncate">{isCompleted ? t('tasks.status.done', { defaultValue: 'Gotowe' }) : t('tasks.details.mark_complete', { defaultValue: 'Oznacz jako gotowe' })}</span>
                             </button>
-                            <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-500 text-black text-[10px] font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                            <span className="flex-shrink-0 px-1.5 py-0.5 rounded bg-amber-500 text-black text-[10px] font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(245,158,11,0.2)]">
                                 {t('tasks.edit.edit_mode')}
                             </span>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                             <button
                                 onClick={() => setIsMaximized(!isMaximized)}
                                 className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
@@ -480,7 +481,7 @@ export function EditTaskPanel({
                                 </button>
 
                                 {showMoreMenu && (
-                                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a24] rounded-xl shadow-2xl py-1.5 z-[100] border border-gray-800 animate-in fade-in zoom-in-95 duration-100">
+                                    <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a1a24] rounded-none sm:rounded-xl shadow-2xl py-1.5 z-[100] border border-gray-800 animate-in fade-in zoom-in-95 duration-100">
                                         <button
                                             onClick={() => {
                                                 setShowMoreMenu(false)
@@ -517,7 +518,7 @@ export function EditTaskPanel({
                                 onBlur={() => setIsEditingTitle(false)}
                                 onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
                                 autoFocus
-                                className="text-2xl font-bold text-white w-full bg-gray-800/50 border border-amber-500/50 rounded-xl px-4 py-2 outline-none shadow-[0_0_20px_rgba(245,158,11,0.05)]"
+                                className="text-2xl font-bold text-white w-full bg-gray-800/50 border border-amber-500/50 rounded-none sm:rounded-xl px-4 py-2 outline-none shadow-[0_0_20px_rgba(245,158,11,0.05)]"
                             />
                         ) : (
                             <h2
@@ -535,15 +536,15 @@ export function EditTaskPanel({
                         {/* Project */}
                         {task.projectName && (
                             <div className="flex items-center gap-4 group">
-                                <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.edit.meta.project')}</span>
-                                <span className="text-sm text-gray-300 group-hover:text-white transition-colors">{task.projectName}</span>
+                                <span className="text-sm text-gray-500 w-28 flex-shrink-0">{t('tasks.edit.meta.project')}</span>
+                                <span className="text-sm text-gray-300 group-hover:text-white transition-colors truncate">{task.projectName}</span>
                             </div>
                         )}
 
                         {/* Assignees - Editable */}
                         <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-24 flex-shrink-0 pt-1.5">{t('tasks.edit.meta.assignee')}</span>
-                            <div className="flex-1">
+                            <span className="text-sm text-gray-500 w-28 flex-shrink-0 pt-1.5">{t('tasks.edit.meta.assignee')}</span>
+                            <div className="flex-1 min-w-0">
                                 <AssigneePicker
                                     selectedAssignees={selectedAssignees}
                                     availableAssignees={teamMembers}
@@ -557,36 +558,42 @@ export function EditTaskPanel({
 
                         {/* Status */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.edit.meta.status')}</span>
-                            <StatusSelector
-                                status={status}
-                                stages={stages}
-                                onChange={setStatus}
-                                disabled={isBlocked}
-                                title={blockedTitle}
-                            />
+                            <span className="text-sm text-gray-500 w-28 flex-shrink-0">{t('tasks.edit.meta.status')}</span>
+                            <div className="flex-1 min-w-0">
+                                <StatusSelector
+                                    status={status}
+                                    stages={stages}
+                                    onChange={setStatus}
+                                    disabled={isBlocked}
+                                    title={blockedTitle}
+                                />
+                            </div>
                         </div>
 
                         {/* Due Date - Editable */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.edit.meta.end_date')}</span>
-                            <DueDatePicker
-                                value={dueDate}
-                                onChange={setDueDate}
-                                placeholder={t('tasks.edit.select_date')}
-                            />
+                            <span className="text-sm text-gray-500 w-28 flex-shrink-0">{t('tasks.edit.meta.end_date')}</span>
+                            <div className="flex-1 min-w-0">
+                                <DueDatePicker
+                                    value={dueDate}
+                                    onChange={setDueDate}
+                                    placeholder={t('tasks.edit.select_date')}
+                                />
+                            </div>
                         </div>
 
                         {/* Priority - Editable */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.edit.meta.priority')}</span>
-                            <PrioritySelector value={priority} onChange={setPriority} size="sm" />
+                            <span className="text-sm text-gray-500 w-28 flex-shrink-0">{t('tasks.edit.meta.priority')}</span>
+                            <div className="flex-1 min-w-0">
+                                <PrioritySelector value={priority} onChange={setPriority} size="sm" />
+                            </div>
                         </div>
 
                         {/* Labels - Editable */}
                         <div className="flex items-start gap-4">
-                            <span className="text-sm text-gray-500 w-24 flex-shrink-0 pt-1.5">{t('tasks.edit.meta.labels')}</span>
-                            <div className="flex-1">
+                            <span className="text-sm text-gray-500 w-28 flex-shrink-0 pt-1.5">{t('tasks.edit.meta.labels')}</span>
+                            <div className="flex-1 min-w-0">
                                 <LabelPicker
                                     selectedLabels={selectedLabels}
                                     availableLabels={availableLabels}
@@ -598,12 +605,14 @@ export function EditTaskPanel({
 
                         {/* Dependencies */}
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-gray-500 w-24 flex-shrink-0">{t('tasks.create.dependencies')}</span>
-                            <DependsOnSelector
-                                selectedIds={selectedDependsOn}
-                                availableTasks={availableTasks}
-                                onChange={setSelectedDependsOn}
-                            />
+                            <span className="text-sm text-gray-500 w-28 flex-shrink-0">{t('tasks.create.dependencies')}</span>
+                            <div className="flex-1 min-w-0">
+                                <DependsOnSelector
+                                    selectedIds={selectedDependsOn}
+                                    availableTasks={availableTasks}
+                                    onChange={setSelectedDependsOn}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -785,13 +794,13 @@ export function EditTaskPanel({
                 <div className="flex-none p-6 border-t border-gray-800 flex justify-end gap-3 bg-[#12121a] rounded-b-2xl">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors"
+                        className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-none sm:rounded-xl transition-colors"
                     >
                         {t('common.cancel')}
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-6 py-2 text-sm font-bold text-black bg-amber-500 hover:bg-amber-400 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_25px_rgba(245,158,11,0.3)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+                        className="px-6 py-2 text-sm font-bold text-black bg-amber-500 hover:bg-amber-400 rounded-none sm:rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.2)] hover:shadow-[0_0_25px_rgba(245,158,11,0.3)] transition-all transform hover:-translate-y-0.5 active:translate-y-0"
                     >
                         {t('common.save')}
                     </button>

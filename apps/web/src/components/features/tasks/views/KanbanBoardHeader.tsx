@@ -415,9 +415,9 @@ export function KanbanBoardHeader({
     const activeFilters = currentFilters || defaultFilters
 
     return (
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end w-full">
             {/* Search, Filters, Sort, New Task */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center flex-wrap justify-end gap-2 md:gap-3 w-full">
                 {/* Search - using existing SearchIcon */}
                 <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -430,7 +430,7 @@ export function KanbanBoardHeader({
                         onChange={(e) => onSearchChange(e.target.value)}
                         onFocus={() => setSearchFocused(true)}
                         onBlur={() => setSearchFocused(false)}
-                        className="w-48 pl-10 pr-4 py-2 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
+                        className="w-[140px] md:w-48 pl-10 pr-2 md:pr-4 py-2 rounded-xl bg-[#1a1a24] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
                     />
                 </div>
 

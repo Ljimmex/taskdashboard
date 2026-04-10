@@ -38,24 +38,29 @@ export function MessagesPage() {
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-[calc(100vh-64px)] -m-4 -mb-24 lg:m-0 lg:h-[calc(100vh-112px)] lg:rounded-2xl lg:border lg:border-[var(--app-border)] relative overflow-hidden shadow-2xl">
             {/* Main Content - Flex Container */}
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden relative">
                 {/* Team Members List Sidebar */}
-                <ConversationList
-                    workspaceId={workspaceId}
-                    workspaceSlug={workspaceSlug}
-                    selectedConversationId={selectedUserId}
-                    onSelectConversation={setSelectedUserId}
-                />
+                <div className={`absolute md:static inset-0 z-20 bg-[var(--app-bg-sidebar)] transition-transform duration-300 md:translate-x-0 ${selectedUserId ? '-translate-x-full' : 'translate-x-0'} md:w-80 w-full flex-shrink-0 h-full border-r border-[var(--app-border)]`}>
+                    <ConversationList
+                        workspaceId={workspaceId}
+                        workspaceSlug={workspaceSlug}
+                        selectedConversationId={selectedUserId}
+                        onSelectConversation={setSelectedUserId}
+                    />
+                </div>
 
                 {/* Main Chat Area */}
-                <ChatWindow
-                    recipientUserId={selectedUserId}
-                    currentUserId={session.user.id}
-                    workspaceId={workspaceId}
-                    workspaceSlug={workspaceSlug}
-                />
+                <div className={`flex-1 flex flex-col min-w-0 h-full bg-[var(--app-bg-deepest)] ${selectedUserId ? 'block' : 'hidden md:flex'}`}>
+                    <ChatWindow
+                        recipientUserId={selectedUserId}
+                        currentUserId={session.user.id}
+                        workspaceId={workspaceId}
+                        workspaceSlug={workspaceSlug}
+                        onBack={() => setSelectedUserId(undefined)}
+                    />
+                </div>
             </div>
 
             {/* Channel Settings Panel */}

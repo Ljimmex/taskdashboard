@@ -153,7 +153,7 @@ const AssigneeAvatars = ({ assignees }: { assignees: { id: string; name: string;
                 )}
             </div>
             {assignees.length === 1 && (
-                <span className="text-xs text-gray-400">{assignees[0].name}</span>
+                <span className="text-xs text-gray-400">{assignees[0].name.split(' ')[0]}</span>
             )}
         </div>
     )
@@ -253,7 +253,7 @@ const RowMenu = ({
                         <button
                             onClick={(e) => { e.stopPropagation(); onToggleCompletion(); setOpen(false) }}
                             disabled={isBlocked}
-                            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors group/item
+                            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors group/item whitespace-nowrap
                                 ${isBlocked ? 'text-gray-600 cursor-not-allowed' : 'text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88]'}`
                             }
                         >

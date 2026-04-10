@@ -15,7 +15,7 @@ interface SidebarProps {
     onToggle?: () => void
 }
 
-export function Sidebar({ isOpen = true }: SidebarProps) {
+export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
     const location = useLocation()
     const { t } = useTranslation()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
@@ -89,9 +89,9 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
     ]
 
     return (
-        <aside className={`fixed left-0 top-0 h-screen w-56 bg-[var(--app-bg-sidebar)] flex flex-col z-40 transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} animate-slide-in`}>
-            {/* Logo */}
-            <div className="p-5 flex items-center h-16">
+        <aside className={`fixed left-0 top-0 h-screen w-56 bg-[var(--app-bg-sidebar)] flex flex-col z-[100] transition-all duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 animate-slide-in`}>
+            {/* Logo and Close Button */}
+            <div className="p-5 flex items-center justify-between h-16">
                 <a href="/" className="flex items-center gap-2">
                     <img
                         src={isDarkMode ? "/Zadano/Zadano_Logo_Full_Dark.svg" : "/Zadano/Zadano_Logo_Full_Light.svg"}
@@ -99,6 +99,11 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                         className="h-7 transition-opacity duration-300"
                     />
                 </a>
+                <button onClick={onToggle} className="lg:hidden p-2 -mr-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
 
             {/* Navigation */}
@@ -133,7 +138,12 @@ export function Sidebar({ isOpen = true }: SidebarProps) {
                                 </span>
                             </div>
                             {item.count && (
-                                <span className={`text-xs ${showGold ? 'text-[var(--app-accent)]/80' : 'text-[var(--app-text-muted)]'}`}>
+                                <span className={cn(
+                                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center transition-all duration-300",
+                                    showGold
+                                        ? "bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-sm"
+                                        : "bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)]"
+                                )}>
                                     {item.count}
                                 </span>
                             )}

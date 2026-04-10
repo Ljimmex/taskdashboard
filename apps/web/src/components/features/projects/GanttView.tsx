@@ -152,13 +152,13 @@ export function GanttView({
                 >
                     <div className="min-w-max flex">
                         {/* Left Side Header (Sticky Left) */}
-                        <div className="w-[720px] flex-shrink-0 sticky left-0 z-30 bg-[var(--app-bg-elevated)] flex items-center h-12 text-xs font-semibold text-[var(--app-text-secondary)] border-r border-[var(--app-border)] shadow-[4px_0_24px_rgba(0,0,0,0.1)]">
-                            <div className="w-[240px] px-4 border-r border-[var(--app-divider)] h-full flex items-center overflow-hidden"><Marquee>{t('projects.gantt.task_name')}</Marquee></div>
-                            <div className="w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.start_date')}</Marquee></div>
-                            <div className="w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.end_date')}</Marquee></div>
-                            <div className="w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.status')}</Marquee></div>
-                            <div className="w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.subtasks')}</Marquee></div>
-                            <div className="w-[80px] px-2 text-center h-full flex items-center justify-center overflow-hidden"><Marquee>{t('projects.gantt.assignee')}</Marquee></div>
+                        <div className="w-[140px] md:w-[320px] lg:w-[720px] flex-shrink-0 sticky left-0 z-30 bg-[var(--app-bg-elevated)] flex items-center h-12 text-xs font-semibold text-[var(--app-text-secondary)] border-r border-[var(--app-border)] shadow-[4px_0_24px_rgba(0,0,0,0.1)]">
+                            <div className="w-[140px] md:w-[240px] px-2 md:px-4 border-r border-[var(--app-divider)] h-full flex items-center overflow-hidden focus-visible:outline-none"><Marquee>{t('projects.gantt.task_name')}</Marquee></div>
+                            <div className="hidden lg:flex w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full items-center justify-center overflow-hidden focus-visible:outline-none"><Marquee>{t('projects.gantt.start_date')}</Marquee></div>
+                            <div className="hidden lg:flex w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full items-center justify-center overflow-hidden focus-visible:outline-none"><Marquee>{t('projects.gantt.end_date')}</Marquee></div>
+                            <div className="hidden lg:flex w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full items-center justify-center overflow-hidden focus-visible:outline-none"><Marquee>{t('projects.gantt.status')}</Marquee></div>
+                            <div className="hidden lg:flex w-[100px] px-2 text-center border-r border-[var(--app-divider)] h-full items-center justify-center overflow-hidden focus-visible:outline-none"><Marquee>{t('projects.gantt.subtasks')}</Marquee></div>
+                            <div className="hidden md:flex w-[80px] px-2 text-center h-full items-center justify-center overflow-hidden focus-visible:outline-none"><Marquee>{t('projects.gantt.assignee')}</Marquee></div>
                         </div>
 
                         {/* Right Side Header (Calendar Days) */}
@@ -195,22 +195,22 @@ export function GanttView({
                                 <div key={task.id} className="flex group transition-colors h-12 relative border-b border-[var(--app-divider)] hover:bg-[var(--app-bg-sidebar)]/50">
                                     {/* Left Side Details (Sticky Left) */}
                                     <div
-                                        className="w-[720px] flex-shrink-0 sticky left-0 z-20 flex items-center bg-[var(--app-bg-page)] group-hover:bg-[var(--app-bg-sidebar)] transition-colors border-r border-[var(--app-border)] shadow-[4px_0_24px_rgba(0,0,0,0.1)]"
+                                        className="w-[140px] md:w-[320px] lg:w-[720px] flex-shrink-0 sticky left-0 z-20 flex items-center bg-[var(--app-bg-page)] group-hover:bg-[var(--app-bg-sidebar)] transition-colors border-r border-[var(--app-border)] shadow-[4px_0_24px_rgba(0,0,0,0.1)]"
                                         onClick={() => onTaskClick?.(task)}
                                     >
-                                        <div className="w-[240px] px-4 text-sm font-medium text-[var(--app-text-primary)] cursor-pointer hover:text-[var(--app-accent)] transition-colors border-r border-[var(--app-divider)] h-full flex items-center overflow-hidden">
+                                        <div className="w-[140px] md:w-[240px] px-2 md:px-4 text-sm font-medium text-[var(--app-text-primary)] cursor-pointer hover:text-[var(--app-accent)] transition-colors border-r border-[var(--app-divider)] h-full flex items-center overflow-hidden focus-visible:outline-none">
                                             <Marquee>{task.title}</Marquee>
                                         </div>
-                                        <div className="w-[100px] px-2 text-xs text-[var(--app-text-muted)] text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden">
+                                        <div className="hidden lg:flex w-[100px] px-2 text-xs text-[var(--app-text-muted)] text-center border-r border-[var(--app-divider)] h-full items-center justify-center overflow-hidden focus-visible:outline-none">
                                             <Marquee>{task.startDate ? formatShortDate(task.startDate) : '-'}</Marquee>
                                         </div>
-                                        <div className="w-[100px] px-2 text-xs text-[var(--app-text-muted)] text-center border-r border-[var(--app-divider)] h-full flex items-center justify-center overflow-hidden">
+                                        <div className="hidden lg:flex w-[100px] px-2 text-xs text-[var(--app-text-muted)] text-center border-r border-[var(--app-divider)] h-full items-center justify-center overflow-hidden focus-visible:outline-none">
                                             <Marquee>{task.endDate ? formatShortDate(task.endDate) : '-'}</Marquee>
                                         </div>
-                                        <div className="w-[100px] px-2 flex justify-center border-r border-[var(--app-divider)] h-full items-center overflow-hidden">
+                                        <div className="hidden lg:flex w-[100px] px-2 justify-center border-r border-[var(--app-divider)] h-full items-center overflow-hidden focus-visible:outline-none">
                                             <StatusBadge status={task.status} stages={stages} size="sm" />
                                         </div>
-                                        <div className="w-[100px] px-2 text-xs text-[var(--app-text-muted)] flex items-center justify-center gap-1 border-r border-[var(--app-divider)] h-full overflow-hidden">
+                                        <div className="hidden lg:flex w-[100px] px-2 text-xs text-[var(--app-text-muted)] items-center justify-center gap-1 border-r border-[var(--app-divider)] h-full overflow-hidden focus-visible:outline-none">
                                             {task.subtasksCount ? (
                                                 <span className="flex items-center gap-1 bg-[var(--app-divider)] px-1.5 py-0.5 rounded text-[10px]">
                                                     <span className="text-[var(--app-text-muted)]">📄</span>
@@ -218,7 +218,7 @@ export function GanttView({
                                                 </span>
                                             ) : '-'}
                                         </div>
-                                        <div className="w-[80px] px-2 flex justify-center h-full items-center">
+                                        <div className="hidden md:flex w-[80px] px-2 justify-center h-full items-center">
                                             {task.assigneeDetails && task.assigneeDetails.length > 0 && (
                                                 <div className="flex -space-x-1.5 items-center">
                                                     {task.assigneeDetails.slice(0, 2).map((assignee, idx) => (

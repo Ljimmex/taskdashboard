@@ -31,7 +31,7 @@ export function UserSettingsPanel({ isOpen, onClose }: UserSettingsPanelProps) {
             />
 
             {/* Panel - Floating Card Style */}
-            <div className={`fixed top-4 right-4 bottom-4 w-full max-w-xl bg-[var(--app-bg-card)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
+            <div className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-card)] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'
                 }`}>
                 {/* Header */}
                 <div className="p-6 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-sidebar)] rounded-t-2xl transition-colors">

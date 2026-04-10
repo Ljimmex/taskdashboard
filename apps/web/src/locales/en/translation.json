@@ -172,6 +172,7 @@
     },
     "dashboard": {
         "title": "Dashboard",
+        "board": "Board",
         "team": "Team",
         "projects": "Projects",
         "messages": "Messages",

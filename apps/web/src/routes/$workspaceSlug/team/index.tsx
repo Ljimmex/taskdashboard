@@ -430,7 +430,7 @@ export default function TeamPage() {
     }
 
     return (
-        <div className="p-8 max-w-[1600px] mx-auto min-h-screen">
+        <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-screen">
             <TeamHeader
                 teamCount={filteredTeams.length}
                 memberCount={filteredTeams.reduce((acc, t) => acc + t.members.length, 0)}

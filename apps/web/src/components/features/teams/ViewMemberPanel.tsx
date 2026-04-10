@@ -164,7 +164,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
             {/* Main View Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-deepest)] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header: Compact & Productivity Focused */}
                 <div className="flex-none p-6 border-b border-[var(--app-border)] flex items-start justify-between">
@@ -276,7 +276,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                         {/* Teams */}
                         <div>
                             <Label className="uppercase text-xs font-semibold text-[var(--app-text-muted)] tracking-wider mb-3 block">{t('teams.view_panel.teams')}</Label>
-                            <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-sidebar)]">
+                            <div className="min-h-[48px] px-4 py-2.5 rounded-none sm:rounded-xl bg-[var(--app-bg-sidebar)]">
                                 <div className="flex flex-wrap gap-2">
                                     {displayTeams.length > 0 ? displayTeams.map((team, i) => (
                                         <div key={i} className="flex items-center gap-1 bg-[var(--app-bg-elevated)] pl-2 pr-2.5 py-1 rounded-lg text-xs font-medium text-[var(--app-text-primary)] border border-[var(--app-border)]/50">
@@ -293,7 +293,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                         {/* Projects */}
                         <div>
                             <Label className="uppercase text-xs font-semibold text-[var(--app-text-muted)] tracking-wider mb-3 block">{t('teams.view_panel.active_projects')}</Label>
-                            <div className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--app-bg-sidebar)]">
+                            <div className="min-h-[48px] px-4 py-2.5 rounded-none sm:rounded-xl bg-[var(--app-bg-sidebar)]">
                                 {(member.projects && member.projects.length > 0) ? (
                                     <div className="flex flex-wrap gap-2">
                                         {member.projects.map((proj, i) => (
@@ -362,7 +362,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
 
             {/* Sub-panel: Assign Task */}
             <div
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-[60] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] ${isAssignTaskOpen && isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-deepest)] rounded-none sm:rounded-2xl z-[60] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] ${isAssignTaskOpen && isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-[var(--app-border)] flex items-center gap-3">
@@ -390,7 +390,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                         assignableTasks.map((task: any) => {
                             const proj = projectsData?.data?.find((p: any) => p.id === task.projectId)
                             return (
-                                <div key={task.id} className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between gap-3 group cursor-pointer" onClick={() => !submittingTaskId && !assignTaskMutation.isPending && assignTaskMutation.mutate(task.id)}>
+                                <div key={task.id} className="p-4 rounded-none sm:rounded-2xl bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-between gap-3 group cursor-pointer" onClick={() => !submittingTaskId && !assignTaskMutation.isPending && assignTaskMutation.mutate(task.id)}>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-sm font-medium text-[var(--app-text-primary)] truncate">{task.title}</p>
                                         <p className="text-xs text-[var(--app-text-secondary)]/80 truncate mt-1">{proj?.name || 'Unknown Project'}</p>
@@ -401,7 +401,7 @@ export function ViewMemberPanel({ isOpen, onClose, member, teamName }: ViewMembe
                                             e.stopPropagation()
                                             assignTaskMutation.mutate(task.id)
                                         }}
-                                        className="h-8 px-4 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-black transition-all opacity-0 group-hover:opacity-100 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-lg shadow-amber-500/20"
+                                        className="h-8 px-4 text-xs font-semibold rounded-none sm:rounded-xl bg-amber-500 hover:bg-amber-600 text-black transition-all opacity-0 group-hover:opacity-100 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-lg shadow-amber-500/20"
                                     >
                                         {submittingTaskId === task.id ? 'Assigning...' : 'Assign'}
                                     </button>

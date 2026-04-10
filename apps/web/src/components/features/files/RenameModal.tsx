@@ -60,16 +60,16 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
     if (!isOpen || !itemId) return null
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
             {/* Backdrop */}
             <div className="absolute inset-0" onClick={handleClose} />
 
             {/* Modal */}
-            <div className="relative z-10 w-full max-w-md bg-[var(--app-bg-card)] border border-white/5 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="relative z-10 w-full max-w-md bg-[var(--app-bg-card)] border border-white/5 rounded-t-3xl rounded-b-none sm:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[var(--app-accent)]/10 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-t-3xl rounded-b-none sm:rounded-xl bg-[var(--app-accent)]/10 flex items-center justify-center">
                             {itemType === 'folder' ? (
                                 <Folder className="w-5 h-5 text-[var(--app-accent)]" />
                             ) : (
@@ -103,7 +103,7 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
                             onChange={(e) => setName(e.target.value)}
                             placeholder={t('files.modals.rename.placeholder')}
                             autoFocus
-                            className="w-full px-4 py-3 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--app-accent)]/50 focus:border-[var(--app-accent)] transition-all"
+                            className="w-full px-4 py-3 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-t-3xl rounded-b-none sm:rounded-xl text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--app-accent)]/50 focus:border-[var(--app-accent)] transition-all"
                         />
                     </div>
 
@@ -112,14 +112,14 @@ export function RenameModal({ isOpen, onClose, itemId, itemName, itemType, onSuc
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 px-4 py-2.5 text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl font-medium hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] transition-colors"
+                            className="flex-1 px-4 py-2.5 text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-t-3xl rounded-b-none sm:rounded-xl font-medium hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] transition-colors"
                         >
                             {t('files.modals.rename.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={!name.trim() || name === itemName || renameFile.isPending || renameFolder.isPending}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--app-accent)] text-white rounded-xl font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[var(--app-accent)] text-white rounded-t-3xl rounded-b-none sm:rounded-xl font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                         >
                             {(renameFile.isPending || renameFolder.isPending) ? (
                                 <>

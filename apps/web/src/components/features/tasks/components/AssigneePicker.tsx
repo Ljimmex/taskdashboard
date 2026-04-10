@@ -139,14 +139,14 @@ export function AssigneePicker({
                 {selectedAssignees.length === 0 ? (
                     <span className="text-sm text-gray-400 font-medium">{placeholder === 'Przypisz osobę...' ? t('tasks.assignee.placeholder') : placeholder}</span>
                 ) : (
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 overflow-hidden">
                         {visibleAssignees.map(assignee => (
                             <div
                                 key={assignee.id}
                                 className="flex items-center gap-1 group"
                             >
                                 <Avatar name={assignee.name} avatar={assignee.avatar} image={assignee.image} size="sm" />
-                                <span className="text-xs text-gray-300">{assignee.name.split(' ')[0]}</span>
+                                <span className="text-xs text-gray-300 truncate max-w-[100px] whitespace-nowrap">{assignee.name.split(' ')[0]}</span>
                                 <button
                                     onClick={(e) => handleRemoveAssignee(e, assignee.id)}
                                     className="w-4 h-4 rounded-full flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-500/20 transition-colors"
@@ -228,7 +228,7 @@ export function AssigneePicker({
                                     >
                                         <Avatar name={assignee.name} avatar={assignee.avatar} image={assignee.image} size="md" />
                                         <div className="flex-1 text-left">
-                                            <div className="text-sm text-white font-medium">{assignee.name}</div>
+                                            <div className="text-sm text-white font-medium">{assignee.name.split(' ')[0]}</div>
                                             {assignee.role && (
                                                 <div className="text-xs text-gray-500">{assignee.role}</div>
                                             )}

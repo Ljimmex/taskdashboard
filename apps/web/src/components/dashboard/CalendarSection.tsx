@@ -233,7 +233,7 @@ export function CalendarSection() {
                 </div>
 
                 {/* Prawa strona: Przyciski Funkcyjne i Nawigacja */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center flex-wrap gap-2 sm:gap-3">
                     {/* Przycisk Filter */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

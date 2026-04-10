@@ -76,7 +76,7 @@ export function DayTaskListPanel({
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[#16161f] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-gray-800 ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[#16161f] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-gray-800 ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'
                     }`}
             >
                 {/* Header */}

@@ -140,7 +140,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
             {/* Panel */}
             <div
                 ref={panelRef}
-                className={`fixed top-4 right-4 bottom-4 w-full max-w-md bg-[var(--app-bg-deepest)] rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'}`}
+                className={`fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-deepest)] rounded-none sm:rounded-2xl z-50 flex flex-col shadow-2xl transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full sm:translate-x-[calc(100%+2rem)]'}`}
             >
                 {/* Header */}
                 <div className="flex-none p-6 border-b border-[var(--app-border)]">
@@ -190,7 +190,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                 <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">{t('teams.invite_panel.search_label')}</label>
                                 <div className="relative">
                                     {selectedMember ? (
-                                        <div className="flex items-center justify-between bg-[var(--app-bg-sidebar)] border border-amber-500/50 rounded-xl px-4 py-3">
+                                        <div className="flex items-center justify-between bg-[var(--app-bg-sidebar)] border border-amber-500/50 rounded-none sm:rounded-xl px-4 py-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-[var(--app-bg-input)] flex items-center justify-center overflow-hidden">
                                                     {selectedMember.image ? (
@@ -226,7 +226,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                                     }}
                                                     onFocus={() => setIsSearchOpen(true)}
                                                     placeholder={t('teams.invite_panel.search_placeholder')}
-                                                    className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-sidebar)] placeholder-gray-500 outline-none px-4 py-3 rounded-xl border border-[var(--app-border)] focus:border-amber-500/50 transition-colors"
+                                                    className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-sidebar)] placeholder-gray-500 outline-none px-4 py-3 rounded-none sm:rounded-xl border border-[var(--app-border)] focus:border-amber-500/50 transition-colors"
                                                 />
                                                 {isSearching && (
                                                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -239,7 +239,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                             </div>
 
                                             {isSearchOpen && searchQuery.length >= 2 && (
-                                                <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl shadow-2xl overflow-hidden z-30 max-h-60 overflow-y-auto py-2">
+                                                <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-none sm:rounded-xl shadow-2xl overflow-hidden z-30 max-h-60 overflow-y-auto py-2">
                                                     {workspaceMembers && workspaceMembers.length > 0 ? (
                                                         workspaceMembers.map((m) => (
                                                             <button
@@ -280,7 +280,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                 <div className="relative">
                                     <button
                                         onClick={() => setActiveDropdown(!activeDropdown)}
-                                        className="w-full flex items-center justify-between bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-sm text-[var(--app-text-primary)] hover:border-[var(--app-border)] transition-colors"
+                                        className="w-full flex items-center justify-between bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-none sm:rounded-xl px-4 py-3 text-sm text-[var(--app-text-primary)] hover:border-[var(--app-border)] transition-colors"
                                     >
                                         <span className="capitalize">{role.replace('_', ' ')}</span>
                                         <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5" className={`transition-transform ${activeDropdown ? 'rotate-180' : ''}`}>
@@ -291,7 +291,7 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                     {activeDropdown && (
                                         <>
                                             <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(false)} />
-                                            <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl shadow-xl overflow-hidden z-20 py-1">
+                                            <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-none sm:rounded-xl shadow-xl overflow-hidden z-20 py-1">
                                                 {['team_lead', 'senior', 'mid', 'junior', 'intern', 'member'].map((r) => (
                                                     <button
                                                         key={r}
@@ -319,11 +319,11 @@ export function InviteMemberPanel({ isOpen, onClose, teamName, workspaceSlug, wo
                                         type="text"
                                         readOnly
                                         value={inviteLink}
-                                        className="flex-1 text-sm text-[var(--app-text-secondary)] bg-[var(--app-bg-sidebar)] outline-none px-4 py-3 rounded-xl border border-[var(--app-border)] cursor-text select-all"
+                                        className="flex-1 text-sm text-[var(--app-text-secondary)] bg-[var(--app-bg-sidebar)] outline-none px-4 py-3 rounded-none sm:rounded-xl border border-[var(--app-border)] cursor-text select-all"
                                     />
                                     <button
                                         onClick={handleCopyLink}
-                                        className="px-4 py-2 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-xl hover:bg-[var(--app-bg-input)] transition-colors flex items-center justify-center min-w-[3rem]"
+                                        className="px-4 py-2 bg-[var(--app-bg-sidebar)] border border-[var(--app-border)] rounded-none sm:rounded-xl hover:bg-[var(--app-bg-input)] transition-colors flex items-center justify-center min-w-[3rem]"
                                         title="Copy Link"
                                     >
                                         {isCopied ? (
