@@ -105,8 +105,9 @@ export function FileList({
         return <div className="flex items-center justify-center py-10 text-gray-500">{t('files.messages.getting_ready')}</div>
     }
 
-    const formatSize = (bytes: number | null) => {
-        if (!bytes) return '-'
+    const formatSize = (bytes: number | null | undefined) => {
+        if (bytes == null) return '-'
+        if (bytes === 0) return '0 B'
         const units = ['B', 'KB', 'MB', 'GB']
         let size = bytes
         let unitIndex = 0
@@ -184,6 +185,10 @@ export function FileList({
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-40 bg-[var(--app-bg-card)] border-[var(--app-divider)] p-1">
+                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDownload(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                            <Download className="h-4 w-4 text-[var(--app-text-muted)]" />
+                                            <span>{t('files.actions.download')}</span>
+                                        </DropdownMenuItem>
                                         {canManageFolder && (
                                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
                                                 <Pencil className="h-4 w-4 text-[var(--app-accent)]" />

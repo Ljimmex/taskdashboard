@@ -108,9 +108,10 @@ interface StatusSelectorProps {
     disabled?: boolean
     title?: string
     className?: string
+    fullWidth?: boolean
 }
 
-export function StatusSelector({ value, onChange, stages, disabled, title, className }: StatusSelectorProps) {
+export function StatusSelector({ value, onChange, stages, disabled, title, className, fullWidth }: StatusSelectorProps) {
     const [isOpen, setIsOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
 
@@ -138,6 +139,7 @@ export function StatusSelector({ value, onChange, stages, disabled, title, class
                 title={title}
                 className={cn(
                     'flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1a1a24] hover:bg-gray-800 transition-all text-sm font-medium',
+                    fullWidth && 'w-full justify-between',
                     disabled && 'opacity-50 cursor-not-allowed'
                 )}
             >

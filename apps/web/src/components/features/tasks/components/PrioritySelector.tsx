@@ -24,6 +24,7 @@ interface PrioritySelectorProps {
     disabled?: boolean
     size?: 'sm' | 'md'
     className?: string
+    fullWidth?: boolean
 }
 
 // Icon mapping based on priority ID
@@ -48,6 +49,7 @@ export function PrioritySelector({
     disabled = false,
     size = 'md',
     className,
+    fullWidth,
 }: PrioritySelectorProps) {
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const [isOpen, setIsOpen] = useState(false)
@@ -95,13 +97,16 @@ export function PrioritySelector({
                 className={cn(
                     'flex items-center rounded-lg font-medium transition-all whitespace-nowrap flex-shrink-0 max-w-full',
                     sizeStyles,
+                    fullWidth && 'w-full justify-between',
                     'bg-gray-800/50 hover:bg-gray-800',
                     disabled && 'opacity-50 cursor-not-allowed'
                 )}
                 style={{ color: selected.color }}
             >
-                <SelectedIcon size={iconSize} />
-                <span className="truncate">{selected.name}</span>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                    <SelectedIcon size={iconSize} />
+                    <span className="truncate">{selected.name}</span>
+                </div>
                 <svg
                     width="12"
                     height="12"

@@ -74,18 +74,28 @@ app.get('/', zValidator('query', foldersQuerySchema), async (c) => {
         .where(and(...conditions))
         .orderBy(desc(folders.createdAt))
 
-    // Calculate folder sizes by summing file sizes
-    const { files } = await import('../../db/schema/files')
-    const foldersWithSizes = await Promise.all(results.map(async (folder) => {
-        const sizeResult = await db
-            .select({ totalSize: sql<number>`COALESCE(SUM(${files.size}), 0)` })
-            .from(files)
-            .where(eq(files.folderId, folder.id))
+    // Calculate folder sizes recursively by summing file sizes
+    const sizesQuery = await db.execute(sql`
+        WITH RECURSIVE folder_tree AS (
+            SELECT id, id as root_id FROM folders WHERE workspace_id = ${workspaceId}
+            UNION ALL
+            SELECT f.id, ft.root_id FROM folders f
+            INNER JOIN folder_tree ft ON ft.id = f.parent_id
+        )
+        SELECT ft.root_id, COALESCE(SUM(fi.size), 0) as total_size 
+        FROM folder_tree ft
+        LEFT JOIN files fi ON fi.folder_id = ft.id
+        GROUP BY ft.root_id
+    `)
 
-        return {
-            ...folder,
-            size: Number(sizeResult[0]?.totalSize || 0)
-        }
+    const sizeMap = new Map()
+    for (const row of sizesQuery) {
+        sizeMap.set(row.root_id, Number(row.total_size))
+    }
+
+    const foldersWithSizes = results.map(folder => ({
+        ...folder,
+        size: sizeMap.get(folder.id) || 0
     }))
 
     return c.json({ data: foldersWithSizes })

@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
 import { FileGridItem, FolderGridItem } from './FileGrid'
 import { FileList } from './FileList'
 import { FileInfoPanel } from './FileInfoPanel'
@@ -12,7 +14,6 @@ import { Loader2, FolderPlus } from 'lucide-react'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { FileRecord, Folder } from '@taskdashboard/types'
 import { useTranslation } from 'react-i18next'
-
 import { FolderBreadcrumb, BreadcrumbItem } from './FolderBreadcrumb'
 
 interface FileExplorerProps {
@@ -198,14 +199,72 @@ export function FileExplorer({
         }
     }
 
-    const handleDownload = async (id: string) => {
+    const downloadFolderAsZip = async (folder: Folder) => {
         try {
-            const json = await apiFetchJson<any>(`/api/files/${id}/download`)
-            const { downloadUrl } = json
-            window.open(downloadUrl, '_blank')
+            const zip = new JSZip()
+
+            const addFolderToZip = async (currentFolderId: string, currentZipFolder: JSZip) => {
+                const { id: workspaceId } = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+
+                // Get subfolders
+                const parentParam = currentFolderId ? `&parentId=${currentFolderId}` : '&parentId=root'
+                const foldersData = await apiFetchJson<any>(`/api/folders?workspaceId=${workspaceId}${parentParam}`)
+                const subFolders = foldersData.data || []
+
+                // Get files
+                const filesData = await apiFetchJson<any>(`/api/files?workspaceId=${workspaceId}&folderId=${currentFolderId}`)
+                const subFiles = filesData.data || []
+
+                // Fetch each file
+                for (const f of subFiles) {
+                    try {
+                        const json = await apiFetchJson<any>(`/api/files/${f.id}/download`)
+                        if (json.downloadUrl) {
+                            const res = await fetch(json.downloadUrl)
+                            const blob = await res.blob()
+                            currentZipFolder.file(f.name, blob)
+                        }
+                    } catch (e) {
+                        console.error('Failed to download file for zip', f.name, e)
+                    }
+                }
+
+                // Recursively add subfolders
+                for (const sub of subFolders) {
+                    const newZipFolder = currentZipFolder.folder(sub.name)
+                    if (newZipFolder) {
+                        await addFolderToZip(sub.id, newZipFolder)
+                    }
+                }
+            }
+
+            await addFolderToZip(folder.id, zip)
+            const content = await zip.generateAsync({ type: 'blob' })
+            saveAs(content, `${folder.name}.zip`)
         } catch (error) {
-            console.error('Download failed:', error)
+            console.error('Failed to zip folder:', error)
             alert(t('files.messages.download_failed') + ' ' + (error as Error).message)
+        }
+    }
+
+    const handleDownload = async (id: string) => {
+        const file = files?.find(f => f.id === id)
+        const folder = folders?.find(f => f.id === id)
+
+        if (folder) {
+            await downloadFolderAsZip(folder)
+            return
+        }
+
+        if (file) {
+            try {
+                const json = await apiFetchJson<any>(`/api/files/${id}/download`)
+                const { downloadUrl } = json
+                window.open(downloadUrl, '_blank')
+            } catch (error) {
+                console.error('Download failed:', error)
+                alert(t('files.messages.download_failed') + ' ' + (error as Error).message)
+            }
         }
     }
 

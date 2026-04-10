@@ -101,12 +101,14 @@ const DependsOnSelector = ({
         <div className="relative" ref={containerRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 text-sm text-gray-300 transition-colors"
+                className="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-gray-800/30 hover:bg-gray-800/50 text-sm transition-colors border border-gray-800"
             >
-                <span className="text-lg">🔗</span>
-                <span>
-                    {selectedIds.length === 0 ? 'Zależy od...' : `${selectedIds.length} zależności`}
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-base">🔗</span>
+                    <span className={selectedIds.length === 0 ? 'text-gray-500' : 'text-white'}>
+                        {selectedIds.length === 0 ? 'Zależy od...' : `${selectedIds.length} zależności`}
+                    </span>
+                </div>
                 <ChevronDown size={14} className="text-gray-400" />
             </button>
             {isOpen && (
@@ -587,99 +589,93 @@ export function CreateTaskPanel({
 
                 {/* Main Content - Scrollable */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    {/* Title */}
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-400 mb-2">{t('tasks.create.task_title')}</label>
+                    {/* Title & Description wrapped in a clean, borderless container */}
+                    <div className="mb-6 flex flex-col gap-3">
                         <input
                             ref={titleInputRef}
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             onKeyDown={handleTitleKeyDown}
-                            placeholder={t('tasks.create.task_title_placeholder')}
-                            className="w-full text-xl font-semibold text-white bg-[#1a1a24] placeholder-gray-500 outline-none px-4 py-3 rounded-none sm:rounded-xl focus:border-amber-500/50 transition-colors"
+                            placeholder={t('tasks.create.task_title_placeholder') || 'Tytuł zadania...'}
+                            className="w-full text-2xl font-bold text-white bg-transparent outline-none placeholder-gray-600 transition-colors"
                         />
-                    </div>
-
-                    {/* Description */}
-                    <div className="mb-6">
                         <textarea
                             ref={descriptionRef}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder={t('tasks.create.description_placeholder')}
-                            rows={4}
-                            className="w-full text-sm text-gray-300 bg-[#1a1a24] rounded-none sm:rounded-xl p-4 placeholder-gray-500 outline-none resize-none transition-colors"
+                            placeholder={t('tasks.create.description_placeholder') || 'Dodaj opis zadania... (wspiera Markdown)'}
+                            rows={3}
+                            className="w-full text-sm text-gray-300 bg-transparent outline-none resize-none placeholder-gray-600"
                         />
-                        <p className="text-xs text-gray-600 mt-2">
-                            {t('tasks.create.markdown_hint')}
-                        </p>
                     </div>
 
-                    {/* Properties Bar - Flexible Grid Layout */}
-                    <div className="flex flex-wrap items-start gap-y-5 gap-x-4 mb-6 pb-6 border-b border-gray-800">
+                    {/* Properties Bar - Grid Layout */}
+                    <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-gray-800">
                         {/* Status - only for tasks */}
                         {itemType === 'task' && (
-                            <div className="flex flex-col gap-1.5 flex-1 min-w-[120px]">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('projects.details.meta.status') || 'Status'}</span>
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('projects.details.meta.status') || 'Status'}</span>
                                 <div className="w-full">
                                     <StatusSelector
                                         value={status}
                                         stages={currentStages}
                                         onChange={(newStatus) => setStatus(newStatus)}
+                                        fullWidth
                                     />
                                 </div>
                             </div>
                         )}
 
                         {/* Priority */}
-                        <div className="flex flex-col gap-1.5 flex-1 min-w-[120px]">
-                            <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('projects.details.meta.priority') || 'Priority'}</span>
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('projects.details.meta.priority') || 'Priority'}</span>
                             <div className="w-full">
                                 <PrioritySelector
                                     value={priority}
                                     onChange={setPriority}
                                     size="md"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Assignee */}
-                        <div className="flex flex-col gap-1.5 relative z-20 flex-1 min-w-[140px]">
-                            <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('projects.details.meta.assignee') || 'Assignee'}</span>
-                            <div className="w-full min-w-0">
-                                <AssigneePicker
-                                    selectedAssignees={assignees}
-                                    availableAssignees={teamMembers as any}
-                                    onSelect={setAssignees}
-                                    maxVisible={2}
-                                    placeholder={t('tasks.create.assignee_placeholder')}
+                                    fullWidth
                                 />
                             </div>
                         </div>
 
                         {/* Start Date */}
-                        <div className="flex flex-col gap-1.5 flex-1 min-w-[130px]">
-                            <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('tasks.create.start_date')}</span>
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('tasks.create.start_date') || 'Start'}</span>
                             <div className="w-full">
                                 <DueDatePicker
                                     value={startDate}
                                     onChange={(date) => setStartDate(date || '')}
-                                    placeholder={t('tasks.create.start_date')}
+                                    placeholder={t('tasks.create.start_date') || 'Data startu'}
                                     showTime={false}
                                 />
                             </div>
                         </div>
 
                         {/* End Date */}
-                        <div className="flex flex-col gap-1.5 flex-1 min-w-[130px]">
-                            <span className="text-[10px] text-gray-500 font-bold uppercase px-1">{t('tasks.create.end_date')}</span>
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('tasks.create.end_date') || 'Koniec'}</span>
                             <div className="w-full">
                                 <DueDatePicker
                                     value={dueDate}
                                     onChange={(date) => setDueDate(date || '')}
-                                    placeholder={t('tasks.create.due_date_placeholder')}
+                                    placeholder={t('tasks.create.due_date_placeholder') || 'Termin (Due date)'}
                                     showTime={false}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Assignee - Full Width Bottom Row */}
+                        <div className="flex flex-col gap-1.5 col-span-2 relative z-20 mt-1">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('projects.details.meta.assignee') || 'Przypisane'}</span>
+                            <div className="w-full min-w-0">
+                                <AssigneePicker
+                                    selectedAssignees={assignees}
+                                    availableAssignees={teamMembers as any}
+                                    onSelect={setAssignees}
+                                    maxVisible={4}
+                                    placeholder={t('tasks.create.assignee_placeholder') || 'Przypisz osoby...'}
                                 />
                             </div>
                         </div>
@@ -723,12 +719,11 @@ export function CreateTaskPanel({
 
                     {/* Extended Options */}
                     {showMore && (
-                        <div className="space-y-6 pt-2 pb-6">
+                        <div className="space-y-5 pt-2 pb-6">
                             {/* Depends On */}
-                            <div className="space-y-3">
-                                <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
-                                    <span className="text-lg">🔗</span>
-                                    {t('tasks.create.dependencies')}
+                            <div>
+                                <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                    {t('tasks.create.dependencies') || 'Zależności'}
                                 </label>
                                 <DependsOnSelector
                                     selectedIds={dependsOn}
@@ -739,18 +734,17 @@ export function CreateTaskPanel({
 
                             {/* Subtasks - only for tasks */}
                             {itemType === 'task' && (
-                                <div className="space-y-3">
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
-                                        <SubtaskCheckboxIcon />
-                                        {t('tasks.create.subtasks')}
+                                <div>
+                                    <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                        {t('tasks.create.subtasks') || 'Zadania podrzędne'}
                                     </label>
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         {subtasks.map((subtask, index) => (
                                             <div
                                                 key={index}
-                                                className="bg-gray-800/50 rounded-none sm:rounded-xl overflow-hidden"
+                                                className="bg-gray-800/30 rounded-lg overflow-hidden border border-gray-800"
                                             >
-                                                <div className="flex items-center gap-3 px-4 py-3">
+                                                <div className="flex items-center gap-3 px-3 py-2">
                                                     {subtask.assigneeId ? (
                                                         <div className="flex-shrink-0">
                                                             {(() => {
@@ -791,34 +785,25 @@ export function CreateTaskPanel({
                                                     </button>
                                                 </div>
                                                 {editingSubtaskIndex === index && (
-                                                    <div className="px-4 pb-3 pt-0 flex items-start gap-4">
+                                                    <div className="px-3 pb-3 pt-0 flex flex-col gap-3">
                                                         <div className="flex-1">
-                                                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">{t('tasks.create.subtasks_description_label')}</label>
                                                             <textarea
                                                                 value={subtask.description}
                                                                 onChange={(e) => updateSubtask(index, { description: e.target.value })}
-                                                                placeholder={t('tasks.create.subtasks_description_placeholder')}
+                                                                placeholder={t('tasks.create.subtasks_description_placeholder') || 'Opis...'}
                                                                 rows={2}
-                                                                className="w-full text-xs text-gray-400 bg-gray-900/50 rounded-lg p-3 placeholder-gray-600 outline-none resize-none focus:border-amber-500/50 transition-colors"
+                                                                className="w-full text-xs text-gray-400 bg-gray-900/50 rounded-lg p-2 placeholder-gray-600 outline-none resize-none focus:border-amber-500/50 transition-colors border border-gray-800"
                                                             />
                                                         </div>
-                                                        <div className="w-48">
-                                                            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">{t('tasks.create.subtasks_assignee_label')}</label>
+                                                        <div className="w-full max-w-[200px]">
                                                             <AssigneePicker
                                                                 selectedAssignees={teamMembers.filter(m => m.id === subtask.assigneeId) as any}
                                                                 availableAssignees={teamMembers as any}
                                                                 onSelect={(assignees) => updateSubtask(index, { assigneeId: assignees[0]?.id })}
                                                                 maxVisible={1}
-                                                                placeholder={t('tasks.create.subtasks_assignee_placeholder')}
+                                                                placeholder={t('tasks.create.subtasks_assignee_placeholder') || 'Przypisz'}
                                                             />
                                                         </div>
-                                                    </div>
-                                                )}
-                                                {subtask.description && editingSubtaskIndex !== index && (
-                                                    <div className="px-4 pb-3 pt-0">
-                                                        <p className="text-xs text-gray-500 leading-relaxed pl-8">
-                                                            {subtask.description}
-                                                        </p>
                                                     </div>
                                                 )}
                                             </div>
@@ -829,15 +814,15 @@ export function CreateTaskPanel({
                                                 value={newSubtask}
                                                 onChange={(e) => setNewSubtask(e.target.value)}
                                                 onKeyDown={(e) => e.key === 'Enter' && addSubtask()}
-                                                placeholder={t('tasks.create.add_subtask_placeholder')}
-                                                className="flex-1 px-4 py-3 bg-gray-800/50 rounded-none sm:rounded-xl text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500/50 transition-colors"
+                                                placeholder={t('tasks.create.add_subtask_placeholder') || 'Dodaj zadanie podrzędne...'}
+                                                className="flex-1 px-3 py-2 bg-gray-800/30 rounded-lg text-sm text-white placeholder-gray-600 outline-none focus:border-amber-500/50 transition-colors border border-gray-800"
                                             />
                                             <button
                                                 onClick={addSubtask}
                                                 disabled={!newSubtask.trim()}
-                                                className={`px-4 py-3 rounded-none sm:rounded-xl text-sm font-medium transition-all ${newSubtask.trim() ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'text-gray-600 cursor-not-allowed'}`}
+                                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${newSubtask.trim() ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'text-gray-600 cursor-not-allowed'}`}
                                             >
-                                                {t('tasks.create.add_subtask_button')}
+                                                {t('tasks.create.add_subtask_button') || 'Dodaj'}
                                             </button>
                                         </div>
                                     </div>
@@ -845,10 +830,9 @@ export function CreateTaskPanel({
                             )}
 
                             {/* Attachments */}
-                            <div className="space-y-3">
-                                <label className="flex items-center gap-2 text-sm font-medium text-gray-400 mb-3">
-                                    <PaperclipIcon />
-                                    {t('tasks.create.attachments')}
+                            <div>
+                                <label className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                    {t('tasks.create.attachments') || 'Załączniki'}
                                 </label>
 
                                 {/* Hidden file input */}
@@ -880,16 +864,16 @@ export function CreateTaskPanel({
                                 {attachments.length > 0 && (
                                     <div className="space-y-2 mb-3">
                                         {attachments.map((file, index) => (
-                                            <div key={index} className="flex items-center gap-3 px-4 py-3 bg-gray-800/50 rounded-none sm:rounded-xl">
-                                                <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2CE88" strokeWidth="2">
+                                            <div key={index} className="flex items-center gap-3 px-3 py-2 bg-gray-800/30 rounded-lg border border-gray-800">
+                                                <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F2CE88" strokeWidth="2">
                                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                                         <polyline points="14 2 14 8 20 8" />
                                                     </svg>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm text-white font-medium truncate">{file.name}</p>
-                                                    <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
+                                                    <p className="text-[10px] text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
                                                 </div>
                                                 <button
                                                     onClick={() => setAttachments(attachments.filter((_, i) => i !== index))}
@@ -906,9 +890,9 @@ export function CreateTaskPanel({
 
                                 {/* Drop zone */}
                                 <div
-                                    className={`rounded-none sm:rounded-xl p-6 text-center cursor-pointer transition-all ${isDragging
-                                        ? 'bg-amber-500/10'
-                                        : 'hover:bg-gray-800/30'
+                                    className={`rounded-lg p-4 text-center cursor-pointer transition-all border border-dashed ${isDragging
+                                        ? 'bg-amber-500/10 border-amber-500/50'
+                                        : 'bg-transparent border-gray-700 hover:bg-gray-800/30 hover:border-gray-600'
                                         }`}
                                     onClick={() => fileInputRef.current?.click()}
                                     onDragOver={(e) => {
@@ -937,19 +921,18 @@ export function CreateTaskPanel({
                                         }
                                     }}
                                 >
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isDragging ? 'bg-amber-500/20' : 'bg-gray-800'
+                                    <div className="flex flex-col items-center gap-1">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isDragging ? 'bg-amber-500/20' : 'bg-gray-800'
                                             }`}>
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={isDragging ? "#F2CE88" : "#9E9E9E"} strokeWidth="2">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isDragging ? "#F2CE88" : "#9E9E9E"} strokeWidth="2">
                                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                                 <polyline points="17 8 12 3 7 8" />
                                                 <line x1="12" y1="3" x2="12" y2="15" />
                                             </svg>
                                         </div>
-                                        <p className={`text-sm transition-colors ${isDragging ? 'text-amber-400' : 'text-gray-500'}`}>
-                                            {isDragging ? t('tasks.create.dropzone_active') : t('tasks.create.dropzone_inactive')}
+                                        <p className={`text-xs transition-colors ${isDragging ? 'text-amber-400' : 'text-gray-500'}`}>
+                                            {isDragging ? t('tasks.create.dropzone_active') || 'Upuść tutaj...' : t('tasks.create.dropzone_inactive') || 'Wgraj załącznik'}
                                         </p>
-                                        <p className="text-xs text-gray-600">{t('tasks.create.file_type_hint')}</p>
                                     </div>
                                 </div>
                             </div>
@@ -958,46 +941,48 @@ export function CreateTaskPanel({
                 </div>
 
                 {/* Footer */}
-                <div className="flex-none p-6 bg-[#0f0f14] rounded-b-2xl">
-                    <div className="flex items-center justify-between">
+                <div className="flex-none p-5 bg-[#0f0f14] rounded-b-2xl border-t border-gray-800/50">
+                    <div className="flex items-center gap-3 justify-between">
                         {/* Left side - Create more toggle */}
                         <label
-                            className="flex items-center gap-3 cursor-pointer select-none"
+                            className="flex items-center gap-2 cursor-pointer select-none"
                             onClick={() => setCreateMore(!createMore)}
                         >
                             <div
-                                className={`w-5 h-5 border border-gray-800 rounded-md flex items-center justify-center transition-all ${createMore
-                                    ? 'bg-amber-500'
-                                    : 'hover:bg-gray-800/30'
+                                className={`w-4 h-4 border border-gray-700 rounded flex items-center justify-center transition-all flex-shrink-0 ${createMore
+                                    ? 'bg-amber-500 border-amber-500'
+                                    : 'hover:bg-gray-800/50'
                                     }`}
                             >
                                 {createMore && (
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3">
                                         <polyline points="20 6 9 17 4 12" />
                                     </svg>
                                 )}
                             </div>
-                            <span className="text-sm text-gray-400 font-medium">{t('tasks.create.create_another')}</span>
+                            <span className="text-xs text-gray-400 font-medium whitespace-nowrap truncate min-w-0 max-w-[80px] sm:max-w-none" title={t('tasks.create.create_another') || 'Utwórz kolejne'}>
+                                {t('tasks.create.create_another') || 'Utwórz kolejne'}
+                            </span>
                         </label>
 
                         {/* Right side - Actions */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                                className="px-3 py-2 text-sm text-gray-400 hover:text-white transition-colors whitespace-nowrap"
                             >
-                                {t('tasks.create.cancel')}
+                                {t('tasks.create.cancel') || 'Anuluj'}
                             </button>
                             <button
                                 onClick={handleCreate}
                                 disabled={!title.trim()}
-                                className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${title.trim()
+                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${title.trim()
                                     ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-lg shadow-amber-500/20'
-                                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                                    : 'bg-gray-800/50 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
-                                {t('tasks.create.create_button')}
-                                <span className="text-xs opacity-75">⌘↵</span>
+                                <span>{t('tasks.create.create_button') || 'Stwórz zadanie'}</span>
+                                <span className="text-[10px] opacity-75 hidden sm:inline">⌘↵</span>
                             </button>
                         </div>
                     </div>

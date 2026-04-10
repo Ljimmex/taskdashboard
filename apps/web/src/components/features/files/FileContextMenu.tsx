@@ -34,12 +34,10 @@ export function FileContextMenu({ children, itemId, isFolder, onRename, onDelete
                 )}
 
                 {/* Download (everyone) */}
-                {!isFolder && (
-                    <ContextMenuItem onClick={() => onDownload(itemId)} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer transition-colors">
-                        <Download className="h-4 w-4 text-[var(--app-text-muted)]" />
-                        <span>{t('files.actions.download')}</span>
-                    </ContextMenuItem>
-                )}
+                <ContextMenuItem onClick={() => onDownload(itemId)} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer transition-colors">
+                    <Download className="h-4 w-4 text-[var(--app-text-muted)]" />
+                    <span>{t('files.actions.download')}</span>
+                </ContextMenuItem>
 
                 {/* Info (everyone) */}
                 {onInfo && (

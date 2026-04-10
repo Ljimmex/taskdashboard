@@ -52,8 +52,9 @@ function getFileColor(mimeType?: string | null) {
 }
 
 // Format file size
-function formatSize(bytes: number | null) {
-    if (!bytes) return '-'
+function formatSize(bytes: number | null | undefined) {
+    if (bytes == null) return '-'
+    if (bytes === 0) return '0 B'
     if (bytes < 1024) return bytes + ' B'
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
     if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
@@ -177,10 +178,11 @@ interface FolderGridItemProps {
     onRename: (id: string) => void
     onDelete: (id: string) => void
     onFileDrop?: (fileId: string, folderId: string) => void
+    onDownload?: (id: string) => void
     userRole?: string | null
 }
 
-export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileDrop, userRole }: FolderGridItemProps) {
+export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileDrop, onDownload, userRole }: FolderGridItemProps) {
     const { t, i18n } = useTranslation()
     const currentLocale = i18n.language === 'pl' ? pl : enUS
     const [isDragOver, setIsDragOver] = React.useState(false)
@@ -213,7 +215,7 @@ export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileD
             onRename={onRename}
             onDelete={onDelete}
             onMove={() => { }}
-            onDownload={() => { }}
+            onDownload={onDownload || (() => { })}
             userRole={userRole}
         >
             <div
@@ -248,31 +250,37 @@ export function FolderGridItem({ folder, onNavigate, onRename, onDelete, onFileD
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40 bg-[var(--app-bg-card)] border-[var(--app-divider)] p-1">
+                            {onDownload && (
+                                <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDownload(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                    <Archive className="h-4 w-4 text-[var(--app-text-muted)]" />
+                                    <span>{t('files.actions.download')}</span>
+                                </DropdownMenuItem>
+                            )}
                             {userRole !== 'member' && (
-                                <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
+                                <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onRename(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
                                     <Pencil className="h-4 w-4 text-amber-500" />
                                     <span>{t('files.actions.edit')}</span>
                                 </DropdownMenuItem>
                             )}
                             {userRole !== 'member' && (
                                 <>
-                                    <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                        <Copy className="h-4 w-4 text-gray-400" />
+                                    <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                        <Copy className="h-4 w-4 text-[var(--app-text-muted)]" />
                                         <span>{t('files.actions.duplicate')}</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                        <Archive className="h-4 w-4 text-gray-400" />
+                                    <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                        <Archive className="h-4 w-4 text-[var(--app-text-muted)]" />
                                         <span>{t('files.actions.archive')}</span>
                                     </DropdownMenuItem>
                                 </>
                             )}
-                            <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                <Info className="h-4 w-4 text-gray-400" />
+                            <DropdownMenuItem onClick={(e: React.MouseEvent) => e.stopPropagation()} className="flex items-center gap-3 px-3 py-2 text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-md cursor-pointer">
+                                <Info className="h-4 w-4 text-[var(--app-text-muted)]" />
                                 <span>{t('files.actions.info')}</span>
                             </DropdownMenuItem>
                             {userRole !== 'member' && (
-                                <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDelete(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md cursor-pointer">
-                                    <Trash2 className="h-4 w-4 text-amber-600" />
+                                <DropdownMenuItem onClick={(e: React.MouseEvent) => { e.stopPropagation(); onDelete(folder.id) }} className="flex items-center gap-3 px-3 py-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-md cursor-pointer transition-colors">
+                                    <Trash2 className="h-4 w-4" />
                                     <span>{t('files.actions.delete')}</span>
                                 </DropdownMenuItem>
                             )}
