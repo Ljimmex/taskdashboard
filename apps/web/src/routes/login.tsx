@@ -81,7 +81,7 @@ function LoginPage() {
         }
     }
 
-    const handlePostAuthActions = async (userId: string) => {
+    const handlePostAuthActions = async (userId: string, token?: string) => {
         const searchParams = new URLSearchParams(window.location.search)
         const inviteId = searchParams.get('invite')
         const workspaceSlug = searchParams.get('workspace')
@@ -90,9 +90,14 @@ function LoginPage() {
 
         if (inviteId) {
             try {
+                const headers: Record<string, string> = { 'x-user-id': userId }
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`
+                }
+
                 const acceptResponse = await apiFetch(`/api/workspaces/invites/accept/${inviteId}`, {
                     method: 'POST',
-                    headers: { 'x-user-id': userId }
+                    headers
                 })
 
                 if (acceptResponse.ok) {
@@ -151,7 +156,8 @@ function LoginPage() {
                     if (loginRes.error) {
                         setError(loginRes.error.message || t('auth.error.login'))
                     } else if (loginRes.data?.user) {
-                        await handlePostAuthActions(loginRes.data.user.id)
+                        const token = (loginRes.data as any).token || (loginRes.data as any)?.session?.token;
+                        await handlePostAuthActions(loginRes.data.user.id, token)
                     }
                 } else {
                     navigate({
@@ -184,7 +190,8 @@ function LoginPage() {
             } else {
                 const sessionRes = await authClient.getSession()
                 if (sessionRes.data?.user) {
-                    await handlePostAuthActions(sessionRes.data.user.id)
+                    const token = (sessionRes.data as any).token || (sessionRes.data as any)?.session?.token;
+                    await handlePostAuthActions(sessionRes.data.user.id, token)
                 } else {
                     navigate({ to: '/dashboard' })
                 }
@@ -239,7 +246,8 @@ function LoginPage() {
 
                 setError(result.error.message || t('auth.error.login'))
             } else if (result.data?.user) {
-                await handlePostAuthActions(result.data.user.id)
+                const token = (result.data as any).token || (result.data as any)?.session?.token;
+                await handlePostAuthActions(result.data.user.id, token)
             }
         } catch (err: any) {
             if ((err as any)?.code === "EMAIL_NOT_VERIFIED" || (err as any)?.message === "Email not verified") {
