@@ -5,10 +5,24 @@ import { emailOTPClient, twoFactorClient } from 'better-auth/client/plugins'
 export const authClient = createAuthClient({
     baseURL: import.meta.env.VITE_API_URL || window.location.origin,
     fetchOptions: {
-        auth: {
-            type: "Bearer",
-            token: () => localStorage.getItem("bearer_token") || "",
-        }
+        // Capture bearer token from every auth response
+        onSuccess: (ctx) => {
+            const authToken = ctx.response.headers.get('set-auth-token')
+            if (authToken) {
+                try {
+                    localStorage.setItem('bearer_token', decodeURIComponent(authToken))
+                } catch {
+                    localStorage.setItem('bearer_token', authToken)
+                }
+            }
+        },
+        // Send stored bearer token with every auth request
+        headers: {
+            get Authorization() {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('bearer_token') : null
+                return token ? `Bearer ${token}` : ''
+            }
+        },
     },
     plugins: [
         emailOTPClient(),

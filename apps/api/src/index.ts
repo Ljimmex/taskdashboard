@@ -93,7 +93,7 @@ app.use('*', cors({
     ],
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'x-user-id'],
-    exposeHeaders: ['Content-Length'],
+    exposeHeaders: ['Content-Length', 'set-auth-token'],
     maxAge: 86400,
     credentials: true,
 }))

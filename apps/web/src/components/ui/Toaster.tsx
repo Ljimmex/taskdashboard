@@ -19,9 +19,9 @@ const ErrorIcon = () => (
 
 const InfoIcon = () => (
     <svg width="24" height="24" viewBox="0 0 32 32" fill="none" className="shrink-0">
-        <rect x="4" y="4" width="24" height="24" rx="8" fill="#3b82f6" opacity="0.15" />
-        <rect x="8" y="8" width="16" height="16" rx="6" fill="#3b82f6" opacity="0.3" />
-        <path d="M16 11V16M16 21H16.01" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="4" y="4" width="24" height="24" rx="8" fill="var(--app-accent)" opacity="0.15" />
+        <rect x="8" y="8" width="16" height="16" rx="6" fill="var(--app-accent)" opacity="0.3" />
+        <path d="M16 11V16M16 21H16.01" stroke="var(--app-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 )
 
@@ -51,8 +51,8 @@ const TOAST_CONFIG: Record<ToastType, { icon: any, colorClass: string, shadowCla
     },
     info: {
         icon: <InfoIcon />,
-        colorClass: 'text-blue-500',
-        shadowClass: 'shadow-[0_8px_32px_rgba(59,130,246,0.15)]'
+        colorClass: 'text-[var(--app-accent)]',
+        shadowClass: 'shadow-[0_8px_32px_rgba(242,206,136,0.15)]'
     }
 }
 
@@ -93,7 +93,7 @@ export function Toaster() {
                         {/* Progress Bar (Subtle) */}
                         <div className="absolute bottom-0 left-6 right-6 h-[2px] bg-white/5 overflow-hidden rounded-full">
                             <div
-                                className={`h-full opacity-40 ${toast.type === 'success' ? 'bg-[var(--app-accent)]' : toast.type === 'error' ? 'bg-rose-500' : 'bg-blue-500'} animate-toast-progress`}
+                                className={`h-full opacity-40 ${toast.type === 'success' ? 'bg-[var(--app-accent)]' : toast.type === 'error' ? 'bg-rose-500' : toast.type === 'warning' ? 'bg-amber-500' : 'bg-[var(--app-accent)]'} animate-toast-progress`}
                                 style={{ animationDuration: `${toast.duration || 3000}ms` }}
                             />
                         </div>

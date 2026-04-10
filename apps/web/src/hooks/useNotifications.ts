@@ -26,6 +26,7 @@ export function useNotifications() {
     const { data: session } = useSession()
     const queryClient = useQueryClient()
     const previousNotificationsRef = useRef<NotificationItem[]>([])
+    const lastToastTimeRef = useRef<number>(0)
 
     const { data: notifications = [], isLoading, ...queryInfo } = useQuery<NotificationItem[]>({
         queryKey: ['notifications'],
@@ -82,7 +83,7 @@ export function useNotifications() {
 
     const hasInitialDataRef = useRef(false)
 
-    // Toasts for new notifications
+    // Toasts for new notifications (with deduplication)
     useEffect(() => {
         if (isLoading) return
 
@@ -93,24 +94,31 @@ export function useNotifications() {
             return
         }
 
+        // Debounce — skip if a toast was shown less than 3s ago
+        const now = Date.now()
+        if (now - lastToastTimeRef.current < 3000) {
+            previousNotificationsRef.current = notifications
+            return
+        }
+
         if (notifications.length > previousNotificationsRef.current.length) {
-            console.log(`[Notifications] Count increased from ${previousNotificationsRef.current.length} to ${notifications.length}`)
             const newNotifications = notifications.filter(
                 n => !previousNotificationsRef.current.find(prev => prev.id === n.id)
             )
 
-            console.log(`[Notifications] New items found:`, newNotifications.length)
-
-            // Show toast for each really NEW notification
+            // Show a single consolidated toast
             if (newNotifications.length > 0) {
-                newNotifications.forEach(n => {
-                    const translatedTitle = t(n.title) || n.title
+                lastToastTimeRef.current = now
+                if (newNotifications.length === 1) {
+                    const translatedTitle = t(newNotifications[0].title) || newNotifications[0].title
                     toast.info(t('notifications.new_notification', { title: translatedTitle }))
-                })
+                } else {
+                    toast.info(t('notifications.new_notifications_count', {
+                        count: newNotifications.length,
+                        defaultValue: `Masz ${newNotifications.length} nowych powiadomień`
+                    }))
+                }
             }
-        } else {
-            // Debug log if needed
-            // console.log(`[Notifications] No increase in count. Current: ${notifications.length}, Prev: ${previousNotificationsRef.current.length}`)
         }
         previousNotificationsRef.current = notifications
     }, [notifications, isLoading, t])
