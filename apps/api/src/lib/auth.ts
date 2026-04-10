@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { db } from '@/db'
 import { twoFactor } from 'better-auth/plugins'
 import { emailOTP } from 'better-auth/plugins'
+import { bearer } from 'better-auth/plugins'
 import * as schema from '../db/schema'
 import { eq, and, lt } from 'drizzle-orm'
 import { sendOTPEmail } from './email'
@@ -87,11 +88,11 @@ export const auth = betterAuth({
         'https://taskdashboard-web.onrender.com',
         'https://zadanoapp.com',
         'https://www.zadanoapp.com',
-        'https://api.zadanoapp.com',
     ],
 
     // Plugins
     plugins: [
+        bearer(),
         emailOTP({
             // OTP configuration
             otpLength: 6,

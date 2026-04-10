@@ -157,6 +157,7 @@ function LoginPage() {
                         setError(loginRes.error.message || t('auth.error.login'))
                     } else if (loginRes.data?.user) {
                         const token = (loginRes.data as any).token || (loginRes.data as any)?.session?.token;
+                        if (token) localStorage.setItem('bearer_token', token);
                         await handlePostAuthActions(loginRes.data.user.id, token)
                     }
                 } else {
@@ -187,14 +188,12 @@ function LoginPage() {
 
             if (res.error) {
                 setError(res.error.message || t('auth.error.login'))
+            } else if (res.data?.user) {
+                const token = (res.data as any).token || (res.data as any)?.session?.token;
+                if (token) localStorage.setItem('bearer_token', token);
+                await handlePostAuthActions(res.data.user.id, token)
             } else {
-                const sessionRes = await authClient.getSession()
-                if (sessionRes.data?.user) {
-                    const token = (sessionRes.data as any).token || (sessionRes.data as any)?.session?.token;
-                    await handlePostAuthActions(sessionRes.data.user.id, token)
-                } else {
-                    navigate({ to: '/dashboard' })
-                }
+                navigate({ to: '/dashboard' })
             }
         } catch (err: any) {
             setError(err.message)
@@ -247,6 +246,7 @@ function LoginPage() {
                 setError(result.error.message || t('auth.error.login'))
             } else if (result.data?.user) {
                 const token = (result.data as any).token || (result.data as any)?.session?.token;
+                if (token) localStorage.setItem('bearer_token', token);
                 await handlePostAuthActions(result.data.user.id, token)
             }
         } catch (err: any) {

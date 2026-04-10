@@ -13,6 +13,11 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}): Pro
         ...((options.headers as Record<string, string>) || {}),
     }
 
+    const token = localStorage.getItem('bearer_token')
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+    }
+
     // Automatically set Content-Type to JSON if not already set and body is not FormData
     if (!headers['Content-Type'] && !(options.body instanceof FormData)) {
         headers['Content-Type'] = 'application/json'
