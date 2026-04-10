@@ -75,7 +75,8 @@ app.use('*', secureHeaders({
             "https://opwnyaxsxutmodbapjrc.supabase.co",
             "wss://opwnyaxsxutmodbapjrc.supabase.co",
             "https://*.r2.cloudflarestorage.com",
-            "https://taskdashboard-api.onrender.com"
+            "https://taskdashboard-api.onrender.com",
+            "https://api.zadanoapp.com"
         ],
         upgradeInsecureRequests: [],
     },
@@ -90,6 +91,7 @@ app.use('*', cors({
         'https://taskdashboard-web.onrender.com',
         'https://zadanoapp.com',
         'https://www.zadanoapp.com',
+        'https://api.zadanoapp.com',
     ],
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'x-user-id'],
