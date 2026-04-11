@@ -9,8 +9,6 @@ import { DueDatePicker } from '../components/DueDatePicker'
 import { AssigneePicker, type Assignee } from '../components/AssigneePicker'
 import { TemplateSelector } from '../filters/TemplateSelector'
 import {
-    PaperclipIcon,
-    SubtaskCheckboxIcon,
     ChevronDoubleRightIcon,
 } from '../components/TaskIcons'
 import { apiFetch, apiFetchJson } from '@/lib/api'
