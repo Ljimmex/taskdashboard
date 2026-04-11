@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
+import mammoth from 'mammoth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { useTranslation } from 'react-i18next'
 import {
@@ -1504,6 +1505,65 @@ function ImageViewer({ previewUrl, fileName }: { previewUrl: string; fileName: s
 }
 
 // =============================================================================
+// DOCX VIEWER
+// =============================================================================
+
+function DocxViewer({ previewUrl, fileName }: { previewUrl: string; fileName: string }) {
+    const [html, setHtml] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        const convert = async () => {
+            setLoading(true)
+            setError(null)
+            try {
+                const response = await fetch(previewUrl)
+                const arrayBuffer = await response.arrayBuffer()
+                const result = await mammoth.convertToHtml({ arrayBuffer })
+                setHtml(result.value)
+            } catch (err: any) {
+                setError(err.message || 'Failed to load DOCX')
+            } finally {
+                setLoading(false)
+            }
+        }
+        convert()
+    }, [previewUrl])
+
+    if (loading) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-[var(--app-bg-deepest)]">
+                <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-[var(--app-bg-deepest)]">
+                <p className="text-red-400 text-sm">{error}</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex-1 flex flex-col min-h-0 bg-[var(--app-bg-deepest)]">
+            <div className="flex items-center justify-center px-4 py-2 bg-[var(--app-bg-card)] border-b border-[var(--app-border)]/50">
+                <span className="text-xs font-bold text-[var(--app-text-secondary)]">{fileName}</span>
+            </div>
+            <div className="flex-1 overflow-auto flex justify-center bg-[var(--app-bg-deepest)] p-4 sm:p-8 custom-scrollbar">
+                <div
+                    className="bg-white text-black rounded-lg shadow-2xl border border-[var(--app-border)]/30 w-full max-w-[800px] p-8 sm:p-12 prose prose-sm max-w-none"
+                    style={{ minHeight: '600px' }}
+                    dangerouslySetInnerHTML={{ __html: html || '' }}
+                />
+            </div>
+        </div>
+    )
+}
+
+// =============================================================================
 // MAIN FILE VIEWER PAGE
 // =============================================================================
 
@@ -1523,6 +1583,7 @@ export function FileViewerPage({ fileId, onClose }: FileViewerProps) {
     const fileType = fileData?.fileType || ''
     const isPdf = mimeType.includes('pdf')
     const isImage = mimeType.startsWith('image/')
+    const isDocx = mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || fileType === 'docx'
     const textTypes = ['txt', 'md', 'csv', 'json', 'html', 'css', 'js', 'ts', 'jsx', 'tsx', 'xml', 'yaml', 'yml', 'env', 'log']
     const isText = mimeType.startsWith('text/') || textTypes.includes(fileType)
 
@@ -1617,7 +1678,7 @@ export function FileViewerPage({ fileId, onClose }: FileViewerProps) {
     }, [onClose])
 
     return (
-        <div className="fixed inset-0 z-50 bg-[var(--app-bg-deepest)] flex flex-col text-[var(--app-text-primary)]">
+        <div className="fixed inset-0 z-[200] bg-[var(--app-bg-deepest)] flex flex-col text-[var(--app-text-primary)]">
             {/* FLOATING HEADER — no border */}
             <div className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between h-14 px-4 bg-[var(--app-bg-card)]/90 backdrop-blur-xl rounded-2xl border border-[var(--app-border)] shadow-2xl">
                 <div className="flex items-center gap-4">
@@ -1706,7 +1767,10 @@ export function FileViewerPage({ fileId, onClose }: FileViewerProps) {
                         {isImage && previewUrl && (
                             <ImageViewer previewUrl={previewUrl} fileName={fileData?.name || ''} />
                         )}
-                        {!isPdf && !isText && !isImage && (
+                        {isDocx && previewUrl && (
+                            <DocxViewer previewUrl={previewUrl} fileName={fileData?.name || ''} />
+                        )}
+                        {!isPdf && !isText && !isImage && !isDocx && (
                             <div className="flex-1 flex items-center justify-center">
                                 <div className="text-center">
                                     <p className="text-gray-400 text-sm">{t('files.viewer.unsupported', 'This file type cannot be previewed.')}</p>

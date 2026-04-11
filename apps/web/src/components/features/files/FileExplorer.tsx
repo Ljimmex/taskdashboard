@@ -395,6 +395,7 @@ export function FileExplorer({
                                             onNavigate={handleNavigate}
                                             onRename={handleRename}
                                             onDelete={handleDelete}
+                                            onDownload={handleDownload}
                                             onFileDrop={handleFileDrop}
                                             userRole={userRole}
                                         />
