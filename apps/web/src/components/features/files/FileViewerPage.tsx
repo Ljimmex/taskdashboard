@@ -6,7 +6,7 @@ import mammoth from 'mammoth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { useTranslation } from 'react-i18next'
 import {
-    X, ZoomIn, ZoomOut,
+    X, ZoomIn, ZoomOut, FileText,
     Save, MessageSquare, Send, Check,
     Trash2, RotateCcw, Download, Loader2,
     Columns2, Rows2, GalleryVerticalEnd, MessageCircle,
@@ -1508,11 +1508,24 @@ function ImageViewer({ previewUrl, fileName }: { previewUrl: string; fileName: s
 // DOCX VIEWER
 // =============================================================================
 
-function DocxViewer({ previewUrl, fileName }: { previewUrl: string; fileName: string }) {
+// A4 page dimensions in pixels at 96 DPI
+const A4_WIDTH = 794  // 210mm
+const A4_HEIGHT = 1123 // 297mm
+const PAGE_PADDING = 64 // px padding inside each page
+
+function DocxViewer({ previewUrl }: { previewUrl: string; fileName: string }) {
     const [html, setHtml] = useState<string | null>(null)
+    const [pages, setPages] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [scale, setScale] = useState(1)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [isFullscreen, setIsFullscreen] = useState(false)
+    const scrollRef = useRef<HTMLDivElement>(null)
+    const pageRefs = useRef<(HTMLDivElement | null)[]>([])
+    const containerRef = useRef<HTMLDivElement>(null)
 
+    // Convert DOCX to HTML
     useEffect(() => {
         const convert = async () => {
             setLoading(true)
@@ -1531,10 +1544,132 @@ function DocxViewer({ previewUrl, fileName }: { previewUrl: string; fileName: st
         convert()
     }, [previewUrl])
 
+    // Split HTML content into pages by measuring rendered height
+    useEffect(() => {
+        if (!html) return
+
+        const splitIntoPages = () => {
+            // Create an off-screen container to measure content
+            const measurer = document.createElement('div')
+            measurer.style.position = 'absolute'
+            measurer.style.left = '-9999px'
+            measurer.style.top = '0'
+            measurer.style.width = `${A4_WIDTH - PAGE_PADDING * 2}px`
+            measurer.style.fontFamily = 'Georgia, "Times New Roman", serif'
+            measurer.style.fontSize = '12pt'
+            measurer.style.lineHeight = '1.6'
+            measurer.innerHTML = html
+            document.body.appendChild(measurer)
+
+            const contentHeight = A4_HEIGHT - PAGE_PADDING * 2
+            const totalHeight = measurer.scrollHeight
+
+            if (totalHeight <= contentHeight) {
+                // Single page
+                setPages([html])
+                document.body.removeChild(measurer)
+                return
+            }
+
+            // Split by child elements
+            const children = Array.from(measurer.children) as HTMLElement[]
+            const pageContents: string[] = []
+            let currentPageHtml = ''
+            let currentHeight = 0
+
+            for (const child of children) {
+                const childHeight = child.offsetHeight + parseInt(getComputedStyle(child).marginTop || '0') + parseInt(getComputedStyle(child).marginBottom || '0')
+
+                if (currentHeight + childHeight > contentHeight && currentPageHtml) {
+                    pageContents.push(currentPageHtml)
+                    currentPageHtml = child.outerHTML
+                    currentHeight = childHeight
+                } else {
+                    currentPageHtml += child.outerHTML
+                    currentHeight += childHeight
+                }
+            }
+
+            if (currentPageHtml) {
+                pageContents.push(currentPageHtml)
+            }
+
+            // If no elements could be split, fall back to single page
+            if (pageContents.length === 0) {
+                pageContents.push(html)
+            }
+
+            setPages(pageContents)
+            document.body.removeChild(measurer)
+        }
+
+        // Small delay to ensure DOM is ready
+        const timer = setTimeout(splitIntoPages, 100)
+        return () => clearTimeout(timer)
+    }, [html])
+
+    // Track current page on scroll
+    useEffect(() => {
+        const scrollEl = scrollRef.current
+        if (!scrollEl) return
+
+        const handleScroll = () => {
+            const scrollTop = scrollEl.scrollTop
+            const viewportMid = scrollTop + scrollEl.clientHeight / 2
+
+            for (let i = 0; i < pageRefs.current.length; i++) {
+                const page = pageRefs.current[i]
+                if (page) {
+                    const top = page.offsetTop
+                    const bottom = top + page.offsetHeight
+                    if (viewportMid >= top && viewportMid < bottom) {
+                        setCurrentPage(i + 1)
+                        break
+                    }
+                }
+            }
+        }
+
+        scrollEl.addEventListener('scroll', handleScroll, { passive: true })
+        return () => scrollEl.removeEventListener('scroll', handleScroll)
+    }, [pages.length])
+
+    const scrollToPage = (pageNum: number) => {
+        const page = pageRefs.current[pageNum - 1]
+        if (page && scrollRef.current) {
+            scrollRef.current.scrollTo({ top: page.offsetTop - 24, behavior: 'smooth' })
+        }
+    }
+
+    const zoomIn = () => setScale(s => Math.min(3, s + 0.25))
+    const zoomOut = () => setScale(s => Math.max(0.25, s - 0.25))
+
+    const toggleFullscreen = () => {
+        if (!containerRef.current) return
+        if (!document.fullscreenElement) {
+            containerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => { })
+        } else {
+            document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => { })
+        }
+    }
+
+    useEffect(() => {
+        const handler = () => setIsFullscreen(!!document.fullscreenElement)
+        document.addEventListener('fullscreenchange', handler)
+        return () => document.removeEventListener('fullscreenchange', handler)
+    }, [])
+
+    const numPages = pages.length
+    const prevPage = () => { if (currentPage > 1) scrollToPage(currentPage - 1) }
+    const nextPage = () => { if (currentPage < numPages) scrollToPage(currentPage + 1) }
+
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center bg-[var(--app-bg-deepest)]">
-                <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+                    <span className="text-sm text-gray-400">Konwertowanie dokumentu...</span>
+                </div>
             </div>
         )
     }
@@ -1548,16 +1683,83 @@ function DocxViewer({ previewUrl, fileName }: { previewUrl: string; fileName: st
     }
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 bg-[var(--app-bg-deepest)]">
-            <div className="flex items-center justify-center px-4 py-2 bg-[var(--app-bg-card)] border-b border-[var(--app-border)]/50">
-                <span className="text-xs font-bold text-[var(--app-text-secondary)]">{fileName}</span>
+        <div ref={containerRef} className="flex-1 flex flex-col min-h-0 bg-[var(--app-bg-deepest)] relative">
+            {/* Scroll area with pages */}
+            <div
+                ref={scrollRef}
+                className="flex-1 overflow-auto flex flex-col items-center bg-[var(--app-bg-deepest)] py-6 gap-6 custom-scrollbar"
+                style={{ padding: '24px' }}
+            >
+                {pages.map((pageHtml, i) => (
+                    <div
+                        key={i}
+                        ref={el => { pageRefs.current[i] = el }}
+                        className="bg-white text-black shadow-2xl rounded-sm flex-shrink-0 relative"
+                        style={{
+                            width: `${A4_WIDTH * scale}px`,
+                            minHeight: `${A4_HEIGHT * scale}px`,
+                            padding: `${PAGE_PADDING * scale}px`,
+                            transformOrigin: 'top center',
+                        }}
+                    >
+                        <div
+                            className="docx-content"
+                            style={{
+                                fontFamily: 'Georgia, "Times New Roman", serif',
+                                fontSize: `${12 * scale}pt`,
+                                lineHeight: '1.6',
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                            }}
+                            dangerouslySetInnerHTML={{ __html: pageHtml }}
+                        />
+                        {/* Page number */}
+                        <div
+                            className="absolute bottom-3 right-4 text-[10px] text-gray-400 select-none"
+                            style={{ fontSize: `${10 * scale}px` }}
+                        >
+                            {i + 1} / {numPages}
+                        </div>
+                    </div>
+                ))}
             </div>
-            <div className="flex-1 overflow-auto flex justify-center bg-[var(--app-bg-deepest)] p-4 sm:p-8 custom-scrollbar">
-                <div
-                    className="bg-white text-black rounded-lg shadow-2xl border border-[var(--app-border)]/30 w-full max-w-[800px] p-8 sm:p-12 prose prose-sm max-w-none"
-                    style={{ minHeight: '600px' }}
-                    dangerouslySetInnerHTML={{ __html: html || '' }}
-                />
+
+            {/* FLOATING BOTTOM TOOLBAR (center) — matching PDF viewer style */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-2 bg-[var(--app-bg-card)]/90 backdrop-blur-xl rounded-2xl border border-[var(--app-border)] shadow-2xl z-40">
+                {/* Page style info */}
+                <div className="flex items-center gap-1 px-2 py-1 text-xs text-[var(--app-text-muted)] font-semibold select-none">
+                    <FileText className="h-4 w-4" />
+                    <span>DOCX</span>
+                </div>
+                <div className="w-px h-6 bg-[var(--app-border)]/30 mx-1.5" />
+            </div>
+
+            {/* BOTTOM LEFT: Page nav */}
+            <div className="absolute bottom-6 left-6 flex items-center gap-2 px-3 py-2 bg-[var(--app-bg-card)]/90 backdrop-blur-xl rounded-xl border border-[var(--app-border)] shadow-xl z-40">
+                <button onClick={prevPage} disabled={currentPage <= 1} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg disabled:opacity-20 transition-all">
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-xs font-bold text-[var(--app-text-secondary)] select-none px-2 min-w-[90px] text-center tracking-tight">
+                    {currentPage} / {numPages || '–'}
+                </span>
+                <button onClick={nextPage} disabled={currentPage >= numPages} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg disabled:opacity-20 transition-all">
+                    <ChevronRight className="h-4 w-4" />
+                </button>
+            </div>
+
+            {/* BOTTOM RIGHT: Zoom + fullscreen */}
+            <div className="absolute bottom-6 right-6 flex items-center gap-2 px-3 py-2 bg-[var(--app-bg-card)]/90 backdrop-blur-xl rounded-xl border border-[var(--app-border)] shadow-xl z-40">
+                <button onClick={zoomOut} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-all">
+                    <ZoomOut className="h-4 w-4" />
+                </button>
+                <span className="text-xs font-bold text-[var(--app-text-secondary)] min-w-[45px] text-center select-none">{Math.round(scale * 100)}%</span>
+                <button onClick={zoomIn} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-all">
+                    <ZoomIn className="h-4 w-4" />
+                </button>
+                <div className="w-px h-5 bg-[var(--app-border)]/30 mx-1" />
+                <button onClick={toggleFullscreen} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-all" title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
+                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
             </div>
         </div>
     )
