@@ -8,6 +8,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Globe } from 'lucide-react';
 
+const FlagIcon = ({ code }: { code: string }) => (
+    <img
+        src={`https://flagcdn.com/w20/${code.toLowerCase()}.png`}
+        srcSet={`https://flagcdn.com/w40/${code.toLowerCase()}.png 2x`}
+        className="w-5 h-3.5 object-cover rounded-sm border border-black/10"
+        alt={code}
+    />
+);
+
 export function LanguageSwitcher() {
     const { i18n } = useTranslation();
 
@@ -21,7 +30,7 @@ export function LanguageSwitcher() {
                 <Button variant="ghost" size="default" className="rounded-full text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] gap-2 px-3 transition-colors">
                     <Globe className="h-5 w-5" />
                     <span className="text-sm font-medium">
-                        {i18n.language === 'pl' ? '🇵🇱' : '🇺🇸'}
+                        {i18n.language === 'pl' ? <FlagIcon code="pl" /> : <FlagIcon code="us" />}
                     </span>
                     <span className="sr-only">Switch language</span>
                 </Button>
@@ -31,13 +40,13 @@ export function LanguageSwitcher() {
                     onClick={() => changeLanguage('en')}
                     className="focus:bg-[var(--app-bg-elevated)] focus:text-[var(--app-text-primary)] cursor-pointer hover:bg-[var(--app-bg-elevated)] transition-colors py-2.5"
                 >
-                    <span className="mr-2">🇺🇸</span> English
+                    <span className="mr-2"><FlagIcon code="us" /></span> English
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => changeLanguage('pl')}
                     className="focus:bg-[var(--app-bg-elevated)] focus:text-[var(--app-text-primary)] cursor-pointer hover:bg-[var(--app-bg-elevated)] transition-colors py-2.5"
                 >
-                    <span className="mr-2">🇵🇱</span> Polski
+                    <span className="mr-2"><FlagIcon code="pl" /></span> Polski
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

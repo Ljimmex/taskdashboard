@@ -147,6 +147,24 @@ const EMOJI_CATEGORIES = {
     ]
 }
 
+function getFlagCode(emoji: string) {
+    // Standard regional indicator sequence flags are 2 code points
+    // Some complex flags like England use different sequences, but 
+    // the vast majority are 2 characters in regional indicator range.
+    const codePoints = Array.from(emoji);
+    if (codePoints.length === 2) {
+        const cp1 = codePoints[0].codePointAt(0);
+        const cp2 = codePoints[1].codePointAt(0);
+        if (cp1 && cp2 && cp1 >= 0x1F1E6 && cp1 <= 0x1F1FF && cp2 >= 0x1F1E6 && cp2 <= 0x1F1FF) {
+            return (
+                String.fromCharCode(cp1 - 0x1F1E6 + 65) +
+                String.fromCharCode(cp2 - 0x1F1E6 + 65)
+            ).toLowerCase();
+        }
+    }
+    return null;
+}
+
 export function EmojiPicker({ onEmojiSelect, className = '' }: EmojiPickerProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [activeCategory, setActiveCategory] = useState<keyof typeof EMOJI_CATEGORIES>('Smileys')
@@ -208,7 +226,19 @@ export function EmojiPicker({ onEmojiSelect, className = '' }: EmojiPickerProps)
                                         className="text-2xl hover:bg-[var(--app-bg-sidebar)] rounded p-1 transition-colors aspect-square flex items-center justify-center"
                                         title={emoji}
                                     >
-                                        {emoji}
+                                        {(() => {
+                                            const flagCode = getFlagCode(emoji);
+                                            if (flagCode) {
+                                                return (
+                                                    <img
+                                                        src={`https://flagcdn.com/w40/${flagCode}.png`}
+                                                        className="w-full h-auto object-contain rounded-sm"
+                                                        alt={emoji}
+                                                    />
+                                                );
+                                            }
+                                            return emoji;
+                                        })()}
                                     </button>
                                 ))}
                             </div>
