@@ -183,28 +183,22 @@ app.openapi(
     }
 )
 
-// API info
+// API info - Redirect to main website in production, show info in development
 app.openapi(
     createRoute({
         method: 'get',
         path: '/',
         responses: {
             200: {
-                content: {
-                    'application/json': {
-                        schema: z.object({
-                            name: z.string(),
-                            version: z.string(),
-                            endpoints: z.record(z.string()),
-                        }),
-                    },
-                },
-                description: 'Retrieve API information and common endpoints',
+                description: 'Redirect to main website or API information',
             },
         },
         tags: ['System'],
     }),
     (c) => {
+        if (process.env.NODE_ENV === 'production') {
+            return c.redirect('https://zadanoapp.com')
+        }
         return c.json({
             name: 'Zadano.app API',
             version: '0.1.0',
@@ -231,23 +225,25 @@ app.openapi(
 // API DOCUMENTATION (SCALAR)
 // =============================================================================
 
-app.doc('/openapi.json', {
-    openapi: '3.0.0',
-    info: {
-        version: '0.1.0',
-        title: 'Zadano.app API',
-    },
-})
+if (process.env.NODE_ENV !== 'production') {
+    app.doc('/openapi.json', {
+        openapi: '3.0.0',
+        info: {
+            version: '0.1.0',
+            title: 'Zadano.app API',
+        },
+    })
 
-app.get(
-    '/docs',
-    apiReference({
-        theme: 'saturn',
-        spec: {
-            url: '/openapi.json',
-        }
-    } as any)
-)
+    app.get(
+        '/docs',
+        apiReference({
+            theme: 'saturn',
+            spec: {
+                url: '/openapi.json',
+            }
+        } as any)
+    )
+}
 
 // ... (docs skipped)
 
