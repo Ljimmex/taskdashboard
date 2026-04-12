@@ -2114,15 +2114,15 @@
         "areTyping": "piszą...",
         "othersAreTyping": "innych pisze...",
         "emojiCategories": {
-            "smileys": "Uśmieszki",
-            "gestures": "Gesty",
-            "animals": "Zwierzęta",
-            "food": "Jedzenie",
-            "activities": "Aktywności",
-            "travel": "Podróże",
-            "objects": "Obiekty",
-            "symbols": "Symbole",
-            "flags": "Flagi"
+            "smileys": "😀 Uśmieszki",
+            "gestures": "👋 Gesty",
+            "animals": "🐶 Zwierzęta",
+            "food": "🍏 Jedzenie",
+            "activities": "⚽ Aktywności",
+            "travel": "🚗 Podróże",
+            "objects": "⌚ Obiekty",
+            "symbols": "❤️ Symbole",
+            "flags": "🏁 Flagi"
         }
     },
     "toasts": {

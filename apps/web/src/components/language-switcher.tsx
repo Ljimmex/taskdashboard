@@ -20,7 +20,9 @@ export function LanguageSwitcher() {
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="default" className="rounded-full text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] gap-2 px-3 transition-colors">
                     <Globe className="h-5 w-5" />
-                    <span className="text-sm font-medium">{i18n.language.toUpperCase()}</span>
+                    <span className="text-sm font-medium">
+                        {i18n.language === 'pl' ? '🇵🇱' : '🇺🇸'}
+                    </span>
                     <span className="sr-only">Switch language</span>
                 </Button>
             </DropdownMenuTrigger>

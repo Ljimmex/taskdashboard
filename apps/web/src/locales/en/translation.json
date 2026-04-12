@@ -2175,15 +2175,15 @@
         "areTyping": "are typing...",
         "othersAreTyping": "others are typing...",
         "emojiCategories": {
-            "smileys": "Smileys",
-            "gestures": "Gestures",
-            "animals": "Animals",
-            "food": "Food",
-            "activities": "Activities",
-            "travel": "Travel",
-            "objects": "Objects",
-            "symbols": "Symbols",
-            "flags": "Flags"
+            "smileys": "😀 Smileys",
+            "gestures": "👋 Gestures",
+            "animals": "🐶 Animals",
+            "food": "🍏 Food",
+            "activities": "⚽ Activities",
+            "travel": "🚗 Travel",
+            "objects": "⌚ Objects",
+            "symbols": "❤️ Symbols",
+            "flags": "🏁 Flags"
         }
     },
     "toasts": {
