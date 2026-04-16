@@ -301,8 +301,29 @@ timeRoutes.get('/my-tasks', async (c) => {
                 taskId: subtasks.taskId,
                 isCompleted: subtasks.isCompleted
             }).from(subtasks).where(inArray(subtasks.taskId, allTaskIds))
+        }
 
+        // Fetch meetings separately with a more robust approach
+        try {
             const validTaskIds = allTaskIds.filter(id => isUUID(id))
+
+            // Build OR conditions for meetings safely
+            const meetingConditions = [
+                eq(calendarEvents.createdBy, userId),
+                sql`${userId} = ANY(${calendarEvents.attendeeIds})`,
+            ]
+
+            // Only add taskId filter if we have valid UUIDs
+            if (validTaskIds.length > 0) {
+                meetingConditions.push(inArray(calendarEvents.taskId, validTaskIds))
+            }
+
+            // Only add team overlap filter if user has teams AND teams belong to this workspace
+            const userWorkspaceTeamIds = userTeamIds.filter(tid => teamIds.includes(tid))
+            if (userWorkspaceTeamIds.length > 0) {
+                const pgTeamIds = `{${userWorkspaceTeamIds.join(',')}}`
+                meetingConditions.push(sql`${calendarEvents.teamIds} && ${pgTeamIds}::uuid[]`)
+            }
 
             allMeetings = await db.select({
                 id: calendarEvents.id,
@@ -315,30 +336,35 @@ timeRoutes.get('/my-tasks', async (c) => {
                     inArray(calendarEvents.type, ['meeting', 'event']),
                     // Relaxed time window: allow logging time for meetings up to 48 hours ago
                     gte(calendarEvents.endAt, sql`now() - interval '48 hours'`),
-                    or(
-                        validTaskIds.length > 0 ? inArray(calendarEvents.taskId, validTaskIds) : sql`false`,
-                        eq(calendarEvents.createdBy, userId),
-                        sql`${userId} = ANY(${calendarEvents.attendeeIds})`,
-                        // Grant access if the meeting is associated with any of the user's teams
-                        userTeamIds.length > 0 ? sql`team_ids && ${userTeamIds}::uuid[]` : sql`false`
-                    )
+                    or(...meetingConditions)
                 )
             ).orderBy(desc(calendarEvents.startAt))
+        } catch (meetingError: any) {
+            console.error('Error fetching meetings for my-tasks (non-fatal):', meetingError)
+            // Continue without meetings - tasks will still be returned
         }
 
         // Filter to:
         // 1. Tasks assigned to user
         // 2. Tasks that have meetings (so user can pick the meeting)
-        // 3. For members: include all tasks in projects they have access to (via team)
+        // 3. For workspace members viewing their own tasks: show all tasks in their projects
+        //    to allow them to log time for any task they worked on
+        // 4. For admins/managers viewing someone else's tasks: show all tasks
         const myTasks = allTasksInProjects.filter(t => {
             const isAssigned = t.assignees && t.assignees.includes(targetUserId);
             const hasMeeting = allMeetings.some(m => m.taskId === t.id);
+            const isSelfView = targetUserId === userId;
+            const isWsMember = !!currentUserWsRole;
+            const isAdminOrManager = ['owner', 'admin', 'project_manager', 'hr_manager'].includes(currentUserWsRole || '');
 
-            // If it's a member looking at their own tasks, show all tasks in their projects
-            // to allow them to log time for any task they worked on.
-            const isMemberSelf = (targetUserId === userId) && (currentUserWsRole === 'member');
+            // Self-view: any workspace member sees all tasks to log time
+            // Admin/manager viewing others: sees all tasks
+            // Otherwise: only assigned + not completed, or tasks with meetings
+            if ((isSelfView && isWsMember) || (!isSelfView && isAdminOrManager)) {
+                return true
+            }
 
-            return (isAssigned && !t.isCompleted) || hasMeeting || isMemberSelf;
+            return (isAssigned && !t.isCompleted) || hasMeeting;
         })
 
         // Build project map
