@@ -76,6 +76,11 @@ const tasksQuerySchema = z.object({
     workspaceSlug: zSanitizedString().optional(),
 })
 
+const isUUID = (val: string | null | undefined): boolean => {
+    if (!val) return false
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+}
+
 export const tasksRoutes = new Hono<Env>()
 
 // Helper: Get user's workspace role (blocks suspended members)
@@ -1118,20 +1123,30 @@ tasksRoutes.get('/:id/subtasks', async (c) => {
 tasksRoutes.post('/:id/subtasks', async (c) => {
     try {
         const id = c.req.param('id')
+        if (!isUUID(id)) return c.json({ success: false, error: 'Invalid task ID format' }, 400)
+
         const session = await auth.api.getSession({ headers: c.req.raw.headers })
         if (!session?.user) return c.json({ error: 'Unauthorized' }, 401)
         const user = session.user
         const userId = user.id
 
         const body = await c.req.json()
+        if (!body.title || typeof body.title !== 'string' || !body.title.trim()) {
+            return c.json({ success: false, error: 'Subtask title is required' }, 400)
+        }
+
         const [created] = await db.insert(subtasks).values({
             taskId: id,
-            title: body.title,
+            title: body.title.trim(),
             description: body.description || null,
             isCompleted: body.isCompleted || false,
             assigneeId: body.assigneeId || null,
             dependsOn: body.dependsOn || []
         } as NewSubtask).returning()
+
+        if (!created) {
+            throw new Error('Failed to retrieve created subtask')
+        }
 
         // Notify subtask assignee
         if (created.assigneeId && created.assigneeId !== userId) {
@@ -1175,7 +1190,7 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
         return c.json({ success: true, data: created }, 201)
     } catch (error) {
         console.error('Error creating subtask:', error)
-        return c.json({ success: false, error: 'Failed to create subtask' }, 500)
+        return c.json({ success: false, error: 'Failed to create subtask', details: error instanceof Error ? error.message : String(error) }, 500)
     }
 })
 

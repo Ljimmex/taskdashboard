@@ -22,9 +22,9 @@ import { zSanitizedString } from '../../lib/zod-extensions'
 
 // Default role multipliers for revshare calculation
 const ROLE_COEFFICIENTS: Record<string, number> = {
-    project_leader: 1.25,
-    area_leader: 1.10,
-    participant: 1.00,
+    Project_Leader: 1.25,
+    Team_Leader: 1.10,
+    Participant: 1.00,
 }
 
 const DIFFICULTY_COEFFICIENTS: Record<string, number> = {
@@ -302,6 +302,8 @@ timeRoutes.get('/my-tasks', async (c) => {
                 isCompleted: subtasks.isCompleted
             }).from(subtasks).where(inArray(subtasks.taskId, allTaskIds))
 
+            const validTaskIds = allTaskIds.filter(id => isUUID(id))
+
             allMeetings = await db.select({
                 id: calendarEvents.id,
                 title: calendarEvents.title,
@@ -314,11 +316,11 @@ timeRoutes.get('/my-tasks', async (c) => {
                     // Relaxed time window: allow logging time for meetings up to 48 hours ago
                     gte(calendarEvents.endAt, sql`now() - interval '48 hours'`),
                     or(
-                        inArray(calendarEvents.taskId, allTaskIds.length > 0 ? allTaskIds : ['']),
+                        validTaskIds.length > 0 ? inArray(calendarEvents.taskId, validTaskIds) : sql`false`,
                         eq(calendarEvents.createdBy, userId),
                         sql`${userId} = ANY(${calendarEvents.attendeeIds})`,
                         // Grant access if the meeting is associated with any of the user's teams
-                        userTeamIds.length > 0 ? sql`team_ids && ${JSON.stringify(userTeamIds)}::uuid[]` : sql`false`
+                        userTeamIds.length > 0 ? sql`team_ids && ${userTeamIds}::uuid[]` : sql`false`
                     )
                 )
             ).orderBy(desc(calendarEvents.startAt))
