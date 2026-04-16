@@ -41,7 +41,7 @@ interface Annotation {
     replies?: Annotation[]
 }
 
-type LayoutMode = 'single' | 'double'
+type LayoutMode = 'single' | 'double' | 'fitWidth'
 
 // Drawing stroke data
 interface DrawStroke {
@@ -804,8 +804,18 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
         { id: 'text-highlight', icon: TypeOutline, label: 'Text High' },
         { id: 'sep2', icon: null, label: '' },
         { id: 'link', icon: Link, label: 'Link' },
-        { id: 'layout', icon: layoutMode === 'single' ? Columns2 : Rows2, label: layoutMode === 'single' ? 'Two pages' : 'Single page' },
+        {
+            id: 'layout',
+            icon: layoutMode === 'single' ? Columns2 : layoutMode === 'double' ? Rows2 : Maximize2,
+            label: layoutMode === 'single' ? 'Double' : layoutMode === 'double' ? 'Fit Width' : 'Single'
+        },
     ]
+
+    const cycleLayout = () => {
+        if (layoutMode === 'single') setLayoutMode('double')
+        else if (layoutMode === 'double') setLayoutMode('fitWidth')
+        else setLayoutMode('single')
+    }
 
     return (
         <div ref={viewerRootRef} className="flex-1 flex flex-col min-h-0 relative bg-[var(--app-bg-deepest)]">
@@ -1111,7 +1121,8 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
                                 >
                                     <Page
                                         pageNumber={pageNum}
-                                        scale={scale}
+                                        scale={layoutMode === 'fitWidth' ? undefined : scale}
+                                        width={layoutMode === 'fitWidth' && scrollContainerRef.current ? scrollContainerRef.current.clientWidth - 80 : undefined}
                                         renderTextLayer={true}
                                         renderAnnotationLayer={true}
                                     />
@@ -1365,7 +1376,7 @@ function PdfViewer({ previewUrl, annotations, onAddAnnotation, onDeleteAnnotatio
                             onClick={() => {
                                 if (item.id === 'undo') handleUndo()
                                 else if (item.id === 'redo') handleRedo()
-                                else if (item.id === 'layout') setLayoutMode(prev => prev === 'single' ? 'double' : 'single')
+                                else if (item.id === 'layout') cycleLayout()
                                 else setActiveTool(prev => prev === item.id ? 'cursor' : item.id)
                             }}
                             className={`p-2.5 rounded-xl transition-all ${isActive
@@ -1513,7 +1524,106 @@ const A4_WIDTH = 794  // 210mm
 const A4_HEIGHT = 1123 // 297mm
 const PAGE_PADDING = 64 // px padding inside each page
 
-function DocxViewer({ previewUrl }: { previewUrl: string; fileName: string }) {
+// =============================================================================
+// DOCX THUMBNAILS SIDEBAR
+// =============================================================================
+
+function DocxThumbnails({ pages, currentPage, onPageClick, onClose, layoutMode }: {
+    pages: string[]
+    currentPage: number
+    onPageClick: (page: number) => void
+    onClose: () => void
+    layoutMode: LayoutMode
+}) {
+    const { t } = useTranslation()
+    const thumbRefs = useRef<(HTMLDivElement | null)[]>([])
+    const numPages = pages.length
+
+    useEffect(() => {
+        const idx = layoutMode === 'double' ? Math.floor((currentPage - 1) / 2) : currentPage - 1
+        const el = thumbRefs.current[idx]
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }, [currentPage, layoutMode])
+
+    const pageGroups: number[][] = []
+    if (layoutMode === 'double') {
+        for (let i = 0; i < numPages; i += 2) {
+            const group = [i + 1]
+            if (i + 2 <= numPages) group.push(i + 2)
+            pageGroups.push(group)
+        }
+    } else {
+        for (let i = 0; i < numPages; i++) pageGroups.push([i + 1])
+    }
+
+    const thumbScale = 0.15
+
+    return (
+        <div className="absolute top-4 left-4 bottom-20 w-[170px] z-30 bg-[var(--app-bg-card)] border border-[var(--app-border)] backdrop-blur-xl rounded-2xl flex flex-col min-h-0 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--app-border)]/50 bg-[var(--app-bg-elevated)]/30">
+                <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-widest">
+                    {t('files.viewer.thumbnails', 'Thumbnails')}
+                </span>
+                <button onClick={onClose} className="text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors">
+                    <X className="h-4 w-4" />
+                </button>
+            </div>
+            <div className="flex-1 overflow-auto py-3 px-3 space-y-3 custom-scrollbar">
+                {pageGroups.map((group, gIdx) => {
+                    const isActive = group.includes(currentPage)
+                    return (
+                        <div
+                            key={gIdx}
+                            ref={el => { thumbRefs.current[gIdx] = el }}
+                            className={`relative cursor-pointer rounded-xl overflow-hidden border-2 transition-all hover:border-[var(--app-accent)]/50 ${isActive
+                                ? 'border-[var(--app-accent)] shadow-lg scale-[1.02]'
+                                : 'border-transparent opacity-70 hover:opacity-100 hover:scale-[1.01]'
+                                }`}
+                            onClick={() => onPageClick(group[0])}
+                        >
+                            <div className={`flex ${layoutMode === 'double' ? 'gap-0.5' : 'justify-center'} bg-white rounded-lg overflow-hidden p-1`}>
+                                {group.map(pageNum => (
+                                    <div
+                                        key={pageNum}
+                                        className="bg-white text-black shadow-sm flex-shrink-0 relative overflow-hidden"
+                                        style={{
+                                            width: `${A4_WIDTH * thumbScale}px`,
+                                            height: `${A4_HEIGHT * thumbScale}px`,
+                                            padding: `${PAGE_PADDING * thumbScale}px`,
+                                        }}
+                                    >
+                                        <div
+                                            className="docx-content origin-top-left"
+                                            style={{
+                                                transform: `scale(${thumbScale})`,
+                                                width: `${A4_WIDTH - PAGE_PADDING * 2}px`,
+                                                fontFamily: 'Georgia, "Times New Roman", serif',
+                                                fontSize: '12pt',
+                                                lineHeight: '1.6',
+                                            }}
+                                            dangerouslySetInnerHTML={{ __html: pages[pageNum - 1] }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className={`absolute bottom-0 inset-x-0 text-center text-[10px] py-1 font-bold ${isActive ? 'bg-[var(--app-accent)] text-white' : 'bg-black/60 text-white'
+                                }`}>
+                                {group.length > 1 ? `${group[0]}-${group[1]}` : group[0]}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+function DocxViewer({ previewUrl, showThumbnails, setShowThumbnails }: {
+    previewUrl: string
+    fileName: string
+    showThumbnails: boolean
+    setShowThumbnails: (v: boolean) => void
+}) {
     const [html, setHtml] = useState<string | null>(null)
     const [pages, setPages] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
@@ -1521,9 +1631,40 @@ function DocxViewer({ previewUrl }: { previewUrl: string; fileName: string }) {
     const [scale, setScale] = useState(1)
     const [currentPage, setCurrentPage] = useState(1)
     const [isFullscreen, setIsFullscreen] = useState(false)
+    const [layoutMode, setLayoutMode] = useState<LayoutMode>('double')
+    const [activeTool, setActiveTool] = useState<string>('cursor')
     const scrollRef = useRef<HTMLDivElement>(null)
     const pageRefs = useRef<(HTMLDivElement | null)[]>([])
     const containerRef = useRef<HTMLDivElement>(null)
+
+    const cycleLayout = () => {
+        if (layoutMode === 'single') setLayoutMode('double')
+        else if (layoutMode === 'double') setLayoutMode('fitWidth')
+        else setLayoutMode('single')
+    }
+
+    // Pan Tool
+    const [isPanDragging, setIsPanDragging] = useState(false)
+    const panStartRef = useRef<{ x: number, y: number, left: number, top: number } | null>(null)
+
+    const handlePanStart = (e: React.MouseEvent) => {
+        if (activeTool !== 'hand') return
+        setIsPanDragging(true)
+        panStartRef.current = {
+            x: e.clientX,
+            y: e.clientY,
+            left: scrollRef.current?.scrollLeft || 0,
+            top: scrollRef.current?.scrollTop || 0
+        }
+    }
+    const handlePanMove = (e: React.MouseEvent) => {
+        if (!isPanDragging || !panStartRef.current || !scrollRef.current || activeTool !== 'hand') return
+        const dx = e.clientX - panStartRef.current.x
+        const dy = e.clientY - panStartRef.current.y
+        scrollRef.current.scrollLeft = panStartRef.current.left - dx
+        scrollRef.current.scrollTop = panStartRef.current.top - dy
+    }
+    const handlePanEnd = () => setIsPanDragging(false)
 
     // Convert DOCX to HTML
     useEffect(() => {
@@ -1682,56 +1823,112 @@ function DocxViewer({ previewUrl }: { previewUrl: string; fileName: string }) {
         )
     }
 
+    const cursorClass = activeTool === 'hand' ? 'cursor-grab active:cursor-grabbing' : ''
+
+    const getPageDisplay = () => {
+        if (layoutMode === 'double') {
+            const end = Math.min(numPages, currentPage + 1)
+            return currentPage === end ? `${currentPage}` : `${currentPage}-${end}`
+        }
+        return `${currentPage}`
+    }
+
     return (
-        <div ref={containerRef} className="flex-1 flex flex-col min-h-0 bg-[var(--app-bg-deepest)] relative">
+        <div ref={containerRef} className="flex-1 flex flex-col min-h-0 bg-[var(--app-bg-deepest)] relative overflow-hidden">
+            {showThumbnails && (
+                <DocxThumbnails
+                    pages={pages}
+                    currentPage={currentPage}
+                    onPageClick={scrollToPage}
+                    onClose={() => setShowThumbnails(false)}
+                    layoutMode={layoutMode}
+                />
+            )}
+
             {/* Scroll area with pages */}
             <div
                 ref={scrollRef}
-                className="flex-1 overflow-auto flex flex-col items-center bg-[var(--app-bg-deepest)] py-6 gap-6 custom-scrollbar"
+                className={`flex-1 overflow-auto flex flex-col items-center bg-[var(--app-bg-deepest)] py-6 custom-scrollbar ${cursorClass}`}
                 style={{ padding: '24px' }}
+                onMouseDown={handlePanStart}
+                onMouseMove={handlePanMove}
+                onMouseUp={handlePanEnd}
+                onMouseLeave={handlePanEnd}
             >
-                {pages.map((pageHtml, i) => (
-                    <div
-                        key={i}
-                        ref={el => { pageRefs.current[i] = el }}
-                        className="bg-white text-black shadow-2xl rounded-sm flex-shrink-0 relative"
-                        style={{
-                            width: `${A4_WIDTH * scale}px`,
-                            minHeight: `${A4_HEIGHT * scale}px`,
-                            padding: `${PAGE_PADDING * scale}px`,
-                            transformOrigin: 'top center',
-                        }}
-                    >
+                <div className={
+                    layoutMode === 'double'
+                        ? 'grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center'
+                        : 'flex flex-col items-center gap-6'
+                }>
+                    {pages.map((pageHtml, i) => (
                         <div
-                            className="docx-content"
+                            key={i}
+                            ref={el => { pageRefs.current[i] = el }}
+                            className="bg-white text-black shadow-2xl rounded-sm flex-shrink-0 relative"
                             style={{
-                                fontFamily: 'Georgia, "Times New Roman", serif',
-                                fontSize: `${12 * scale}pt`,
-                                lineHeight: '1.6',
-                                wordWrap: 'break-word',
-                                overflowWrap: 'break-word',
+                                width: layoutMode === 'fitWidth' && scrollRef.current ? `${scrollRef.current.clientWidth - 80}px` : `${A4_WIDTH * scale}px`,
+                                minHeight: layoutMode === 'fitWidth' && scrollRef.current ? `${(A4_HEIGHT / A4_WIDTH) * (scrollRef.current.clientWidth - 80)}px` : `${A4_HEIGHT * scale}px`,
+                                padding: layoutMode === 'fitWidth' && scrollRef.current ? `${PAGE_PADDING * ((scrollRef.current.clientWidth - 80) / A4_WIDTH)}px` : `${PAGE_PADDING * scale}px`,
+                                transformOrigin: 'top center',
                             }}
-                            dangerouslySetInnerHTML={{ __html: pageHtml }}
-                        />
-                        {/* Page number */}
-                        <div
-                            className="absolute bottom-3 right-4 text-[10px] text-gray-400 select-none"
-                            style={{ fontSize: `${10 * scale}px` }}
                         >
-                            {i + 1} / {numPages}
+                            <div
+                                className="docx-content"
+                                style={{
+                                    fontFamily: 'Georgia, "Times New Roman", serif',
+                                    fontSize: layoutMode === 'fitWidth' && scrollRef.current ? `${12 * ((scrollRef.current.clientWidth - 80) / A4_WIDTH)}pt` : `${12 * scale}pt`,
+                                    lineHeight: '1.6',
+                                    wordWrap: 'break-word',
+                                    overflowWrap: 'break-word',
+                                }}
+                                dangerouslySetInnerHTML={{ __html: pageHtml }}
+                            />
+                            {/* Page number */}
+                            <div
+                                className="absolute bottom-3 right-4 text-[10px] text-gray-400 select-none"
+                                style={{ fontSize: `${10 * scale}px` }}
+                            >
+                                {i + 1} / {numPages}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
             {/* FLOATING BOTTOM TOOLBAR (center) — matching PDF viewer style */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-2 bg-[var(--app-bg-card)]/90 backdrop-blur-xl rounded-2xl border border-[var(--app-border)] shadow-2xl z-40">
+                <button
+                    onClick={() => setActiveTool('cursor')}
+                    className={`p-1.5 rounded-lg transition-all ${activeTool === 'cursor' ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/10' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}
+                    title="Select tool"
+                >
+                    <MousePointer className="h-4 w-4" />
+                </button>
+                <button
+                    onClick={() => setActiveTool('hand')}
+                    className={`p-1.5 rounded-lg transition-all ${activeTool === 'hand' ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/10' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}
+                    title="Pan tool"
+                >
+                    <Hand className="h-4 w-4" />
+                </button>
+
+                <div className="w-px h-6 bg-[var(--app-border)]/30 mx-1.5" />
+
+                <button
+                    onClick={cycleLayout}
+                    className={`p-1.5 rounded-lg transition-all ${layoutMode !== 'single' ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/10' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}
+                    title={layoutMode === 'single' ? 'Switch to double page' : layoutMode === 'double' ? 'Switch to fit width' : 'Switch to single page'}
+                >
+                    {layoutMode === 'single' ? <Columns2 className="h-4 w-4" /> : layoutMode === 'double' ? <Rows2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
+
+                <div className="w-px h-6 bg-[var(--app-border)]/30 mx-1.5" />
+
                 {/* Page style info */}
                 <div className="flex items-center gap-1 px-2 py-1 text-xs text-[var(--app-text-muted)] font-semibold select-none">
                     <FileText className="h-4 w-4" />
                     <span>DOCX</span>
                 </div>
-                <div className="w-px h-6 bg-[var(--app-border)]/30 mx-1.5" />
             </div>
 
             {/* BOTTOM LEFT: Page nav */}
@@ -1740,7 +1937,7 @@ function DocxViewer({ previewUrl }: { previewUrl: string; fileName: string }) {
                     <ChevronLeft className="h-4 w-4" />
                 </button>
                 <span className="text-xs font-bold text-[var(--app-text-secondary)] select-none px-2 min-w-[90px] text-center tracking-tight">
-                    {currentPage} / {numPages || '–'}
+                    {getPageDisplay()} / {numPages || '–'}
                 </span>
                 <button onClick={nextPage} disabled={currentPage >= numPages} className="p-1.5 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg disabled:opacity-20 transition-all">
                     <ChevronRight className="h-4 w-4" />
@@ -1907,7 +2104,7 @@ export function FileViewerPage({ fileId, onClose }: FileViewerProps) {
                         <span>{t('files.actions.download')}</span>
                     </button>
 
-                    {isPdf && (
+                    {(isPdf || isDocx) && (
                         <>
                             <div className="w-px h-6 bg-[var(--app-border)]/30 mx-1" />
                             <button
@@ -1917,14 +2114,16 @@ export function FileViewerPage({ fileId, onClose }: FileViewerProps) {
                             >
                                 <GalleryVerticalEnd className="h-4 w-4" />
                             </button>
-                            <button
-                                onClick={() => setShowComments(v => !v)}
-                                className={`p-2.5 rounded-xl transition-all ${showComments ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/10 shadow-sm' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}
-                                title="Toggle comments"
-                            >
-                                <MessageCircle className="h-4 w-4" />
-                            </button>
                         </>
+                    )}
+                    {isPdf && (
+                        <button
+                            onClick={() => setShowComments(v => !v)}
+                            className={`p-2.5 rounded-xl transition-all ${showComments ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/10 shadow-sm' : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'}`}
+                            title="Toggle comments"
+                        >
+                            <MessageCircle className="h-4 w-4" />
+                        </button>
                     )}
                 </div>
             </div>
@@ -1970,7 +2169,12 @@ export function FileViewerPage({ fileId, onClose }: FileViewerProps) {
                             <ImageViewer previewUrl={previewUrl} fileName={fileData?.name || ''} />
                         )}
                         {isDocx && previewUrl && (
-                            <DocxViewer previewUrl={previewUrl} fileName={fileData?.name || ''} />
+                            <DocxViewer
+                                previewUrl={previewUrl}
+                                fileName={fileData?.name || ''}
+                                showThumbnails={showThumbnails}
+                                setShowThumbnails={setShowThumbnails}
+                            />
                         )}
                         {!isPdf && !isText && !isImage && !isDocx && (
                             <div className="flex-1 flex items-center justify-center">

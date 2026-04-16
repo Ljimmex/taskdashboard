@@ -252,6 +252,17 @@ timeRoutes.get('/my-tasks', async (c) => {
             return c.json({ success: false, error: 'Workspace not found' }, 404)
         }
 
+        // Get user's role in the workspace
+        const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
+            .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, workspace.id))).limit(1)
+        const currentUserWsRole = wsMember?.role || null
+
+        // Get user's active team memberships for visibility
+        const userTeamsRows = await db.select({ teamId: teamMembers.teamId })
+            .from(teamMembers)
+            .where(eq(teamMembers.userId, userId))
+        const userTeamIds = userTeamsRows.map(ut => ut.teamId)
+
         // Get teams in this workspace
         const workspaceTeams = await db.select({ id: teams.id }).from(teams).where(eq(teams.workspaceId, workspace.id))
         const teamIds = workspaceTeams.map(t => t.id)
@@ -300,11 +311,14 @@ timeRoutes.get('/my-tasks', async (c) => {
                 and(
                     eq(calendarEvents.workspaceId, workspace.id),
                     inArray(calendarEvents.type, ['meeting', 'event']),
-                    gte(calendarEvents.endAt, sql`now()`),
+                    // Relaxed time window: allow logging time for meetings up to 48 hours ago
+                    gte(calendarEvents.endAt, sql`now() - interval '48 hours'`),
                     or(
                         inArray(calendarEvents.taskId, allTaskIds.length > 0 ? allTaskIds : ['']),
                         eq(calendarEvents.createdBy, userId),
-                        sql`${userId} = ANY(${calendarEvents.attendeeIds})`
+                        sql`${userId} = ANY(${calendarEvents.attendeeIds})`,
+                        // Grant access if the meeting is associated with any of the user's teams
+                        userTeamIds.length > 0 ? sql`team_ids && ${JSON.stringify(userTeamIds)}::uuid[]` : sql`false`
                     )
                 )
             ).orderBy(desc(calendarEvents.startAt))
@@ -313,10 +327,17 @@ timeRoutes.get('/my-tasks', async (c) => {
         // Filter to:
         // 1. Tasks assigned to user
         // 2. Tasks that have meetings (so user can pick the meeting)
-        const myTasks = allTasksInProjects.filter(t =>
-            (t.assignees && t.assignees.includes(targetUserId) && !t.isCompleted) ||
-            allMeetings.some(m => m.taskId === t.id)
-        )
+        // 3. For members: include all tasks in projects they have access to (via team)
+        const myTasks = allTasksInProjects.filter(t => {
+            const isAssigned = t.assignees && t.assignees.includes(targetUserId);
+            const hasMeeting = allMeetings.some(m => m.taskId === t.id);
+
+            // If it's a member looking at their own tasks, show all tasks in their projects
+            // to allow them to log time for any task they worked on.
+            const isMemberSelf = (targetUserId === userId) && (currentUserWsRole === 'member');
+
+            return (isAssigned && !t.isCompleted) || hasMeeting || isMemberSelf;
+        })
 
         // Build project map
         const projectMap = Object.fromEntries(teamProjects.map(p => [p.id, p]))
