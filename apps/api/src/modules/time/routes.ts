@@ -252,11 +252,6 @@ timeRoutes.get('/my-tasks', async (c) => {
             return c.json({ success: false, error: 'Workspace not found' }, 404)
         }
 
-        // Get user's role in the workspace
-        const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-            .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, workspace.id))).limit(1)
-        const currentUserWsRole = wsMember?.role || null
-
         // Get user's active team memberships for visibility
         const userTeamsRows = await db.select({ teamId: teamMembers.teamId })
             .from(teamMembers)
@@ -344,26 +339,12 @@ timeRoutes.get('/my-tasks', async (c) => {
             // Continue without meetings - tasks will still be returned
         }
 
-        // Filter to:
-        // 1. Tasks assigned to user
-        // 2. Tasks that have meetings (so user can pick the meeting)
-        // 3. For workspace members viewing their own tasks: show all tasks in their projects
-        //    to allow them to log time for any task they worked on
-        // 4. For admins/managers viewing someone else's tasks: show all tasks
+        // Filter to only show:
+        // 1. Tasks where the target user is in assignees (and not completed)
+        // 2. Tasks that have associated meetings (so user can pick the meeting)
         const myTasks = allTasksInProjects.filter(t => {
             const isAssigned = t.assignees && t.assignees.includes(targetUserId);
             const hasMeeting = allMeetings.some(m => m.taskId === t.id);
-            const isSelfView = targetUserId === userId;
-            const isWsMember = !!currentUserWsRole;
-            const isAdminOrManager = ['owner', 'admin', 'project_manager', 'hr_manager'].includes(currentUserWsRole || '');
-
-            // Self-view: any workspace member sees all tasks to log time
-            // Admin/manager viewing others: sees all tasks
-            // Otherwise: only assigned + not completed, or tasks with meetings
-            if ((isSelfView && isWsMember) || (!isSelfView && isAdminOrManager)) {
-                return true
-            }
-
             return (isAssigned && !t.isCompleted) || hasMeeting;
         })
 
