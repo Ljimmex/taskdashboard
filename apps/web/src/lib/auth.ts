@@ -16,12 +16,13 @@ export const authClient = createAuthClient({
                 }
             }
         },
-        // Send stored bearer token with every auth request
-        headers: {
-            get Authorization() {
-                const token = typeof window !== 'undefined' ? localStorage.getItem('bearer_token') : null
-                return token ? `Bearer ${token}` : ''
-            }
+        // Use proper bearer auth config for the better-auth client
+        auth: {
+            type: 'Bearer',
+            token: () => {
+                if (typeof window === 'undefined') return ''
+                return localStorage.getItem('bearer_token') || ''
+            },
         },
     },
     plugins: [

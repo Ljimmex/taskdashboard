@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { getSession } from '@/lib/auth'
+import { EncryptionProvider } from '@/context/EncryptionContext'
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 
@@ -33,8 +34,10 @@ export const Route = createFileRoute('/$workspaceSlug')({
 
 function WorkspaceAuthLayout() {
     return (
-        <DashboardLayout>
-            <Outlet />
-        </DashboardLayout>
+        <EncryptionProvider>
+            <DashboardLayout>
+                <Outlet />
+            </DashboardLayout>
+        </EncryptionProvider>
     )
 }

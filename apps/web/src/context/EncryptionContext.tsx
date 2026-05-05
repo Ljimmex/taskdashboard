@@ -41,7 +41,23 @@ export function EncryptionProvider({ children }: { children: React.ReactNode }) 
         const initKeys = async () => {
             setIsLoading(true)
             try {
+                // Ensure we have a bearer token before making API calls
+                // This prevents 401 errors during auth transitions
+                const token = localStorage.getItem('bearer_token')
+                if (!token) {
+                    setIsLoading(false)
+                    return
+                }
+
                 const user = await apiFetchJson<any>('/api/users/me')
+                
+                // If the API returned an error (e.g. 401), bail out gracefully
+                if (user?.error) {
+                    console.warn('EncryptionContext: Could not fetch user:', user.error)
+                    setIsLoading(false)
+                    return
+                }
+                
                 const derivedPassword = getDerivedPassword(session.user.id)
 
                 if (user.publicKey && user.encryptedPrivateKey && user.keySalt && user.keyIv) {

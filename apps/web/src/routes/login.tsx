@@ -151,8 +151,11 @@ function LoginPage() {
                     if (loginRes.error) {
                         setError(loginRes.error.message || t('auth.error.login'))
                     } else if (loginRes.data?.user) {
-                        const token = (loginRes.data as any)?.token
-                        if (token) localStorage.setItem('bearer_token', token)
+                        await new Promise(r => setTimeout(r, 150))
+                        if (!localStorage.getItem('bearer_token')) {
+                            const token = (loginRes.data as any)?.token || (loginRes.data as any)?.session?.token
+                            if (token) localStorage.setItem('bearer_token', token)
+                        }
                         await handlePostAuthActions(loginRes.data.user.id)
                     }
                 } else {
@@ -184,8 +187,11 @@ function LoginPage() {
             if (res.error) {
                 setError(res.error.message || t('auth.error.login'))
             } else if (res.data?.user) {
-                const token = (res.data as any)?.token
-                if (token) localStorage.setItem('bearer_token', token)
+                await new Promise(r => setTimeout(r, 150))
+                if (!localStorage.getItem('bearer_token')) {
+                    const token = (res.data as any)?.token || (res.data as any)?.session?.token
+                    if (token) localStorage.setItem('bearer_token', token)
+                }
                 await handlePostAuthActions(res.data.user.id)
             } else {
                 navigate({ to: '/dashboard' })
@@ -240,12 +246,20 @@ function LoginPage() {
 
                 setError(result.error.message || t('auth.error.login'))
             } else if (result.data?.user) {
-                // Explicitly save bearer token before navigating
-                // This is critical for cross-origin setups where cookies may be blocked
-                const token = (result.data as any)?.token
-                if (token) {
-                    localStorage.setItem('bearer_token', token)
+                // The bearer token is captured by the authClient's global onSuccess handler
+                // via the 'set-auth-token' response header. Wait a tick to ensure it's stored
+                // before navigating, which prevents 401 race conditions on dashboard load.
+                await new Promise(r => setTimeout(r, 150))
+                
+                // Verify token was stored - if not, the onSuccess may not have fired
+                if (!localStorage.getItem('bearer_token')) {
+                    // Fallback: try to get session token from the result
+                    const token = (result.data as any)?.token || (result.data as any)?.session?.token
+                    if (token) {
+                        localStorage.setItem('bearer_token', token)
+                    }
                 }
+                
                 await handlePostAuthActions(result.data.user.id)
             }
         } catch (err: any) {
