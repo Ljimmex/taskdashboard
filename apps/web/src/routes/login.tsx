@@ -151,6 +151,8 @@ function LoginPage() {
                     if (loginRes.error) {
                         setError(loginRes.error.message || t('auth.error.login'))
                     } else if (loginRes.data?.user) {
+                        const token = (loginRes.data as any)?.token
+                        if (token) localStorage.setItem('bearer_token', token)
                         await handlePostAuthActions(loginRes.data.user.id)
                     }
                 } else {
@@ -182,6 +184,8 @@ function LoginPage() {
             if (res.error) {
                 setError(res.error.message || t('auth.error.login'))
             } else if (res.data?.user) {
+                const token = (res.data as any)?.token
+                if (token) localStorage.setItem('bearer_token', token)
                 await handlePostAuthActions(res.data.user.id)
             } else {
                 navigate({ to: '/dashboard' })
@@ -236,6 +240,12 @@ function LoginPage() {
 
                 setError(result.error.message || t('auth.error.login'))
             } else if (result.data?.user) {
+                // Explicitly save bearer token before navigating
+                // This is critical for cross-origin setups where cookies may be blocked
+                const token = (result.data as any)?.token
+                if (token) {
+                    localStorage.setItem('bearer_token', token)
+                }
                 await handlePostAuthActions(result.data.user.id)
             }
         } catch (err: any) {

@@ -8,21 +8,19 @@ export const Route = createFileRoute('/dashboard')({
         const session = await getSession()
 
         if (!session?.data?.session) {
-            throw redirect({ to: '/login' })
-        }
-
-        // Fetch user's workspaces
-        // We can't use hooks here easily, so we might need a direct fetch 
-        // or rely on a utility. For now, let's fetch from our API.
-        // But beforeLoad runs on client too.
-
-        try {
-            // We can assume valid session means we can query API
-            // But fetch requires absolute URL if server-side? 
-            // TanStack router runs on client mostly for SPA.
-            // However, let's just create a component that does this effect.
-        } catch (e) {
-            throw redirect({ to: '/login' })
+            // On cross-origin setups, cookies may be blocked.
+            // Check if we have a bearer token as fallback — if so, retry once
+            const token = localStorage.getItem('bearer_token')
+            if (token) {
+                // Small delay to allow any pending token writes to complete
+                await new Promise(r => setTimeout(r, 100))
+                const retrySession = await getSession()
+                if (!retrySession?.data?.session) {
+                    throw redirect({ to: '/login' })
+                }
+            } else {
+                throw redirect({ to: '/login' })
+            }
         }
     },
     component: DashboardRedirector
