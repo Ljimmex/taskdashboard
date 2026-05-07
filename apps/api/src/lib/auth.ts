@@ -13,6 +13,9 @@ export const auth = betterAuth({
     // Explicitly pass secret from env
     secret: process.env.BETTER_AUTH_SECRET,
 
+    // Set base URL for production (critical for CORS in cross-origin setups)
+    baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+
     // Base path for auth routes
     basePath: '/api/auth',
 

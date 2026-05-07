@@ -94,7 +94,7 @@ app.use('*', cors({
         'https://api.zadanoapp.com',
     ],
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization', 'x-user-id'],
+    allowHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'User-Agent'],
     exposeHeaders: ['Content-Length', 'set-auth-token'],
     maxAge: 86400,
     credentials: true,
