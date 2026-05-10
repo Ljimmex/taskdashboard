@@ -50,7 +50,44 @@ console.log('📡 Expected Port:', process.env.PORT || 3000)
 
 import { rateLimiter } from 'hono-rate-limiter'
 
-// Security headers
+// 1. CORS - MUST be first to handle preflight OPTIONS requests before any other middleware
+// This ensures that even if other middleware fails or has security policies, CORS preflight still succeeds.
+const ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://taskdashboard.pages.dev',
+    'https://taskdashboard-api.onrender.com',
+    'https://taskdashboard-web.onrender.com',
+    'https://zadanoapp.com',
+    'https://www.zadanoapp.com',
+    'https://api.zadanoapp.com',
+]
+
+app.use('*', cors({
+    origin: (origin) => {
+        // Allow if origin is in our list or matches our domains
+        if (!origin) return null
+        if (ALLOWED_ORIGINS.includes(origin)) return origin
+        if (origin.endsWith('.zadanoapp.com')) return origin
+        if (origin.endsWith('.onrender.com')) return origin
+        return null
+    },
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'x-user-id', 
+        'User-Agent', 
+        'X-Requested-With',
+        'better-auth-agent',
+        'x-better-auth-version'
+    ],
+    exposeHeaders: ['Content-Length', 'set-auth-token', 'X-Total-Count'],
+    maxAge: 86400,
+    credentials: true,
+}))
+
+// 2. Security headers
 app.use('*', secureHeaders({
     strictTransportSecurity: 'max-age=63072000; includeSubDomains; preload',
     xFrameOptions: 'DENY',
@@ -76,28 +113,11 @@ app.use('*', secureHeaders({
             "wss://opwnyaxsxutmodbapjrc.supabase.co",
             "https://*.r2.cloudflarestorage.com",
             "https://taskdashboard-api.onrender.com",
-            "https://api.zadanoapp.com"
+            "https://api.zadanoapp.com",
+            "https://zadanoapp.com"
         ],
         upgradeInsecureRequests: [],
     },
-}))
-
-// CORS - Must be before rate limiting to handle preflight OPTIONS requests
-app.use('*', cors({
-    origin: [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'https://taskdashboard-api.onrender.com',
-        'https://taskdashboard-web.onrender.com',
-        'https://zadanoapp.com',
-        'https://www.zadanoapp.com',
-        'https://api.zadanoapp.com',
-    ],
-    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'User-Agent'],
-    exposeHeaders: ['Content-Length', 'set-auth-token'],
-    maxAge: 86400,
-    credentials: true,
 }))
 
 // Rate Limiting (5000 reqs per 15 min per IP)
