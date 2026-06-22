@@ -14,6 +14,10 @@ import {
     canDeleteTasks,
     canAssignTasks,
     canCompleteTasks,
+    canCreateStages,
+    canUpdateStages,
+    canDeleteStages,
+    canReorderStages,
     type TeamLevel,
     type WorkspaceRole
 } from '../../lib/permissions'
@@ -95,12 +99,57 @@ async function getUserWorkspaceRole(userId: string, workspaceId: string): Promis
     return (member?.role as WorkspaceRole) || null
 }
 
-// Helper: Get user's team level for a project's team
-async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
+// Helper: Get user's effective team level for a project's team.
+// Checks in order:
+// 1. Explicit team_membership in the project's team
+// 2. Ownership of the project's team (legacy ownerId field)
+// 3. Any team_lead role in another team within the same workspace
+async function getUserEffectiveTeamLevel(
+    userId: string,
+    teamId: string,
+    workspaceId: string | null
+): Promise<TeamLevel | null> {
+    // 1. Explicit membership in the project's team
     const member = await db.query.teamMembers.findFirst({
         where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId))
     })
-    return (member?.teamLevel as TeamLevel) || null
+    if (member?.teamLevel) {
+        return member.teamLevel as TeamLevel
+    }
+
+    // 2. Team owner fallback
+    const team = await db.query.teams.findFirst({
+        where: (t, { eq }) => eq(t.id, teamId),
+        columns: { ownerId: true }
+    })
+    if (team?.ownerId === userId) {
+        return 'team_lead'
+    }
+
+    // 3. Workspace-wide team_lead fallback
+    // If the user is a team_lead in any team in this workspace, grant team_lead rights here too
+    if (workspaceId) {
+        const workspaceTeams = await db.query.teams.findMany({
+            where: (t, { eq }) => eq(t.workspaceId, workspaceId),
+            columns: { id: true, ownerId: true }
+        })
+
+        for (const otherTeam of workspaceTeams) {
+            if (otherTeam.id === teamId) continue
+
+            const otherMember = await db.query.teamMembers.findFirst({
+                where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, otherTeam.id))
+            })
+            if (otherMember?.teamLevel === 'team_lead') {
+                return 'team_lead'
+            }
+            if (otherTeam.ownerId === userId) {
+                return 'team_lead'
+            }
+        }
+    }
+
+    return null
 }
 
 // Helper: Get teamId from projectId
@@ -125,6 +174,53 @@ async function getWorkspaceIdFromProject(projectId: string): Promise<string | nu
 // =============================================================================
 // TASKS CRUD (3.11)
 // =============================================================================
+
+// GET /api/tasks/permissions - Get current user's effective task/stage permissions for a project
+tasksRoutes.get('/permissions', zValidator('query', z.object({ projectId: z.string() })), async (c) => {
+    try {
+        const user = c.get('user') as any
+        const userId = user.id
+
+        const { projectId } = c.req.valid('query')
+
+        const teamId = await getTeamIdFromProject(projectId)
+        if (!teamId) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+        }
+
+        let workspaceRole: WorkspaceRole | null = null
+        const workspaceId = await getWorkspaceIdFromProject(projectId)
+        if (workspaceId) {
+            workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+        }
+
+        const teamLevel = await getUserEffectiveTeamLevel(userId, teamId, workspaceId)
+
+        console.log('🛡️ PERMISSIONS endpoint:', { userId, projectId, teamId, workspaceId, workspaceRole, teamLevel })
+
+        return c.json({
+            success: true,
+            data: {
+                tasks: {
+                    create: canCreateTasks(workspaceRole, teamLevel),
+                    update: canUpdateTasks(workspaceRole, teamLevel),
+                    delete: canDeleteTasks(workspaceRole, teamLevel),
+                    assign: canAssignTasks(workspaceRole, teamLevel),
+                    complete: canCompleteTasks(workspaceRole, teamLevel),
+                },
+                stages: {
+                    create: canCreateStages(workspaceRole, teamLevel),
+                    update: canUpdateStages(workspaceRole, teamLevel),
+                    delete: canDeleteStages(workspaceRole, teamLevel),
+                    reorder: canReorderStages(workspaceRole, teamLevel),
+                }
+            }
+        })
+    } catch (error) {
+        console.error('Error fetching task permissions:', error)
+        return c.json({ success: false, error: 'Failed to fetch task permissions' }, 500)
+    }
+})
 
 // GET /api/tasks - List tasks (filtered by project membership)
 tasksRoutes.get('/', zValidator('query', tasksQuerySchema), async (c) => {
@@ -458,8 +554,8 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
             workspaceRole = await getUserWorkspaceRole(userId, projectWorkspaceId)
         }
 
-        const teamLevel = await getUserTeamLevel(userId, teamId)
-        console.log('👤 User permissions:', { workspaceRole, teamLevel })
+        const teamLevel = await getUserEffectiveTeamLevel(userId, teamId, projectWorkspaceId)
+        console.log('🛡️ CREATE task permission check:', { userId, projectId: body.projectId, teamId, workspaceId: projectWorkspaceId, workspaceRole, teamLevel, canCreateTasks: canCreateTasks(workspaceRole, teamLevel) })
 
         if (!canCreateTasks(workspaceRole, teamLevel) && userId !== 'temp-user-id') {
             console.warn('🚫 Unauthorized to create tasks:', { userId, workspaceRole, teamLevel })
@@ -638,7 +734,9 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
             workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
         }
 
-        const teamLevel = await getUserTeamLevel(userId, teamId)
+        const teamLevel = await getUserEffectiveTeamLevel(userId, teamId, workspaceId)
+
+        console.log('🛡️ UPDATE task permission check:', { taskId: id, userId, projectId: task.projectId, teamId, workspaceId, workspaceRole, teamLevel, canUpdateTasks: canUpdateTasks(workspaceRole, teamLevel) })
 
         // Allow if: has update permission OR is assignee
         const isAssignee = task.assignees?.includes(userId)
@@ -987,7 +1085,18 @@ tasksRoutes.delete('/:id', async (c) => {
             workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
         }
 
-        const teamLevel = await getUserTeamLevel(userId, teamId)
+        const teamLevel = await getUserEffectiveTeamLevel(userId, teamId, workspaceId)
+
+        console.log('🛡️ DELETE task permission check:', {
+            taskId: id,
+            userId,
+            projectId: task.projectId,
+            teamId,
+            workspaceId,
+            workspaceRole,
+            teamLevel,
+            canDeleteTasks: canDeleteTasks(workspaceRole, teamLevel),
+        })
 
         if (!canDeleteTasks(workspaceRole, teamLevel)) {
             return c.json({ success: false, error: 'Unauthorized to delete task' }, 403)
@@ -1043,7 +1152,7 @@ tasksRoutes.patch('/:id/move', async (c) => {
             workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
         }
 
-        const teamLevel = await getUserTeamLevel(userId, teamId)
+        const teamLevel = await getUserEffectiveTeamLevel(userId, teamId, workspaceId)
 
         // Allow move if can update tasks or is assignee
         const isAssignee = task.assignees?.includes(userId)

@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TaskCardProps } from '../components/TaskCard'
+import type { TaskPermissions } from '@/hooks/useTaskPermissions'
 import {
     DocumentIcon,
     DocumentIconGold,
@@ -28,6 +29,7 @@ interface TaskListViewProps {
     priorities?: { id: string; name: string; color: string }[] // Dynamic priorities
     onSort?: (by: string, dir: 'asc' | 'desc') => void
     userRole?: string
+    permissions?: TaskPermissions
     userId?: string
     onQuickUpdate?: (data: { id: string; title?: string; priority?: string; assigneeId?: string; dueDate?: string; assignees?: string[]; isCompleted?: boolean }) => void
 }
@@ -174,6 +176,7 @@ const RowMenu = ({
     onDuplicate,
     onArchive,
     userRole,
+    permissions,
     onAssignToMe,
     isAssignedToMe,
     isCompleted,
@@ -185,6 +188,7 @@ const RowMenu = ({
     onDuplicate?: () => void
     onArchive?: () => void
     userRole?: string
+    permissions?: TaskPermissions
     onAssignToMe?: () => void
     isAssignedToMe?: boolean
     isCompleted?: boolean
@@ -195,7 +199,9 @@ const RowMenu = ({
     const [open, setOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
 
-    const canManageTasks = userRole !== 'member' && userRole !== 'guest'
+    const canManageTasks = permissions
+        ? !!(permissions.tasks.update || permissions.tasks.delete)
+        : userRole !== 'member' && userRole !== 'guest'
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -231,7 +237,7 @@ const RowMenu = ({
                         {t('tasks.card.menu.edit')}
                     </button>
 
-                    {!isAssignedToMe && (canManageTasks || userRole === 'member') && onAssignToMe && (
+                    {!isAssignedToMe && (permissions ? permissions.tasks.assign : userRole !== 'guest') && onAssignToMe && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onAssignToMe(); setOpen(false) }}
                             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88] transition-colors group/item"
@@ -249,7 +255,7 @@ const RowMenu = ({
                     )}
 
                     {/* Mark as Done / Undone */}
-                    {(canManageTasks || userRole === 'member') && onToggleCompletion && (
+                    {(permissions ? permissions.tasks.complete : userRole !== 'guest') && onToggleCompletion && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onToggleCompletion(); setOpen(false) }}
                             disabled={isBlocked}
@@ -320,6 +326,7 @@ export function TaskListView({
     columns = [],
     priorities = [],
     userRole,
+    permissions,
     userId,
     onQuickUpdate
 }: TaskListViewProps) {
@@ -450,6 +457,7 @@ export function TaskListView({
                                         onDuplicate={() => onTaskDuplicate?.(task.id)}
                                         onArchive={() => onTaskArchive?.(task.id)}
                                         userRole={userRole}
+                                        permissions={permissions}
                                         isAssignedToMe={userId ? task.assignees?.some(a => (typeof a === 'string' ? a === userId : a.id === userId)) : false}
                                         isCompleted={task.isCompleted}
                                         isBlocked={(task as any).isBlocked}

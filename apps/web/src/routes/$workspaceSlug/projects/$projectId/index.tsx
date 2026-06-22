@@ -15,6 +15,7 @@ import { TaskDetailsPanel } from '@/components/features/tasks/panels/TaskDetails
 import { EditTaskPanel } from '@/components/features/tasks/panels/EditTaskPanel'
 import { ConfirmDeleteModal } from '@/components/common/ConfirmDeleteModal'
 import { BulkActions } from '@/components/features/tasks/components/BulkActions'
+import { useTaskPermissions } from '@/hooks/useTaskPermissions'
 
 
 export const Route = createFileRoute('/$workspaceSlug/projects/$projectId/')({
@@ -157,6 +158,9 @@ function ProjectDetailPage() {
   })
 
   const currentWorkspace = workspaces?.find((w: any) => w.slug === workspaceSlug)
+
+  // Fetch effective task/stage permissions for the current project
+  const { data: taskPermissions } = useTaskPermissions(projectId)
 
   // Fetch teams to get members for assignment
   const { data: teamsData } = useQuery({
@@ -979,6 +983,7 @@ function ProjectDetailPage() {
                 availableLabels={workspaceLabels}
                 availablePriorities={currentWorkspace?.priorities}
                 availableStatuses={project?.stages?.map(s => ({ value: s.id, label: s.name })) || []}
+                canCreateTask={taskPermissions?.tasks.create}
               />
             )
           }
@@ -1004,7 +1009,7 @@ function ProjectDetailPage() {
               onChangeColumnColor={handleChangeStageColor}
               onDeleteColumn={handleDeleteStage}
               onColumnReorder={handleReorderStages}
-              userRole={currentWorkspace?.userRole}
+              permissions={taskPermissions || undefined}
               userId={session?.user?.id}
             />
           </div>
@@ -1027,7 +1032,7 @@ function ProjectDetailPage() {
               setSortBy(field)
               setSortDirection(dir)
             }}
-            userRole={currentWorkspace?.userRole}
+            permissions={taskPermissions || undefined}
             userId={session?.user?.id}
             onQuickUpdate={handleQuickUpdateTask}
           />

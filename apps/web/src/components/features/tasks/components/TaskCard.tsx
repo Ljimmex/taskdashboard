@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
 import { useTasks, isTaskBlocked } from '@/hooks/useTasks'
+import type { TaskPermissions } from '@/hooks/useTaskPermissions'
 import { LabelBadge } from '../../labels/LabelBadge'
 import { SubtaskProgress } from '@/components/common/ProgressBar'
 import {
@@ -72,6 +73,7 @@ export interface TaskCardProps {
     onArchive?: () => void
     isDragging?: boolean
     userRole?: string
+    permissions?: TaskPermissions
     userId?: string
     onQuickUpdate?: (data: { id: string; title: string; priority: string; assigneeId?: string; dueDate?: string; assignees?: string[]; isCompleted?: boolean }) => void
     isCollapsedOverride?: boolean // Added for column-wide collapse override
@@ -109,6 +111,7 @@ export function TaskCard({
     onArchive,
     isDragging = false,
     userRole,
+    permissions,
     userId,
     onQuickUpdate,
     isCollapsedOverride,
@@ -145,8 +148,10 @@ export function TaskCard({
 
     const isCollapsed = type !== 'meeting' && isCollapsedState
 
-    // Check permissions
-    const canManageTasks = userRole !== 'member' && userRole !== 'guest'
+    // Check permissions (permissions take precedence over legacy userRole check)
+    const canManageTasks = permissions
+        ? !!(permissions.tasks.update || permissions.tasks.delete)
+        : userRole !== 'member' && userRole !== 'guest'
 
     // Fetch workspace priorities
     const { data: workspace } = useQuery({
@@ -322,7 +327,7 @@ export function TaskCard({
                             {t('tasks.card.menu.edit')}
                         </button>
 
-                        {type !== 'meeting' && !isAssignedToMe && (canManageTasks || userRole === 'member') && (
+                        {type !== 'meeting' && !isAssignedToMe && (permissions ? permissions.tasks.assign : userRole !== 'guest') && (
                             <button onClick={handleAssignToMe} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item whitespace-nowrap">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="group-hover/item:hidden">
                                     <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="#545454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -337,7 +342,7 @@ export function TaskCard({
                         )}
 
                         {/* Mark as Done / Undone */}
-                        {(canManageTasks || userRole === 'member') && (
+                        {(permissions ? permissions.tasks.complete : userRole !== 'guest') && (
                             <button
                                 onClick={handleToggleCompletion}
                                 disabled={isBlocked}
@@ -356,8 +361,8 @@ export function TaskCard({
                         )}
 
                         {canManageTasks && (
-                            <>
-                                <button onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item whitespace-nowrap">
+                        <>
+                            <button onClick={(e) => { e.stopPropagation(); onDuplicate?.(); setShowMenu(false) }} className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group/item whitespace-nowrap">
                                     <svg width="14" height="14" viewBox="0 0 32 32" fill="none" className="group-hover/item:hidden">
                                         <rect x="10" y="10" width="16" height="16" rx="3" fill="#9E9E9E" />
                                         <path d="M8 22V10C8 7.79086 9.79086 6 12 6H22" stroke="#545454" strokeWidth="4" strokeLinecap="round" />

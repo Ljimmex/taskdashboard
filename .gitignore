@@ -61,3 +61,4 @@ supabase/.temp
 
 # Agent Skills
 .agent/skills/
+AGENTS.md

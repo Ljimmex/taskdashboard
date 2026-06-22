@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { apiFetchJson } from '@/lib/api'
 import { TaskCard, TaskCardProps } from '../components/TaskCard'
+import type { TaskPermissions } from '@/hooks/useTaskPermissions'
 import { AssigneePicker, Assignee } from '../components/AssigneePicker'
 import { DueDatePicker } from '../components/DueDatePicker'
 import {
@@ -72,6 +73,7 @@ interface TaskColumnProps {
     onDeleteColumn?: () => void
     dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
     userRole?: string
+    permissions?: TaskPermissions
 }
 
 // Status configuration with colors and icons
@@ -497,7 +499,8 @@ function ColumnMenu({
     isCardsCollapsed,
     onAddRule,
     onDeleteColumn,
-    userRole
+    userRole,
+    permissions
 }: {
     onClose: () => void
     onRename?: () => void
@@ -514,12 +517,15 @@ function ColumnMenu({
     onAddRule?: () => void
     onDeleteColumn?: () => void
     userRole?: string
+    permissions?: TaskPermissions
 }) {
     const { t } = useTranslation()
     const menuRef = useRef<HTMLDivElement>(null)
     const [view, setView] = useState<'main' | 'colors'>('main')
 
-    const canEditColumn = userRole && !['member', 'guest'].includes(userRole)
+    const canEditColumn = permissions
+        ? !!(permissions.stages.update || permissions.stages.delete)
+        : !!(userRole && !['member', 'guest'].includes(userRole))
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -744,14 +750,18 @@ export function TaskColumn({
     children,
     dragHandleProps,
     members,
-    userRole
-}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[]; userRole?: string; isCollapsed?: boolean; isCardsCollapsed?: boolean }) {
+    userRole,
+    permissions
+}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[]; userRole?: string; permissions?: TaskPermissions; isCollapsed?: boolean; isCardsCollapsed?: boolean }) {
     const [showQuickAdd, setShowQuickAdd] = useState(false)
     const [showColumnMenu, setShowColumnMenu] = useState(false)
     const [isRenaming, setIsRenaming] = useState(false)
     const [renameTitle, setRenameTitle] = useState('')
 
-    const canEditColumn = userRole && !['member', 'guest'].includes(userRole)
+    const canEditColumn = permissions
+        ? !!(permissions.stages.update || permissions.stages.delete)
+        : !!(userRole && !['member', 'guest'].includes(userRole))
+    const canCreateTask = permissions ? permissions.tasks.create : true
 
     const config = useStatusConfig()[status] || {
         label: title,
@@ -857,16 +867,18 @@ export function TaskColumn({
 
                 {/* Action buttons: Add + Menu */}
                 <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                        onClick={() => setShowQuickAdd(!showQuickAdd)}
-                        className="w-6 h-6 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-amber-400 transition-colors"
-                        title="Add task"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                    </button>
+                    {canCreateTask && (
+                        <button
+                            onClick={() => setShowQuickAdd(!showQuickAdd)}
+                            className="w-6 h-6 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-amber-400 transition-colors"
+                            title="Add task"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                        </button>
+                    )}
                     <button
                         onClick={() => setShowColumnMenu(!showColumnMenu)}
                         className="w-6 h-6 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
@@ -902,6 +914,7 @@ export function TaskColumn({
                         onAddRule={onAddRule}
                         onDeleteColumn={onDeleteColumn}
                         userRole={userRole}
+                        permissions={permissions}
                     />
                 )}
             </div>
@@ -921,6 +934,7 @@ export function TaskColumn({
                     <TaskCard
                         key={task.id}
                         {...task}
+                        permissions={permissions}
                         onClick={() => onTaskClick?.(task.id)}
                         onEdit={() => onTaskEdit?.(task.id)}
                         onDelete={() => onTaskDelete?.(task.id)}

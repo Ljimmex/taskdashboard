@@ -28,6 +28,7 @@ interface KanbanBoardHeaderProps {
     availableLabels?: { id: string; name: string; color: string }[]
     availablePriorities?: { id: string; name: string; color: string; position: number }[]
     availableStatuses?: { value: string; label: string }[]
+    canCreateTask?: boolean
 }
 
 export interface FilterState {
@@ -394,7 +395,8 @@ export function KanbanBoardHeader({
     members,
     availableLabels,
     availablePriorities,
-    availableStatuses
+    availableStatuses,
+    canCreateTask
 }: KanbanBoardHeaderProps) {
     const { t } = useTranslation()
     const [searchFocused, setSearchFocused] = useState(false)
@@ -487,16 +489,18 @@ export function KanbanBoardHeader({
                 </div>
 
                 {/* New Task button */}
-                <button
-                    onClick={onNewTask}
-                    className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-sm font-semibold transition-all shadow-lg shadow-amber-500/20"
-                >
+                {(canCreateTask ?? true) && (
+                    <button
+                        onClick={onNewTask}
+                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-sm font-semibold transition-all shadow-lg shadow-amber-500/20"
+                    >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="12" y1="5" x2="12" y2="19" />
                         <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    {t('board.header.new_task')}
-                </button>
+                        {t('board.header.new_task')}
+                    </button>
+                )}
             </div>
         </div>
     )

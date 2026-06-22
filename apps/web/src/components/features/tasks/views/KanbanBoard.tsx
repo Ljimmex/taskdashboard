@@ -24,6 +24,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { TaskCard, TaskCardProps } from '../components/TaskCard'
 import { TaskColumn, AddColumn, QuickEditTask } from './TaskColumn'
 import { isTaskBlocked } from '@/hooks/useTasks'
+import type { TaskPermissions } from '@/hooks/useTaskPermissions'
 import { useParams } from '@tanstack/react-router'
 
 // Sortable Task wrapper
@@ -40,6 +41,7 @@ function SortableTask({
     onQuickUpdate,
     onCancelEdit,
     userRole,
+    permissions,
     userId,
     isBlocked,
     isCollapsedOverride,
@@ -56,6 +58,7 @@ function SortableTask({
     onQuickUpdate?: (data: { id: string; title?: string; priority?: string; assignees?: string[]; dueDate?: string; isCompleted?: boolean }) => void
     onCancelEdit?: () => void
     userRole?: string
+    permissions?: TaskPermissions
     userId?: string
     isBlocked?: boolean
     isCollapsedOverride?: boolean
@@ -107,6 +110,7 @@ function SortableTask({
                     onDuplicate={() => onTaskDuplicate?.(task.id)}
                     onArchive={() => onTaskArchive?.(task.id)}
                     userRole={userRole}
+                    permissions={permissions}
                     userId={userId}
                     onQuickUpdate={onQuickUpdate}
                     isCollapsedOverride={isCollapsedOverride}
@@ -137,11 +141,13 @@ function SortableColumn({
     isCollapsed,
     isCardsCollapsed,
     isOver,
+    permissions,
     children
 }: {
     column: { id: string; title: string; status: any; color?: string }
     tasks: TaskCardProps[]
     members?: { id: string; name: string; avatar?: string }[]
+    permissions?: TaskPermissions
     onAddTask?: (data?: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string; startDate?: string }) => void
     onTaskClick?: (id: string) => void
     onTaskEdit?: (id: string) => void
@@ -209,6 +215,7 @@ function SortableColumn({
                 onToggleCollapse={onToggleCollapse}
                 isCollapsed={isCollapsed}
                 isCardsCollapsed={isCardsCollapsed}
+                permissions={permissions}
                 dragHandleProps={{ ...attributes, ...listeners }}
             >
                 {children}
@@ -242,6 +249,7 @@ interface KanbanBoardProps {
     onMoveAllCards?: (columnId: string) => void
     onQuickUpdate?: (data: { id: string; title?: string; priority?: string; assignees?: string[]; dueDate?: string; isCompleted?: boolean }) => void
     userRole?: string
+    permissions?: TaskPermissions
     userId?: string
 }
 
@@ -264,6 +272,7 @@ export function KanbanBoard({
     onMoveAllCards,
     onQuickUpdate,
     userRole,
+    permissions,
     userId,
 }: KanbanBoardProps) {
     const [activeColumn, setActiveColumn] = useState<any | null>(null)
@@ -459,6 +468,7 @@ export function KanbanBoard({
                                 onToggleCollapse={() => setColumnCollapsedStates(prev => ({ ...prev, [column.id]: !prev[column.id] }))}
                                 isCollapsed={columnCollapsedStates[column.id]}
                                 isCardsCollapsed={cardCollapsedStates[column.id]}
+                                permissions={permissions}
                             >
                                 <SortableContext
                                     items={column.tasks.map(t => t.id)}
@@ -481,6 +491,7 @@ export function KanbanBoard({
                                             }}
                                             onCancelEdit={() => setEditingTaskId(null)}
                                             userRole={userRole}
+                                            permissions={permissions}
                                             userId={userId}
                                             isBlocked={isTaskBlocked(task as any, allTasks as any)}
                                             isCollapsedOverride={cardCollapsedStates[column.id]}
