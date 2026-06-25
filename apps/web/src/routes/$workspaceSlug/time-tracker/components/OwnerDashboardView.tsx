@@ -129,9 +129,12 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
             acc[p.role] = (acc[p.role] || 0) + p.totalHours
             return acc
         }, {})
-        return Object.entries(breakdown).map(([name, value]) => ({
+        const total = Object.values(breakdown).reduce((a: number, b) => a + Number(b), 0)
+        return Object.entries(breakdown).map(([name, value], index) => ({
             name: name.replace('_', ' '),
-            value: Number(value)
+            value: Number(value),
+            color: COLORS[index % COLORS.length],
+            percent: total > 0 ? Math.round((Number(value) / total) * 1000) / 10 : 0
         })).sort((a, b) => b.value - a.value)
     }, [participants])
 
@@ -429,20 +432,23 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
                             </div>
 
                             {/* Donut Chart (Roles) */}
-                            <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm">
-                                <h2 className="text-base font-bold text-[var(--app-text-primary)] mb-6 flex items-center gap-3 opacity-90">
+                            <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm flex flex-col">
+                                <h2 className="text-base font-bold text-[var(--app-text-primary)] mb-4 flex items-center gap-3 opacity-90">
                                     <BreakdownIcon />
                                     {t('timeTracker.roleBreakdown', 'Rozkład Ról')}
                                 </h2>
-                                <div className="h-64 w-full flex items-center justify-center relative">
+                                <div className="h-52 w-full flex items-center justify-center relative">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RechartsPieChart>
-                                            <Pie data={roleBreakdownData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                                                {roleBreakdownData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                                            <Pie data={roleBreakdownData} innerRadius={55} outerRadius={75} paddingAngle={4} dataKey="value">
+                                                {roleBreakdownData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                                             </Pie>
                                             <RechartsTooltip
                                                 contentStyle={{ backgroundColor: 'var(--app-bg-card)', border: '1px solid var(--app-divider)', borderRadius: '12px', color: 'var(--app-text-primary)' }}
-                                                formatter={(value: any) => [formatHours(Number(value) || 0), t('timeTracker.hours', 'Godziny')]}
+                                                formatter={(value: any, name: any) => {
+                                                    const item = roleBreakdownData.find(d => d.name === name)
+                                                    return [`${formatHours(Number(value) || 0)} (${item?.percent ?? 0}%)`, name]
+                                                }}
                                             />
                                         </RechartsPieChart>
                                     </ResponsiveContainer>
@@ -451,6 +457,27 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
                                         <span className="text-xl font-bold text-[var(--app-text-primary)]">{formatHours(participants.reduce((a: number, p: any) => a + p.totalHours, 0))}</span>
                                         <span className="text-[10px] text-[var(--app-text-muted)] uppercase tracking-widest font-bold">{t('timeTracker.total', 'Łącznie')}</span>
                                     </div>
+                                </div>
+
+                                {/* Legend */}
+                                <div className="mt-4 space-y-2">
+                                    {roleBreakdownData.map((item) => (
+                                        <div key={item.name} className="flex items-center justify-between text-sm">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+                                                <span className="text-[var(--app-text-secondary)] truncate">{item.name}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 flex-shrink-0">
+                                                <span className="font-semibold text-[var(--app-text-primary)]">{formatHours(item.value)}</span>
+                                                <span className="text-xs text-[var(--app-text-muted)] w-10 text-right">{item.percent}%</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {roleBreakdownData.length === 0 && (
+                                        <div className="text-center text-sm text-[var(--app-text-muted)] py-4">
+                                            {t('timeTracker.noRoleData', 'Brak danych o rolach')}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

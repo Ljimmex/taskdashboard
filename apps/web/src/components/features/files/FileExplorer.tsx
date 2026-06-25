@@ -352,15 +352,13 @@ export function FileExplorer({
                         onFileDrop={handleFileDrop}
                         userRole={userRole}
                     />
-                    {userRole !== 'member' && (
-                        <button
-                            onClick={() => setIsCreateFolderOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-card)] hover:bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-lg transition-colors"
-                        >
-                            <FolderPlus size={16} />
-                            {t('files.actions.new_folder')}
-                        </button>
-                    )}
+                    <button
+                        onClick={() => setIsCreateFolderOpen(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-card)] hover:bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-lg transition-colors"
+                    >
+                        <FolderPlus size={16} />
+                        {t('files.actions.new_folder')}
+                    </button>
                 </div>
 
                 {viewMode === 'list' ? (

@@ -450,6 +450,27 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         const [workspace] = await db.select().from(workspaces).where(eq(workspaces.id, team.workspaceId)).limit(1)
         if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
 
+        // Get active workspace members to exclude users no longer in the workspace
+        const activeWorkspaceMembers = await db.select({ userId: workspaceMembers.userId })
+            .from(workspaceMembers)
+            .where(and(
+                eq(workspaceMembers.workspaceId, workspace.id),
+                eq(workspaceMembers.status, 'active')
+            ))
+        const activeUserIds = new Set(activeWorkspaceMembers.map(m => m.userId))
+
+        // If requesting a single member who is no longer active, return empty result
+        if (targetUserId && !activeUserIds.has(targetUserId)) {
+            return c.json({
+                success: true,
+                data: {
+                    summary: null,
+                    recentEntries: [],
+                    hourThreshold: workspace.settings?.revshareHourThreshold || 200
+                }
+            })
+        }
+
         // Get threshold from settings (default 200)
         const hourThreshold = workspace.settings?.revshareHourThreshold || 200
 
@@ -458,7 +479,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
         const taskIds = projectTasks.map(t => t.id)
 
         // --- FETCH ALL APPROVED ENTRIES ---
-        const allApprovedEntries = await db.select().from(timeEntries).where(
+        const allApprovedEntriesRaw = await db.select().from(timeEntries).where(
             and(
                 or(
                     taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
@@ -471,6 +492,9 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 eq(timeEntries.approvalStatus, 'approved')
             )
         )
+
+        // Exclude entries from users no longer active in the workspace
+        const allApprovedEntries = allApprovedEntriesRaw.filter(e => activeUserIds.has(e.userId))
 
         // --- FILTER ENTRIES BY RANGE ---
         let targetEntries = allApprovedEntries
@@ -494,7 +518,10 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
             })
         }
 
-        // Fetch project mapping for all users involved to get CURRENT roles (Workspace + Team context)
+        // Exclude entries from users no longer active in the workspace
+        targetEntries = targetEntries.filter(e => activeUserIds.has(e.userId))
+
+        // Fetch project mapping for active workspace members only to get CURRENT roles
         const membersData = await db.select({
             userId: projectMembers.userId,
             wsRole: workspaceMembers.role,
@@ -506,8 +533,11 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                 AND t.workspace_id = ${workspace.id}
             )`
         }).from(projectMembers)
-            .leftJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, workspace.id)))
-            .where(eq(projectMembers.projectId, projectId))
+            .innerJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, workspace.id)))
+            .where(and(
+                eq(projectMembers.projectId, projectId),
+                eq(workspaceMembers.status, 'active')
+            ))
 
         const memberRoleMap = Object.fromEntries(membersData.map(m => {
             const resolved = resolveProjectRole(m.wsRole || 'member', !!m.isAnyTeamLead)
@@ -702,6 +732,15 @@ timeRoutes.get('/project/:projectId', async (c) => {
         const [team] = await db.select().from(teams).where(eq(teams.id, project.teamId)).limit(1)
         if (!team) return c.json({ success: false, error: 'Team not found' }, 404)
 
+        // Get active workspace members to exclude users no longer in the workspace
+        const activeWorkspaceMembers = await db.select({ userId: workspaceMembers.userId })
+            .from(workspaceMembers)
+            .where(and(
+                eq(workspaceMembers.workspaceId, team.workspaceId),
+                eq(workspaceMembers.status, 'active')
+            ))
+        const activeUserIds = new Set(activeWorkspaceMembers.map(m => m.userId))
+
         // Get tasks in project
         const projectTasks = await db.select({
             id: tasks.id,
@@ -722,8 +761,11 @@ timeRoutes.get('/project/:projectId', async (c) => {
                 AND t.workspace_id = ${team.workspaceId}
             )`
         }).from(projectMembers)
-            .leftJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, team.workspaceId)))
-            .where(eq(projectMembers.projectId, projectId))
+            .innerJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, team.workspaceId)))
+            .where(and(
+                eq(projectMembers.projectId, projectId),
+                eq(workspaceMembers.status, 'active')
+            ))
 
         const memberRoleMap = Object.fromEntries(membersData.map(m => {
             const resolved = resolveProjectRole(m.wsRole || 'member', !!m.isAnyTeamLead)
@@ -775,6 +817,9 @@ timeRoutes.get('/project/:projectId', async (c) => {
                 return d >= start && d <= end
             })
         }
+
+        // Exclude entries from users no longer active in the workspace
+        filteredEntries = filteredEntries.filter(e => activeUserIds.has(e.userId))
 
         // Get subtask info
         const subtaskIds = filteredEntries.filter(e => e.subtaskId).map(e => e.subtaskId!) as string[]
@@ -1182,6 +1227,15 @@ timeRoutes.get('/pending', async (c) => {
         const [workspace] = await db.select().from(workspaces).where(eq(workspaces.slug, workspaceSlug)).limit(1)
         if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
 
+        // Get active workspace members to exclude users no longer in the workspace
+        const activeWorkspaceMembers = await db.select({ userId: workspaceMembers.userId })
+            .from(workspaceMembers)
+            .where(and(
+                eq(workspaceMembers.workspaceId, workspace.id),
+                eq(workspaceMembers.status, 'active')
+            ))
+        const activeUserIds = new Set(activeWorkspaceMembers.map(m => m.userId))
+
         const [wsMember] = await db.select().from(workspaceMembers)
             .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, workspace.id))).limit(1)
 
@@ -1202,7 +1256,7 @@ timeRoutes.get('/pending', async (c) => {
         if (taskIds.length === 0) return c.json({ success: true, data: [] })
         const taskMap = Object.fromEntries(projectTasks.map(t => [t.id, t]))
 
-        const pendingEntries = await db.select().from(timeEntries)
+        const pendingEntriesRaw = await db.select().from(timeEntries)
             .where(and(
                 or(
                     taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
@@ -1211,6 +1265,9 @@ timeRoutes.get('/pending', async (c) => {
                 eq(timeEntries.approvalStatus, 'pending')
             ))
             .orderBy(desc(timeEntries.startedAt))
+
+        // Exclude entries from users no longer active in the workspace
+        const pendingEntries = pendingEntriesRaw.filter(e => activeUserIds.has(e.userId))
 
         const entryUserIds = [...new Set(pendingEntries.map(e => e.userId))]
         const userDetails = entryUserIds.length > 0

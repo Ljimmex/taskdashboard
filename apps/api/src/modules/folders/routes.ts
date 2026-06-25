@@ -9,7 +9,7 @@ import { authMiddleware } from '@/middleware/auth'
 
 import { type Auth } from '../../lib/auth'
 import { triggerWebhook } from '../webhooks/trigger'
-import type { WorkspaceRole } from '../../lib/permissions'
+import { hasWorkspacePermission, type WorkspaceRole } from '../../lib/permissions'
 
 // type Env removed
 
@@ -122,6 +122,11 @@ app.post('/', zValidator('json', createSchema), async (c) => {
     const workspaceRole = await getUserWorkspaceRole(user.id, body.workspaceId)
     if (!workspaceRole) {
         return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
+
+    // Check files.upload permission
+    if (!hasWorkspacePermission(workspaceRole, 'files', 'upload')) {
+        return c.json({ error: 'Forbidden: Insufficient permissions to create folders' }, 403)
     }
 
     const [newFolder] = await db.insert(folders).values({

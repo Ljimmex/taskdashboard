@@ -4,8 +4,8 @@ import { db } from '../../db'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { users } from '../../db/schema/users'
 import { teams, teamMembers } from '../../db/schema/teams'
-import { projects } from '../../db/schema/projects'
-import { tasks } from '../../db/schema/tasks'
+import { projects, projectMembers } from '../../db/schema/projects'
+import { tasks, timeEntries } from '../../db/schema/tasks'
 import { auth, type Auth } from '../../lib/auth'
 import {
     canManageWorkspaceSettings,
@@ -542,6 +542,39 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
                     .where(and(
                         sql`${memberId} = ANY(${tasks.assignees})`,
                         inArray(tasks.projectId, projectIds)
+                    ))
+            }
+
+            // B2. Remove time entries and project memberships for the removed member
+            let allWorkspaceTaskIds: string[] = []
+            if (projectIds.length > 0) {
+                const taskRows = await tx.select({ id: tasks.id })
+                    .from(tasks)
+                    .where(inArray(tasks.projectId, projectIds))
+                allWorkspaceTaskIds = taskRows.map(t => t.id)
+            }
+
+            const hasTasks = allWorkspaceTaskIds.length > 0
+            if (hasTasks || projectIds.length > 0) {
+                await tx.delete(timeEntries)
+                    .where(and(
+                        eq(timeEntries.userId, memberId),
+                        or(
+                            hasTasks ? inArray(timeEntries.taskId, allWorkspaceTaskIds) : sql`false`,
+                            and(
+                                eq(timeEntries.workspaceId, workspaceId),
+                                eq(timeEntries.entryType, 'meeting'),
+                                sql`${timeEntries.taskId} IS NULL`
+                            )
+                        )
+                    ))
+            }
+
+            if (projectIds.length > 0) {
+                await tx.delete(projectMembers)
+                    .where(and(
+                        eq(projectMembers.userId, memberId),
+                        inArray(projectMembers.projectId, projectIds)
                     ))
             }
 
