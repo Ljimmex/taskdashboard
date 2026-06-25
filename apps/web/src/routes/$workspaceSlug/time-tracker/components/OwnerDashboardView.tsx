@@ -15,6 +15,8 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatHours } from './utils'
 
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316']
+
 export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug }: { selectedProjectId: string | null; projects: any[]; workspaceSlug: string }) {
     const { t, i18n } = useTranslation()
     const activeProjectName = useMemo(() => projects.find(p => p.id === selectedProjectId)?.name || t('timeTracker.projectDashboard', 'Dashboard Projektu'), [projects, selectedProjectId, t])
@@ -329,9 +331,6 @@ export function OwnerDashboardView({ selectedProjectId, projects, workspaceSlug 
         })
         doc.save(`raport_revshare_${activeProjectName.replace(/\s+/g, '_')}.pdf`)
     }
-
-    // Kolory do wykresów
-    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316']
 
     return (
         <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out pb-12">
