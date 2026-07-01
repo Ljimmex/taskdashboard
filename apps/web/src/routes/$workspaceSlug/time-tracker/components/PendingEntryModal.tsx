@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlignLeft, Calendar, CheckSquare, Clock, Loader2, Pencil, Trash2, Users, X } from 'lucide-react'
+import { AlignLeft, Calendar, CheckSquare, Clock, Loader2, Pencil, Trash2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { DueDatePicker } from '@/components/features/tasks/components/DueDatePicker'
 import { formatMinutes } from './utils'
