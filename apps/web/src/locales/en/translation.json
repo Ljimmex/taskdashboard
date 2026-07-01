@@ -429,6 +429,8 @@
         "editPendingEntryTitle": "Edit Pending Entry",
         "editPendingEntrySubtitle": "Change entry details before approval or remove it from recent activity.",
         "pendingEntryModalHint": "You can edit only your own entries with pending status.",
+        "pendingTaskModeHint": "The entry will be treated as standard task work.",
+        "pendingMeetingModeHint": "The entry keeps the same logged duration, but contribution points will be calculated as a meeting.",
         "meetingContributionNote": "Meetings keep the same logged duration, but count with a 50% multiplier in contribution points.",
         "savePendingEntry": "Save Changes",
         "deletePendingEntry": "Delete Entry",

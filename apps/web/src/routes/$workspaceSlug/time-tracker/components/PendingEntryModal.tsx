@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlignLeft, Briefcase, Calendar, Clock, Loader2, Pencil, Trash2, Users, X } from 'lucide-react'
+import { AlignLeft, Calendar, CheckSquare, Clock, Loader2, Pencil, Trash2, Users, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { DueDatePicker } from '@/components/features/tasks/components/DueDatePicker'
 import { formatMinutes } from './utils'
@@ -220,7 +220,7 @@ export function PendingEntryModal({
                 {t('timeTracker.history.pending', 'Oczekujące')}
               </span>
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[10px] font-black uppercase tracking-[0.18em] text-[var(--app-text-muted)]">
-                {entryType === 'meeting' ? <Users size={12} /> : <Briefcase size={12} />}
+                {entryType === 'meeting' ? <Calendar size={12} /> : <CheckSquare size={12} />}
                 {entryType === 'meeting' ? t('timeTracker.isMeeting', 'Spotkanie') : t('timeTracker.task', 'Zadanie')}
               </span>
             </div>
@@ -234,30 +234,67 @@ export function PendingEntryModal({
             <label className="block text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 pl-1">
               {t('timeTracker.entryTypeLabel', 'Typ wpisu')}
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="overflow-hidden rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-card)]">
+              <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50">
+                {t('timeTracker.tasksHeader', 'Zadania Projektowe')}
+              </div>
               <button
                 type="button"
                 onClick={() => setEntryType('task')}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                className={`w-full px-4 py-3 text-left flex items-center gap-3 border-b border-[var(--app-divider)] transition-colors group ${
                   entryType === 'task'
-                    ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] border-[var(--app-accent)] shadow-md'
-                    : 'bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
+                    ? 'bg-[var(--app-accent)]/5'
+                    : 'hover:bg-[var(--app-bg-deepest)]'
                 }`}
               >
-                <Briefcase size={18} />
-                <span className="font-bold">{t('timeTracker.task', 'Zadanie')}</span>
+                <div className={`p-1.5 rounded-md transition-colors ${
+                  entryType === 'task'
+                    ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
+                    : 'bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)]'
+                }`}>
+                  <CheckSquare size={14} />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className={`font-semibold text-sm transition-colors ${
+                    entryType === 'task' ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)]'
+                  }`}>
+                    {t('timeTracker.task', 'Zadanie')}
+                  </span>
+                  <span className="text-[11px] font-medium text-[var(--app-text-muted)] mt-0.5">
+                    {t('timeTracker.pendingTaskModeHint', 'Wpis zostanie liczony jak standardowa praca nad zadaniem.')}
+                  </span>
+                </div>
               </button>
+
+              <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50 border-t border-[var(--app-divider)]">
+                {t('timeTracker.meetingsHeader', 'Spotkania i Wydarzenia')}
+              </div>
               <button
                 type="button"
                 onClick={() => setEntryType('meeting')}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-colors group ${
                   entryType === 'meeting'
-                    ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] border-[var(--app-accent)] shadow-md'
-                    : 'bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
+                    ? 'bg-[var(--app-accent)]/5'
+                    : 'hover:bg-[var(--app-bg-elevated)]'
                 }`}
               >
-                <Users size={18} />
-                <span className="font-bold">{t('timeTracker.meetingLabel', 'Spotkanie')}</span>
+                <div className={`p-1.5 rounded-md transition-colors ${
+                  entryType === 'meeting'
+                    ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
+                    : 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
+                }`}>
+                  <Calendar size={14} />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className={`font-semibold text-sm transition-colors ${
+                    entryType === 'meeting' ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)]'
+                  }`}>
+                    {t('timeTracker.meetingLabel', 'Spotkanie')}
+                  </span>
+                  <span className="text-[11px] font-medium text-[var(--app-text-muted)] mt-0.5">
+                    {t('timeTracker.pendingMeetingModeHint', 'Wpis zachowa czas logowania, ale wklad punktowy bedzie liczony jak spotkanie.')}
+                  </span>
+                </div>
               </button>
             </div>
           </div>

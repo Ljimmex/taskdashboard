@@ -431,6 +431,8 @@
         "editPendingEntryTitle": "Edytuj wpis oczekujący",
         "editPendingEntrySubtitle": "Zmień szczegóły wpisu przed jego zatwierdzeniem lub usuń go z listy aktywności.",
         "pendingEntryModalHint": "Możesz edytować wyłącznie własne wpisy ze statusem pending.",
+        "pendingTaskModeHint": "Wpis zostanie liczony jak standardowa praca nad zadaniem.",
+        "pendingMeetingModeHint": "Wpis zachowa czas logowania, ale wkład punktowy będzie liczony jak spotkanie.",
         "meetingContributionNote": "Spotkania zachowują ten sam czas logowania, ale liczą się z mnożnikiem 50% w punktach wkładu.",
         "savePendingEntry": "Zapisz zmiany",
         "deletePendingEntry": "Usuń wpis",
