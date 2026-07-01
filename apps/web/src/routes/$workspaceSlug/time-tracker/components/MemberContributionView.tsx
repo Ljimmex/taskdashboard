@@ -21,8 +21,15 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
     refetchInterval: 5000,
   })
 
+  const { data: recentData, isLoading: isRecentLoading } = useQuery({
+    queryKey: ['member-recent-activity', selectedProjectId, userId],
+    queryFn: () => apiFetchJson<{ success: boolean; data: any[] }>(`/api/time?projectId=${selectedProjectId}&userId=${userId}`),
+    enabled: !!selectedProjectId && !!userId,
+    refetchInterval: 5000,
+  })
+
   const summary = contribData?.data?.summary
-  const recent = contribData?.data?.recentEntries || []
+  const recent = recentData?.data || []
   const hourThreshold = contribData?.data?.hourThreshold || 200
 
   const totalPages = Math.ceil(recent.length / itemsPerPage)
@@ -44,6 +51,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
 
   const invalidateTimeQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['revshare-member', selectedProjectId, userId] })
+    queryClient.invalidateQueries({ queryKey: ['member-recent-activity', selectedProjectId, userId] })
     queryClient.invalidateQueries({ queryKey: ['revshare'] })
     queryClient.invalidateQueries({ queryKey: ['project-time-entries'] })
     queryClient.invalidateQueries({ queryKey: ['pending-time-entries'] })
@@ -119,7 +127,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
     )
   }
 
-  if (isLoading) {
+  if (isLoading || isRecentLoading) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

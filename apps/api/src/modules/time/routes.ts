@@ -140,7 +140,7 @@ timeRoutes.get('/', async (c) => {
     try {
         const user = c.get('user')
         const userId = user.id
-        const { taskId, startDate, endDate, approvalStatus } = c.req.query()
+        const { taskId, projectId, startDate, endDate, approvalStatus } = c.req.query()
         const filterUserId = c.req.query('userId')
 
         let query = db.select().from(timeEntries).orderBy(desc(timeEntries.startedAt))
@@ -161,6 +161,42 @@ timeRoutes.get('/', async (c) => {
         }
 
         if (taskId) result = result.filter(e => e.taskId === taskId)
+
+        if (projectId) {
+            const [project] = await db.select({ id: projects.id, teamId: projects.teamId })
+                .from(projects)
+                .where(eq(projects.id, projectId))
+                .limit(1)
+
+            if (!project) {
+                return c.json({ success: false, error: 'Project not found' }, 404)
+            }
+
+            const [team] = await db.select({ workspaceId: teams.workspaceId })
+                .from(teams)
+                .where(eq(teams.id, project.teamId))
+                .limit(1)
+
+            if (!team) {
+                return c.json({ success: false, error: 'Team not found' }, 404)
+            }
+
+            const projectTasks = await db.select({ id: tasks.id })
+                .from(tasks)
+                .where(eq(tasks.projectId, projectId))
+
+            const projectTaskIds = new Set(projectTasks.map(task => task.id))
+
+            result = result.filter(entry =>
+                (entry.taskId ? projectTaskIds.has(entry.taskId) : false) ||
+                (
+                    entry.workspaceId === team.workspaceId &&
+                    entry.entryType === 'meeting' &&
+                    entry.taskId === null
+                )
+            )
+        }
+
         if (filterUserId) result = result.filter(e => e.userId === filterUserId)
         else result = result.filter(e => e.userId === userId) // Default: own entries only
         if (startDate) result = result.filter(e => new Date(e.startedAt) >= new Date(startDate))
