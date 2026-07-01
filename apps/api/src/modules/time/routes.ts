@@ -82,6 +82,9 @@ const startTimeEntrySchema = z.object({
 const updateTimeEntrySchema = z.object({
     description: zSanitizedString().optional(),
     durationMinutes: z.number().int().nonnegative().optional(),
+    startedAt: z.string().datetime().or(z.date()).optional(),
+    endedAt: z.string().datetime().or(z.date()).optional().nullable(),
+    entryType: z.enum(['task', 'meeting']).optional(),
 })
 
 export const timeRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
@@ -683,6 +686,7 @@ async function handleContribution(c: any, type: string, targetUserId?: string) {
                     rawDurationMinutes: r.durationMinutes,
                     description: r.description,
                     startedAt: r.startedAt,
+                    endedAt: r.endedAt,
                     entryType: r.entryType,
                     approvalStatus: r.approvalStatus,
                     points
@@ -1159,9 +1163,43 @@ timeRoutes.patch('/:id', zValidator('json', updateTimeEntrySchema), async (c) =>
             return c.json({ success: false, error: 'Unauthorized to update time entry' }, 403)
         }
 
+        if (isOwner && entry.approvalStatus !== 'pending') {
+            return c.json({ success: false, error: 'Only pending entries can be updated by the owner' }, 403)
+        }
+
         const updateData: Partial<NewTimeEntry> = {}
-        if (body.description !== undefined) updateData.description = body.description
-        if (body.durationMinutes !== undefined) updateData.durationMinutes = body.durationMinutes
+        const nextStartedAt = body.startedAt !== undefined ? new Date(body.startedAt) : new Date(entry.startedAt)
+        const nextEndedAt = body.endedAt !== undefined
+            ? (body.endedAt ? new Date(body.endedAt) : null)
+            : (entry.endedAt ? new Date(entry.endedAt) : null)
+
+        if (Number.isNaN(nextStartedAt.getTime())) {
+            return c.json({ success: false, error: 'Invalid startedAt value' }, 400)
+        }
+
+        if (nextEndedAt && Number.isNaN(nextEndedAt.getTime())) {
+            return c.json({ success: false, error: 'Invalid endedAt value' }, 400)
+        }
+
+        let nextDurationMinutes = body.durationMinutes ?? entry.durationMinutes
+        if (nextEndedAt) {
+            const derivedDurationMinutes = Math.round((nextEndedAt.getTime() - nextStartedAt.getTime()) / 60000)
+            if (derivedDurationMinutes <= 0) {
+                return c.json({ success: false, error: 'endedAt must be after startedAt' }, 400)
+            }
+            nextDurationMinutes = body.durationMinutes ?? derivedDurationMinutes
+        }
+
+        if (body.description !== undefined) updateData.description = body.description || null
+        if (body.startedAt !== undefined) updateData.startedAt = nextStartedAt
+        if (body.endedAt !== undefined) updateData.endedAt = nextEndedAt
+        if (body.entryType !== undefined) updateData.entryType = body.entryType
+        if (body.durationMinutes !== undefined || body.startedAt !== undefined || body.endedAt !== undefined) {
+            if (nextDurationMinutes <= 0) {
+                return c.json({ success: false, error: 'durationMinutes must be greater than 0' }, 400)
+            }
+            updateData.durationMinutes = nextDurationMinutes
+        }
 
         const [updated] = await db.update(timeEntries).set(updateData).where(eq(timeEntries.id, id)).returning()
         if (!updated) return c.json({ success: false, error: 'Time entry not found' }, 404)
@@ -1202,6 +1240,10 @@ timeRoutes.delete('/:id', async (c) => {
         // Allow if: is owner OR has manage permission
         if (!isOwner && !canManageTimeEntries(wsRole as any, teamLevel as any)) {
             return c.json({ success: false, error: 'Unauthorized to delete time entry' }, 403)
+        }
+
+        if (isOwner && entry.approvalStatus !== 'pending') {
+            return c.json({ success: false, error: 'Only pending entries can be deleted by the owner' }, 403)
         }
 
         const [deleted] = await db.delete(timeEntries).where(eq(timeEntries.id, id)).returning()

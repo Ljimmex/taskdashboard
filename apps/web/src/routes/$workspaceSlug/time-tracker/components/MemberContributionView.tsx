@@ -1,13 +1,17 @@
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
-import { Clock, AlertCircle, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Clock, AlertCircle, Calendar, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
+import { toast } from '@/hooks/useToast'
 import { formatMinutes, formatHours } from './utils'
+import { PendingEntryModal, type PendingRecentEntry } from './PendingEntryModal'
 
 export function MemberContributionView({ userId, selectedProjectId }: { userId: string; selectedProjectId: string | null }) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
+  const [editingEntry, setEditingEntry] = useState<PendingRecentEntry | null>(null)
   const itemsPerPage = 10
 
   const { data: contribData, isLoading } = useQuery({
@@ -26,6 +30,78 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
     const start = (currentPage - 1) * itemsPerPage
     return recent.slice(start, start + itemsPerPage)
   }, [recent, currentPage])
+
+  useEffect(() => {
+    if (totalPages === 0 && currentPage !== 1) {
+      setCurrentPage(1)
+      return
+    }
+
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
+
+  const invalidateTimeQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['revshare-member', selectedProjectId, userId] })
+    queryClient.invalidateQueries({ queryKey: ['revshare'] })
+    queryClient.invalidateQueries({ queryKey: ['project-time-entries'] })
+    queryClient.invalidateQueries({ queryKey: ['pending-time-entries'] })
+  }
+
+  const updateEntryMutation = useMutation({
+    mutationFn: (payload: {
+      id: string
+      description: string
+      durationMinutes: number
+      startedAt: string
+      endedAt: string
+      entryType: 'task' | 'meeting'
+    }) =>
+      apiFetchJson<{ success: boolean; data?: any; error?: string }>(`/api/time/${payload.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          description: payload.description,
+          durationMinutes: payload.durationMinutes,
+          startedAt: payload.startedAt,
+          endedAt: payload.endedAt,
+          entryType: payload.entryType,
+        }),
+      }),
+    onSuccess: (response) => {
+      if (!response.success) {
+        toast.error(response.error || t('timeTracker.pendingEntryUpdateError', 'Nie udalo sie zapisac zmian wpisu.'))
+        return
+      }
+
+      invalidateTimeQueries()
+      setEditingEntry(null)
+      toast.success(t('timeTracker.pendingEntryUpdateSuccess', 'Zmiany wpisu zostaly zapisane.'))
+    },
+    onError: () => {
+      toast.error(t('timeTracker.pendingEntryUpdateError', 'Nie udalo sie zapisac zmian wpisu.'))
+    },
+  })
+
+  const deleteEntryMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiFetchJson<{ success: boolean; message?: string; error?: string }>(`/api/time/${id}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: (response) => {
+      if (!response.success) {
+        toast.error(response.error || t('timeTracker.pendingEntryDeleteError', 'Nie udalo sie usunac wpisu.'))
+        return
+      }
+
+      invalidateTimeQueries()
+      setEditingEntry(null)
+      toast.success(t('timeTracker.pendingEntryDeleteSuccess', 'Wpis zostal usuniety.'))
+    },
+    onError: () => {
+      toast.error(t('timeTracker.pendingEntryDeleteError', 'Nie udalo sie usunac wpisu.'))
+    },
+  })
 
   if (!selectedProjectId) {
     return (
@@ -150,7 +226,7 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
           <>
             <div className="space-y-3">
               {paginatedRecent.map((entry: any) => (
-                <HistoryEntry key={entry.id} entry={entry} />
+                <HistoryEntry key={entry.id} entry={entry} onEdit={setEditingEntry} />
               ))}
             </div>
 
@@ -203,6 +279,22 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
           </>
         )}
       </div>
+
+      <PendingEntryModal
+        isOpen={!!editingEntry}
+        entry={editingEntry}
+        isSaving={updateEntryMutation.isPending}
+        isDeleting={deleteEntryMutation.isPending}
+        onClose={() => setEditingEntry(null)}
+        onSave={(payload) => {
+          if (!editingEntry) return
+          updateEntryMutation.mutate({ id: editingEntry.id, ...payload })
+        }}
+        onDelete={() => {
+          if (!editingEntry) return
+          deleteEntryMutation.mutate(editingEntry.id)
+        }}
+      />
     </div>
   )
 }
@@ -241,7 +333,7 @@ function StatCard({ icon, label, value, isStatus = false, statusState }: any) {
   )
 }
 
-function HistoryEntry({ entry }: { entry: any }) {
+function HistoryEntry({ entry, onEdit }: { entry: any; onEdit: (entry: PendingRecentEntry) => void }) {
   const { t, i18n } = useTranslation()
   const getStatusConfig = (status: string) => {
     switch (status.toLowerCase()) {
@@ -255,6 +347,7 @@ function HistoryEntry({ entry }: { entry: any }) {
   }
 
   const status = getStatusConfig(entry.approvalStatus)
+  const canManagePending = entry.approvalStatus === 'pending' && !!entry.endedAt
 
   return (
     <div className="group flex flex-col md:flex-row md:items-center justify-between p-5 rounded-[20px] bg-[var(--app-bg-card)] border border-[var(--app-divider)] hover:bg-[var(--app-bg-elevated)] transition-all duration-300 hover:shadow-lg hover:shadow-black/5 cursor-default">
@@ -265,7 +358,7 @@ function HistoryEntry({ entry }: { entry: any }) {
         <div className="flex flex-wrap items-center gap-3 text-xs font-bold">
           <span className="flex items-center gap-1.5 text-[var(--app-text-primary)] bg-[var(--app-bg-elevated)] px-2.5 py-1.5 rounded-lg border border-[var(--app-divider)]">
             <Clock size={12} className="text-[var(--app-accent)]" />
-            {formatMinutes(entry.durationMinutes)}
+            {formatMinutes(entry.rawDurationMinutes ?? entry.durationMinutes)}
           </span>
           <div className="flex items-center gap-2 text-[var(--app-text-muted)] text-xs">
             <Calendar size={14} className="opacity-50" />
@@ -287,6 +380,16 @@ function HistoryEntry({ entry }: { entry: any }) {
       </div>
 
       <div className="flex items-center gap-4 justify-between md:justify-end border-t md:border-t-0 border-[var(--app-divider)] pt-4 md:pt-0">
+        {canManagePending && (
+          <button
+            type="button"
+            onClick={() => onEdit(entry)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] text-xs font-bold hover:border-[var(--app-accent)]/40 hover:text-[var(--app-accent)] transition-colors"
+          >
+            <Pencil size={14} />
+            {t('common.edit', 'Edytuj')}
+          </button>
+        )}
         <div className="text-right flex flex-col items-end">
           <div className="text-base font-black text-[var(--app-text-primary)] bg-gradient-to-br from-[var(--app-text-primary)] to-[var(--app-text-muted)] bg-clip-text">
             +{entry.points} pts
