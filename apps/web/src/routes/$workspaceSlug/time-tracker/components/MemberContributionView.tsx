@@ -7,7 +7,7 @@ import { toast } from '@/hooks/useToast'
 import { formatMinutes, formatHours } from './utils'
 import { PendingEntryModal, type PendingRecentEntry } from './PendingEntryModal'
 
-export function MemberContributionView({ userId, selectedProjectId }: { userId: string; selectedProjectId: string | null }) {
+export function MemberContributionView({ userId, selectedProjectId, workspaceSlug }: { userId: string; selectedProjectId: string | null; workspaceSlug: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [currentPage, setCurrentPage] = useState(1)
@@ -65,6 +65,8 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
       startedAt: string
       endedAt: string
       entryType: 'task' | 'meeting'
+      taskId: string | null
+      subtaskId: string | null
     }) =>
       apiFetchJson<{ success: boolean; data?: any; error?: string }>(`/api/time/${payload.id}`, {
         method: 'PATCH',
@@ -74,6 +76,8 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
           startedAt: payload.startedAt,
           endedAt: payload.endedAt,
           entryType: payload.entryType,
+          taskId: payload.taskId,
+          subtaskId: payload.subtaskId,
         }),
       }),
     onSuccess: (response) => {
@@ -291,6 +295,8 @@ export function MemberContributionView({ userId, selectedProjectId }: { userId: 
       <PendingEntryModal
         isOpen={!!editingEntry}
         entry={editingEntry}
+        workspaceSlug={workspaceSlug}
+        ownerUserId={editingEntry?.userId || userId}
         isSaving={updateEntryMutation.isPending}
         isDeleting={deleteEntryMutation.isPending}
         onClose={() => setEditingEntry(null)}

@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlignLeft, Calendar, CheckSquare, Clock, Loader2, Pencil, Trash2, X } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { useQuery } from '@tanstack/react-query'
+import { AlignLeft, Calendar, CheckSquare, ChevronDown, Clock, Loader2, Pencil, Trash2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { DueDatePicker } from '@/components/features/tasks/components/DueDatePicker'
+import { apiFetchJson } from '@/lib/api'
 import { formatMinutes } from './utils'
+import { MyTask } from './types'
 
 export interface PendingRecentEntry {
   id: string
+  userId: string
+  taskId: string | null
+  subtaskId: string | null
   taskTitle: string
   description: string | null
   startedAt: string
@@ -18,6 +25,8 @@ export interface PendingRecentEntry {
 interface PendingEntryModalProps {
   isOpen: boolean
   entry: PendingRecentEntry | null
+  workspaceSlug: string
+  ownerUserId: string
   isSaving: boolean
   isDeleting: boolean
   onClose: () => void
@@ -27,6 +36,8 @@ interface PendingEntryModalProps {
     startedAt: string
     endedAt: string
     entryType: 'task' | 'meeting'
+    taskId: string | null
+    subtaskId: string | null
   }) => void
   onDelete: () => void
 }
@@ -113,6 +124,8 @@ function TimeSelect({ value, onChange, label }: { value: string; onChange: (valu
 export function PendingEntryModal({
   isOpen,
   entry,
+  workspaceSlug,
+  ownerUserId,
   isSaving,
   isDeleting,
   onClose,
@@ -124,7 +137,12 @@ export function PendingEntryModal({
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
-  const [entryType, setEntryType] = useState<'task' | 'meeting'>('task')
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+  const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null)
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null)
+  const [selectedEntryType, setSelectedEntryType] = useState<'task' | 'meeting'>('task')
+  const [taskDropdownOpen, setTaskDropdownOpen] = useState(false)
+  const taskRef = useRef<HTMLDivElement>(null)
   const [description, setDescription] = useState('')
 
   useEffect(() => {
@@ -137,8 +155,25 @@ export function PendingEntryModal({
     setDate(start.date)
     setStartTime(start.time)
     setEndTime(end.time)
-    setEntryType(entry.entryType)
     setDescription(entry.description || '')
+
+    // Resolve initial task/meeting selection from the entry (matches ManualEntry semantics)
+    if (entry.taskId === 'standalone-meetings') {
+      setSelectedTaskId('standalone-meetings')
+      setSelectedSubtaskId(null)
+      setSelectedMeetingId(null)
+      setSelectedEntryType('meeting')
+    } else if (entry.taskId) {
+      setSelectedTaskId(entry.taskId)
+      setSelectedSubtaskId(entry.subtaskId)
+      setSelectedMeetingId(null)
+      setSelectedEntryType('task')
+    } else {
+      setSelectedTaskId(null)
+      setSelectedSubtaskId(null)
+      setSelectedMeetingId(null)
+      setSelectedEntryType('meeting')
+    }
   }, [entry, isOpen])
 
   useEffect(() => {
@@ -156,6 +191,19 @@ export function PendingEntryModal({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      if (taskRef.current && !taskRef.current.contains(event.target as Node)) {
+        setTaskDropdownOpen(false)
+      }
+    }
+
+    if (taskDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [taskDropdownOpen])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node) && !isSaving && !isDeleting) {
         onClose()
       }
@@ -166,6 +214,16 @@ export function PendingEntryModal({
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isDeleting, isOpen, isSaving, onClose])
+
+  const { data: tasksData, isLoading: tasksLoading } = useQuery({
+    queryKey: ['my-tasks', workspaceSlug, ownerUserId],
+    queryFn: () => apiFetchJson<{ success: boolean; data: MyTask[] }>(`/api/time/my-tasks?workspaceSlug=${workspaceSlug}&targetUserId=${ownerUserId}`),
+    enabled: !!workspaceSlug && !!ownerUserId,
+  })
+  const myTasks = (tasksData?.data || []).filter((t: MyTask) => t.status !== 'done')
+  const selectedTask = myTasks.find((t: MyTask) => t.id === selectedTaskId)
+  const selectedMeeting = selectedTask?.meetings?.find((m: any) => m.id === selectedMeetingId)
+  const selectedSubtask = selectedTask?.subtasks.find((s: any) => s.id === selectedSubtaskId)
 
   const durationMinutes = useMemo(() => {
     if (!date || !startTime || !endTime) return 0
@@ -182,7 +240,7 @@ export function PendingEntryModal({
 
   if (!isOpen || !entry) return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         ref={modalRef}
@@ -220,11 +278,19 @@ export function PendingEntryModal({
                 {t('timeTracker.history.pending', 'Oczekujące')}
               </span>
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[10px] font-black uppercase tracking-[0.18em] text-[var(--app-text-muted)]">
-                {entryType === 'meeting' ? <Calendar size={12} /> : <CheckSquare size={12} />}
-                {entryType === 'meeting' ? t('timeTracker.isMeeting', 'Spotkanie') : t('timeTracker.task', 'Zadanie')}
+                {selectedEntryType === 'meeting' ? <Calendar size={12} /> : <CheckSquare size={12} />}
+                {selectedEntryType === 'meeting' ? t('timeTracker.isMeeting', 'Spotkanie') : t('timeTracker.task', 'Zadanie')}
               </span>
             </div>
-            <h3 className="text-base font-bold text-[var(--app-text-primary)] truncate">{entry.taskTitle}</h3>
+            <h3 className="text-base font-bold text-[var(--app-text-primary)] truncate">
+              {selectedTask
+                ? selectedSubtask
+                  ? `${selectedTask.title} / ${selectedSubtask.title}`
+                  : selectedMeeting
+                    ? `${selectedTask.title} / ${selectedMeeting.title}`
+                    : selectedTask.title
+                : entry.taskTitle}
+            </h3>
             <p className="text-xs text-[var(--app-text-muted)] mt-1">
               {t('timeTracker.pendingEntryModalHint', 'Możesz edytować wyłącznie własne wpisy ze statusem pending.')}
             </p>
@@ -232,70 +298,150 @@ export function PendingEntryModal({
 
           <div>
             <label className="block text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 pl-1">
-              {t('timeTracker.entryTypeLabel', 'Typ wpisu')}
+              {t('timeTracker.selectTask', 'Zadanie lub Spotkanie')}
             </label>
-            <div className="overflow-hidden rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-card)]">
-              <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50">
-                {t('timeTracker.tasksHeader', 'Zadania Projektowe')}
-              </div>
+            <div className="relative" ref={taskRef}>
               <button
                 type="button"
-                onClick={() => setEntryType('task')}
-                className={`w-full px-4 py-3 text-left flex items-center gap-3 border-b border-[var(--app-divider)] transition-colors group ${
-                  entryType === 'task'
-                    ? 'bg-[var(--app-accent)]/5'
-                    : 'hover:bg-[var(--app-bg-deepest)]'
+                onClick={() => setTaskDropdownOpen(!taskDropdownOpen)}
+                disabled={tasksLoading}
+                className={`w-full flex items-center justify-between px-4 py-3 bg-[var(--app-bg-elevated)] border rounded-xl text-left transition-all outline-none ${
+                  taskDropdownOpen
+                    ? 'border-[var(--app-accent)] ring-1 ring-[var(--app-accent)]/20 shadow-lg'
+                    : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
                 }`}
               >
-                <div className={`p-1.5 rounded-md transition-colors ${
-                  entryType === 'task'
-                    ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
-                    : 'bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)]'
-                }`}>
-                  <CheckSquare size={14} />
+                <div className="flex items-center gap-3 min-w-0">
+                  <CheckSquare size={18} className="text-[var(--app-text-muted)] flex-shrink-0" />
+                  {selectedTask ? (
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-[var(--app-text-primary)] truncate">
+                        {selectedTask.title}
+                      </span>
+                      <span className="text-xs text-[var(--app-text-muted)] mt-0.5 truncate flex items-center gap-1">
+                        {selectedTask.projectName}
+                        {selectedEntryType === 'meeting' && selectedMeeting && (
+                          <span className="text-[var(--app-accent)] flex items-center gap-1">
+                            <span className="mx-1">•</span> <Calendar size={10} /> {selectedMeeting.title}
+                          </span>
+                        )}
+                        {selectedEntryType === 'task' && selectedSubtask && (
+                          <span className="text-[var(--app-accent)]">
+                            <span className="mx-1 text-[var(--app-text-muted)]">/</span>
+                            {selectedSubtask.title}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-[var(--app-text-muted)] font-medium">
+                      {tasksLoading ? t('common.loading', 'Ładowanie zadań...') : t('timeTracker.manual.pickTask', 'Wybierz nad czym pracowałeś...')}
+                    </span>
+                  )}
                 </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className={`font-semibold text-sm transition-colors ${
-                    entryType === 'task' ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)]'
-                  }`}>
-                    {t('timeTracker.task', 'Zadanie')}
-                  </span>
-                  <span className="text-[11px] font-medium text-[var(--app-text-muted)] mt-0.5">
-                    {t('timeTracker.pendingTaskModeHint', 'Wpis zostanie liczony jak standardowa praca nad zadaniem.')}
-                  </span>
-                </div>
+                <ChevronDown
+                  size={18}
+                  className={`text-[var(--app-text-muted)] flex-shrink-0 transition-transform duration-200 ${taskDropdownOpen ? 'rotate-180' : ''}`}
+                />
               </button>
 
-              <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50 border-t border-[var(--app-divider)]">
-                {t('timeTracker.meetingsHeader', 'Spotkania i Wydarzenia')}
-              </div>
-              <button
-                type="button"
-                onClick={() => setEntryType('meeting')}
-                className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-colors group ${
-                  entryType === 'meeting'
-                    ? 'bg-[var(--app-accent)]/5'
-                    : 'hover:bg-[var(--app-bg-elevated)]'
-                }`}
-              >
-                <div className={`p-1.5 rounded-md transition-colors ${
-                  entryType === 'meeting'
-                    ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
-                    : 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
-                }`}>
-                  <Calendar size={14} />
+              {taskDropdownOpen && (
+                <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-xl max-h-80 overflow-y-auto custom-scrollbar overflow-hidden">
+                  {myTasks.length === 0 ? (
+                    <div className="p-6 text-center text-sm font-medium text-[var(--app-text-muted)]">
+                      {t('timeTracker.timer.noTasks', 'Brak przypisanych zadań.')}
+                    </div>
+                  ) : (
+                    <div className="py-2">
+                      {/* TASKS */}
+                      {myTasks.filter(t => t.id !== 'standalone-meetings').length > 0 && (
+                        <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50">
+                          {t('timeTracker.tasksHeader', 'Zadania Projektowe')}
+                        </div>
+                      )}
+
+                      {myTasks.filter(t => t.id !== 'standalone-meetings').map((task: MyTask) => (
+                        <div key={task.id} className="border-b border-[var(--app-divider)] last:border-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTaskId(task.id)
+                              setSelectedSubtaskId(null)
+                              setSelectedMeetingId(null)
+                              setSelectedEntryType('task')
+                              setTaskDropdownOpen(false)
+                            }}
+                            className={`w-full px-4 py-3 text-left hover:bg-[var(--app-bg-deepest)] flex flex-col transition-colors ${
+                              selectedTaskId === task.id && !selectedSubtaskId ? 'bg-[var(--app-accent)]/5 text-[var(--app-accent)]' : ''
+                            }`}
+                          >
+                            <span className="font-semibold text-sm text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)] transition-colors">{task.title}</span>
+                            <span className="text-[11px] font-medium text-[var(--app-text-muted)] mt-0.5">{task.projectName}</span>
+                          </button>
+
+                          {/* Subtasks */}
+                          {task.subtasks.length > 0 && (
+                            <div className="bg-[var(--app-bg-elevated)]/30 pb-2 border-l-2 border-l-[var(--app-divider)] ml-4 mr-2 mb-2 rounded-r-lg">
+                              {task.subtasks.map(sub => (
+                                <button
+                                  type="button"
+                                  key={sub.id}
+                                  onClick={() => {
+                                    setSelectedTaskId(task.id)
+                                    setSelectedSubtaskId(sub.id)
+                                    setSelectedMeetingId(null)
+                                    setSelectedEntryType('task')
+                                    setTaskDropdownOpen(false)
+                                  }}
+                                  className={`w-full px-4 py-2 pl-8 text-left hover:bg-[var(--app-bg-elevated)] flex items-center gap-2 text-sm transition-colors ${
+                                    selectedSubtaskId === sub.id ? 'bg-[var(--app-accent)]/5 text-[var(--app-accent)]' : ''
+                                  }`}
+                                >
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--app-divider)] group-hover:bg-[var(--app-accent)] transition-colors" />
+                                  <span className="text-[var(--app-text-secondary)] font-medium text-[13px]">{sub.title}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* MEETINGS */}
+                      {myTasks.find(t => t.id === 'standalone-meetings') && (
+                        <>
+                          <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50 border-t border-[var(--app-divider)]">
+                            {t('timeTracker.meetingsHeader', 'Spotkania i Wydarzenia')}
+                          </div>
+                          <div>
+                            {myTasks.find(t => t.id === 'standalone-meetings')?.meetings?.map((m: any) => (
+                              <button
+                                type="button"
+                                key={m.id}
+                                onClick={() => {
+                                  setSelectedTaskId('standalone-meetings')
+                                  setSelectedSubtaskId(null)
+                                  setSelectedMeetingId(m.id)
+                                  setSelectedEntryType('meeting')
+                                  setTaskDropdownOpen(false)
+                                }}
+                                className="w-full px-4 py-3 text-left hover:bg-[var(--app-bg-elevated)] flex items-center gap-3 border-b border-[var(--app-divider)] last:border-0 transition-colors"
+                              >
+                                <div className="p-1.5 rounded-md bg-[var(--app-accent)]/10 text-[var(--app-accent)]">
+                                  <Calendar size={14} />
+                                </div>
+                                <div className="flex flex-col flex-1 min-w-0">
+                                  <span className="font-semibold text-sm text-[var(--app-text-primary)] truncate">{m.title}</span>
+                                  <span className="text-[10px] font-medium text-[var(--app-text-muted)] mt-0.5">{new Date(m.date).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className={`font-semibold text-sm transition-colors ${
-                    entryType === 'meeting' ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)]'
-                  }`}>
-                    {t('timeTracker.meetingLabel', 'Spotkanie')}
-                  </span>
-                  <span className="text-[11px] font-medium text-[var(--app-text-muted)] mt-0.5">
-                    {t('timeTracker.pendingMeetingModeHint', 'Wpis zachowa czas logowania, ale wklad punktowy bedzie liczony jak spotkanie.')}
-                  </span>
-                </div>
-              </button>
+              )}
             </div>
           </div>
 
@@ -348,7 +494,7 @@ export function PendingEntryModal({
               <div className="text-sm font-semibold text-[var(--app-text-secondary)]">
                 {t('timeTracker.manual.durationAuto', 'Podsumowanie czasu')}
               </div>
-              {entryType === 'meeting' && (
+              {selectedEntryType === 'meeting' && (
                 <div className="text-xs text-[var(--app-text-muted)] mt-1">
                   {t('timeTracker.meetingContributionNote', 'Spotkania zachowuja ten sam czas logowania, ale licza sie z mnoznikiem 50% w punktach wkładu.')}
                 </div>
@@ -387,7 +533,7 @@ export function PendingEntryModal({
             </button>
             <button
               type="button"
-              disabled={durationMinutes <= 0 || isSaving || isDeleting}
+              disabled={!selectedTaskId || durationMinutes <= 0 || isSaving || isDeleting}
               onClick={() => {
                 const start = new Date(`${date}T${startTime}`)
                 let end = new Date(`${date}T${endTime}`)
@@ -401,7 +547,9 @@ export function PendingEntryModal({
                   durationMinutes,
                   startedAt: start.toISOString(),
                   endedAt: end.toISOString(),
-                  entryType,
+                  entryType: selectedEntryType,
+                  taskId: selectedTaskId,
+                  subtaskId: selectedSubtaskId,
                 })
               }}
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[var(--app-accent)] text-[var(--app-accent-text)] font-bold hover:bg-[var(--app-accent-hover)] transition-all shadow-sm disabled:opacity-50"
@@ -412,6 +560,7 @@ export function PendingEntryModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

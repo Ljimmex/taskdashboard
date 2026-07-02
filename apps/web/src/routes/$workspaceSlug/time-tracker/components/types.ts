@@ -23,6 +23,7 @@ export interface TimeEntryRaw {
   userName: string
   userImage: string | null
   entryType?: 'task' | 'meeting'
+  approvalStatus?: 'pending' | 'approved' | 'rejected'
   difficultyLevel?: string
   bonusPoints?: number
   isApproved?: boolean

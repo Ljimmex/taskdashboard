@@ -15,6 +15,7 @@ import { ManualEntryView } from './components/ManualEntryView'
 import { HRApprovalView } from './components/HRApprovalView'
 import { MemberContributionView } from './components/MemberContributionView'
 import { OwnerDashboardView } from './components/OwnerDashboardView'
+import { WeeklyCalendarView } from './components/WeeklyCalendarView'
 
 export const Route = createFileRoute('/$workspaceSlug/time-tracker/')({
     component: TimeTrackerPage,
@@ -40,7 +41,7 @@ export function TimeTrackerPage() {
     const canApproveEntries = ['owner', 'admin', 'hr_manager', 'project_manager'].includes(role || '')
 
     // Navigation state
-    const [view, setView] = useState<'timer' | 'manual' | 'approval' | 'contribution' | 'dashboard'>('timer')
+    const [view, setView] = useState<'timer' | 'manual' | 'approval' | 'contribution' | 'dashboard' | 'calendar'>('timer')
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
     const [projectsDropdownOpen, setProjectsDropdownOpen] = useState(false)
 
@@ -69,6 +70,7 @@ export function TimeTrackerPage() {
         { id: 'approval', label: t('timeTracker.approvals', 'Approvals'), iconKey: 'board', show: canApproveEntries },
         { id: 'contribution', label: t('timeTracker.myContribution', 'My Contribution'), iconKey: 'team', show: true },
         { id: 'dashboard', label: t('timeTracker.ownerDashboard', 'Owner Dashboard'), iconKey: 'dashboard', show: canManageEntries },
+        { id: 'calendar', label: t('timeTracker.weeklyCalendar', 'Weekly Calendar'), iconKey: 'calendar', show: true },
     ]
 
     return (
@@ -148,8 +150,9 @@ export function TimeTrackerPage() {
                 {view === 'timer' && userId && <MemberTimerView workspaceSlug={workspaceSlug} userId={userId} />}
                 {view === 'manual' && userId && <ManualEntryView workspaceSlug={workspaceSlug} userId={userId} canManage={canManageEntries} />}
                 {view === 'approval' && <HRApprovalView workspaceSlug={workspaceSlug} />}
-                {view === 'contribution' && userId && <MemberContributionView userId={userId} selectedProjectId={selectedProjectId} />}
+                {view === 'contribution' && userId && <MemberContributionView userId={userId} selectedProjectId={selectedProjectId} workspaceSlug={workspaceSlug} />}
                 {view === 'dashboard' && <OwnerDashboardView selectedProjectId={selectedProjectId} projects={projects} workspaceSlug={workspaceSlug} />}
+                {view === 'calendar' && <WeeklyCalendarView workspaceSlug={workspaceSlug} userId={userId} />}
             </div>
         </div>
     )

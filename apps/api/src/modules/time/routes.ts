@@ -85,6 +85,8 @@ const updateTimeEntrySchema = z.object({
     startedAt: z.string().datetime().or(z.date()).optional(),
     endedAt: z.string().datetime().or(z.date()).optional().nullable(),
     entryType: z.enum(['task', 'meeting']).optional(),
+    taskId: z.string().optional().nullable(),
+    subtaskId: z.string().optional().nullable(),
 })
 
 export const timeRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
@@ -133,6 +135,17 @@ async function getWorkspaceRoleFromTask(userId: string, taskId: string | null | 
     const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
         .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, team.workspaceId))).limit(1)
     return wsMember?.role || null
+}
+
+// Helper: Get workspaceId from a taskId
+async function getWorkspaceIdFromTask(taskId: string | null | undefined): Promise<string | null> {
+    if (!taskId || !isUUID(taskId)) return null
+    const [task] = await db.select({ projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1)
+    if (!task) return null
+    const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, task.projectId)).limit(1)
+    if (!project) return null
+    const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, project.teamId)).limit(1)
+    return team?.workspaceId || null
 }
 
 // GET /api/time - List time entries (own entries OR viewAll permission)
@@ -1235,6 +1248,33 @@ timeRoutes.patch('/:id', zValidator('json', updateTimeEntrySchema), async (c) =>
                 return c.json({ success: false, error: 'durationMinutes must be greater than 0' }, 400)
             }
             updateData.durationMinutes = nextDurationMinutes
+        }
+
+        // Handle task change: update derived workspace/role context for the entry owner
+        const taskIdChanged = body.taskId !== undefined && body.taskId !== entry.taskId
+        if (taskIdChanged) {
+            if (!body.taskId || body.taskId === 'standalone-meetings') {
+                updateData.taskId = null
+                updateData.subtaskId = null
+                // Preserve existing workspace context; user cannot remove a task in this UI
+            } else {
+                const newWorkspaceId = await getWorkspaceIdFromTask(body.taskId)
+                if (!newWorkspaceId) {
+                    return c.json({ success: false, error: 'Selected task does not belong to a workspace' }, 400)
+                }
+                const [targetWsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
+                    .where(and(eq(workspaceMembers.userId, entry.userId), eq(workspaceMembers.workspaceId, newWorkspaceId))).limit(1)
+                const targetAnyTeamLead = await isUserAnyTeamLead(entry.userId, newWorkspaceId)
+                updateData.taskId = body.taskId
+                updateData.workspaceId = newWorkspaceId
+                updateData.projectRole = resolveProjectRole(targetWsMember?.role as any, targetAnyTeamLead)
+            }
+        }
+        if (body.subtaskId !== undefined) {
+            updateData.subtaskId = body.subtaskId || null
+        } else if (taskIdChanged && body.taskId && body.taskId !== 'standalone-meetings') {
+            // Reset subtask when task changes and no new subtask was provided
+            updateData.subtaskId = null
         }
 
         const [updated] = await db.update(timeEntries).set(updateData).where(eq(timeEntries.id, id)).returning()

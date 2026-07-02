@@ -142,7 +142,9 @@
         "uploading": "Uploading...",
         "sending": "Sending...",
         "save_changes": "Save changes",
-        "feature_coming_soon": "This feature is coming soon."
+        "feature_coming_soon": "This feature is coming soon.",
+        "previous": "Previous",
+        "next": "Next"
     },
     "resources": {
         "title": "Resources",
@@ -406,6 +408,15 @@
         "recentHistory": "Recent Activity",
         "approvals": "Approvals",
         "ownerDashboard": "Owner Dashboard",
+        "weeklyCalendar": "Weekly Calendar",
+        "totalThisWeek": "Total this week",
+        "noTimeEntriesThisWeek": "No time entries this week.",
+        "worklog": "worklog",
+        "worklogs": "worklogs",
+        "pendingTask": "Pending Task",
+        "approvedTask": "Accepted Task",
+        "pendingMeeting": "Pending Meeting",
+        "approvedMeeting": "Accepted Meeting",
         "monthly": "Monthly",
         "cumulative": "Cumulative",
         "custom": "Custom",
