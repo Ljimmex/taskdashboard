@@ -603,7 +603,7 @@ teamsRoutes.post('/:id/members', zValidator('json', addTeamMemberSchema), async 
                 type: 'team_access',
                 title: 'notifications.titles.team_access',
                 message: 'notifications.messages.team_access',
-                link: `/${workspace?.slug}/teams/${teamId}`,
+                link: `/${workspace?.slug}/team`,
                 actor: { name: user.name, image: user.image || undefined },
                 metadata: { teamId: teamId, title: team.name }
             })

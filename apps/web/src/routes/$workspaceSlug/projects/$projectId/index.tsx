@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, LayoutGrid, List, Calendar, GitBranch } from 'lucide-react'
 import { useSession } from '@/lib/auth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
+import { getAssignableMembers } from '@/lib/teamUtils'
 import { KanbanBoard } from '@/components/features/tasks/views/KanbanBoard'
 import { KanbanBoardHeader, type FilterState } from '@/components/features/tasks/views/KanbanBoardHeader'
 import { TaskListView } from '@/components/features/tasks/views/TaskListView'
@@ -18,8 +19,17 @@ import { BulkActions } from '@/components/features/tasks/components/BulkActions'
 import { useTaskPermissions } from '@/hooks/useTaskPermissions'
 
 
+export interface ProjectDetailSearch {
+  taskId?: string
+}
+
 export const Route = createFileRoute('/$workspaceSlug/projects/$projectId/')({
   component: ProjectDetailPage,
+  validateSearch: (search: Record<string, unknown>): ProjectDetailSearch => {
+    return {
+      taskId: search.taskId as string | undefined,
+    }
+  },
 })
 
 type ViewMode = 'kanban' | 'list' | 'calendar' | 'timeline'
@@ -57,6 +67,7 @@ function ProjectDetailPage() {
   const { t } = useTranslation()
   const { workspaceSlug, projectId } = useParams({ strict: false }) as { workspaceSlug: string; projectId: string }
   const navigate = useNavigate()
+  const search = Route.useSearch()
   const { data: session } = useSession()
   const queryClient = useQueryClient()
 
@@ -186,19 +197,12 @@ function ProjectDetailPage() {
     enabled: !!workspaceSlug
   })
 
-  const teamMembers = useMemo(() => {
-    const allMembers = teamsData?.flatMap((team: any) =>
-      team.members?.map((m: any) => ({
-        id: m.userId || m.user?.id,
-        name: m.user?.name || t('common.unknown'),
-        avatar: m.user?.image,
-        image: m.user?.image
-      })) || []
-    ) || []
+  const currentUserId = session?.user?.id
 
-    // Deduplicate members by ID
-    return Array.from(new Map(allMembers.map((m: any) => [m.id, m])).values()) as { id: string; name: string; avatar?: string }[]
-  }, [teamsData])
+  const teamMembers = useMemo(() => getAssignableMembers(teamsData, currentUserId, {
+    projectTeamId: project?.teamId,
+    fallbackToAll: true
+  }), [teamsData, currentUserId, project?.teamId])
 
   // Fetch project and tasks
   useEffect(() => {
@@ -230,6 +234,15 @@ function ProjectDetailPage() {
 
     if (projectId) fetchData()
   }, [projectId])
+
+  // Open task details when navigating from a notification with ?taskId=
+  useEffect(() => {
+    if (!search.taskId || loading || tasks.length === 0) return
+    const task = tasks.find((t) => t.id === search.taskId)
+    if (task) {
+      handleTaskClick(search.taskId)
+    }
+  }, [search.taskId, loading, tasks])
 
   const refetchTasks = useCallback(async () => {
     const data = await apiFetchJson<any>(`/api/tasks?projectId=${projectId}`)

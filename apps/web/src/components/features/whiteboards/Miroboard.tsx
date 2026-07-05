@@ -12,6 +12,7 @@ import { useWhiteboardUI } from "./hooks/useWhiteboardUI";
 
 import { WhiteboardToolbar } from "./ui/WhiteboardToolbar";
 import { WhiteboardContextMenu } from "./ui/WhiteboardContextMenu";
+import { WhiteboardRightClickMenu } from "./ui/WhiteboardRightClickMenu";
 import { SmallButton } from "./ui/WhiteboardComponents";
 
 export interface MiroBoardProps {
@@ -31,17 +32,52 @@ export function MiroBoard({ boardId, boardName: _boardName, initialData, onSave,
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
   const [selectedElement, setSelectedElement] = useState<any>(null);
   const [popupCoords, setPopupCoords] = useState({ x: 0, y: 0 });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
 
   const uiState = useWhiteboardUI();
-  const actions = useWhiteboardActions(excalidrawAPI);
+  const actions = useWhiteboardActions(excalidrawAPI, () => {
+    if (!excalidrawAPI) return;
+    requestAnimationFrame(() => {
+      const elements = excalidrawAPI.getSceneElements();
+      if (elements) broadcastBoardUpdate(elements);
+    });
+  });
 
   // Realtime Supabase Collaboration hook
-  const { broadcastBoardUpdate, broadcastPointerUpdate } = useWhiteboardRealtime(boardId, excalidrawAPI, readOnly);
+  const { broadcastBoardUpdate, broadcastPointerUpdate, isConnected } = useWhiteboardRealtime(boardId, excalidrawAPI, readOnly);
 
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Custom right-click menu: block Excalidraw native menu and show our own
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const doc = document;
+    const handleContextMenu = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (!wrapperRef.current?.contains(target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setContextMenu({ x: e.clientX, y: e.clientY, visible: true });
+    };
+    doc.addEventListener('contextmenu', handleContextMenu, true);
+
+    const handleClick = () => setContextMenu(prev => ({ ...prev, visible: false }));
+    doc.addEventListener('click', handleClick, true);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setContextMenu(prev => ({ ...prev, visible: false }));
+    };
+    doc.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      doc.removeEventListener('contextmenu', handleContextMenu, true);
+      doc.removeEventListener('click', handleClick, true);
+      doc.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const [excalidrawInitialData] = useState(() => {
@@ -152,7 +188,7 @@ export function MiroBoard({ boardId, boardName: _boardName, initialData, onSave,
   }
 
   return (
-    <div className={cn(styles.miroboardWrapper, theme === "dark" && styles.dark)}>
+    <div ref={wrapperRef} className={cn(styles.miroboardWrapper, theme === "dark" && styles.dark)}>
       {isLoading && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[var(--app-bg-deepest)] border-none">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -172,7 +208,7 @@ export function MiroBoard({ boardId, boardName: _boardName, initialData, onSave,
       )}
 
       {/* Excalidraw Canvas */}
-      <div className={styles.excalidrawCanvas} onContextMenu={(e) => e.preventDefault()}>
+      <div className={styles.excalidrawCanvas}>
         <Excalidraw
           excalidrawAPI={(api) => {
             setExcalidrawAPI(api);
@@ -198,6 +234,14 @@ export function MiroBoard({ boardId, boardName: _boardName, initialData, onSave,
         <>
           <WhiteboardToolbar theme={theme} uiState={uiState} actions={actions} excalidrawAPI={excalidrawAPI} />
           <WhiteboardContextMenu selectedElement={selectedElement} popupCoords={popupCoords} updateSelected={updateSelected} excalidrawAPI={excalidrawAPI} theme={theme} />
+          <WhiteboardRightClickMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            visible={contextMenu.visible}
+            onClose={() => setContextMenu(prev => ({ ...prev, visible: false }))}
+            excalidrawAPI={excalidrawAPI}
+            theme={theme}
+          />
         </>
       )}
 
@@ -206,6 +250,16 @@ export function MiroBoard({ boardId, boardName: _boardName, initialData, onSave,
         "absolute bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl p-1.5 shadow-lg backdrop-blur-xl",
         theme === "dark" ? "border border-white/10 bg-[#2d2d44]/95" : "border border-black/5 bg-white/95"
       )}>
+        <div
+          className="flex items-center gap-1.5 px-2"
+          title={isConnected ? "Realtime connected" : "Realtime disconnected"}
+        >
+          <span className={cn("h-2 w-2 rounded-full", isConnected ? "bg-green-500" : "bg-red-500")} />
+          <span className={cn("text-[10px] font-bold uppercase tracking-wider", theme === "dark" ? "text-white/70" : "text-gray-500")}>
+            {isConnected ? "Live" : "Offline"}
+          </span>
+        </div>
+        <div className={cn("h-5 w-px", theme === "dark" ? "bg-white/20" : "bg-black/10")} />
         <div className="flex">
           <SmallButton onClick={handleUndo} icon={<Undo2 size={16} />} tooltip="Undo" theme={theme === "dark" ? "dark" : "light"} />
           <SmallButton onClick={handleRedo} icon={<Redo2 size={16} />} tooltip="Redo" theme={theme === "dark" ? "dark" : "light"} />

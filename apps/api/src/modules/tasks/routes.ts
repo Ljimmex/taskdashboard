@@ -678,7 +678,7 @@ tasksRoutes.post('/', zValidator('json', createTaskSchema), async (c) => {
                         type: 'task_assigned',
                         title: 'notifications.titles.task_assigned',
                         message: 'notifications.messages.task_assigned',
-                        link: `/${workspace?.slug}/tasks/${created.id}`,
+                        link: `/${workspace?.slug}/projects/${created.projectId}?taskId=${created.id}`,
                         actor: { name: session.user.name, image: session.user.image || undefined },
                         metadata: { taskId: created.id, projectId: created.projectId, title: created.title }
                     })
@@ -903,7 +903,7 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
                         type: 'task_status_changed',
                         title: 'notifications.titles.task_status_changed',
                         message: 'notifications.messages.task_status_changed',
-                        link: `/${workspace?.slug}/tasks/${updated.id}`,
+                        link: `/${workspace?.slug}/projects/${updated.projectId}?taskId=${updated.id}`,
                         actor: { name: user.name, image: user.image || undefined },
                         metadata: {
                             taskId: updated.id,
@@ -959,7 +959,7 @@ tasksRoutes.patch('/:id', zValidator('json', updateTaskSchema), async (c) => {
                             type: 'task_assigned',
                             title: 'notifications.titles.task_assigned',
                             message: 'notifications.messages.task_assigned',
-                            link: `/${workspace?.slug}/tasks/${updated.id}`,
+                            link: `/${workspace?.slug}/projects/${updated.projectId}?taskId=${updated.id}`,
                             actor: { name: user.name, image: user.image || undefined },
                             metadata: { taskId: updated.id, title: updated.title }
                         })
@@ -1270,7 +1270,7 @@ tasksRoutes.post('/:id/subtasks', async (c) => {
                 type: 'subtask_assigned',
                 title: 'notifications.titles.subtask_assigned',
                 message: 'notifications.messages.subtask_assigned',
-                link: `/${workspace?.slug}/tasks/${id}`,
+                link: `/${workspace?.slug}/projects/${task?.projectId}?taskId=${id}`,
                 actor: { name: user.name, image: user.image || undefined },
                 metadata: { taskId: id, subtaskId: created.id, title: created.title }
             })
@@ -1549,7 +1549,7 @@ tasksRoutes.post('/:id/comments', async (c) => {
                     type: 'task_comment',
                     title: 'notifications.titles.task_comment',
                     message: `[${session.user.name}] skomentował zadanie: ${taskObj.title}`,
-                    link: `/${workspace?.slug}/tasks/${id}`,
+                    link: `/${workspace?.slug}/projects/${taskObj?.projectId}?taskId=${id}`,
                     actor: { name: session.user.name, image: session.user.image || undefined },
                     metadata: { taskId: id, commentId: created.id }
                 })

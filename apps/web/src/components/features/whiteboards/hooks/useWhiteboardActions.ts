@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-export function useWhiteboardActions(excalidrawAPI: any) {
+export function useWhiteboardActions(excalidrawAPI: any, onAfterInsert?: () => void) {
     // Helper: ensures every element has all required Excalidraw properties
     const makeEl = (overrides: any) => ({
         version: 1,
@@ -69,8 +69,9 @@ export function useWhiteboardActions(excalidrawAPI: any) {
                 elements: [...elements, newSticky],
                 appState: { selectedElementIds: { [newStickyId]: true } },
             });
+            onAfterInsert?.();
         },
-        [excalidrawAPI]
+        [excalidrawAPI, onAfterInsert]
     );
 
     const insertStickyStack = useCallback(
@@ -145,8 +146,9 @@ export function useWhiteboardActions(excalidrawAPI: any) {
                 }
             }
             excalidrawAPI.updateScene({ elements: [...elements, ...newElements] });
+            onAfterInsert?.();
         },
-        [excalidrawAPI]
+        [excalidrawAPI, onAfterInsert]
     );
 
     const insertFrame = useCallback(
@@ -176,8 +178,9 @@ export function useWhiteboardActions(excalidrawAPI: any) {
                 groupIds: [],
             };
             excalidrawAPI.updateScene({ elements: [...elements, newFrame], appState: { selectedElementIds: { [newFrameId]: true } } });
+            onAfterInsert?.();
         },
-        [excalidrawAPI]
+        [excalidrawAPI, onAfterInsert]
     );
 
     const insertTemplate = useCallback(
@@ -322,10 +325,33 @@ export function useWhiteboardActions(excalidrawAPI: any) {
                 });
                 newElements.push(makeEl({ type: "text", id: `fcl-ab1`, text: "No", fontSize: 16, fontFamily: 1, textAlign: "center", x: centerX - 100, y: centerY - 110, strokeColor: "#c05621", frameId }));
                 newElements.push(makeEl({ type: "text", id: `fcl-ab2`, text: "Yes", fontSize: 16, fontFamily: 1, textAlign: "center", x: centerX + 100, y: centerY - 110, strokeColor: "#c05621", frameId }));
+            } else if (templateType === "timeline") {
+                newElements.push(makeEl({ type: "frame", id: frameId, name: "Timeline", x: centerX - 500, y: centerY - 250, width: 1000, height: 500 }));
+                const steps = [
+                    { title: "Idea", desc: "Concept" },
+                    { title: "Plan", desc: "Scope" },
+                    { title: "Build", desc: "Develop" },
+                    { title: "Test", desc: "Validate" },
+                    { title: "Launch", desc: "Release" }
+                ];
+                const stepWidth = 160;
+                const startX = centerX - ((steps.length - 1) * stepWidth) / 2;
+                const lineY = centerY;
+
+                newElements.push(makeEl({ type: "line", id: `tl-line-${timestamp}`, x: startX - 60, y: lineY, strokeColor: theme === "dark" ? "#94a3b8" : "#475569", strokeWidth: 3, points: [[0, 0], [(steps.length - 1) * stepWidth + 120, 0]], frameId }));
+
+                steps.forEach((step, i) => {
+                    const x = startX + i * stepWidth;
+                    const dotId = `tl-dot-${timestamp}-${i}`;
+                    newElements.push(makeEl({ type: "ellipse", id: dotId, x, y: lineY - 15, width: 30, height: 30, backgroundColor: "#3b82f6", strokeColor: "transparent", frameId }));
+                    newElements.push(makeEl({ type: "text", id: `tl-t-${timestamp}-${i}`, text: step.title, fontSize: 18, fontFamily: 1, textAlign: "center", verticalAlign: "middle", x, y: lineY - 70, strokeColor: theme === "dark" ? "#f8fafc" : "#1e1e1e", frameId }));
+                    newElements.push(makeEl({ type: "text", id: `tl-d-${timestamp}-${i}`, text: step.desc, fontSize: 13, fontFamily: 1, textAlign: "center", verticalAlign: "middle", x, y: lineY + 40, strokeColor: theme === "dark" ? "#cbd5e1" : "#64748b", frameId }));
+                });
             }
             excalidrawAPI.updateScene({ elements: [...elements, ...newElements] });
+            onAfterInsert?.();
         },
-        [excalidrawAPI]
+        [excalidrawAPI, onAfterInsert]
     );
 
     const insertMacroShape = useCallback(
@@ -352,8 +378,9 @@ export function useWhiteboardActions(excalidrawAPI: any) {
                 type: "line", id: newShapeId, fillStyle: "solid", strokeWidth: 2, roughness: 0, x: startX, y: startY, strokeColor, backgroundColor: "transparent", points, groupIds: [],
             };
             excalidrawAPI.updateScene({ elements: [...elements, newShape], appState: { selectedElementIds: { [newShapeId]: true } } });
+            onAfterInsert?.();
         },
-        [excalidrawAPI]
+        [excalidrawAPI, onAfterInsert]
     );
 
     const insertEmoji = useCallback(
@@ -371,8 +398,9 @@ export function useWhiteboardActions(excalidrawAPI: any) {
                 type: "text", id: emojiId, text: emoji, fontSize: 64, fontFamily: 1, textAlign: "center", verticalAlign: "middle", x: startX, y: startY, width: 60, height: 72, strokeColor: "#000000", originalText: emoji, updated: Date.now(), groupIds: [],
             };
             excalidrawAPI.updateScene({ elements: [...elements, emojiElement], appState: { selectedElementIds: { [emojiId]: true } } });
+            onAfterInsert?.();
         },
-        [excalidrawAPI]
+        [excalidrawAPI, onAfterInsert]
     );
 
     const insertKanbanCard = useCallback(
@@ -390,8 +418,9 @@ export function useWhiteboardActions(excalidrawAPI: any) {
                 type: "rectangle", id: cardId, fillStyle: "solid", strokeWidth: 1, x: startX, y: startY, strokeColor: "#e2e8f0", backgroundColor: color, width: 250, height: 150, roundness: { type: 3, value: 8 }, groupIds: [],
             };
             excalidrawAPI.updateScene({ elements: [...elements, card], appState: { selectedElementIds: { [cardId]: true } } });
+            onAfterInsert?.();
         },
-        [excalidrawAPI]
+        [excalidrawAPI, onAfterInsert]
     );
 
     const insertTable = useCallback(
@@ -415,8 +444,9 @@ export function useWhiteboardActions(excalidrawAPI: any) {
                 }
             }
             excalidrawAPI.updateScene({ elements: [...elements, ...newElements] });
+            onAfterInsert?.();
         },
-        [excalidrawAPI]
+        [excalidrawAPI, onAfterInsert]
     );
 
     const insertVotingDot = useCallback(
@@ -433,8 +463,9 @@ export function useWhiteboardActions(excalidrawAPI: any) {
             const dotId = `vote-${Date.now()}`;
             const voteDot = { type: "ellipse", id: dotId, x: startX, y: startY, width: 40, height: 40, backgroundColor: colors[type], strokeColor: "transparent", fillStyle: "solid", strokeWidth: 0, roughness: 0, groupIds: [] };
             excalidrawAPI.updateScene({ elements: [...elements, voteDot], appState: { selectedElementIds: { [dotId]: true } } });
+            onAfterInsert?.();
         },
-        [excalidrawAPI]
+        [excalidrawAPI, onAfterInsert]
     );
 
     const groupSelected = useCallback(() => {
@@ -446,7 +477,8 @@ export function useWhiteboardActions(excalidrawAPI: any) {
         const groupId = `group-${Date.now()}`;
         const newElements = elements.map((el: any) => selectedIds.includes(el.id) ? { ...el, groupIds: [...(el.groupIds || []), groupId] } : el);
         excalidrawAPI.updateScene({ elements: newElements });
-    }, [excalidrawAPI]);
+        onAfterInsert?.();
+    }, [excalidrawAPI, onAfterInsert]);
 
     const ungroupSelected = useCallback(() => {
         if (!excalidrawAPI) return;
@@ -455,7 +487,8 @@ export function useWhiteboardActions(excalidrawAPI: any) {
         const selectedIds = Object.keys(appState.selectedElementIds || {}).filter(id => appState.selectedElementIds[id]);
         const newElements = elements.map((el: any) => selectedIds.includes(el.id) ? { ...el, groupIds: [] } : el);
         excalidrawAPI.updateScene({ elements: newElements });
-    }, [excalidrawAPI]);
+        onAfterInsert?.();
+    }, [excalidrawAPI, onAfterInsert]);
 
     return {
         insertSticky, insertStickyStack, insertFrame, insertTemplate, insertMacroShape, insertEmoji,

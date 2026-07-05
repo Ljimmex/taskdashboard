@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { FileText, Palette, X, Sparkles, ChevronRight } from 'lucide-react';
+import { FileText, Palette, X, Sparkles, ArrowRight, Check } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface CreationSidePanelProps {
@@ -26,6 +26,13 @@ export const CreationSidePanel: React.FC<CreationSidePanelProps> = ({
         setMounted(true);
     }, []);
 
+    useEffect(() => {
+        if (isOpen) {
+            setName('');
+            setType('document');
+        }
+    }, [isOpen]);
+
     if (!mounted) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -46,7 +53,7 @@ export const CreationSidePanel: React.FC<CreationSidePanelProps> = ({
             {/* Backdrop */}
             <div
                 className={clsx(
-                    "fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[100] transition-opacity duration-300",
+                    "fixed inset-0 bg-black/50 z-[60] backdrop-blur-sm transition-opacity duration-300",
                     isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
                 )}
                 onClick={onClose}
@@ -54,124 +61,123 @@ export const CreationSidePanel: React.FC<CreationSidePanelProps> = ({
 
             {/* Panel */}
             <div className={clsx(
-                "fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-card)] rounded-none sm:rounded-2xl z-[110] flex flex-col shadow-2xl transform transition-transform duration-300 ease-out border border-[var(--app-border)] font-sans overflow-hidden",
-                isOpen ? "translate-x-0" : "translate-x-[calc(100%+2rem)]"
+                "fixed inset-0 sm:inset-auto sm:top-4 sm:right-4 sm:bottom-4 w-full sm:w-[448px] max-w-none sm:max-w-md bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-none sm:rounded-2xl shadow-2xl z-[70] flex flex-col transform transition-transform duration-300 ease-out",
+                isOpen ? "translate-x-0" : "translate-x-full sm:translate-x-[calc(100%+2rem)]"
             )}>
                 {/* Header */}
-                <div className="p-6 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-sidebar)]">
-                    <div>
-                        <h3 className="text-xl font-bold text-[var(--app-text-primary)]">{t('creation.title')}</h3>
-                        <p className="text-sm text-[var(--app-text-muted)] mt-1">{t('creation.subtitle')}</p>
+                <div className="flex-none p-6 border-b border-[var(--app-border)] bg-[var(--app-bg-sidebar)] rounded-t-2xl">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('creation.title', { defaultValue: 'Nowy zasób' })}</h2>
+                            <p className="text-sm text-[var(--app-text-muted)] mt-1">{t('creation.subtitle', { defaultValue: 'Wybierz typ i nazwij swój nowy element' })}</p>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-[var(--app-bg-elevated)] rounded-none sm:rounded-xl text-[var(--app-text-muted)] transition-colors">
-                        <X size={20} />
-                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-                    <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
                         {/* Name Input */}
-                        <div className="space-y-3">
-                            <label className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-widest px-1">
-                                {t('creation.name_label')}
+                        <div>
+                            <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-2">
+                                {t('creation.name_label', { defaultValue: 'Nazwa zasobu' })}
                             </label>
-                            <div className="relative group">
+                            <div className="relative">
+                                <Sparkles size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--app-accent)]" />
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder={t('creation.name_placeholder')}
+                                    placeholder={t('creation.name_placeholder', { defaultValue: 'Wpisz nazwę...' })}
                                     autoFocus
-                                    className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-none sm:rounded-xl py-3 px-4 text-sm text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--app-accent)]/50 focus:border-[var(--app-accent)] transition-all"
+                                    className="w-full text-sm text-[var(--app-text-primary)] bg-[var(--app-bg-elevated)] border border-[var(--app-border)] placeholder-[var(--app-text-muted)] outline-none px-4 py-3 pl-11 rounded-xl focus:border-[var(--app-accent)] transition-colors"
                                 />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-focus-within:opacity-100 transition-opacity">
-                                    <Sparkles size={14} className="text-[var(--app-accent)] animate-pulse" />
-                                </div>
                             </div>
                         </div>
 
                         {/* Type Selection */}
-                        <div className="space-y-4">
-                            <label className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-widest px-1">
-                                {t('creation.type_select', { defaultValue: 'Wybierz typ' })}
+                        <div>
+                            <label className="block text-sm font-medium text-[var(--app-text-secondary)] mb-3">
+                                {t('creation.type_select', { defaultValue: 'Typ zasobu' })}
                             </label>
-
-                            <div className="grid grid-cols-1 gap-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* Document */}
                                 <button
                                     type="button"
                                     onClick={() => setType('document')}
                                     className={clsx(
-                                        "group flex items-center gap-4 p-4 rounded-none sm:rounded-xl border transition-all text-left",
+                                        "group flex flex-col items-center gap-3 p-4 rounded-xl border text-center transition-all",
                                         type === 'document'
-                                            ? "bg-[var(--app-accent)]/10 border-[var(--app-accent)] shadow-sm"
-                                            : "bg-[var(--app-bg-elevated)] border-transparent hover:border-[var(--app-border-hover)]"
+                                            ? "bg-[var(--app-accent)]/10 border-[var(--app-accent)]"
+                                            : "bg-[var(--app-bg-elevated)] border-[var(--app-border)] hover:border-[var(--app-accent)]/30"
                                     )}
                                 >
                                     <div className={clsx(
-                                        "w-12 h-12 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
-                                        type === 'document' ? "bg-[var(--app-accent)] text-[var(--app-accent-text)]" : "bg-[var(--app-bg-card)] text-[var(--app-text-muted)]"
+                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                                        type === 'document' ? "bg-[var(--app-accent)]/20 text-[var(--app-accent)]" : "bg-[var(--app-bg-card)] text-[var(--app-text-muted)] group-hover:text-[var(--app-accent)]"
                                     )}>
-                                        <FileText size={24} />
+                                        <FileText size={22} />
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className={clsx(
-                                            "text-sm font-bold",
-                                            type === 'document' ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-secondary)]"
-                                        )}>
-                                            {t('creation.document')}
-                                        </h4>
-                                        <p className="text-xs text-[var(--app-text-muted)] truncate">
-                                            {t('creation.document_desc')}
-                                        </p>
+                                    <div>
+                                        <div className={clsx("text-sm font-semibold", type === 'document' ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-secondary)]")}>
+                                            {t('creation.document', { defaultValue: 'Dokument' })}
+                                        </div>
+                                        <div className="text-[11px] text-[var(--app-text-muted)] mt-0.5 leading-tight">{t('creation.document_desc', { defaultValue: 'Notatki i dokumentacja' })}</div>
                                     </div>
-                                    {type === 'document' && <ChevronRight size={18} className="text-[var(--app-accent)]" />}
+                                    {type === 'document' && (
+                                        <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[var(--app-accent)] flex items-center justify-center">
+                                            <Check size={12} className="text-[var(--app-accent-text)]" strokeWidth={3} />
+                                        </div>
+                                    )}
                                 </button>
 
+                                {/* Board */}
                                 <button
                                     type="button"
                                     onClick={() => setType('board')}
                                     className={clsx(
-                                        "group flex items-center gap-4 p-4 rounded-none sm:rounded-xl border transition-all text-left",
+                                        "group relative flex flex-col items-center gap-3 p-4 rounded-xl border text-center transition-all",
                                         type === 'board'
-                                            ? "bg-purple-500/10 border-purple-500 shadow-sm"
-                                            : "bg-[var(--app-bg-elevated)] border-transparent hover:border-[var(--app-border-hover)]"
+                                            ? "bg-[var(--app-accent)]/10 border-[var(--app-accent)]"
+                                            : "bg-[var(--app-bg-elevated)] border-[var(--app-border)] hover:border-[var(--app-accent)]/30"
                                     )}
                                 >
                                     <div className={clsx(
-                                        "w-12 h-12 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
-                                        type === 'board' ? "bg-purple-500 text-white" : "bg-[var(--app-bg-card)] text-[var(--app-text-muted)]"
+                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                                        type === 'board' ? "bg-[var(--app-accent)]/20 text-[var(--app-accent)]" : "bg-[var(--app-bg-card)] text-[var(--app-text-muted)] group-hover:text-[var(--app-accent)]"
                                     )}>
-                                        <Palette size={24} />
+                                        <Palette size={22} />
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className={clsx(
-                                            "text-sm font-bold",
-                                            type === 'board' ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-secondary)]"
-                                        )}>
-                                            {t('creation.board')}
-                                        </h4>
-                                        <p className="text-xs text-[var(--app-text-muted)] truncate">
-                                            {t('creation.board_desc')}
-                                        </p>
+                                    <div>
+                                        <div className={clsx("text-sm font-semibold", type === 'board' ? "text-[var(--app-text-primary)]" : "text-[var(--app-text-secondary)]")}>
+                                            {t('creation.board', { defaultValue: 'Tablica' })}
+                                        </div>
+                                        <div className="text-[11px] text-[var(--app-text-muted)] mt-0.5 leading-tight">{t('creation.board_desc', { defaultValue: 'Wizualne planowanie' })}</div>
                                     </div>
-                                    {type === 'board' && <ChevronRight size={18} className="text-purple-500" />}
+                                    {type === 'board' && (
+                                        <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[var(--app-accent)] flex items-center justify-center">
+                                            <Check size={12} className="text-[var(--app-accent-text)]" strokeWidth={3} />
+                                        </div>
+                                    )}
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="p-6 bg-[var(--app-bg-sidebar)] border-t border-[var(--app-border)] space-y-4">
+                    <div className="flex-none p-6 border-t border-[var(--app-border)]">
                         <button
                             type="submit"
-                            className="w-full py-4 rounded-none sm:rounded-xl bg-[var(--app-accent)] text-[var(--app-accent-text)] font-bold shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                            className="w-full bg-[var(--app-accent)] hover:opacity-90 text-[var(--app-accent-text)] font-semibold py-3 rounded-xl transition-opacity flex items-center justify-center gap-2"
                         >
-                            {t('creation.submit')}
-                            <ChevronRight size={18} />
+                            <span>{t('creation.submit', { defaultValue: 'Stwórz zasób' })}</span>
+                            <ArrowRight size={18} />
                         </button>
-                        <p className="text-[10px] text-[var(--app-text-muted)] text-center uppercase tracking-widest font-bold">
-                            {t('creation.footer_note')}
-                        </p>
                     </div>
                 </form>
             </div>

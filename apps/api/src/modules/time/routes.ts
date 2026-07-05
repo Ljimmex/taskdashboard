@@ -1451,7 +1451,7 @@ timeRoutes.patch('/:id/approve', zValidator('json', approveTimeEntrySchema), asy
                 type: 'time_entry_approved',
                 title: 'notifications.titles.time_approved',
                 message: 'notifications.messages.time_approved',
-                link: `/${workspace?.slug}/time-tracker`,
+                link: `/${workspace?.slug}/time-tracker?view=manual`,
                 actor: { name: user.name, image: user.image || undefined },
                 metadata: { entryId: updated.id, duration: updated.durationMinutes }
             })
@@ -1506,7 +1506,7 @@ timeRoutes.patch('/:id/reject', zValidator('json', rejectTimeEntrySchema), async
                 type: 'time_entry_rejected',
                 title: 'notifications.titles.time_rejected',
                 message: 'notifications.messages.time_rejected',
-                link: `/${workspace?.slug}/time-tracker`,
+                link: `/${workspace?.slug}/time-tracker?view=manual`,
                 actor: { name: user.name, image: user.image || undefined },
                 metadata: { entryId: updated.id, reason: body.rejectionReason, duration: updated.durationMinutes }
             })
@@ -1542,7 +1542,7 @@ async function notifyHR(workspaceId: string, actor: { id: string, name: string, 
                 type: 'time_entry_pending',
                 title: 'notifications.titles.time_pending',
                 message: `Nowy wpis czasu do zaakceptowania (${durationMinutes} min) od [${actor.name}]`,
-                link: `/${workspace?.slug}/time-tracker`,
+                link: `/${workspace?.slug}/time-tracker?view=approval`,
                 actor: { name: actor.name, image: actor.image },
                 metadata: { workspaceId }
             })

@@ -89,6 +89,10 @@ services:
         value: https://taskdashboard-api.onrender.com # Use the standard service URL
       - key: BETTER_AUTH_URL
         value: https://taskdashboard-api.onrender.com
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
     # Rate Limiting (Render native)
     # limit: 100 requests per minute
     # burst: 50 requests

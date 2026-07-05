@@ -1385,7 +1385,7 @@ export function TiptapEditor({
         error?: string
     }>({ open: false, type: 'image', value: '' })
     const [headings, setHeadings] = useState<TocHeading[]>([])
-    const [showTocPreview, setShowTocPreview] = useState(false)
+    const [activeHeadingIndex, setActiveHeadingIndex] = useState(0)
     const [liveCursors, setLiveCursors] = useState<Record<string, LiveCursor>>({})
     const liveChannelRef = useRef<RealtimeChannel | null>(null)
     const isApplyingRemoteRef = useRef(false)
@@ -1393,6 +1393,7 @@ export function TiptapEditor({
     const lastPointerBroadcastRef = useRef(0)
     const channelSubscribedRef = useRef(false)
     const editorSurfaceRef = useRef<HTMLDivElement | null>(null)
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null)
     const sendLiveEvent = useCallback((event: string, payload: Record<string, any>) => {
         const channel = liveChannelRef.current as any
         if (!channel || !channelSubscribedRef.current) return
@@ -1407,9 +1408,9 @@ export function TiptapEditor({
                 heading: { levels: [1, 2, 3] },
                 codeBlock: false,
                 link: {
-                    openOnClick: false,
+                    openOnClick: true,
                     HTMLAttributes: {
-                        class: 'text-blue-500 underline cursor-pointer hover:text-blue-600',
+                        class: 'text-[var(--app-accent)] underline underline-offset-2 cursor-pointer hover:opacity-80',
                     },
                 },
             }),
@@ -1488,7 +1489,7 @@ export function TiptapEditor({
         },
         editorProps: {
             attributes: {
-                class: 'notion-editor prose prose-lg dark:prose-invert max-w-none focus:outline-none min-h-[calc(100vh-260px)] px-16 py-12',
+                class: 'notion-editor prose prose-lg dark:prose-invert max-w-none focus:outline-none min-h-[800px] p-12',
             },
         },
     }, [documentId, user?.id, editable])
@@ -1724,6 +1725,14 @@ export function TiptapEditor({
                 }
             })
             setHeadings(nextHeadings)
+            // Assign stable IDs to rendered heading elements so the TOC can track them
+            requestAnimationFrame(() => {
+                const editorEl = editor.view.dom as HTMLElement
+                const headingEls = editorEl.querySelectorAll('h1, h2, h3')
+                headingEls.forEach((el, i) => {
+                    if (nextHeadings[i]) el.id = nextHeadings[i].id
+                })
+            })
             syncOrderedListStarts()
         }
 
@@ -1735,6 +1744,37 @@ export function TiptapEditor({
             editor.off('transaction', syncOrderedListStarts)
         }
     }, [editor])
+
+    // Track active heading while scrolling
+    useEffect(() => {
+        if (!editor || headings.length === 0 || !scrollContainerRef.current) return
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const visible = entries.filter((entry) => entry.isIntersecting)
+                if (visible.length === 0) return
+
+                const topEntry = visible.reduce((prev, curr) =>
+                    prev.boundingClientRect.top < curr.boundingClientRect.top ? prev : curr
+                )
+                const id = topEntry.target.id
+                const idx = headings.findIndex((h) => h.id === id)
+                if (idx !== -1) setActiveHeadingIndex(idx)
+            },
+            {
+                root: scrollContainerRef.current,
+                rootMargin: '-10% 0px -75% 0px',
+                threshold: 0,
+            }
+        )
+
+        headings.forEach((h) => {
+            const el = document.getElementById(h.id)
+            if (el) observer.observe(el)
+        })
+
+        return () => observer.disconnect()
+    }, [editor, headings])
 
     useEffect(() => {
         if (!editor || !onEditorActionsChange) return
@@ -1776,101 +1816,95 @@ export function TiptapEditor({
 
     return (
         <div className="flex flex-col w-full h-full relative">
-            <div className="flex-1 overflow-auto bg-[var(--app-bg-page)] px-4 md:px-8 py-8 relative">
-                <div className="mx-auto w-full max-w-6xl h-full flex items-start gap-4 xl:gap-8">
-                    {/* Main Editor Container */}
-                    <div className="flex-1 min-w-0 h-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-bg-card)] shadow-[var(--app-shadow-card)] overflow-hidden">
-                        <div className="h-full">
-                            <div ref={editorSurfaceRef} className="flex-1 min-w-0 relative">
-                                <EditorBubbleMenuBar editor={editor} />
-                                <EditorTableOverlayControls editor={editor} />
-                                <EditorFloatingMenuBar editor={editor} onInsertImage={addImage} onInsertVideo={addVideo} />
-                                <EditorContent editor={editor} />
-                                {Object.values(liveCursors).map((cursor) => (
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto relative custom-scrollbar">
+                <div className="mx-auto w-full max-w-[90rem] min-h-full px-4 md:px-6 lg:px-8 py-6">
+                    {/* Main Editor Surface */}
+                    <div className="relative min-h-full rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-card)] shadow-sm">
+                        <div ref={editorSurfaceRef} className="relative min-h-full">
+                            <EditorBubbleMenuBar editor={editor} />
+                            <EditorTableOverlayControls editor={editor} />
+                            <EditorFloatingMenuBar editor={editor} onInsertImage={addImage} onInsertVideo={addVideo} />
+                            <EditorContent editor={editor} />
+                            {Object.values(liveCursors).map((cursor) => (
+                                <div
+                                    key={cursor.userId}
+                                    className="pointer-events-none absolute z-[70]"
+                                    style={{
+                                        left: `${cursor.x * 100}%`,
+                                        top: `${cursor.y * 100}%`,
+                                        transform: 'translate(-6px, -2px)',
+                                    }}
+                                >
+                                    <div className="w-0 h-0 border-l-[7px] border-r-[7px] border-b-[12px] border-l-transparent border-r-transparent rotate-45 origin-bottom-left" style={{ borderBottomColor: cursor.color }} />
+                                    <div style={{ backgroundColor: cursor.color }} className="w-2 h-2 rounded-full -mt-0.5 ml-0.5" />
                                     <div
-                                        key={cursor.userId}
-                                        className="pointer-events-none absolute z-[70]"
-                                        style={{
-                                            left: `${cursor.x * 100}%`,
-                                            top: `${cursor.y * 100}%`,
-                                            transform: 'translate(-6px, -2px)',
-                                        }}
+                                        className="mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold text-black whitespace-nowrap shadow-md"
+                                        style={{ backgroundColor: cursor.color }}
                                     >
-                                        <div className="w-0 h-0 border-l-[7px] border-r-[7px] border-b-[12px] border-l-transparent border-r-transparent rotate-45 origin-bottom-left" style={{ borderBottomColor: cursor.color }} />
-                                        <div style={{ backgroundColor: cursor.color }} className="w-2 h-2 rounded-full -mt-0.5 ml-0.5" />
-                                        <div
-                                            className="mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold text-black whitespace-nowrap shadow-md"
-                                            style={{ backgroundColor: cursor.color }}
-                                        >
-                                            {cursor.name}
-                                        </div>
+                                        {cursor.name}
                                     </div>
-                                ))}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* TOC inside editor surface */}
+                        <div className="hidden lg:flex absolute right-0 top-0 bottom-0 w-12 hover:w-64 bg-[var(--app-bg-card)]/50 border-l border-[var(--app-border)] backdrop-blur-sm transition-all duration-300 overflow-hidden group z-30 flex-col pt-8 pointer-events-none">
+                            {/* Header (visible on hover) */}
+                            <div className="px-3 pb-4 mb-2 border-b border-[var(--app-border)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-auto">
+                                <span className="font-semibold text-sm text-[var(--app-text-primary)] flex items-center gap-2">
+                                    <ListTree size={18} />
+                                    Spis treści
+                                </span>
+                            </div>
+
+                            {/* Headings */}
+                            <div className="flex-1 overflow-y-auto px-2 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                                <ul className="space-y-1">
+                                    {headings.length === 0 ? (
+                                        <li className="px-2 py-1.5 text-sm text-[var(--app-text-muted)]">Brak nagłówków</li>
+                                    ) : (
+                                        headings.map((h, i) => {
+                                            const isActive = i === activeHeadingIndex
+                                            const indent = 6 + (h.level - 1) * 8
+                                            return (
+                                                <li key={`toc-${h.id}-${h.pos}-${i}`}>
+                                                    <button
+                                                        onClick={() => editor.chain().focus().setTextSelection(h.pos + 1).scrollIntoView().run()}
+                                                        className={`flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[var(--app-bg-elevated)] text-sm transition-colors relative z-10 w-full text-left ${isActive ? 'text-[var(--app-accent)] font-medium' : 'text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)]'}`}
+                                                        style={{ paddingLeft: `${indent}px` }}
+                                                    >
+                                                        <span className={`rounded-full transition-all ${isActive ? 'w-2 h-2 bg-[var(--app-accent)] shadow-[0_0_8px_rgba(242,206,136,0.5)]' : 'w-1.5 h-1.5 bg-[var(--app-text-muted)] group-hover:bg-[var(--app-text-secondary)]'}`} />
+                                                        <span className="truncate">{h.text}</span>
+                                                    </button>
+                                                </li>
+                                            )
+                                        })
+                                    )}
+                                </ul>
+                            </div>
+
+                            {/* Minimized View Icons */}
+                            <div className="absolute top-8 left-0 w-12 flex flex-col items-center gap-4 group-hover:opacity-0 transition-opacity pointer-events-auto">
+                                <ListTree size={20} className="text-[var(--app-text-muted)]" />
+                                {headings.length === 0 ? (
+                                    <>
+                                        <div className="w-1 h-1 rounded-full bg-[var(--app-text-muted)]" />
+                                        <div className="w-1 h-1 rounded-full bg-[var(--app-text-muted)]" />
+                                        <div className="w-1 h-1 rounded-full bg-[var(--app-text-muted)]" />
+                                    </>
+                                ) : (
+                                    headings.slice(0, 5).map((_, i) => (
+                                        <div key={i} className={`w-1 h-1 rounded-full transition-all ${i === activeHeadingIndex ? 'w-1.5 h-1.5 bg-[var(--app-accent)] shadow-[0_0_6px_rgba(242,206,136,0.5)]' : 'bg-[var(--app-text-muted)]'}`} />
+                                    ))
+                                )}
                             </div>
                         </div>
-                    </div>
-
-                    {/* Fixed ToC on the right edge */}
-                    <div
-                        className="hidden lg:flex w-8 xl:w-12 flex-col items-center pt-8 shrink-0 relative z-30"
-                        onMouseEnter={() => setShowTocPreview(true)}
-                        onMouseLeave={() => setShowTocPreview(false)}
-                    >
-                        <div className="space-y-3">
-                            {headings.length === 0 ? (
-                                <div className="space-y-3">
-                                    {Array.from({ length: 8 }).map((_, i) => (
-                                        <div key={i} className="h-[2px] w-6 xl:w-7 rounded bg-[var(--app-text-secondary)]/55" />
-                                    ))}
-                                </div>
-                            ) : (
-                                headings.map((h, i) => (
-                                    <button
-                                        key={`toc-line-${h.id}-${h.pos}-${i}`}
-                                        onClick={() => editor.chain().focus().setTextSelection(h.pos + 1).scrollIntoView().run()}
-                                        className="block mx-auto"
-                                        title={h.text}
-                                    >
-                                        <div
-                                            className="h-[2px] rounded bg-[var(--app-text-secondary)] hover:bg-[var(--app-accent)] transition-colors"
-                                            style={{ width: `${Math.max(12, 28 - (h.level - 1) * 6)}px` }}
-                                        />
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                        {showTocPreview && headings.length > 0 && (
-                            <div className="absolute right-10 xl:right-14 top-8 z-20 w-64 p-1">
-                                <div className="space-y-0.5 rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-card)] shadow-[var(--app-shadow-card)] p-2 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                                    <div className="text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 px-3">
-                                        Spis treści
-                                    </div>
-                                    {headings.map((h, i) => {
-                                        let textSize = 'text-sm font-normal';
-                                        if (h.level === 1) textSize = 'text-sm font-bold text-[var(--app-text-primary)] tracking-tight';
-                                        else if (h.level === 2) textSize = 'text-xs font-semibold text-[var(--app-text-primary)]';
-                                        else if (h.level === 3) textSize = 'text-[11px] font-medium text-[var(--app-text-secondary)]';
-                                        else textSize = 'text-[10px] font-normal text-[var(--app-text-secondary)] opacity-90';
-
-                                        return (
-                                            <button
-                                                key={`toc-preview-${h.id}-${h.pos}-${i}`}
-                                                onClick={() => editor.chain().focus().setTextSelection(h.pos + 1).scrollIntoView().run()}
-                                                className="w-full rounded-md px-3 py-1 text-left hover:bg-[var(--app-bg-elevated)] transition-colors"
-                                                style={{ paddingLeft: `${12 + (h.level - 1) * 8}px` }}
-                                            >
-                                                <span className={`truncate block leading-tight ${textSize}`}>{h.text}</span>
-                                            </button>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
+
             {mediaToast.open && (
-                <div className="fixed bottom-6 right-6 z-[80] w-[360px] rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-elevated)] p-3 shadow-2xl">
+                <div className="fixed bottom-6 right-6 z-[80] w-[360px] rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-card)] p-3 shadow-2xl">
                     <div className="text-xs font-semibold text-[var(--app-text-primary)] mb-2">
                         {mediaToast.type === 'image' ? 'Wstaw obrazek z URL' : 'Wstaw wideo YouTube z URL'}
                     </div>
@@ -1892,7 +1926,7 @@ export function TiptapEditor({
                     <div className="mt-3 flex items-center justify-end gap-2">
                         <button
                             onClick={closeMediaToast}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-card)] transition-colors"
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors"
                         >
                             Anuluj
                         </button>

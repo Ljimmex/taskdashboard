@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
@@ -17,12 +17,25 @@ import { MemberContributionView } from './components/MemberContributionView'
 import { OwnerDashboardView } from './components/OwnerDashboardView'
 import { WeeklyCalendarView } from './components/WeeklyCalendarView'
 
+export interface TimeTrackerSearch {
+    view?: 'timer' | 'manual' | 'approval' | 'contribution' | 'dashboard' | 'calendar'
+}
+
 export const Route = createFileRoute('/$workspaceSlug/time-tracker/')({
     component: TimeTrackerPage,
+    validateSearch: (search: Record<string, unknown>): TimeTrackerSearch => {
+        const validViews: TimeTrackerSearch['view'][] = ['timer', 'manual', 'approval', 'contribution', 'dashboard', 'calendar']
+        const view = search.view as string | undefined
+        return {
+            view: validViews.includes(view as any) ? (view as any) : undefined,
+        }
+    },
 })
 
 export function TimeTrackerPage() {
     const { workspaceSlug } = Route.useParams()
+    const search = Route.useSearch()
+    const navigate = useNavigate()
     const { t } = useTranslation()
 
     // Auth & Permissions
@@ -41,7 +54,7 @@ export function TimeTrackerPage() {
     const canApproveEntries = ['owner', 'admin', 'hr_manager', 'project_manager'].includes(role || '')
 
     // Navigation state
-    const [view, setView] = useState<'timer' | 'manual' | 'approval' | 'contribution' | 'dashboard' | 'calendar'>('timer')
+    const [view, setView] = useState<'timer' | 'manual' | 'approval' | 'contribution' | 'dashboard' | 'calendar'>(search.view || 'timer')
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
     const [projectsDropdownOpen, setProjectsDropdownOpen] = useState(false)
 
@@ -85,7 +98,10 @@ export function TimeTrackerPage() {
                                 {navItems.filter(i => i.show).map((item) => (
                                     <button
                                         key={item.id}
-                                        onClick={() => setView(item.id as any)}
+                                        onClick={() => {
+                                            setView(item.id as any)
+                                            navigate({ to: '.', search: { view: item.id as TimeTrackerSearch['view'] } })
+                                        }}
                                         className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${view === item.id
                                             ? 'bg-[var(--app-bg-elevated)] text-[var(--app-accent)] shadow-md'
                                             : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'

@@ -139,7 +139,7 @@ commentsRoutes.post('/', zValidator('json', createCommentSchema), async (c) => {
                 type: 'task_comment',
                 title: 'notifications.titles.new_comment',
                 message: 'notifications.messages.new_comment',
-                link: `/${workspace?.slug}/tasks/${task?.id}`,
+                link: `/${workspace?.slug}/projects/${task?.projectId}?taskId=${task?.id}`,
                 actor: { name: user.name, image: user.image || undefined },
                 metadata: { taskId: task?.id, commentId: created.id, title: task?.title }
             })

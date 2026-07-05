@@ -5,14 +5,13 @@ import { X, CheckCircle2, BellOff, Clock, Bell } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { pl, enUS } from 'date-fns/locale'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { sidebarIcons } from '@/components/dashboard/icons/SidebarIcons'
 import { useNotifications, NotificationItem } from '@/hooks/useNotifications'
 
 export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
     const { t, i18n } = useTranslation()
     const navigate = useNavigate()
-    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
     const [mounted, setMounted] = useState(false)
     const [activeTab, setActiveTab] = useState<'All' | 'Tasks' | 'Messages' | 'Comments' | 'Assets' | 'Time'>('All')
 
@@ -202,10 +201,7 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean, onClos
                                             onClick={() => {
                                                 markRead(item.id)
                                                 if (item.link) {
-                                                    const formattedLink = item.link.startsWith('/') ? item.link : `/${item.link}`;
-                                                    const finalLink = workspaceSlug && !formattedLink.startsWith(`/${workspaceSlug}`)
-                                                        ? `/${workspaceSlug}${formattedLink}`
-                                                        : formattedLink;
+                                                    const finalLink = item.link.startsWith('/') ? item.link : `/${item.link}`;
                                                     navigate({ to: finalLink })
                                                 }
                                                 onClose()

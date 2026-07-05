@@ -514,7 +514,7 @@ conversationsRoutes.post('/:id/messages', zValidator('json', createMessageSchema
                 type: conversation.type === 'direct' ? 'direct_message' : 'group_message',
                 title: 'notifications.titles.message_new',
                 message: 'notifications.messages.new_message',
-                link: workspaceSlug ? `/${workspaceSlug}/messages/${conversationId}` : `/messages/${conversationId}`,
+                link: workspaceSlug ? `/${workspaceSlug}/messages?userId=${conversationId}` : `/messages?userId=${conversationId}`,
                 actor: { name: user.name, image: user.image || undefined },
                 metadata: { conversationId, preview }
             })
@@ -611,7 +611,7 @@ conversationsRoutes.patch('/:id/messages', zValidator('json', appendMessageSchem
                 type: conversation.type === 'direct' ? 'direct_message' : 'group_message',
                 title: 'notifications.titles.message_new',
                 message: 'notifications.messages.new_message',
-                link: workspaceSlug ? `/${workspaceSlug}/messages/${conversationId}` : `/messages/${conversationId}`,
+                link: workspaceSlug ? `/${workspaceSlug}/messages?userId=${conversationId}` : `/messages?userId=${conversationId}`,
                 actor: { name: user.name, image: user.image || undefined },
                 metadata: { conversationId, preview }
             })

@@ -13,6 +13,7 @@ import { useSession } from '@/lib/auth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { useTranslation } from 'react-i18next'
 import { useMemo } from 'react'
+import { getAssignableMembers } from '@/lib/teamUtils'
 
 export const Route = createFileRoute('/$workspaceSlug/projects/')({
     component: ProjectsPage,
@@ -411,16 +412,14 @@ function ProjectsPage() {
         }
     }
 
-    // Get members for the selected project's team
+    const currentUserId = session?.user?.id
     const effectiveProjectId = selectedTask?.projectId || selectedProjectId
     const selectedProjectTeamId = projects.find(p => p.id === effectiveProjectId)?.teamId
-    const teamMembers = teamsData?.find((t: any) => t.id === selectedProjectTeamId)?.members?.map((m: any) => ({
-        id: m.userId,
-        name: m.user.name,
-        avatar: m.user.image,
-        email: m.user.email,
-        role: m.teamLevel
-    })) || []
+
+    // Get members for the selected project's team plus members of any team the current user leads
+    const teamMembers = useMemo(() => getAssignableMembers(teamsData, currentUserId, {
+        projectTeamId: selectedProjectTeamId
+    }), [teamsData, currentUserId, selectedProjectTeamId])
 
     const [availableLabels, setAvailableLabels] = useState<any[]>([])
 
