@@ -20,7 +20,7 @@ import { workspaceInvitesRoutes } from './invites'
 import { workspaceDefaultsRoutes } from './defaults'
 import { checkWorkspaceMemberLimit } from '../../lib/workspaceLimits'
 import { isPlatformOwner } from '../../lib/platformOwner'
-import { getWorkspaceDefaultsForPlan } from '../../lib/plans'
+import { getWorkspaceDefaultsForPlan, type SubscriptionPlan } from '../../lib/plans'
 
 type Env = {
     Variables: {
@@ -48,6 +48,8 @@ const updateWorkspaceSchema = z.object({
     settings: z.any().optional(),
     subscriptionPlan: z.enum(['free', 'plus', 'pro', 'enterprise']).optional(),
     subscriptionStatus: z.enum(['active', 'trial', 'expired', 'cancelled', 'past_due']).optional(),
+    isOwnerOverride: z.boolean().optional(),
+    overridePlan: z.enum(['free', 'plus', 'pro', 'enterprise']).optional(),
 })
 
 const addMemberSchema = z.object({
@@ -167,8 +169,11 @@ workspacesRoutes.get('/slug/:slug', async (c) => {
             return c.json({ error: 'Access denied' }, 403)
         }
 
+        const isOwner = member.role === 'owner'
+        const sanitizedWorkspace = isOwner ? workspace : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
+
         return c.json({
-            ...workspace,
+            ...sanitizedWorkspace,
             userRole: member.role
         })
     } catch (error) {
@@ -240,7 +245,10 @@ workspacesRoutes.get('/:id', async (c) => {
             where: (ws, { eq }) => eq(ws.id, id)
         })
 
-        return c.json({ data: workspace })
+        const isOwner = workspaceRole === 'owner'
+        const sanitizedWorkspace = isOwner ? workspace : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
+
+        return c.json({ data: sanitizedWorkspace })
     } catch (error) {
         return c.json({ error: 'Failed to fetch workspace', details: String(error) }, 500)
     }
@@ -301,6 +309,49 @@ workspacesRoutes.patch('/:id', zValidator('json', updateWorkspaceSchema), async 
             }
             if (body.subscriptionStatus) {
                 updateData.subscriptionStatus = body.subscriptionStatus
+            }
+        }
+
+        // Workspace owner override: change plan without payment (invisible to others)
+        const wantsOwnerOverride = body.isOwnerOverride !== undefined || body.overridePlan !== undefined
+        if (wantsOwnerOverride) {
+            if (workspaceRole !== 'owner') {
+                return c.json({ error: 'Only workspace owner can set owner override' }, 403)
+            }
+
+            if (body.isOwnerOverride !== undefined) {
+                updateData.isOwnerOverride = body.isOwnerOverride
+            }
+            if (body.overridePlan !== undefined) {
+                updateData.overridePlan = body.overridePlan
+            }
+
+            const isOverrideActive = body.isOwnerOverride !== undefined ? body.isOwnerOverride : currentWorkspace.isOwnerOverride
+            const effectiveOverridePlan = body.overridePlan !== undefined ? body.overridePlan : currentWorkspace.overridePlan
+
+            if (isOverrideActive && effectiveOverridePlan) {
+                updateData.subscriptionPlan = effectiveOverridePlan
+                const defaults = getWorkspaceDefaultsForPlan(effectiveOverridePlan as SubscriptionPlan)
+                Object.assign(updateData, defaults)
+                updateData.subscriptionStatus = 'active'
+            } else if (body.isOwnerOverride === false) {
+                // Override disabled: fall back to free unless there's an active Polar subscription
+                const activeSubscription = await db.query.subscriptions.findFirst({
+                    where: (s, { eq, and }) => and(eq(s.workspaceId, id), eq(s.status, 'active')),
+                    orderBy: (s, { desc }) => [desc(s.createdAt)]
+                })
+                if (activeSubscription) {
+                    updateData.subscriptionPlan = activeSubscription.plan as SubscriptionPlan
+                    const defaults = getWorkspaceDefaultsForPlan(updateData.subscriptionPlan)
+                    Object.assign(updateData, defaults)
+                    updateData.subscriptionStatus = 'active'
+                } else {
+                    updateData.subscriptionPlan = 'free'
+                    const defaults = getWorkspaceDefaultsForPlan('free')
+                    Object.assign(updateData, defaults)
+                    updateData.subscriptionStatus = 'trial'
+                }
+                updateData.overridePlan = null
             }
         }
 

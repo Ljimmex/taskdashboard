@@ -250,7 +250,8 @@
             "labels": "Etykiety",
             "defaults": "Domyślne",
             "integrations": "Integracje",
-            "security": "Bezpieczeństwo"
+            "security": "Bezpieczeństwo",
+            "plan": "Plan"
         },
         "timeTracker": "Śledzenie Czasu"
     },
@@ -1045,6 +1046,37 @@
                 "rotating": "Rotowanie i re-szyfrowanie...",
                 "success": "Pomyślnie zrotowano klucze i re-zaszyfrowano {{count}} wiadomości.",
                 "confirmRotate": "Czy na pewno chcesz zrotować klucze? Wszystkie wiadomości zostaną ponownie zaszyfrowane nowym kluczem. Może to zająć chwilę w zależności od liczby wiadomości."
+            },
+            "plan": {
+                "title": "Plan i rozliczenia",
+                "status": "Status: {{status}}",
+                "override_badge": "Nadpisanie",
+                "members": "Członkowie",
+                "storage": "Przestrzeń dyskowa",
+                "projects": "Projekty",
+                "teams": "Zespoły",
+                "docs": "Dokumenty",
+                "whiteboards": "Tablice",
+                "file_size": "Maks. rozmiar pliku",
+                "unlimited": "Bez limitu",
+                "limited": "Ograniczone",
+                "change_plan_title": "Zmień plan",
+                "select_plan": "Wybierz plan",
+                "use_owner_override": "Użyj nadpisania właściciela",
+                "owner_override_hint": "Zastosuj ten plan bez płacenia. Widoczne tylko dla Ciebie jako właściciela workspace.",
+                "apply_override": "Zastosuj bez płacenia",
+                "remove_override": "Usuń nadpisanie",
+                "subscribe_with_polar": "Subskrybuj przez Polar",
+                "free_selected": "Wybrano darmowy plan",
+                "checkout_error": "Nie udało się utworzyć sesji płatności",
+                "override_error": "Nie udało się zastosować nadpisania planu",
+                "contact_owner": "Skontaktuj się z właścicielem workspace, aby zmienić plan.",
+                "plan_names": {
+                    "free": "Darmowy",
+                    "plus": "Plus",
+                    "pro": "Pro",
+                    "enterprise": "Enterprise"
+                }
             },
             "general": {
                 "success": "Ustawienia zostały zapisane",

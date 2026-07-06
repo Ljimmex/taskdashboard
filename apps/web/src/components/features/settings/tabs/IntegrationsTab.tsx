@@ -110,8 +110,8 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-6 overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">
                         {t('settings.organization.integrations.title')}
@@ -122,7 +122,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                 </div>
                 <button
                     onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-sm rounded-xl transition-all shadow-lg shadow-amber-500/20 active:translate-y-[1px]"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-sm rounded-xl transition-all shadow-lg shadow-amber-500/20 active:translate-y-[1px] whitespace-nowrap"
                 >
                     <Plus className="w-4 h-4" strokeWidth={3} />
                     {t('settings.organization.integrations.new_webhook_button')}
@@ -137,8 +137,8 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                     </p>
                 </div>
             ) : webhooks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 px-4 bg-[var(--app-bg-card)] border border-dashed border-[var(--app-border)] rounded-2xl text-center">
-                    <div className="w-16 h-16 bg-[var(--app-bg-elevated)] rounded-2xl flex items-center justify-center mb-6 border border-[var(--app-border)] shadow-inner">
+                <div className="flex flex-col items-center justify-center py-16 px-4 bg-[var(--app-bg-elevated)] rounded-2xl text-center">
+                    <div className="w-16 h-16 bg-[var(--app-bg-card)] rounded-2xl flex items-center justify-center mb-6 shadow-inner">
                         <LayoutGrid className="w-8 h-8 text-[var(--app-text-muted)]" />
                     </div>
                     <h4 className="text-lg font-semibold text-[var(--app-text-primary)] mb-2">
@@ -149,7 +149,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                     </p>
                     <button
                         onClick={() => setIsCreateOpen(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-[var(--app-bg-elevated)] hover:bg-[var(--app-bg-card)] text-[var(--app-text-primary)] border border-[var(--app-border)] rounded-xl font-medium transition-all hover:border-[var(--app-border-hover)] shadow-sm active:scale-95"
+                        className="flex items-center gap-2 px-6 py-3 bg-[var(--app-bg-card)] hover:bg-[var(--app-bg-page)] text-[var(--app-text-primary)] rounded-xl font-medium transition-all shadow-sm active:scale-95"
                     >
                         <Plus className="w-4 h-4" />
                         {t('settings.organization.integrations.create_first_webhook_button')}
@@ -161,33 +161,33 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                         <div
                             key={webhook.id}
                             className={cn(
-                                "bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-2xl p-5 hover:border-[var(--app-border-hover)] transition-all group/card shadow-sm hover:shadow-md",
+                                "bg-[var(--app-bg-elevated)] rounded-2xl p-5 transition-all group/card hover:bg-[var(--app-bg-card)] shadow-sm hover:shadow-md",
                                 !webhook.isActive && "opacity-50 grayscale"
                             )}
                         >
-                            <div className="flex items-start justify-between gap-4">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-[var(--app-bg-elevated)] rounded-xl flex items-center justify-center border border-[var(--app-border)] group-hover/card:scale-110 transition-transform">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                <div className="flex items-start gap-4 min-w-0">
+                                    <div className="w-12 h-12 bg-[var(--app-bg-card)] rounded-xl flex items-center justify-center group-hover/card:scale-110 transition-transform flex-shrink-0">
                                         {getWebhookIcon(webhook.type)}
                                     </div>
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2">
+                                    <div className="space-y-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <h4 className="font-semibold text-[var(--app-text-primary)] leading-none text-[15px]">
                                                 {webhook.description || t('settings.organization.integrations.untitled_webhook')}
                                             </h4>
                                             {webhook.silentMode && (
-                                                <span className="px-1.5 py-0.5 bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] text-[10px] font-bold uppercase tracking-wider rounded border border-[var(--app-border)]">
+                                                <span className="px-1.5 py-0.5 bg-[var(--app-bg-card)] text-[var(--app-text-muted)] text-[10px] font-bold uppercase tracking-wider rounded">
                                                     {t('settings.organization.integrations.silent_badge')}
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2 text-xs text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50 px-2 py-1 rounded w-fit border border-[var(--app-border)]/50">
-                                            <span className="font-mono">{webhook.url}</span>
+                                        <div className="flex items-center gap-2 text-xs text-[var(--app-text-muted)] bg-[var(--app-bg-card)] px-2 py-1 rounded w-fit max-w-full">
+                                            <span className="font-mono break-all">{webhook.url}</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1.5 sm:opacity-0 sm:group-hover/card:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => setTestWebhookId(webhook.id)}
                                         className="p-2 text-[var(--app-text-muted)] hover:text-[var(--app-accent)] hover:bg-[var(--app-accent)]/10 rounded-lg transition-colors"
@@ -222,26 +222,27 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-center gap-4 mt-6 pt-4 border-t border-[var(--app-border)]/50">
-                                <div className="flex items-center gap-1.5 flex-shrink min-w-0">
+                            <div className="h-px bg-[var(--app-border)]/50 mt-4 mb-4" />
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                <div className="flex flex-wrap items-center gap-1.5">
                                     <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mr-1">
                                         {t('settings.organization.integrations.all_events_header')}
                                     </span>
                                     {webhook.events.slice(0, 3).map((event: string) => (
-                                        <span key={event} className="px-2.5 py-1 rounded-lg bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] text-[10px] font-bold border border-[var(--app-border)]/50 whitespace-nowrap">
+                                        <span key={event} className="px-2.5 py-1 rounded-lg bg-[var(--app-bg-card)] text-[var(--app-text-secondary)] text-[10px] font-bold">
                                             {event}
                                         </span>
                                     ))}
                                     {webhook.events.length > 3 && (
                                         <div className="relative group/events">
-                                            <span className="px-2.5 py-1 rounded-lg bg-[var(--app-bg-elevated)] text-[var(--app-text-muted)] text-[10px] font-bold border border-[var(--app-border)]/50 cursor-pointer hover:bg-[var(--app-bg-card)] transition-colors">
+                                            <span className="px-2.5 py-1 rounded-lg bg-[var(--app-bg-card)] text-[var(--app-text-muted)] text-[10px] font-bold cursor-pointer hover:bg-[var(--app-bg-page)] transition-colors">
                                                 +{webhook.events.length - 3}
                                             </span>
                                             <div className="absolute left-0 bottom-full mb-2 hidden group-hover/events:block z-50">
-                                                <div className="bg-[var(--app-bg-card)] rounded-xl p-2 shadow-2xl border border-[var(--app-border)] min-w-[160px] animate-in fade-in slide-in-from-bottom-1 duration-200">
+                                                <div className="bg-[var(--app-bg-elevated)] rounded-xl p-2 shadow-2xl min-w-[160px] animate-in fade-in slide-in-from-bottom-1 duration-200">
                                                     <div className="flex flex-col gap-1">
                                                         {webhook.events.slice(3).map((event: string) => (
-                                                            <span key={event} className="px-2 py-1 rounded-lg bg-[var(--app-bg-elevated)] text-[var(--app-text-secondary)] text-[10px]">
+                                                            <span key={event} className="px-2 py-1 rounded-lg bg-[var(--app-bg-card)] text-[var(--app-text-secondary)] text-[10px]">
                                                                 {event}
                                                             </span>
                                                         ))}
@@ -266,7 +267,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                     )}
                                     <div className="flex items-center gap-1.5">
                                         <ClockIcon />
-                                        <span className="whitespace-nowrap">{t('settings.organization.integrations.created_at_stat', { date: format(new Date(webhook.createdAt), 'd MMM yyyy', { locale: dateLocale }) })}</span>
+                                        <span>{t('settings.organization.integrations.created_at_stat', { date: format(new Date(webhook.createdAt), 'd MMM yyyy', { locale: dateLocale }) })}</span>
                                     </div>
                                 </div>
                             </div>

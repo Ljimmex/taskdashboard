@@ -11,6 +11,7 @@ import { MembersSettingsTab } from '../tabs/MembersSettingsTab'
 import { LabelsSettingsTab } from '../tabs/LabelsSettingsTab'
 import { WorkspaceDefaultsTab } from '../tabs/WorkspaceDefaultsTab'
 import { IntegrationsTab } from '../tabs/IntegrationsTab'
+import { PlanSettingsTab } from '../tabs/PlanSettingsTab'
 
 interface OrganizationSettingsPanelProps {
     isOpen: boolean
@@ -26,7 +27,7 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
     const [showRightArrow, setShowRightArrow] = useState(false)
 
     // We can fetch the workspace details here to pass to tabs
-    const [activeTab, setActiveTab] = useState<'general' | 'members' | 'labels' | 'defaults' | 'integrations'>('general')
+    const [activeTab, setActiveTab] = useState<'general' | 'members' | 'labels' | 'defaults' | 'integrations' | 'plan'>('general')
 
     const { data: workspace, isLoading } = useQuery({
         queryKey: ['workspace', workspaceSlug],
@@ -152,6 +153,11 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
                             onClick={() => setActiveTab('integrations')}
                             label={t('dashboard.settings_tabs.integrations')}
                         />
+                        <TabButton
+                            active={activeTab === 'plan'}
+                            onClick={() => setActiveTab('plan')}
+                            label={t('dashboard.settings_tabs.plan')}
+                        />
                     </div>
 
                     {/* Right Mask & Arrow */}
@@ -170,7 +176,7 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-[var(--app-border)] scrollbar-track-transparent">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 scrollbar-thin scrollbar-thumb-[var(--app-border)] scrollbar-track-transparent">
                     {isLoading ? (
                         <div className="text-[var(--app-text-muted)]">{t('common.loading')}</div>
                     ) : workspace ? (
@@ -180,6 +186,7 @@ export function OrganizationSettingsPanel({ isOpen, onClose }: OrganizationSetti
                             {activeTab === 'labels' && <LabelsSettingsTab workspace={workspace} />}
                             {activeTab === 'defaults' && <WorkspaceDefaultsTab workspace={workspace} />}
                             {activeTab === 'integrations' && <IntegrationsTab workspace={workspace} />}
+                            {activeTab === 'plan' && <PlanSettingsTab workspace={workspace} />}
                         </>
                     ) : (
                         <div className="text-red-500">{t('dashboard.settings_panel.error')}</div>
@@ -195,7 +202,7 @@ function TabButton({ active, onClick, label }: { active: boolean, onClick: () =>
     return (
         <button
             onClick={onClick}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${active
+            className={`px-3 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex-shrink-0 ${active
                 ? 'border-[var(--app-accent)] text-[var(--app-text-primary)]'
                 : 'border-transparent text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:border-[var(--app-border)]'
                 }`}

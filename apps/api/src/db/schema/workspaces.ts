@@ -60,6 +60,10 @@ export const workspaces = pgTable('workspaces', {
     polarCustomerId: text('polar_customer_id'),
     polarSubscriptionId: text('polar_subscription_id'),
 
+    // Owner override: change plan without payment (invisible to other members)
+    isOwnerOverride: boolean('is_owner_override').default(false).notNull(),
+    overridePlan: varchar('override_plan', { length: 50 }),
+
     // Current usage counters (updated by app logic)
     currentSeatCount: integer('current_seat_count').default(1).notNull(),
     usedStorageBytes: bigint('used_storage_bytes', { mode: 'number' }).default(0).notNull(),

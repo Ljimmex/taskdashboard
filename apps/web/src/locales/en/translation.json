@@ -249,7 +249,8 @@
             "labels": "Labels",
             "defaults": "Defaults",
             "integrations": "Integrations",
-            "security": "Security"
+            "security": "Security",
+            "plan": "Plan"
         },
         "timeTracker": "Time Tracker"
     },
@@ -1121,6 +1122,37 @@
                 "rotating": "Rotating and re-encrypting...",
                 "success": "Successfully rotated keys and re-encrypted {{count}} messages.",
                 "confirmRotate": "Are you sure you want to rotate keys? All messages will be re-encrypted with a new key. This may take a moment depending on the number of messages."
+            },
+            "plan": {
+                "title": "Plan & Billing",
+                "status": "Status: {{status}}",
+                "override_badge": "Override",
+                "members": "Members",
+                "storage": "Storage",
+                "projects": "Projects",
+                "teams": "Teams",
+                "docs": "Documents",
+                "whiteboards": "Whiteboards",
+                "file_size": "Max file size",
+                "unlimited": "Unlimited",
+                "limited": "Limited",
+                "change_plan_title": "Change plan",
+                "select_plan": "Select plan",
+                "use_owner_override": "Use owner override",
+                "owner_override_hint": "Apply this plan without payment. Visible only to you as the workspace owner.",
+                "apply_override": "Apply without payment",
+                "remove_override": "Remove override",
+                "subscribe_with_polar": "Subscribe with Polar",
+                "free_selected": "Free plan selected",
+                "checkout_error": "Failed to create checkout session",
+                "override_error": "Failed to apply plan override",
+                "contact_owner": "Contact the workspace owner to change the plan.",
+                "plan_names": {
+                    "free": "Free",
+                    "plus": "Plus",
+                    "pro": "Pro",
+                    "enterprise": "Enterprise"
+                }
             },
             "general": {
                 "success": "Settings saved successfully",
