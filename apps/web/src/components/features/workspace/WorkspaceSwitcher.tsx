@@ -23,9 +23,15 @@ export function WorkspaceSwitcher() {
     const fetchWorkspaces = useCallback(async () => {
         try {
             const json = await apiFetchJson<any>('/api/workspaces')
-            setWorkspaces(json.data)
+            if (Array.isArray(json?.data)) {
+                setWorkspaces(json.data)
+            } else {
+                console.error('Unexpected workspaces response', json)
+                setWorkspaces([])
+            }
         } catch (error) {
             console.error('Failed to load workspaces', error)
+            setWorkspaces([])
         }
     }, [])
 

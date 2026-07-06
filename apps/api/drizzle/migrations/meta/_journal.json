@@ -57,6 +57,13 @@
       "when": 1783332518501,
       "tag": "0007_fat_devos",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783335587063,
+      "tag": "0008_broad_colleen_wing",
+      "breakpoints": true
     }
   ]
 }
