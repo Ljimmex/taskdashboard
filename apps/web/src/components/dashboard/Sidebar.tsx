@@ -8,6 +8,7 @@ import { sidebarIcons as icons } from './icons'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { WorkspaceSwitcher } from '../features/workspace/WorkspaceSwitcher'
+import { StorageQuota } from '../features/files/StorageQuota'
 import { OrganizationSettingsPanel } from '../features/settings/panels/OrganizationSettingsPanel'
 
 interface SidebarProps {
@@ -250,6 +251,9 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
 
             {/* Flex spacer */}
             <div className="flex-1" />
+
+            {/* Storage quota for Files */}
+            <StorageQuota workspaceId={workspaceData?.id} />
 
             {/* Workspace Switcher */}
             <WorkspaceSwitcher />

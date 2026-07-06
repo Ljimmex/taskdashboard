@@ -14,6 +14,7 @@ import { triggerWebhook } from '../webhooks/trigger'
 import { NotificationService } from '../notifications/service'
 import { workspaces } from '../../db/schema'
 import type { WorkspaceRole } from '../../lib/permissions'
+import { checkWorkspaceStorageLimit, checkFileSizeLimit, getWorkspaceUsedStorageBytes, getWorkspaceStorageLimitGB } from '../../lib/workspaceLimits'
 
 // type Env removed
 
@@ -68,6 +69,17 @@ app.post('/upload', zValidator('json', uploadSchema), async (c) => {
     const workspaceRole = await getUserWorkspaceRole(user.id, body.workspaceId)
     if (!workspaceRole) {
         return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
+
+    // Enforce file size and storage limits
+    const fileSizeCheck = await checkFileSizeLimit(body.workspaceId, body.size)
+    if (!fileSizeCheck.allowed) {
+        return c.json({ error: fileSizeCheck.error!.message, code: fileSizeCheck.error!.code }, 402)
+    }
+
+    const storageCheck = await checkWorkspaceStorageLimit(body.workspaceId, body.size)
+    if (!storageCheck.allowed) {
+        return c.json({ error: storageCheck.error!.message, code: storageCheck.error!.code }, 402)
     }
 
     // Generate a unique key for R2
@@ -187,6 +199,47 @@ app.get('/', zValidator('query', filesQuerySchema), async (c) => {
     const results = await db.select().from(files).where(and(...conditions)).orderBy(desc(files.createdAt))
 
     return c.json({ data: results })
+})
+
+// -----------------------------------------------------------------------------
+// GET /files/quota - Storage usage for workspace
+// -----------------------------------------------------------------------------
+app.get('/quota', async (c) => {
+    const user = c.get('user')
+    const workspaceId = c.req.query('workspaceId')
+
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
+    if (!workspaceId) {
+        return c.json({ error: 'Workspace ID is required' }, 400)
+    }
+
+    const workspaceRole = await getUserWorkspaceRole(user.id, workspaceId)
+    if (!workspaceRole) {
+        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+    }
+
+    const [workspace] = await db.select({
+            maxStorageGB: workspaces.maxStorageGB,
+            subscriptionPlan: workspaces.subscriptionPlan,
+            currentSeatCount: workspaces.currentSeatCount,
+        })
+        .from(workspaces)
+        .where(eq(workspaces.id, workspaceId))
+        .limit(1)
+
+    if (!workspace) {
+        return c.json({ error: 'Workspace not found' }, 404)
+    }
+
+    const usedBytes = await getWorkspaceUsedStorageBytes(workspaceId)
+    const maxStorageGB = getWorkspaceStorageLimitGB(workspace)
+
+    return c.json({
+        data: {
+            usedBytes,
+            maxStorageGB,
+        }
+    })
 })
 
 // -----------------------------------------------------------------------------

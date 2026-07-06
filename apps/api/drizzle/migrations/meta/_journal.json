@@ -43,6 +43,20 @@
       "when": 1774888852179,
       "tag": "0005_solid_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783331775202,
+      "tag": "0006_parallel_sphinx",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783332518501,
+      "tag": "0007_fat_devos",
+      "breakpoints": true
     }
   ]
 }

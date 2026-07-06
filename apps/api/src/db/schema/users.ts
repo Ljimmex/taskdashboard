@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, timestamp, boolean, pgEnum, pgPolicy } from 'drizzle-orm/pg-core'
+import { pgTable, varchar, text, timestamp, boolean, pgEnum, pgPolicy, jsonb } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 // =============================================================================
@@ -43,6 +43,12 @@ export const users = pgTable('users', {
     createdAt: timestamp('created_at').defaultNow().notNull(),
     lastActiveAt: timestamp('last_active_at'),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
+
+    // Internal flags used by platform operations
+    internalFlags: jsonb('internal_flags').$type<{
+        platformOwner?: boolean
+        [key: string]: any
+    }>().default({}),
 }, (_table) => [
     pgPolicy("Users can view own profile", {
         for: "select",

@@ -18,6 +18,9 @@ import { decryptPrivateKey, encryptPrivateKey } from '../../lib/server-encryptio
 import { triggerWebhook } from '../webhooks/trigger'
 import { workspaceInvitesRoutes } from './invites'
 import { workspaceDefaultsRoutes } from './defaults'
+import { checkWorkspaceMemberLimit } from '../../lib/workspaceLimits'
+import { isPlatformOwner } from '../../lib/platformOwner'
+import { getWorkspaceDefaultsForPlan } from '../../lib/plans'
 
 type Env = {
     Variables: {
@@ -42,7 +45,9 @@ const updateWorkspaceSchema = z.object({
     slug: zSanitizedStringOptional(),
     description: zSanitizedStringOptional(),
     logo: zSanitizedStringOptional(),
-    settings: z.any().optional()
+    settings: z.any().optional(),
+    subscriptionPlan: z.enum(['free', 'plus', 'pro', 'enterprise']).optional(),
+    subscriptionStatus: z.enum(['active', 'trial', 'expired', 'cancelled', 'past_due']).optional(),
 })
 
 const addMemberSchema = z.object({
@@ -281,6 +286,24 @@ workspacesRoutes.patch('/:id', zValidator('json', updateWorkspaceSchema), async 
             }
         }
 
+        // Platform owner backdoor: change plan without payment
+        const wantsPlanChange = body.subscriptionPlan !== undefined || body.subscriptionStatus !== undefined
+        if (wantsPlanChange) {
+            const platformOwner = await isPlatformOwner(userId)
+            if (!platformOwner) {
+                return c.json({ error: 'Unauthorized to change subscription plan' }, 403)
+            }
+
+            if (body.subscriptionPlan) {
+                updateData.subscriptionPlan = body.subscriptionPlan
+                const defaults = getWorkspaceDefaultsForPlan(body.subscriptionPlan)
+                Object.assign(updateData, defaults)
+            }
+            if (body.subscriptionStatus) {
+                updateData.subscriptionStatus = body.subscriptionStatus
+            }
+        }
+
         const [updated] = await db.update(workspaces)
             .set(updateData)
             .where(eq(workspaces.id, id))
@@ -338,6 +361,12 @@ workspacesRoutes.post('/:id/members', zValidator('json', addMemberSchema), async
 
         if (!canManageWorkspaceMembers(workspaceRole)) {
             return c.json({ error: 'Unauthorized to manage workspace members' }, 403)
+        }
+
+        // Enforce workspace member limit
+        const limitCheck = await checkWorkspaceMemberLimit(workspaceId)
+        if (!limitCheck.allowed) {
+            return c.json({ error: limitCheck.error!.message, code: limitCheck.error!.code }, 402)
         }
 
         const [member] = await db.insert(workspaceMembers).values({

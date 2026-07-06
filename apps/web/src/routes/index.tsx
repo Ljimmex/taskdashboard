@@ -15,6 +15,7 @@ function HomePage() {
     const { data: session, isPending } = useSession()
     const navigate = useNavigate()
     const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+    const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly')
 
     useEffect(() => {
         if (!isPending && session) {
@@ -401,21 +402,47 @@ function HomePage() {
                         <p className={`${textMuted} max-w-2xl mx-auto`}>
                             {t('landing.pricing.desc')}
                         </p>
+
+                        {/* Billing Period Selector */}
+                        <div className="mt-8 inline-flex items-center bg-[var(--app-bg-elevated)] p-1 rounded-full">
+                            {(['monthly', 'quarterly', 'yearly'] as const).map((period) => (
+                                <button
+                                    key={period}
+                                    onClick={() => setBillingPeriod(period)}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                                        billingPeriod === period
+                                            ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-lg shadow-amber-500/10'
+                                            : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
+                                    }`}
+                                >
+                                    {t(`landing.pricing.billing.${period}`)}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
                         <PricingCard
                             name={t('landing.pricing.free.name')}
                             price={t('landing.pricing.free.price')}
                             period={t('landing.pricing.free.period')}
                             description={t('landing.pricing.free.desc')}
                             features={t('landing.pricing.free.features', { returnObjects: true }) as string[]}
-                            buttonText={t('landing.pricing.free.name') === 'Enterprise' ? t('landing.pricing.enterprise.contact') : t('landing.hero.start')}
+                            buttonText={t('landing.hero.start')}
+                            isDark={isDark}
+                        />
+                        <PricingCard
+                            name={t('landing.pricing.plus.name')}
+                            price={t(`landing.pricing.plus.price${billingPeriod.charAt(0).toUpperCase() + billingPeriod.slice(1)}`)}
+                            period={t('landing.pricing.plus.period')}
+                            description={t('landing.pricing.plus.desc')}
+                            features={t('landing.pricing.plus.features', { returnObjects: true }) as string[]}
+                            buttonText={t('landing.hero.start')}
                             isDark={isDark}
                         />
                         <PricingCard
                             name={t('landing.pricing.pro.name')}
-                            price={t('landing.pricing.pro.price')}
+                            price={t(`landing.pricing.pro.price${billingPeriod.charAt(0).toUpperCase() + billingPeriod.slice(1)}`)}
                             period={t('landing.pricing.pro.period')}
                             description={t('landing.pricing.pro.desc')}
                             features={t('landing.pricing.pro.features', { returnObjects: true }) as string[]}

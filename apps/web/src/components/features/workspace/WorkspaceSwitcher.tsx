@@ -8,6 +8,7 @@ interface Workspace {
     name: string
     slug: string
     logo?: string
+    subscriptionPlan?: 'free' | 'plus' | 'pro' | 'enterprise'
 }
 
 export function WorkspaceSwitcher() {
@@ -64,7 +65,9 @@ export function WorkspaceSwitcher() {
 
                     <div className="flex-1 text-left overflow-hidden">
                         <h4 className="text-sm font-medium text-[var(--app-text-primary)] truncate">{currentWorkspace.name}</h4>
-                        <span className="text-[10px] text-[var(--app-text-muted)] block">Free Plan</span>
+                        <span className="text-[10px] text-[var(--app-text-muted)] block capitalize">
+                            {currentWorkspace.subscriptionPlan ?? 'Free'} Plan
+                        </span>
                     </div>
 
                     <svg

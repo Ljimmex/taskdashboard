@@ -13,6 +13,7 @@ import {
 import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema'
 import { NotificationService } from '../notifications/service'
+import { checkWorkspaceProjectLimit } from '../../lib/workspaceLimits'
 
 type Env = {
     Variables: {
@@ -241,6 +242,25 @@ projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
             return c.json({ success: false, error: 'Unauthorized to create projects' }, 403)
         }
 
+        // Resolve final workspace id early for limit check and notifications
+        let finalWorkspaceId = workspaceId
+        if (!finalWorkspaceId) {
+            const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, projectTeamIds[0])).limit(1)
+            if (team?.workspaceId) {
+                finalWorkspaceId = team.workspaceId
+            }
+        }
+
+        if (!finalWorkspaceId) {
+            return c.json({ success: false, error: 'Unable to determine workspace' }, 400)
+        }
+
+        // Enforce workspace project limit
+        const limitCheck = await checkWorkspaceProjectLimit(finalWorkspaceId)
+        if (!limitCheck.allowed) {
+            return c.json({ success: false, error: limitCheck.error!.message, code: limitCheck.error!.code }, 402)
+        }
+
         const newProject: NewProject = {
             teamId: projectTeamIds[0], // Set first team as primary for legacy compatibility
             name: body.name,
@@ -310,7 +330,7 @@ projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
 
         if (teamMems.length > 0) {
             const workspace = await db.query.workspaces.findFirst({
-                where: (w, { eq }) => eq(w.id, finalWorkspaceId || ''),
+                where: (w, { eq }) => eq(w.id, finalWorkspaceId),
                 columns: { slug: true }
             })
 
@@ -328,17 +348,7 @@ projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
         }
 
         // TRIGGER WEBHOOK
-        let finalWorkspaceId = workspaceId
-        if (!finalWorkspaceId) {
-            const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, projectTeamIds[0])).limit(1)
-            if (team?.workspaceId) {
-                finalWorkspaceId = team.workspaceId
-            }
-        }
-
-        if (finalWorkspaceId) {
-            triggerWebhook('project.created', result, finalWorkspaceId)
-        }
+        triggerWebhook('project.created', result, finalWorkspaceId)
 
         return c.json({ success: true, data: result }, 201)
     } catch (error) {

@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm'
 import { auth } from '../../lib/auth'
 import { canManageInvitations, type WorkspaceRole } from '../../lib/permissions'
 import { triggerWebhook } from '../webhooks/trigger'
+import { checkWorkspaceMemberLimit } from '../../lib/workspaceLimits'
 
 export const workspaceInvitesRoutes = new Hono()
 
@@ -51,6 +52,12 @@ workspaceInvitesRoutes.post('/:workspaceId/invites', async (c) => {
         const workspaceRole = await getUserWorkspaceRole(session.user.id, internalWorkspaceId)
         if (!canManageInvitations(workspaceRole, null)) {
             return c.json({ error: 'Forbidden: No permission to manage invitations' }, 403)
+        }
+
+        // Enforce workspace member limit (each accepted invite will become a member)
+        const limitCheck = await checkWorkspaceMemberLimit(internalWorkspaceId)
+        if (!limitCheck.allowed) {
+            return c.json({ error: limitCheck.error!.message, code: limitCheck.error!.code }, 402)
         }
 
         // Generate a random token
@@ -248,6 +255,12 @@ workspaceInvitesRoutes.post('/invites/accept/:token', async (c) => {
         // Email restriction check
         if (invite.email && invite.email.toLowerCase() !== session.user.email.toLowerCase()) {
             return c.json({ error: 'This invite was sent to a different email address' }, 403)
+        }
+
+        // Enforce workspace member limit before accepting
+        const limitCheck = await checkWorkspaceMemberLimit(invite.workspaceId)
+        if (!limitCheck.allowed) {
+            return c.json({ error: limitCheck.error!.message, code: limitCheck.error!.code }, 402)
         }
 
         // Join workspace

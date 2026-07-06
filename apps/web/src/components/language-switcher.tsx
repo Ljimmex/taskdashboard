@@ -6,7 +6,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Globe } from 'lucide-react';
 
 const FlagIcon = ({ code }: { code: string }) => (
     <img
@@ -28,7 +27,6 @@ export function LanguageSwitcher() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="default" className="rounded-full text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] gap-2 px-3 transition-colors">
-                    <Globe className="h-5 w-5" />
                     <span className="text-sm font-medium">
                         {i18n.language === 'pl' ? <FlagIcon code="pl" /> : <FlagIcon code="us" />}
                     </span>

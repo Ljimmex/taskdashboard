@@ -21,6 +21,7 @@
         "@aws-sdk/s3-request-presigner": "^3.962.0",
         "@hono/zod-openapi": "^1.2.0",
         "@hono/zod-validator": "^0.4.3",
+        "@polar-sh/sdk": "^0.48.1",
         "@scalar/hono-api-reference": "^0.9.30",
         "@supabase/supabase-js": "^2.47.21",
         "@taskdashboard/types": "workspace:*",

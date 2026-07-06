@@ -33,6 +33,7 @@ import { docsRoutes } from './modules/docs/routes'
 import { whiteboardsRoutes } from './modules/whiteboards/routes'
 import { notificationRoutes } from './modules/notifications/routes'
 import annotationsRoutes from './modules/annotations/routes'
+import { billingRoutes } from './modules/billing/routes'
 
 // Import Webhook Worker
 import { startWebhookWorker } from './modules/webhooks/worker'
@@ -152,7 +153,7 @@ app.use('/api/*', async (c, next) => {
     }
 
     // Public routes that don't need auth
-    const publicPaths = ['/api/auth', '/api/health', '/api/workspaces/invites/resolve', '/docs', '/openapi.json']
+    const publicPaths = ['/api/auth', '/api/health', '/api/workspaces/invites/resolve', '/api/billing/webhook', '/docs', '/openapi.json']
     if (publicPaths.some(p => path.startsWith(p))) {
         return next()
     }
@@ -291,6 +292,7 @@ app.route('/api/docs', docsRoutes)
 app.route('/api/whiteboards', whiteboardsRoutes)
 app.route('/api/notifications', notificationRoutes)
 app.route('/api/annotations', annotationsRoutes)
+app.route('/api/billing', billingRoutes)
 
 
 // =============================================================================

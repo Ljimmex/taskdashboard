@@ -183,6 +183,8 @@
         "files": "Pliki",
         "resources": "Zasoby",
         "settings": "Ustawienia Org.",
+        "storage": "Przestrzeń",
+        "storageOf": "{{used}} z {{total}}",
         "logout": "Wyloguj się",
         "dayMode": "Jasny motyw",
         "nightMode": "Ciemny motyw",
@@ -843,29 +845,58 @@
             "title": "Wybierz idealny plan",
             "title2": "dla swojego workflow",
             "desc": "Niezależnie od tego, czy jesteś freelancerem, startupem czy enterprise - mamy plan dla Ciebie.",
+            "billing": {
+                "monthly": "Miesięcznie",
+                "quarterly": "Kwartalnie",
+                "yearly": "Rocznie"
+            },
             "free": {
                 "name": "Free",
                 "price": "0 zł",
                 "period": "na zawsze",
-                "desc": "Idealny na start dla małych zespołów",
+                "desc": "Dla osób indywidualnych i małych zespołów",
                 "features": [
+                    "1 workspace",
+                    "Do 5 członków",
+                    "500 MB przestrzeni",
                     "Do 5 projektów",
-                    "Do 3 członków zespołu",
-                    "Podstawowa analityka",
+                    "Max 10 MB na plik"
+                ]
+            },
+            "plus": {
+                "name": "Zadano Plus",
+                "priceMonthly": "$7",
+                "priceQuarterly": "$18",
+                "priceYearly": "$60",
+                "period": "mies. / osoba",
+                "desc": "Dla rosnących zespołów, które potrzebują więcej",
+                "features": [
+                    "Nielimitowani użytkownicy",
+                    "50 GB + 5 GB/osobę przestrzeni",
+                    "100 MB max na plik",
+                    "Nielimitowane projekty",
+                    "HR approval w Time Tracker",
+                    "API tylko do odczytu",
+                    "10 webhooków",
                     "Wsparcie email"
                 ]
             },
             "pro": {
-                "name": "Pro",
-                "price": "49 zł",
-                "period": "miesięcznie",
-                "desc": "Dla rosnących zespołów i startupów",
+                "name": "Zadano Pro",
+                "priceMonthly": "$11",
+                "priceQuarterly": "$27",
+                "priceYearly": "$96",
+                "period": "mies. / osoba",
+                "desc": "Dla skalujących się zespołów i firm",
                 "features": [
+                    "Nielimitowani użytkownicy",
+                    "50 GB + 15 GB/osobę przestrzeni",
+                    "2 GB max na plik",
                     "Nielimitowane projekty",
-                    "Do 50 członków zespołu",
-                    "Zaawansowana analityka",
-                    "Priorytetowe wsparcie",
-                    "Integracje API"
+                    "SSO / SAML",
+                    "Pełny dostęp API",
+                    "Nielimitowane webhooki",
+                    "Priorytetowe wsparcie"
                 ]
             },
             "enterprise": {
@@ -875,10 +906,10 @@
                 "desc": "Dla dużych organizacji",
                 "features": [
                     "Wszystko z Pro",
-                    "Nielimitowani użytkownicy",
-                    "SSO / SAML",
-                    "Dedykowany manager",
-                    "SLA 99.99%"
+                    "Nielimitowane workspaces",
+                    "Dedykowane SLA i przestrzeń",
+                    "Audit log",
+                    "Dedykowany manager"
                 ],
                 "contact": "Skontaktuj się"
             },

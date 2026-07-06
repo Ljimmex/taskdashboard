@@ -182,6 +182,8 @@
         "files": "Files",
         "resources": "Resources",
         "settings": "Org. Settings",
+        "storage": "Storage",
+        "storageOf": "{{used}} of {{total}}",
         "logout": "Log Out",
         "dayMode": "Day mode",
         "nightMode": "Night mode",
@@ -857,29 +859,58 @@
             "title": "Choose the perfect plan",
             "title2": "for your workflow",
             "desc": "Whether you are a freelancer, startup or enterprise - we have a plan for you.",
+            "billing": {
+                "monthly": "Monthly",
+                "quarterly": "Quarterly",
+                "yearly": "Yearly"
+            },
             "free": {
                 "name": "Free",
                 "price": "$0",
                 "period": "forever",
-                "desc": "Perfect for small teams to start",
+                "desc": "For individuals and small teams getting started",
                 "features": [
+                    "1 workspace",
+                    "Up to 5 members",
+                    "500 MB storage",
                     "Up to 5 projects",
-                    "Up to 3 team members",
-                    "Basic analytics",
+                    "10 MB max file size"
+                ]
+            },
+            "plus": {
+                "name": "Zadano Plus",
+                "priceMonthly": "$7",
+                "priceQuarterly": "$18",
+                "priceYearly": "$60",
+                "period": "mo / seat",
+                "desc": "For growing teams that need more power",
+                "features": [
+                    "Unlimited users",
+                    "50 GB + 5 GB/seat storage",
+                    "100 MB max file size",
+                    "Unlimited projects",
+                    "HR approval for Time Tracker",
+                    "Read-only API",
+                    "10 webhooks",
                     "Email support"
                 ]
             },
             "pro": {
-                "name": "Pro",
-                "price": "$49",
-                "period": "monthly",
-                "desc": "For growing teams and startups",
+                "name": "Zadano Pro",
+                "priceMonthly": "$11",
+                "priceQuarterly": "$27",
+                "priceYearly": "$96",
+                "period": "mo / seat",
+                "desc": "For scaling teams and businesses",
                 "features": [
+                    "Unlimited users",
+                    "50 GB + 15 GB/seat storage",
+                    "2 GB max file size",
                     "Unlimited projects",
-                    "Up to 50 team members",
-                    "Advanced analytics",
-                    "Priority support",
-                    "API integrations"
+                    "SSO / SAML",
+                    "Full API access",
+                    "Unlimited webhooks",
+                    "Priority support"
                 ]
             },
             "enterprise": {
@@ -889,10 +920,10 @@
                 "desc": "For large organizations",
                 "features": [
                     "Everything in Pro",
-                    "Unlimited users",
-                    "SSO / SAML",
-                    "Dedicated manager",
-                    "SLA 99.99%"
+                    "Unlimited workspaces",
+                    "Custom SLA & storage",
+                    "Audit log",
+                    "Dedicated manager"
                 ],
                 "contact": "Contact us"
             },

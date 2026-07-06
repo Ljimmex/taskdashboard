@@ -13,6 +13,7 @@ import {
 } from '../../lib/permissions'
 import { triggerWebhook } from '../webhooks/trigger'
 import { NotificationService } from '../notifications/service'
+import { checkWorkspaceTeamLimit } from '../../lib/workspaceLimits'
 
 type Env = {
     Variables: {
@@ -331,6 +332,12 @@ teamsRoutes.post('/', zValidator('json', createTeamSchema), async (c) => {
 
         if (!wsMember) {
             return c.json({ error: 'You must be a member of the workspace to create a team' }, 403)
+        }
+
+        // Enforce workspace team limit
+        const limitCheck = await checkWorkspaceTeamLimit(workspaceId)
+        if (!limitCheck.allowed) {
+            return c.json({ error: limitCheck.error!.message, code: limitCheck.error!.code }, 402)
         }
 
         // Transaction: Create team and add initial members (creator NOT auto-added)

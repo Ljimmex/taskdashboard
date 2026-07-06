@@ -6,6 +6,7 @@ import { eq, desc } from 'drizzle-orm'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
+import { checkWorkspaceWhiteboardLimit } from '../../lib/workspaceLimits'
 
 type Env = {
     Variables: {
@@ -150,6 +151,12 @@ whiteboardsRoutes.post('/', zValidator('json', createWhiteboardSchema, (result, 
         const role = await getUserWorkspaceRole(user.id, workspaceId)
         if (!role) {
             return c.json({ success: false, error: 'Forbidden' }, 403)
+        }
+
+        // Enforce workspace whiteboard limit
+        const limitCheck = await checkWorkspaceWhiteboardLimit(workspaceId)
+        if (!limitCheck.allowed) {
+            return c.json({ success: false, error: limitCheck.error!.message, code: limitCheck.error!.code }, 402)
         }
 
         const newBoard: NewWhiteboard = {

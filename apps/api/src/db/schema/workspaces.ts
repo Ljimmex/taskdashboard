@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, timestamp, jsonb, pgEnum, integer, boolean, pgPolicy } from 'drizzle-orm/pg-core'
+import { pgTable, text, varchar, timestamp, jsonb, pgEnum, integer, boolean, pgPolicy, bigint } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { users } from './users'
 
@@ -8,8 +8,8 @@ import { users } from './users'
 
 export const subscriptionPlanEnum = pgEnum('subscription_plan', [
     'free',
-    'starter',
-    'professional',
+    'plus',
+    'pro',
     'enterprise'
 ])
 
@@ -54,26 +54,43 @@ export const workspaces = pgTable('workspaces', {
     subscriptionStatus: subscriptionStatusEnum('subscription_status').default('trial').notNull(),
     trialEndsAt: timestamp('trial_ends_at'),
     billingEmail: varchar('billing_email', { length: 255 }),
+    billingDay: integer('billing_day'), // day of month when the workspace is billed
 
-    // Limits (enforced by plan)
-    maxMembers: integer('max_members').default(5).notNull(), // Free: 5, Starter: 10, Pro: 50, Enterprise: unlimited
-    maxProjects: integer('max_projects').default(3).notNull(),
-    maxStorageGB: integer('max_storage_gb').default(1).notNull(), // GB
+    // Polar.sh identifiers
+    polarCustomerId: text('polar_customer_id'),
+    polarSubscriptionId: text('polar_subscription_id'),
+
+    // Current usage counters (updated by app logic)
+    currentSeatCount: integer('current_seat_count').default(1).notNull(),
+    usedStorageBytes: bigint('used_storage_bytes', { mode: 'number' }).default(0).notNull(),
+
+    // Limits (enforced by plan; null means unlimited)
+    maxMembers: integer('max_members').default(5), // Free: 5; Plus/Pro/Enterprise: null (unlimited)
+    maxProjects: integer('max_projects').default(5), // Free: 5; paid: null
+    maxStorageGB: integer('max_storage_gb').default(0), // base storage; Free: 0.5 GB
+    maxTeams: integer('max_teams').default(2), // Free: 2; paid: null
+    maxDocs: integer('max_docs').default(10), // Free: 10; paid: null
+    maxWhiteboards: integer('max_whiteboards').default(1), // Free: 1; paid: null
+    maxFileSizeMB: integer('max_file_size_mb').default(10), // Free: 10; Plus: 100; Pro: 2048
 
     // Features (JSON flags)
     features: jsonb('features').$type<{
         customBranding?: boolean
         advancedReporting?: boolean
-        apiAccess?: boolean
+        apiAccess?: 'none' | 'read_only' | 'full'
         ssoEnabled?: boolean
         prioritySupport?: boolean
+        hrApproval?: boolean
+        revShare?: boolean
         [key: string]: any
     }>().default({
         customBranding: false,
         advancedReporting: false,
-        apiAccess: false,
+        apiAccess: 'none',
         ssoEnabled: false,
-        prioritySupport: false
+        prioritySupport: false,
+        hrApproval: false,
+        revShare: false,
     }),
 
     // Settings
