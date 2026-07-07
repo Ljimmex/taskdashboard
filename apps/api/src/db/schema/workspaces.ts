@@ -52,6 +52,7 @@ export const workspaces = pgTable('workspaces', {
     // Subscription & Billing
     subscriptionPlan: subscriptionPlanEnum('subscription_plan').default('free').notNull(),
     subscriptionStatus: subscriptionStatusEnum('subscription_status').default('trial').notNull(),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false).notNull(),
     trialEndsAt: timestamp('trial_ends_at'),
     billingEmail: varchar('billing_email', { length: 255 }),
     billingDay: integer('billing_day'), // day of month when the workspace is billed

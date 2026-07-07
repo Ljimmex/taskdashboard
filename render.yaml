@@ -59,6 +59,25 @@ services:
         sync: false
       - key: R2_BUCKET_NAME
         sync: false
+      # Polar.sh Billing
+      - key: POLAR_ACCESS_TOKEN
+        sync: false
+      - key: POLAR_WEBHOOK_SECRET
+        sync: false
+      - key: POLAR_ENV
+        value: production
+      - key: POLAR_PLUS_MONTHLY_PRODUCT_ID
+        sync: false
+      - key: POLAR_PLUS_QUARTERLY_PRODUCT_ID
+        sync: false
+      - key: POLAR_PLUS_YEARLY_PRODUCT_ID
+        sync: false
+      - key: POLAR_PRO_MONTHLY_PRODUCT_ID
+        sync: false
+      - key: POLAR_PRO_QUARTERLY_PRODUCT_ID
+        sync: false
+      - key: POLAR_PRO_YEARLY_PRODUCT_ID
+        sync: false
     healthCheckPath: /ready
 
   # Frontend Static Site

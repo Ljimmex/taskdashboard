@@ -1,8 +1,9 @@
 import { Hono } from 'hono'
 import { db } from '../../db'
 import { type Auth } from '../../lib/auth'
-import { eq, asc, and } from 'drizzle-orm'
+import { eq, asc, and, or } from 'drizzle-orm'
 import { projects, projectMembers, projectTeams, industryTemplateStages, projectStages, type NewProject } from '../../db/schema'
+import { teamMembers } from '../../db/schema/teams'
 import {
     canCreateProjects,
     canUpdateProjects,
@@ -86,12 +87,22 @@ projectsRoutes.get('/', async (c) => {
             const ws = await db.query.workspaces.findFirst({
                 where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
             })
-            if (!ws) return c.json({ success: true, data: [] })
+            if (!ws) {
+                console.warn(`[GET /api/projects] Workspace not found for slug: ${workspaceSlug}`)
+                return c.json({ success: true, data: [] })
+            }
             workspaceId = ws.id
             userWorkspaceRole = await getUserWorkspaceRole(userId, workspaceId)
 
-            if (!userWorkspaceRole) {
+            // Safety fallback: workspace owner should always have access
+            const isWorkspaceOwner = ws.ownerId === userId
+            if (!userWorkspaceRole && !isWorkspaceOwner) {
+                console.warn(`[GET /api/projects] User ${userId} is not an active member of workspace ${workspaceId}`)
                 return c.json({ success: false, error: 'Forbidden: You are not a member of this workspace' }, 403)
+            }
+            if (!userWorkspaceRole && isWorkspaceOwner) {
+                console.warn(`[GET /api/projects] User ${userId} is workspace owner but has no active workspace_members row; granting owner access`)
+                userWorkspaceRole = 'owner'
             }
         }
 
@@ -101,7 +112,10 @@ projectsRoutes.get('/', async (c) => {
                 where: (t, { eq }) => eq(t.workspaceId, workspaceId)
             })
             teamIds = workspaceTeams.map(t => t.id)
-            if (teamIds.length === 0) return c.json({ success: true, data: [] })
+            if (teamIds.length === 0) {
+                console.warn(`[GET /api/projects] Workspace ${workspaceId} has no teams`)
+                return c.json({ success: true, data: [] })
+            }
         }
 
         const isProjectManagerOrHigher = userWorkspaceRole && ['owner', 'admin', 'project_manager'].includes(userWorkspaceRole)
@@ -111,19 +125,43 @@ projectsRoutes.get('/', async (c) => {
                 const wheres: any[] = []
 
                 if (teamIds.length > 0) {
-                    wheres.push(inArray(p.teamId, teamIds))
+                    wheres.push(
+                        or(
+                            inArray(p.teamId, teamIds),
+                            exists(
+                                db.select()
+                                    .from(projectTeams)
+                                    .where(and(
+                                        eq(projectTeams.projectId, p.id),
+                                        inArray(projectTeams.teamId, teamIds)
+                                    ))
+                            )
+                        )
+                    )
                 }
 
                 // Filter by membership if not manager
+                // Allow if user is a project member OR a member of any team linked to the project
                 if (!isProjectManagerOrHigher) {
                     wheres.push(
-                        exists(
-                            db.select()
-                                .from(projectMembers)
-                                .where(and(
-                                    eq(projectMembers.projectId, p.id),
-                                    eq(projectMembers.userId, userId)
-                                ))
+                        or(
+                            exists(
+                                db.select()
+                                    .from(projectMembers)
+                                    .where(and(
+                                        eq(projectMembers.projectId, p.id),
+                                        eq(projectMembers.userId, userId)
+                                    ))
+                            ),
+                            exists(
+                                db.select()
+                                    .from(projectTeams)
+                                    .innerJoin(teamMembers, eq(teamMembers.teamId, projectTeams.teamId))
+                                    .where(and(
+                                        eq(projectTeams.projectId, p.id),
+                                        eq(teamMembers.userId, userId)
+                                    ))
+                            )
                         )
                     )
                 }
@@ -160,6 +198,7 @@ projectsRoutes.get('/', async (c) => {
             },
             orderBy: (p, { desc }) => [desc(p.createdAt)]
         })
+        console.log(`[GET /api/projects] workspaceSlug=${workspaceSlug} workspaceId=${workspaceId} userId=${userId} role=${userWorkspaceRole} teams=${teamIds.length} returned=${result.length} projects`)
         return c.json({ success: true, data: result })
     } catch (error) {
         console.error('Error fetching projects:', error)

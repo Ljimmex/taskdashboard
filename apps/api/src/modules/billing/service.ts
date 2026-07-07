@@ -3,7 +3,7 @@ import { validateEvent, WebhookVerificationError } from '@polar-sh/sdk/webhooks'
 import { db } from '@/db'
 import { eq } from 'drizzle-orm'
 import { workspaces } from '@/db/schema/workspaces'
-import { subscriptions, invoices, subscriptionEvents } from '@/db/schema/subscriptions'
+import { subscriptions, invoices, subscriptionEvents, webhookLogs } from '@/db/schema/subscriptions'
 import { getPlanLimits, type SubscriptionPlan } from '@/lib/plans'
 
 // =============================================================================
@@ -20,14 +20,16 @@ export const POLAR_WEBHOOK_SECRET = process.env.POLAR_WEBHOOK_SECRET ?? ''
 // Product IDs configured in Polar.sh dashboard (one per plan & billing period)
 export const POLAR_PRODUCTS: Record<
     Exclude<SubscriptionPlan, 'free' | 'enterprise'>,
-    { monthlyProductId?: string; yearlyProductId?: string }
+    { monthlyProductId?: string; quarterlyProductId?: string; yearlyProductId?: string }
 > = {
     plus: {
         monthlyProductId: process.env.POLAR_PLUS_MONTHLY_PRODUCT_ID,
+        quarterlyProductId: process.env.POLAR_PLUS_QUARTERLY_PRODUCT_ID,
         yearlyProductId: process.env.POLAR_PLUS_YEARLY_PRODUCT_ID,
     },
     pro: {
         monthlyProductId: process.env.POLAR_PRO_MONTHLY_PRODUCT_ID,
+        quarterlyProductId: process.env.POLAR_PRO_QUARTERLY_PRODUCT_ID,
         yearlyProductId: process.env.POLAR_PRO_YEARLY_PRODUCT_ID,
     },
 }
@@ -46,13 +48,18 @@ export async function createCheckoutSession({
 }: {
     workspaceId: string
     plan: Exclude<SubscriptionPlan, 'free'>
-    billingPeriod?: 'month' | 'year'
+    billingPeriod?: 'month' | 'quarter' | 'year'
     seats: number
     successUrl: string
     customerEmail: string
 }) {
     const config = POLAR_PRODUCTS[plan as 'plus' | 'pro']
-    const productId = billingPeriod === 'year' ? config.yearlyProductId : config.monthlyProductId
+    const productId =
+        billingPeriod === 'year'
+            ? config.yearlyProductId
+            : billingPeriod === 'quarter'
+              ? config.quarterlyProductId
+              : config.monthlyProductId
 
     if (!productId) {
         throw new Error(`No Polar product configured for plan ${plan} / period ${billingPeriod}`)
@@ -66,6 +73,7 @@ export async function createCheckoutSession({
         metadata: {
             workspaceId,
             plan,
+            interval: billingPeriod,
         },
     })
 
@@ -103,11 +111,24 @@ export async function syncSubscriptionFromPolar(polarSubscriptionId: string) {
         return null
     }
 
-    const plan = (polarSub.product?.metadata?.plan as SubscriptionPlan) ?? 'plus'
+    const rawPlan = (polarSub.product?.metadata?.plan as string) ?? 'plus'
+    const plan: SubscriptionPlan = rawPlan === 'professional' ? 'pro' : (rawPlan as SubscriptionPlan)
     const status = mapPolarStatus(polarSub.status)
     const billingDay = new Date(polarSub.currentPeriodStart).getUTCDate()
+
+    // Prefer interval from product metadata; fallback to deriving from recurring interval
+    const rawInterval = polarSub.product?.metadata?.interval as string | undefined
+    const billingPeriod: 'month' | 'quarter' | 'year' | null =
+        rawInterval === 'month' || rawInterval === 'quarter' || rawInterval === 'year'
+            ? rawInterval
+            : polarSub.recurringInterval === 'month' && polarSub.recurringIntervalCount === 3
+              ? 'quarter'
+              : (polarSub.recurringInterval as 'month' | 'year' | null)
     const polarPriceId = polarSub.prices[0]?.id ?? null
-    const seatPriceCents = polarSub.amount ?? getPlanLimits(plan).monthlySeatPriceCents ?? 0
+    // Use the plan's configured monthly seat price as the source of truth.
+    // polarSub.amount is the total subscription amount; dividing it by seats would
+    // give a price for the current billing interval, not a normalized monthly price.
+    const seatPriceCents = getPlanLimits(plan).monthlySeatPriceCents ?? 0
 
     const result = await db.transaction(async (tx) => {
         // Upsert subscription record
@@ -126,6 +147,7 @@ export async function syncSubscriptionFromPolar(polarSubscriptionId: string) {
             plan,
             status,
             billingDay,
+            billingPeriod,
             currentSeats: polarSub.seats ?? 1,
             seatPriceCents,
             currency: polarSub.currency ?? 'USD',
@@ -155,6 +177,7 @@ export async function syncSubscriptionFromPolar(polarSubscriptionId: string) {
             .set({
                 subscriptionPlan: plan,
                 subscriptionStatus: status,
+                cancelAtPeriodEnd: polarSub.cancelAtPeriodEnd,
                 polarCustomerId: polarSub.customerId,
                 polarSubscriptionId,
                 billingDay,
@@ -266,6 +289,85 @@ export async function recordSeatChange({
         currency,
         description,
     })
+}
+
+// =============================================================================
+// Customer Portal
+// =============================================================================
+
+export async function createCustomerPortalSession({
+    customerId,
+    returnUrl,
+}: {
+    customerId: string
+    returnUrl?: string
+}) {
+    const session = await polar.customerSessions.create({
+        customerId,
+        returnUrl: returnUrl ?? undefined,
+    })
+    return session
+}
+
+// =============================================================================
+// Subscription Management
+// =============================================================================
+
+export async function cancelSubscriptionAtPeriodEnd(polarSubscriptionId: string) {
+    const result = await polar.subscriptions.update({
+        id: polarSubscriptionId,
+        subscriptionUpdate: {
+            cancelAtPeriodEnd: true,
+        },
+    })
+    return result
+}
+
+export async function uncancelSubscription(polarSubscriptionId: string) {
+    const result = await polar.subscriptions.update({
+        id: polarSubscriptionId,
+        subscriptionUpdate: {
+            cancelAtPeriodEnd: false,
+        },
+    })
+    return result
+}
+
+export async function revokeSubscriptionImmediately(polarSubscriptionId: string) {
+    const result = await polar.subscriptions.revoke({ id: polarSubscriptionId })
+    return result
+}
+
+export async function updateSubscriptionSeats(polarSubscriptionId: string, seats: number) {
+    const result = await polar.subscriptions.update({
+        id: polarSubscriptionId,
+        subscriptionUpdate: {
+            seats,
+        },
+    })
+    return result
+}
+
+// =============================================================================
+// Webhook Logging
+// =============================================================================
+
+export async function logWebhookEvent(log: {
+    source: string
+    eventType: string
+    payload: Record<string, any>
+    signatureValid: boolean
+    processingError?: string | null
+    workspaceId?: string | null
+}) {
+    try {
+        await db.insert(webhookLogs).values({
+            ...log,
+            createdAt: new Date(),
+        })
+    } catch (error) {
+        console.error('[Webhook Log] Failed to persist log:', error)
+    }
 }
 
 // =============================================================================

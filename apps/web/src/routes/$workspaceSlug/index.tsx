@@ -81,31 +81,27 @@ function DashboardHome() {
     enabled: !!workspaceSlug && !!session?.user?.id
   })
 
+  const projectsError = projectsRes && projectsRes.success === false ? projectsRes.error : null
+
   // Filter and group projects
+  // Backend already filters projects by user permissions; we just split them by status here.
   const { ongoingProjects, pendingProjects } = useMemo(() => {
     if (!projectsRes?.data) return { ongoingProjects: [], pendingProjects: [] }
 
     const allProjects = projectsRes.data
-    const userId = session?.user?.id
-
-    // 1. Filter by participation (user must be a member or owner)
-    const myProjects = allProjects.filter((p: any) =>
-      p.members?.some((m: any) => m.user?.id === userId) || p.ownerId === userId
-    )
-
     const now = new Date()
 
-    // 2. Separate into Ongoing and Pending
     // A project is PENDING if:
     // - Status is 'pending'
     // - OR Status is 'active' but startDate is in the future
-    const pending = myProjects.filter((p: any) =>
+    const pending = allProjects.filter((p: any) =>
       p.status === 'pending' ||
       (p.status === 'active' && p.startDate && new Date(p.startDate) > now)
     )
 
-    const ongoing = myProjects.filter((p: any) =>
-      p.status === 'active' &&
+    // ONGOING includes active and on-hold projects that have already started
+    const ongoing = allProjects.filter((p: any) =>
+      (p.status === 'active' || p.status === 'on_hold') &&
       (!p.startDate || new Date(p.startDate) <= now)
     )
 
@@ -113,7 +109,7 @@ function DashboardHome() {
       ongoingProjects: ongoing,
       pendingProjects: pending
     }
-  }, [projectsRes, session?.user?.id])
+  }, [projectsRes])
 
   const filteredProjects = projectFilter === 'active' ? ongoingProjects : pendingProjects
   const projectsPerPage = 2
@@ -351,6 +347,11 @@ function DashboardHome() {
                 <div className="h-[180px] rounded-2xl bg-gray-800/20 animate-pulse" />
                 <div className="h-[180px] rounded-2xl bg-gray-800/20 animate-pulse" />
               </>
+            ) : projectsError ? (
+              <div className="col-span-2 py-12 flex flex-col items-center justify-center rounded-2xl bg-red-500/5 border border-red-500/10">
+                <p className="text-red-500 mb-2 font-medium">{t('dashboard.projectsError', 'Nie udało się wczytać projektów')}</p>
+                <p className="text-gray-500 text-sm">{projectsError}</p>
+              </div>
             ) : filteredProjects.length > 0 ? (
               visibleProjects.map((p: any) => (
                 <ProjectCard

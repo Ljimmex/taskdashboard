@@ -47,6 +47,7 @@ export const subscriptions = pgTable('subscriptions', {
 
     // Billing cycle
     billingDay: integer('billing_day').notNull(),
+    billingPeriod: varchar('billing_period', { length: 20 }), // month, quarter, year
     currentSeats: integer('current_seats').default(1).notNull(),
     seatPriceCents: integer('seat_price_cents').notNull(), // monthly seat price in cents
     currency: varchar('currency', { length: 3 }).default('USD').notNull(),
@@ -122,6 +123,21 @@ export const invoices = pgTable('invoices', {
 })
 
 // =============================================================================
+// WEBHOOK LOGS
+// =============================================================================
+
+export const webhookLogs = pgTable('webhook_logs', {
+    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    source: varchar('source', { length: 50 }).notNull(), // e.g. 'polar'
+    eventType: varchar('event_type', { length: 100 }).notNull(),
+    payload: jsonb('payload').$type<Record<string, any>>().default({}).notNull(),
+    signatureValid: boolean('signature_valid').default(false).notNull(),
+    processingError: text('processing_error'),
+    workspaceId: text('workspace_id'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// =============================================================================
 // RELATIONS
 // =============================================================================
 
@@ -141,6 +157,10 @@ export const invoicesRelations = relations(invoices, ({ one }) => ({
     workspace: one(workspaces, { fields: [invoices.workspaceId], references: [workspaces.id] }),
 }))
 
+export const webhookLogsRelations = relations(webhookLogs, ({ one }) => ({
+    workspace: one(workspaces, { fields: [webhookLogs.workspaceId], references: [workspaces.id] }),
+}))
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -151,3 +171,5 @@ export type SubscriptionEvent = typeof subscriptionEvents.$inferSelect
 export type NewSubscriptionEvent = typeof subscriptionEvents.$inferInsert
 export type Invoice = typeof invoices.$inferSelect
 export type NewInvoice = typeof invoices.$inferInsert
+export type WebhookLog = typeof webhookLogs.$inferSelect
+export type NewWebhookLog = typeof webhookLogs.$inferInsert

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
-import { Clock, AlertCircle, Calendar, ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
+import { Clock, AlertCircle, Calendar, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react'
 import { toast } from '@/hooks/useToast'
 import { formatMinutes, formatHours } from './utils'
 import { PendingEntryModal, type PendingRecentEntry } from './PendingEntryModal'
@@ -238,7 +238,16 @@ export function MemberContributionView({ userId, selectedProjectId, workspaceSlu
           <>
             <div className="space-y-3">
               {paginatedRecent.map((entry: any) => (
-                <HistoryEntry key={entry.id} entry={entry} onEdit={setEditingEntry} />
+                <HistoryEntry
+                  key={entry.id}
+                  entry={entry}
+                  onEdit={setEditingEntry}
+                  onDelete={(entry) => {
+                    if (window.confirm(t('timeTracker.confirmDeleteEntry', 'Czy na pewno chcesz usunąć ten wpis?'))) {
+                      deleteEntryMutation.mutate(entry.id)
+                    }
+                  }}
+                />
               ))}
             </div>
 
@@ -347,7 +356,7 @@ function StatCard({ icon, label, value, isStatus = false, statusState }: any) {
   )
 }
 
-function HistoryEntry({ entry, onEdit }: { entry: any; onEdit: (entry: PendingRecentEntry) => void }) {
+function HistoryEntry({ entry, onEdit, onDelete }: { entry: any; onEdit: (entry: PendingRecentEntry) => void; onDelete: (entry: PendingRecentEntry) => void }) {
   const { t, i18n } = useTranslation()
   const getStatusConfig = (status: string) => {
     switch (status.toLowerCase()) {
@@ -395,14 +404,24 @@ function HistoryEntry({ entry, onEdit }: { entry: any; onEdit: (entry: PendingRe
 
       <div className="flex items-center gap-4 justify-between md:justify-end border-t md:border-t-0 border-[var(--app-divider)] pt-4 md:pt-0">
         {canManagePending && (
-          <button
-            type="button"
-            onClick={() => onEdit(entry)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] text-xs font-bold hover:border-[var(--app-accent)]/40 hover:text-[var(--app-accent)] transition-colors"
-          >
-            <Pencil size={14} />
-            {t('common.edit', 'Edytuj')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onEdit(entry)}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] text-xs font-bold hover:border-[var(--app-accent)]/40 hover:text-[var(--app-accent)] transition-colors"
+            >
+              <Pencil size={14} />
+              {t('common.edit', 'Edytuj')}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(entry)}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-500 text-xs font-bold hover:bg-rose-500/15 transition-colors"
+            >
+              <Trash2 size={14} />
+              {t('common.delete', 'Usuń')}
+            </button>
+          </div>
         )}
         <div className="text-right flex flex-col items-end">
           <div className="text-base font-black text-[var(--app-text-primary)] bg-gradient-to-br from-[var(--app-text-primary)] to-[var(--app-text-muted)] bg-clip-text">

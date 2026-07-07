@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -59,15 +59,17 @@ export function TimeTrackerPage() {
     const [projectsDropdownOpen, setProjectsDropdownOpen] = useState(false)
 
     // Fetch projects
-    const { data: projectsData } = useQuery({
+    type ProjectsResponse = { success: true; data: any[] } | { success: false; error: string }
+    const { data: projectsData, isLoading: isLoadingProjects, error: projectsQueryError } = useQuery({
         queryKey: ['projects', workspaceSlug],
-        queryFn: () => apiFetchJson<{ success: boolean; data: any[] }>(`/api/projects?workspaceSlug=${workspaceSlug}`),
+        queryFn: () => apiFetchJson<ProjectsResponse>(`/api/projects?workspaceSlug=${workspaceSlug}`),
         enabled: !!workspaceSlug,
     })
-    const projects = projectsData?.data || []
+    const projects = projectsData && projectsData.success === true ? projectsData.data : []
+    const projectsError = projectsData && projectsData.success === false ? projectsData.error : projectsQueryError?.message
 
     // Auto-select first project if only one exists or if none selected
-    useMemo(() => {
+    useEffect(() => {
         if (projects.length > 0 && !selectedProjectId) {
             setSelectedProjectId(projects[0].id)
         }
@@ -121,15 +123,15 @@ export function TimeTrackerPage() {
                     </div>
 
                     <div className="flex justify-end w-full lg:w-auto">
-                        {/* Project Selector - Only visible in Contribution and Dashboard */}
-                        {projects.length > 1 && (view === 'contribution' || view === 'dashboard') && (
+                        {/* Project Selector - visible in Contribution and Dashboard when projects exist */}
+                        {projects.length > 0 && (view === 'contribution' || view === 'dashboard') && (
                             <div className="relative">
                                 <button
                                     onClick={() => setProjectsDropdownOpen(!projectsDropdownOpen)}
-                                    className="flex items-center gap-2 px-3 py-1.5 h-9 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-full hover:border-[var(--app-accent)]/50 transition-all text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider"
+                                    className="flex items-center gap-2 px-3 py-1.5 h-9 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-full hover:border-[var(--app-accent)]/50 transition-all text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider min-w-[140px]"
                                 >
                                     <div className="w-1 h-1 rounded-full bg-[var(--app-accent)]" />
-                                    <span>{selectedProject?.name || t('common.selectProject', 'Select Project')}</span>
+                                    <span className="truncate">{selectedProject?.name || t('common.selectProject', 'Select Project')}</span>
                                     <ChevronDown size={12} className={`transition-transform duration-200 ${projectsDropdownOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
@@ -163,12 +165,30 @@ export function TimeTrackerPage() {
 
             {/* Content Area */}
             <div className="max-w-7xl mx-auto px-4 mt-8">
-                {view === 'timer' && userId && <MemberTimerView workspaceSlug={workspaceSlug} userId={userId} />}
-                {view === 'manual' && userId && <ManualEntryView workspaceSlug={workspaceSlug} userId={userId} canManage={canManageEntries} />}
-                {view === 'approval' && <HRApprovalView workspaceSlug={workspaceSlug} />}
-                {view === 'contribution' && userId && <MemberContributionView userId={userId} selectedProjectId={selectedProjectId} workspaceSlug={workspaceSlug} />}
-                {view === 'dashboard' && <OwnerDashboardView selectedProjectId={selectedProjectId} projects={projects} workspaceSlug={workspaceSlug} />}
-                {view === 'calendar' && <WeeklyCalendarView workspaceSlug={workspaceSlug} userId={userId} />}
+                {isLoadingProjects && (view === 'contribution' || view === 'dashboard') ? (
+                    <div className="py-24 flex items-center justify-center">
+                        <div className="w-10 h-10 border-2 border-[var(--app-accent)] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                ) : projectsError && (view === 'contribution' || view === 'dashboard') ? (
+                    <div className="py-16 flex flex-col items-center justify-center bg-[var(--app-bg-card)]/50 rounded-3xl border border-red-500/10">
+                        <p className="text-red-500 font-medium mb-2">{t('timeTracker.projectsError', 'Nie udało się wczytać projektów')}</p>
+                        <p className="text-[var(--app-text-muted)] text-sm">{projectsError}</p>
+                    </div>
+                ) : projects.length === 0 && (view === 'contribution' || view === 'dashboard') ? (
+                    <div className="py-16 flex flex-col items-center justify-center bg-[var(--app-bg-card)]/50 rounded-3xl border border-[var(--app-divider)]">
+                        <p className="text-[var(--app-text-primary)] font-medium mb-1">{t('timeTracker.noProjects', 'Brak projektów')}</p>
+                        <p className="text-[var(--app-text-muted)] text-sm">{t('timeTracker.noProjectsToTrack', 'W tym workspace nie ma jeszcze projektów.')}</p>
+                    </div>
+                ) : (
+                    <>
+                        {view === 'timer' && userId && <MemberTimerView workspaceSlug={workspaceSlug} userId={userId} />}
+                        {view === 'manual' && userId && <ManualEntryView workspaceSlug={workspaceSlug} userId={userId} canManage={canManageEntries} />}
+                        {view === 'approval' && <HRApprovalView workspaceSlug={workspaceSlug} />}
+                        {view === 'contribution' && userId && <MemberContributionView userId={userId} selectedProjectId={selectedProjectId} workspaceSlug={workspaceSlug} />}
+                        {view === 'dashboard' && <OwnerDashboardView selectedProjectId={selectedProjectId} projects={projects} workspaceSlug={workspaceSlug} />}
+                        {view === 'calendar' && <WeeklyCalendarView workspaceSlug={workspaceSlug} userId={userId} />}
+                    </>
+                )}
             </div>
         </div>
     )

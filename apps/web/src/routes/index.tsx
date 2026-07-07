@@ -439,6 +439,8 @@ function HomePage() {
                             features={t('landing.pricing.plus.features', { returnObjects: true }) as string[]}
                             buttonText={t('landing.hero.start')}
                             isDark={isDark}
+                            plan="plus"
+                            periodValue={billingPeriod}
                         />
                         <PricingCard
                             name={t('landing.pricing.pro.name')}
@@ -450,6 +452,8 @@ function HomePage() {
                             popularText={t('landing.pricing.popular')}
                             buttonText={t('landing.hero.start')}
                             isDark={isDark}
+                            plan="pro"
+                            periodValue={billingPeriod}
                         />
                         <PricingCard
                             name={t('landing.pricing.enterprise.name')}
@@ -890,6 +894,8 @@ function PricingCard({
     popularText,
     buttonText,
     isDark,
+    plan,
+    periodValue,
 }: {
     name: string
     price: string
@@ -900,6 +906,8 @@ function PricingCard({
     popularText?: string
     buttonText: string
     isDark: boolean
+    plan?: 'plus' | 'pro' | 'enterprise'
+    periodValue?: 'monthly' | 'quarterly' | 'yearly'
 }) {
     return (
         <div className={`relative rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${popular
@@ -933,6 +941,10 @@ function PricingCard({
             </ul>
             <Link
                 to="/register"
+                search={plan && periodValue ? {
+                    plan,
+                    period: periodValue === 'monthly' ? 'month' : periodValue === 'quarterly' ? 'quarter' : 'year',
+                } : undefined}
                 className={`block text-center rounded-xl py-3 font-medium transition-all ${popular
                     ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black hover:from-amber-400 hover:to-amber-500 shadow-lg shadow-amber-500/20'
                     : isDark

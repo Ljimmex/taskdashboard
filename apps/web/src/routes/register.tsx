@@ -37,6 +37,8 @@ function RegisterPage() {
     const [success, setSuccess] = useState(false)
 
     const params = new URLSearchParams(window.location.search)
+    const selectedPlanParam = params.get('plan') as 'free' | 'plus' | 'pro' | 'enterprise' | null
+    const selectedPeriodParam = params.get('period') as 'month' | 'quarter' | 'year' | null
     // Step 1 data
     const [email, setEmail] = useState(params.get('email') || '')
     const [password, setPassword] = useState('')
@@ -299,11 +301,42 @@ function RegisterPage() {
             })
 
             if (!wsResponse.ok) {
-                console.error('Failed to create workspace', await wsResponse.text())
+                const errorText = await wsResponse.text()
+                console.error('Failed to create workspace', errorText)
+                setError(t('register.error.unexpected'))
+                setLoading(false)
+                return
+            }
+
+            const workspace = (await wsResponse.json() as { data: { id: string; slug: string } }).data
+
+            // 4. Start Polar checkout for paid plans
+            if (selectedPlanParam && ['plus', 'pro'].includes(selectedPlanParam)) {
+                const period = selectedPeriodParam || 'month'
+                const successUrl = `${window.location.origin}/${workspace.slug}/settings?checkout=success`
+                const checkoutRes = await apiFetchJson<{ data: { url: string; checkoutId: string } }>('/api/billing/checkout', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        workspaceId: workspace.id,
+                        plan: selectedPlanParam,
+                        billingPeriod: period,
+                        seats: 1,
+                        successUrl,
+                    }),
+                })
+
+                if (checkoutRes.data?.url) {
+                    window.location.href = checkoutRes.data.url
+                    return
+                }
+
+                console.error('Checkout creation failed')
+                // Fall through to dashboard if checkout fails
             }
 
             setSuccess(true)
             setLoading(false)
+            navigate({ to: `/${workspace.slug}` })
 
         } catch (err) {
             console.error(err)
