@@ -30,10 +30,21 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}): Pro
     })
 }
 
+import { toast } from '@/hooks/useToast'
+
 // Typed wrapper for JSON responses
 export async function apiFetchJson<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const response = await apiFetch(endpoint, options)
 
+    const data = await response.json().catch(() => null)
 
-    return response.json()
+    if (response.status === 402) {
+        // Workspace/plan limit errors are surfaced as 402 Payment Required.
+        // Show a toast so users understand why the action was blocked.
+        const message = data?.error || 'Plan limit reached'
+        toast.error(message)
+        throw new Error(message)
+    }
+
+    return data as T
 }

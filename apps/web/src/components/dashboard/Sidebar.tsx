@@ -60,6 +60,19 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         enabled: !!workspaceSlug
     })
 
+    // Fetch projects count
+    const { data: projects } = useQuery({
+        queryKey: ['projects', workspaceSlug],
+        queryFn: async () => {
+            if (!workspaceSlug) return []
+            const json = await apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`, {
+                headers: { 'x-user-id': session?.user?.id || '' }
+            })
+            return json.data
+        },
+        enabled: !!workspaceSlug
+    })
+
     // Fetch conversations for unread count
     const { data: unreadCount } = useQuery({
         queryKey: ['conversations', 'unread', workspaceSlug],
@@ -81,7 +94,7 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
     const navItems = [
         { iconKey: 'dashboard', label: t('dashboard.title'), path: `${baseUrl}`, count: null },
         { iconKey: 'team', label: t('dashboard.team'), path: `${baseUrl}/team`, count: teams?.length || null },
-        { iconKey: 'product', label: t('dashboard.projects'), path: `${baseUrl}/projects`, count: null },
+        { iconKey: 'product', label: t('dashboard.projects'), path: `${baseUrl}/projects`, count: projects?.length || null },
         { iconKey: 'messages', label: t('dashboard.messages'), path: `${baseUrl}/messages`, count: unreadCount || null },
         { iconKey: 'calendar', label: t('dashboard.calendar'), path: `${baseUrl}/calendar`, count: null },
         { iconKey: 'files', label: t('dashboard.files'), path: `${baseUrl}/files`, count: null },

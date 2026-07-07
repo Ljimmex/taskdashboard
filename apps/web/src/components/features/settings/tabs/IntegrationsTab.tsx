@@ -181,8 +181,8 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2 text-xs text-[var(--app-text-muted)] bg-[var(--app-bg-card)] px-2 py-1 rounded w-fit max-w-full">
-                                            <span className="font-mono break-all">{webhook.url}</span>
+                                        <div className="text-xs text-[var(--app-text-muted)] bg-[var(--app-bg-card)] px-2 py-1 rounded max-w-full overflow-x-auto scrollbar-hide" title={webhook.url}>
+                                            <span className="font-mono whitespace-nowrap">{webhook.url}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -223,9 +223,9 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                             </div>
 
                             <div className="h-px bg-[var(--app-border)]/50 mt-4 mb-4" />
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                            <div className="flex flex-wrap items-start justify-between gap-4">
                                 <div className="flex flex-wrap items-center gap-1.5">
-                                    <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mr-1">
+                                    <span className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider">
                                         {t('settings.organization.integrations.all_events_header')}
                                     </span>
                                     {webhook.events.slice(0, 3).map((event: string) => (
@@ -253,7 +253,7 @@ export function IntegrationsTab({ workspace }: IntegrationsTabProps) {
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-3 text-[11px] text-[var(--app-text-muted)] flex-shrink-0">
+                                <div className="flex items-center gap-3 text-[11px] text-[var(--app-text-muted)] flex-shrink-0 whitespace-nowrap">
                                     {webhook.failureCount > 0 && (
                                         <div className="flex items-center gap-1.5 text-red-500 font-medium">
                                             <Activity className="w-3.5 h-3.5" />
