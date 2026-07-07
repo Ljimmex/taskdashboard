@@ -59,7 +59,7 @@ services:
         sync: false
       - key: R2_BUCKET_NAME
         sync: false
-    healthCheckPath: /health
+    healthCheckPath: /ready
 
   # Frontend Static Site
   - type: web

@@ -4,6 +4,8 @@ import './loadEnv'
 
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { apiReference } from '@scalar/hono-api-reference'
+import { sql } from 'drizzle-orm'
+import { db } from './db'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
@@ -203,6 +205,26 @@ app.openapi(
         })
     }
 )
+
+// Readiness check - verifies the API can connect to the database before accepting traffic
+app.get('/ready', async (c) => {
+    try {
+        await db.execute(sql`SELECT 1`)
+        return c.json({
+            status: 'ready',
+            timestamp: new Date().toISOString(),
+        })
+    } catch (error) {
+        console.error('Readiness check failed:', error)
+        return c.json(
+            {
+                status: 'not ready',
+                error: 'Database connection failed',
+            },
+            503
+        )
+    }
+})
 
 // API info - Redirect to main website in production, show info in development
 app.openapi(

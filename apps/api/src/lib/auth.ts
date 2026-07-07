@@ -66,20 +66,32 @@ export const auth = betterAuth({
         max: 1000, // Increased for dev/testing
     },
 
-    // OAuth Social Providers
+    // OAuth Social Providers (only register providers that have credentials configured)
     socialProviders: {
-        google: {
-            clientId: process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        },
-        github: {
-            clientId: process.env.GITHUB_CLIENT_ID!,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-        },
-        slack: {
-            clientId: process.env.SLACK_CLIENT_ID!,
-            clientSecret: process.env.SLACK_CLIENT_SECRET!,
-        },
+        ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+            ? {
+                  google: {
+                      clientId: process.env.GOOGLE_CLIENT_ID,
+                      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                  },
+              }
+            : {}),
+        ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+            ? {
+                  github: {
+                      clientId: process.env.GITHUB_CLIENT_ID,
+                      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+                  },
+              }
+            : {}),
+        ...(process.env.SLACK_CLIENT_ID && process.env.SLACK_CLIENT_SECRET
+            ? {
+                  slack: {
+                      clientId: process.env.SLACK_CLIENT_ID,
+                      clientSecret: process.env.SLACK_CLIENT_SECRET,
+                  },
+              }
+            : {}),
     },
 
     // Trusted origins for CORS
