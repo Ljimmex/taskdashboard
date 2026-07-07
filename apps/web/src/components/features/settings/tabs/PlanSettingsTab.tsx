@@ -39,7 +39,7 @@ export function PlanSettingsTab({ workspace }: PlanSettingsTabProps) {
     const queryClient = useQueryClient()
     const { data: session } = useSession()
     const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
-    const isOwner = workspace?.userRole === 'owner'
+    const isPlatformOwner = workspace?.isPlatformOwner === true
 
     const currentPlan: Plan = workspace?.subscriptionPlan || 'free'
     const [selectedPlan, setSelectedPlan] = useState<Plan>(currentPlan)
@@ -56,8 +56,21 @@ export function PlanSettingsTab({ workspace }: PlanSettingsTabProps) {
     const displayLimit = (value: number | null | undefined) =>
         value === null || value === undefined ? t('settings.organization.plan.unlimited') : value
 
-    const storageUsed = workspace?.usedStorageBytes || 0
-    const storageLimitGB = workspace?.maxStorageGB || 0
+    const limits = workspace?.limits
+    const usage = workspace?.usage
+    const membersUsed = usage?.members ?? workspace?.currentSeatCount ?? 1
+    const storageUsed = usage?.usedStorageBytes ?? workspace?.usedStorageBytes ?? 0
+    const projectsUsed = usage?.projects ?? 0
+    const teamsUsed = usage?.teams ?? 0
+    const docsUsed = usage?.docs ?? 0
+    const whiteboardsUsed = usage?.whiteboards ?? 0
+    const maxMembers = limits?.maxMembers ?? workspace?.maxMembers
+    const maxProjects = limits?.maxProjects ?? workspace?.maxProjects
+    const maxTeams = limits?.maxTeams ?? workspace?.maxTeams
+    const maxDocs = limits?.maxDocs ?? workspace?.maxDocs
+    const maxWhiteboards = limits?.maxWhiteboards ?? workspace?.maxWhiteboards
+    const maxFileSizeMB = limits?.maxFileSizeMB ?? workspace?.maxFileSizeMB ?? 10
+    const storageLimitGB = limits?.maxStorageGB ?? workspace?.maxStorageGB ?? 0
 
     const checkoutMutation = useMutation({
         mutationFn: async () => {
@@ -143,7 +156,7 @@ export function PlanSettingsTab({ workspace }: PlanSettingsTabProps) {
                     <LimitRow
                         icon={<Users className="w-4 h-4" />}
                         label={t('settings.organization.plan.members')}
-                        value={`${workspace?.currentSeatCount || 1} / ${String(displayLimit(workspace?.maxMembers))}`}
+                        value={`${membersUsed} / ${String(displayLimit(maxMembers))}`}
                     />
                     <LimitRow
                         icon={<HardDrive className="w-4 h-4" />}
@@ -153,33 +166,33 @@ export function PlanSettingsTab({ workspace }: PlanSettingsTabProps) {
                     <LimitRow
                         icon={<Folder className="w-4 h-4" />}
                         label={t('settings.organization.plan.projects')}
-                        value={String(displayLimit(workspace?.maxProjects))}
+                        value={`${projectsUsed} / ${String(displayLimit(maxProjects))}`}
                     />
                     <LimitRow
                         icon={<UsersRound className="w-4 h-4" />}
                         label={t('settings.organization.plan.teams')}
-                        value={String(displayLimit(workspace?.maxTeams))}
+                        value={`${teamsUsed} / ${String(displayLimit(maxTeams))}`}
                     />
                     <LimitRow
                         icon={<FileText className="w-4 h-4" />}
                         label={t('settings.organization.plan.docs')}
-                        value={String(displayLimit(workspace?.maxDocs))}
+                        value={`${docsUsed} / ${String(displayLimit(maxDocs))}`}
                     />
                     <LimitRow
                         icon={<SquareKanban className="w-4 h-4" />}
                         label={t('settings.organization.plan.whiteboards')}
-                        value={String(displayLimit(workspace?.maxWhiteboards))}
+                        value={`${whiteboardsUsed} / ${String(displayLimit(maxWhiteboards))}`}
                     />
                     <LimitRow
                         icon={<Upload className="w-4 h-4" />}
                         label={t('settings.organization.plan.file_size')}
-                        value={`${workspace?.maxFileSizeMB || 10} MB`}
+                        value={`${maxFileSizeMB} MB`}
                     />
                 </div>
             </section>
 
             {/* Owner-only plan management */}
-            {isOwner ? (
+            {isPlatformOwner ? (
                 <section className="bg-[var(--app-bg-elevated)] rounded-2xl p-5 space-y-4">
                     <h4 className="text-base font-semibold text-[var(--app-text-primary)]">
                         {t('settings.organization.plan.change_plan_title')}

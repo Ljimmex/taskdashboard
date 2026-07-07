@@ -1,11 +1,14 @@
 import { Hono } from 'hono'
-import { eq, or, like, and, sql, inArray } from 'drizzle-orm'
+import { eq, or, like, and, sql, inArray, count, sum } from 'drizzle-orm'
 import { db } from '../../db'
 import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { users } from '../../db/schema/users'
 import { teams, teamMembers } from '../../db/schema/teams'
 import { projects, projectMembers } from '../../db/schema/projects'
 import { tasks, timeEntries } from '../../db/schema/tasks'
+import { files } from '../../db/schema/files'
+import { documents } from '../../db/schema/documents'
+import { whiteboards } from '../../db/schema/whiteboards'
 import { auth, type Auth } from '../../lib/auth'
 import {
     canManageWorkspaceSettings,
@@ -103,6 +106,49 @@ export async function getUserWorkspaceRole(userId: string, workspaceId: string):
     return (member.role as WorkspaceRole) || null
 }
 
+// Helper: Compute real workspace usage counters
+async function getWorkspaceUsage(workspaceId: string) {
+    const [membersRes] = await db
+        .select({ value: count() })
+        .from(workspaceMembers)
+        .where(and(eq(workspaceMembers.workspaceId, workspaceId), sql`${workspaceMembers.status} IS DISTINCT FROM 'suspended'`))
+
+    const [storageRes] = await db
+        .select({ value: sum(files.size) })
+        .from(files)
+        .where(eq(files.workspaceId, workspaceId))
+
+    const [teamsRes] = await db
+        .select({ value: count() })
+        .from(teams)
+        .where(eq(teams.workspaceId, workspaceId))
+
+    const [projectsRes] = await db
+        .select({ value: count() })
+        .from(projects)
+        .innerJoin(teams, eq(projects.teamId, teams.id))
+        .where(eq(teams.workspaceId, workspaceId))
+
+    const [docsRes] = await db
+        .select({ value: count() })
+        .from(documents)
+        .where(eq(documents.workspaceId, workspaceId))
+
+    const [whiteboardsRes] = await db
+        .select({ value: count() })
+        .from(whiteboards)
+        .where(eq(whiteboards.workspaceId, workspaceId))
+
+    return {
+        members: membersRes.value || 0,
+        usedStorageBytes: Number(storageRes.value || 0),
+        projects: projectsRes.value || 0,
+        teams: teamsRes.value || 0,
+        docs: docsRes.value || 0,
+        whiteboards: whiteboardsRes.value || 0,
+    }
+}
+
 // GET /api/workspaces - Get user's workspaces
 workspacesRoutes.get('/', async (c) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
@@ -128,10 +174,14 @@ workspacesRoutes.get('/', async (c) => {
                 )
             )
 
+        const platformOwner = await isPlatformOwner(userId)
+
         return c.json({
             data: userWorkspaces.map(w => ({
                 ...w.workspace,
-                userRole: w.role
+                userRole: w.role,
+                isPlatformOwner: platformOwner,
+                ...(platformOwner ? {} : { isOwnerOverride: undefined, overridePlan: undefined }),
             }))
         })
     } catch (error) {
@@ -169,12 +219,17 @@ workspacesRoutes.get('/slug/:slug', async (c) => {
             return c.json({ error: 'Access denied' }, 403)
         }
 
-        const isOwner = member.role === 'owner'
-        const sanitizedWorkspace = isOwner ? workspace : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
+        const platformOwner = await isPlatformOwner(session.user.id)
+        const sanitizedWorkspace = platformOwner ? workspace : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
+        const usage = await getWorkspaceUsage(workspace.id)
+        const limits = getWorkspaceDefaultsForPlan(workspace.subscriptionPlan as SubscriptionPlan)
 
         return c.json({
             ...sanitizedWorkspace,
-            userRole: member.role
+            userRole: member.role,
+            isPlatformOwner: platformOwner,
+            usage,
+            limits,
         })
     } catch (error) {
         return c.json({ error: 'Failed to fetch workspace', details: String(error) }, 500)
@@ -245,12 +300,31 @@ workspacesRoutes.get('/:id', async (c) => {
             where: (ws, { eq }) => eq(ws.id, id)
         })
 
-        const isOwner = workspaceRole === 'owner'
-        const sanitizedWorkspace = isOwner ? workspace : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
+        const platformOwner = await isPlatformOwner(userId)
+        const sanitizedWorkspace = platformOwner ? workspace : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
 
-        return c.json({ data: sanitizedWorkspace })
+        return c.json({ data: { ...sanitizedWorkspace, isPlatformOwner: platformOwner } })
     } catch (error) {
         return c.json({ error: 'Failed to fetch workspace', details: String(error) }, 500)
+    }
+})
+
+// GET /api/workspaces/:id/usage - Real workspace usage counters
+workspacesRoutes.get('/:id/usage', async (c) => {
+    const id = c.req.param('id')
+    const user = c.get('user') as any
+    const userId = user.id
+
+    try {
+        const workspaceRole = await getUserWorkspaceRole(userId, id)
+        if (!workspaceRole) {
+            return c.json({ error: 'Workspace not found or access denied' }, 404)
+        }
+
+        const usage = await getWorkspaceUsage(id)
+        return c.json({ data: usage })
+    } catch (error) {
+        return c.json({ error: 'Failed to fetch usage', details: String(error) }, 500)
     }
 })
 
@@ -278,6 +352,8 @@ workspacesRoutes.patch('/:id', zValidator('json', updateWorkspaceSchema), async 
             return c.json({ error: 'Workspace not found' }, 404)
         }
 
+        const platformOwner = await isPlatformOwner(userId)
+
         // Prepare update data
         const updateData: any = {
             updatedAt: new Date()
@@ -297,7 +373,6 @@ workspacesRoutes.patch('/:id', zValidator('json', updateWorkspaceSchema), async 
         // Platform owner backdoor: change plan without payment
         const wantsPlanChange = body.subscriptionPlan !== undefined || body.subscriptionStatus !== undefined
         if (wantsPlanChange) {
-            const platformOwner = await isPlatformOwner(userId)
             if (!platformOwner) {
                 return c.json({ error: 'Unauthorized to change subscription plan' }, 403)
             }
@@ -312,11 +387,11 @@ workspacesRoutes.patch('/:id', zValidator('json', updateWorkspaceSchema), async 
             }
         }
 
-        // Workspace owner override: change plan without payment (invisible to others)
+        // Platform owner override: change plan without payment (invisible to others)
         const wantsOwnerOverride = body.isOwnerOverride !== undefined || body.overridePlan !== undefined
         if (wantsOwnerOverride) {
-            if (workspaceRole !== 'owner') {
-                return c.json({ error: 'Only workspace owner can set owner override' }, 403)
+            if (!platformOwner) {
+                return c.json({ error: 'Only platform owner can set owner override' }, 403)
             }
 
             if (body.isOwnerOverride !== undefined) {
@@ -365,7 +440,9 @@ workspacesRoutes.patch('/:id', zValidator('json', updateWorkspaceSchema), async 
             triggerWebhook('workspace.updated', updated, updated.id)
         }
 
-        return c.json({ data: updated })
+        const sanitizedUpdated = platformOwner ? updated : { ...updated, isOwnerOverride: undefined, overridePlan: undefined }
+
+        return c.json({ data: sanitizedUpdated })
     } catch (error) {
         return c.json({ error: 'Failed to update workspace', details: String(error) }, 500)
     }
