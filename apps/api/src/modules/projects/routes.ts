@@ -198,7 +198,7 @@ projectsRoutes.get('/', async (c) => {
             },
             orderBy: (p, { desc }) => [desc(p.createdAt)]
         })
-        console.log(`[GET /api/projects] workspaceSlug=${workspaceSlug} workspaceId=${workspaceId} userId=${userId} role=${userWorkspaceRole} teams=${teamIds.length} returned=${result.length} projects`)
+        console.log(`[GET /api/projects] workspaceSlug=${workspaceSlug} workspaceId=${workspaceId} userId=${userId} role=${userWorkspaceRole} teams=${teamIds.length} returned=${result.length} projects`, JSON.stringify(result.map(p => ({ id: p.id, name: p.name, status: p.status, startDate: p.startDate }))))
         return c.json({ success: true, data: result })
     } catch (error) {
         console.error('Error fetching projects:', error)

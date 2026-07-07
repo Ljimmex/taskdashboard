@@ -328,7 +328,7 @@ function DashboardHome() {
                   : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                   }`}
               >
-                {t('dashboard.ongoing')}
+                {t('dashboard.ongoing')} ({ongoingProjects.length})
               </button>
               <button
                 onClick={() => { setProjectFilter('pending'); setProjectPage(0) }}
@@ -337,7 +337,7 @@ function DashboardHome() {
                   : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
                   }`}
               >
-                {t('dashboard.pending')}
+                {t('dashboard.pending')} ({pendingProjects.length})
               </button>
             </div>
           </div>
@@ -371,9 +371,35 @@ function DashboardHome() {
               ))
             ) : (
               <div className="col-span-2 py-12 flex flex-col items-center justify-center rounded-2xl">
-                <p className="text-gray-500 mb-4">{projectFilter === 'active' ? t('dashboard.noProjectsActive') : t('dashboard.noProjectsPending')}</p>
-                {projectFilter === 'active' && workspaceData?.userRole && !['member', 'guest'].includes(workspaceData.userRole) && (
+                <p className="text-gray-500 mb-4">
+                  {projects.length === 0
+                    ? t('dashboard.noProjects')
+                    : projectFilter === 'active'
+                      ? t('dashboard.noProjectsActive')
+                      : t('dashboard.noProjectsPending')}
+                </p>
+                {projects.length === 0 && workspaceData?.userRole && !['member', 'guest'].includes(workspaceData.userRole) && (
                   <button onClick={() => setIsCreateProjectOpen(true)} className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">{t('dashboard.createProject')}</button>
+                )}
+                {projects.length > 0 && (
+                  <div className="flex gap-3">
+                    {projectFilter === 'active' && pendingProjects.length > 0 && (
+                      <button
+                        onClick={() => { setProjectFilter('pending'); setProjectPage(0) }}
+                        className="px-4 py-2 bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] border border-[var(--app-border)] rounded-lg text-sm font-medium hover:border-[var(--app-accent)] transition-colors"
+                      >
+                        {t('dashboard.showPendingProjects', 'Pokaż projekty oczekujące')} ({pendingProjects.length})
+                      </button>
+                    )}
+                    {projectFilter === 'pending' && ongoingProjects.length > 0 && (
+                      <button
+                        onClick={() => { setProjectFilter('active'); setProjectPage(0) }}
+                        className="px-4 py-2 bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] border border-[var(--app-border)] rounded-lg text-sm font-medium hover:border-[var(--app-accent)] transition-colors"
+                      >
+                        {t('dashboard.showActiveProjects', 'Pokaż projekty aktywne')} ({ongoingProjects.length})
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
