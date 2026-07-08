@@ -103,7 +103,7 @@ app.use(
     contentSecurityPolicy: {
       defaultSrc: ["'self'"],
       baseUri: ["'self'"],
-      fontSrc: ["'self'", 'data:'],
+      fontSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
       frameSrc: ["'none'"],

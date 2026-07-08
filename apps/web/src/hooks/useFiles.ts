@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileRecord, Folder } from '@taskdashboard/types'
-import { useEffect } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 
@@ -40,7 +40,15 @@ const fetchFolders = async (workspaceSlug: string, parentId: string | null): Pro
 
 export function useFiles(workspaceSlug: string, folderId: string | null = null, recursive = false) {
   const queryClient = useQueryClient()
-  const queryKey = ['files', workspaceSlug, folderId, recursive]
+  const queryKey = useMemo(
+    () => ['files', workspaceSlug, folderId, recursive],
+    [workspaceSlug, folderId, recursive]
+  )
+  // Unique channel suffix per hook instance to avoid name collisions
+  // when multiple components subscribe to the same workspace/folder.
+  const channelSuffixRef = useRef(
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+  )
 
   const query = useQuery({
     queryKey,
@@ -53,7 +61,9 @@ export function useFiles(workspaceSlug: string, folderId: string | null = null, 
     if (!workspaceSlug) return
 
     const channel = supabase
-      .channel(`files-${workspaceSlug}-${folderId || 'root'}`)
+      .channel(
+        `files-${workspaceSlug}-${folderId || 'root'}-${recursive ? 'recursive' : 'current'}-${channelSuffixRef.current}`
+      )
       .on(
         'postgres_changes',
         {
@@ -67,19 +77,27 @@ export function useFiles(workspaceSlug: string, folderId: string | null = null, 
           queryClient.invalidateQueries({ queryKey })
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('[useFiles] Realtime subscription failed:', status)
+        }
+      })
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [workspaceSlug, folderId, queryClient])
+  }, [workspaceSlug, folderId, recursive, queryClient, queryKey])
 
   return query
 }
 
 export function useFolders(workspaceSlug: string, parentId: string | null = null) {
   const queryClient = useQueryClient()
-  const queryKey = ['folders', workspaceSlug, parentId]
+  const queryKey = useMemo(() => ['folders', workspaceSlug, parentId], [workspaceSlug, parentId])
+  // Unique channel suffix per hook instance to avoid name collisions.
+  const channelSuffixRef = useRef(
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+  )
 
   const query = useQuery({
     queryKey,
@@ -92,7 +110,7 @@ export function useFolders(workspaceSlug: string, parentId: string | null = null
     if (!workspaceSlug) return
 
     const channel = supabase
-      .channel(`folders-${workspaceSlug}-${parentId || 'root'}`)
+      .channel(`folders-${workspaceSlug}-${parentId || 'root'}-${channelSuffixRef.current}`)
       .on(
         'postgres_changes',
         {
@@ -106,12 +124,16 @@ export function useFolders(workspaceSlug: string, parentId: string | null = null
           queryClient.invalidateQueries({ queryKey })
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('[useFolders] Realtime subscription failed:', status)
+        }
+      })
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [workspaceSlug, parentId, queryClient])
+  }, [workspaceSlug, parentId, queryClient, queryKey])
 
   return query
 }
