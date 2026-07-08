@@ -126,7 +126,7 @@ export function ProjectKanbanPanel({ workspaceSlug }: DashboardPanelProps) {
   }
 
   return (
-    <div className="flex h-full min-h-[280px] flex-col rounded-2xl bg-[var(--app-bg-card)] p-5">
+    <div className="flex h-full max-h-[480px] min-h-[280px] flex-col rounded-2xl bg-[var(--app-bg-card)] p-5">
       <div className="mb-3">
         <Select value={selectedProjectId} onValueChange={handleProjectChange}>
           <SelectTrigger className="w-auto min-w-[180px] border-[var(--app-border)] bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] focus:ring-amber-500 focus:ring-offset-0">
@@ -161,11 +161,11 @@ export function ProjectKanbanPanel({ workspaceSlug }: DashboardPanelProps) {
           </p>
         </div>
       ) : (
-        <div className="custom-gantt-scroll flex flex-1 gap-3 overflow-x-auto pb-2">
+        <div className="custom-gantt-scroll flex flex-1 gap-3 overflow-x-auto overflow-y-hidden pb-2">
           {columns.map(({ stage, tasks }) => (
             <div
               key={stage.id}
-              className="bg-[var(--app-bg-elevated)]/30 flex w-52 shrink-0 flex-col rounded-xl border border-[var(--app-border)] p-2"
+              className="bg-[var(--app-bg-elevated)]/30 flex h-full w-52 shrink-0 flex-col rounded-xl border border-[var(--app-border)] p-2"
             >
               <div className="mb-2 flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
