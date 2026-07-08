@@ -56,6 +56,8 @@ const updateUserSchema = z.object({
   encryptedPrivateKey: z.string().optional(),
   keySalt: z.string().optional(),
   keyIv: z.string().optional(),
+  // User preferences (e.g. dashboard layout)
+  preferences: z.any().optional(),
 })
 
 usersRoutes.patch('/me', zValidator('json', updateUserSchema), async (c) => {

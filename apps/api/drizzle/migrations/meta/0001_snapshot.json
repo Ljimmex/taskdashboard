@@ -1,6 +1,6 @@
 {
-  "id": "cb951cff-b6dc-448e-a65a-5478bd690463",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "46204b08-7cb0-4ef5-8f18-51fc13ef4bf5",
+  "prevId": "cb951cff-b6dc-448e-a65a-5478bd690463",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -540,6 +540,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "preferences": {
+          "name": "preferences",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
         },
         "internal_flags": {
           "name": "internal_flags",

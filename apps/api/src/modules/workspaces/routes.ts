@@ -21,7 +21,7 @@ import { decryptPrivateKey, encryptPrivateKey } from '../../lib/server-encryptio
 import { triggerWebhook } from '../webhooks/trigger'
 import { workspaceInvitesRoutes } from './invites'
 import { workspaceDefaultsRoutes } from './defaults'
-import { checkWorkspaceMemberLimit } from '../../lib/workspaceLimits'
+import { checkWorkspaceMemberLimit, getWorkspaceStorageLimitGB } from '../../lib/workspaceLimits'
 import { isPlatformOwner } from '../../lib/platformOwner'
 import { getWorkspaceDefaultsForPlan, type SubscriptionPlan } from '../../lib/plans'
 
@@ -231,6 +231,8 @@ workspacesRoutes.get('/slug/:slug', async (c) => {
       : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
     const usage = await getWorkspaceUsage(workspace.id)
     const limits = getWorkspaceDefaultsForPlan(workspace.subscriptionPlan as SubscriptionPlan)
+    // Storage limit is dynamic: base + per-seat, so override the static default.
+    limits.maxStorageGB = getWorkspaceStorageLimitGB(workspace)
 
     return c.json({
       ...sanitizedWorkspace,

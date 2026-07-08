@@ -42,6 +42,26 @@ function formatBytes(bytes: number) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
 }
 
+const PLAN_STORAGE: Record<Plan, { baseStorageGB: number; storagePerSeatGB: number }> = {
+  free: { baseStorageGB: 0, storagePerSeatGB: 0 },
+  plus: { baseStorageGB: 50, storagePerSeatGB: 5 },
+  pro: { baseStorageGB: 50, storagePerSeatGB: 15 },
+  enterprise: { baseStorageGB: 0, storagePerSeatGB: 0 },
+}
+
+function getWorkspaceStorageLimitGB(workspace: any): number {
+  const plan: Plan = workspace?.subscriptionPlan || 'free'
+  if (plan === 'free') {
+    return workspace?.maxStorageGB || 0.5
+  }
+  if (plan === 'enterprise') {
+    return workspace?.maxStorageGB || 0
+  }
+  const limits = PLAN_STORAGE[plan]
+  const seats = workspace?.currentSeatCount || 1
+  return limits.baseStorageGB + limits.storagePerSeatGB * seats
+}
+
 function formatCurrency(cents: number, currency: string = 'USD') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -147,7 +167,7 @@ export function PlanSettingsTab({ workspace }: PlanSettingsTabProps) {
   const maxDocs = limits?.maxDocs ?? workspace?.maxDocs
   const maxWhiteboards = limits?.maxWhiteboards ?? workspace?.maxWhiteboards
   const maxFileSizeMB = limits?.maxFileSizeMB ?? workspace?.maxFileSizeMB ?? 10
-  const storageLimitGB = limits?.maxStorageGB ?? workspace?.maxStorageGB ?? 0
+  const storageLimitGB = limits?.maxStorageGB ?? getWorkspaceStorageLimitGB(workspace)
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
@@ -221,6 +241,10 @@ export function PlanSettingsTab({ workspace }: PlanSettingsTabProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace', workspaceSlug] })
+      if (workspace?.id) {
+        queryClient.invalidateQueries({ queryKey: ['files', 'quota', workspace.id] })
+        queryClient.invalidateQueries({ queryKey: ['files-quota', workspace.id] })
+      }
     },
     onError: (error: any) => {
       console.error('Cancel failed:', error)
@@ -243,6 +267,10 @@ export function PlanSettingsTab({ workspace }: PlanSettingsTabProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace', workspaceSlug] })
+      if (workspace?.id) {
+        queryClient.invalidateQueries({ queryKey: ['files', 'quota', workspace.id] })
+        queryClient.invalidateQueries({ queryKey: ['files-quota', workspace.id] })
+      }
     },
     onError: (error: any) => {
       console.error('Seats update failed:', error)

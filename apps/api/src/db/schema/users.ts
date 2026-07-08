@@ -55,6 +55,21 @@ export const users = pgTable(
     lastActiveAt: timestamp('last_active_at'),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 
+    // User-level preferences (e.g. dashboard layout, UI settings)
+    preferences: jsonb('preferences')
+      .$type<{
+        dashboard?: {
+          layout: Array<{
+            panelId: string
+            order: number
+            config?: Record<string, any>
+          }>
+        }
+        [key: string]: any
+      }>()
+      .default({})
+      .notNull(),
+
     // Internal flags used by platform operations
     internalFlags: jsonb('internal_flags')
       .$type<{

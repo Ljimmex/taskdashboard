@@ -8,6 +8,13 @@
       "when": 1783504572422,
       "tag": "0000_blue_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783505433431,
+      "tag": "0001_goofy_jack_murdock",
+      "breakpoints": true
     }
   ]
 }

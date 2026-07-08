@@ -145,7 +145,8 @@
     "feature_coming_soon": "Ta funkcja będzie dostępna wkrótce.",
     "previous": "Wstecz",
     "next": "Dalej",
-    "selectProject": "Wybierz projekt"
+    "selectProject": "Wybierz projekt",
+    "copy": "Kopia"
   },
   "resources": {
     "title": "Zasoby",
@@ -257,6 +258,20 @@
       "security": "Bezpieczeństwo",
       "plan": "Plan"
     },
+    "upcomingMeetings": "Nadchodzące spotkania",
+    "tasksDueToday": "Zadania na dziś",
+    "notifications": "Powiadomienia",
+    "noPanels": "Brak paneli do wyświetlenia",
+    "customize": "Dostosuj dashboard",
+    "doneEditing": "Gotowe",
+    "addPanel": "Dodaj panel",
+    "resetLayout": "Przywróć domyślny układ",
+    "allPanelsAdded": "Wszystkie dostępne panele są już dodane",
+    "removePanel": "Usuń panel",
+    "noMyTasks": "Brak przypisanych zadań",
+    "noTasksDueToday": "Brak zadań na dziś",
+    "noNotifications": "Brak powiadomień",
+    "noTeamMembers": "Brak członków zespołu",
     "timeTracker": "Śledzenie Czasu"
   },
   "notifications": {
@@ -557,6 +572,10 @@
     "progress": "Postęp"
   },
   "calendar": {
+    "duplicateConfirm": "Powielić to wydarzenie?",
+    "duplicateFailed": "Nie udało się powielić",
+    "archiveConfirm": "Zarchiwizować to wydarzenie?",
+    "deleteConfirm": "Usunąć to wydarzenie?",
     "scope": {
       "label": "Zakres",
       "team": "Zespoły",

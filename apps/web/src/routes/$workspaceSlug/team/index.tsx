@@ -301,6 +301,7 @@ export default function TeamPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['projects', workspaceSlug] })
       setInvitePanelState((prev) => ({ ...prev, isOpen: false }))
     },
   })
@@ -316,6 +317,7 @@ export default function TeamPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['projects', workspaceSlug] })
       setEditingSession(null)
     },
   })
@@ -332,6 +334,7 @@ export default function TeamPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['projects', workspaceSlug] })
       setEditingSession(null)
     },
   })

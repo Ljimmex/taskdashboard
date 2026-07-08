@@ -144,7 +144,8 @@
     "save_changes": "Save changes",
     "feature_coming_soon": "This feature is coming soon.",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "copy": "Copy"
   },
   "resources": {
     "title": "Resources",
@@ -256,6 +257,20 @@
       "security": "Security",
       "plan": "Plan"
     },
+    "upcomingMeetings": "Upcoming meetings",
+    "tasksDueToday": "Tasks due today",
+    "notifications": "Notifications",
+    "noPanels": "No panels to display",
+    "customize": "Customize dashboard",
+    "doneEditing": "Done",
+    "addPanel": "Add panel",
+    "resetLayout": "Reset default layout",
+    "allPanelsAdded": "All available panels are already added",
+    "removePanel": "Remove panel",
+    "noMyTasks": "No assigned tasks",
+    "noTasksDueToday": "No tasks due today",
+    "noNotifications": "No notifications",
+    "noTeamMembers": "No team members",
     "timeTracker": "Time Tracker"
   },
   "notifications": {
@@ -555,6 +570,10 @@
     "progress": "Progress"
   },
   "calendar": {
+    "duplicateConfirm": "Duplicate this event?",
+    "duplicateFailed": "Failed to duplicate",
+    "archiveConfirm": "Archive this event?",
+    "deleteConfirm": "Delete this event?",
     "scope": {
       "label": "Scope",
       "team": "Teams",

@@ -1,14 +1,19 @@
-import DOMPurify from 'isomorphic-dompurify'
+import sanitizeHtml from 'sanitize-html'
 
-const DOCUMENT_PURIFY_CONFIG = {
-  ADD_TAGS: ['iframe'],
-  ADD_ATTR: ['style', 'target', 'allow', 'allowfullscreen', 'frameborder', 'scrolling'],
-  ALLOW_DATA_ATTR: true,
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [...(sanitizeHtml.defaults.allowedTags || []), 'iframe'],
+  allowedAttributes: {
+    ...sanitizeHtml.defaults.allowedAttributes,
+    iframe: ['src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'scrolling'],
+    '*': ['style', 'class', 'id'],
+  },
+  allowedIframeHostnames: ['www.youtube.com', 'youtube.com', 'youtu.be'],
+  allowProtocolRelative: false,
 }
 
 function sanitizeValue(value: unknown): unknown {
   if (typeof value === 'string') {
-    return DOMPurify.sanitize(value, DOCUMENT_PURIFY_CONFIG)
+    return sanitizeHtml(value, SANITIZE_OPTIONS)
   }
   if (Array.isArray(value)) {
     return value.map(sanitizeValue)
