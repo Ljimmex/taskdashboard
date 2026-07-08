@@ -55,10 +55,12 @@ function DashboardHome() {
   }))
 
   // Fetch Projects
-  const { data: projectsRes, isLoading: isLoadingProjects } = useQuery({
+  const { data: projectsRes, isLoading: isLoadingProjects, error: projectsQueryError } = useQuery({
     queryKey: ['projects', workspaceSlug],
     queryFn: async () => {
-      return apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`)
+      const json = await apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`)
+      if (json?.success === false) throw new Error(json.error || 'Failed to fetch projects')
+      return json?.data || []
     }
   })
 
@@ -81,14 +83,14 @@ function DashboardHome() {
     enabled: !!workspaceSlug && !!session?.user?.id
   })
 
-  const projectsError = projectsRes && projectsRes.success === false ? projectsRes.error : null
+  const projectsError = projectsQueryError?.message || null
 
   // Filter and group projects
   // Backend already filters projects by user permissions; we just split them by status here.
   const { ongoingProjects, pendingProjects } = useMemo(() => {
-    if (!projectsRes?.data) return { ongoingProjects: [], pendingProjects: [] }
+    if (!projectsRes || !Array.isArray(projectsRes) || projectsRes.length === 0) return { ongoingProjects: [], pendingProjects: [] }
 
-    const allProjects = projectsRes.data
+    const allProjects = projectsRes
     const now = new Date()
 
     // A project is PENDING if:
@@ -117,7 +119,7 @@ function DashboardHome() {
   const currentProjectPage = Math.min(projectPage, totalProjectPages - 1)
   const visibleProjects = filteredProjects.slice(currentProjectPage * projectsPerPage, currentProjectPage * projectsPerPage + projectsPerPage)
 
-  const projects = projectsRes?.data || []
+  const projects = Array.isArray(projectsRes) ? projectsRes : []
 
   const events = useMemo(() => {
     const now = new Date()
@@ -388,7 +390,7 @@ function DashboardHome() {
                         onClick={() => { setProjectFilter('pending'); setProjectPage(0) }}
                         className="px-4 py-2 bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] border border-[var(--app-border)] rounded-lg text-sm font-medium hover:border-[var(--app-accent)] transition-colors"
                       >
-                        {t('dashboard.showPendingProjects', 'Pokaż projekty oczekujące')} ({pendingProjects.length})
+                        {t('dashboard.showPendingProjects')} ({pendingProjects.length})
                       </button>
                     )}
                     {projectFilter === 'pending' && ongoingProjects.length > 0 && (
@@ -396,7 +398,7 @@ function DashboardHome() {
                         onClick={() => { setProjectFilter('active'); setProjectPage(0) }}
                         className="px-4 py-2 bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] border border-[var(--app-border)] rounded-lg text-sm font-medium hover:border-[var(--app-accent)] transition-colors"
                       >
-                        {t('dashboard.showActiveProjects', 'Pokaż projekty aktywne')} ({ongoingProjects.length})
+                        {t('dashboard.showActiveProjects')} ({ongoingProjects.length})
                       </button>
                     )}
                   </div>

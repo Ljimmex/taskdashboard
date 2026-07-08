@@ -59,14 +59,17 @@ export function TimeTrackerPage() {
     const [projectsDropdownOpen, setProjectsDropdownOpen] = useState(false)
 
     // Fetch projects
-    type ProjectsResponse = { success: true; data: any[] } | { success: false; error: string }
     const { data: projectsData, isLoading: isLoadingProjects, error: projectsQueryError } = useQuery({
         queryKey: ['projects', workspaceSlug],
-        queryFn: () => apiFetchJson<ProjectsResponse>(`/api/projects?workspaceSlug=${workspaceSlug}`),
+        queryFn: async () => {
+            const json = await apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`)
+            if (json?.success === false) throw new Error(json.error || 'Failed to fetch projects')
+            return json?.data || []
+        },
         enabled: !!workspaceSlug,
     })
-    const projects = projectsData && projectsData.success === true ? projectsData.data : []
-    const projectsError = projectsData && projectsData.success === false ? projectsData.error : projectsQueryError?.message
+    const projects = Array.isArray(projectsData) ? projectsData : []
+    const projectsError = projectsQueryError?.message || null
 
     // Auto-select first project if only one exists or if none selected
     useEffect(() => {
