@@ -107,13 +107,13 @@ export function TeamMembersPanel({ workspaceSlug }: DashboardPanelProps) {
     <div className="flex h-full max-h-[480px] flex-col rounded-2xl bg-[var(--app-bg-card)] p-5">
       <div className="mb-3">
         <Select value={selectedTeamId} onValueChange={handleTeamChange}>
-          <SelectTrigger className="w-auto min-w-[180px] border-[var(--app-border)] bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] focus:ring-amber-500 focus:ring-offset-0">
+          <SelectTrigger className="w-auto min-w-[180px] border-[var(--app-border)] bg-[var(--app-bg-elevated)] !text-[var(--app-text-primary)] focus:ring-amber-500 focus:ring-offset-0">
             <SelectValue placeholder={t('dashboard.selectTeam')} />
           </SelectTrigger>
-          <SelectContent className="border-[var(--app-border)] bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)]">
+          <SelectContent className="border-[var(--app-border)] bg-[var(--app-bg-elevated)] !text-[var(--app-text-primary)]">
             <SelectItem
               value=""
-              className="focus:bg-[var(--app-bg-card)] focus:text-[var(--app-text-primary)]"
+              className="!text-[var(--app-text-primary)] focus:bg-[var(--app-bg-card)] focus:text-[var(--app-text-primary)]"
             >
               {t('dashboard.allMembers', 'Wszyscy członkowie')}
             </SelectItem>
@@ -121,7 +121,7 @@ export function TeamMembersPanel({ workspaceSlug }: DashboardPanelProps) {
               <SelectItem
                 key={team.id}
                 value={team.id}
-                className="focus:bg-[var(--app-bg-card)] focus:text-[var(--app-text-primary)]"
+                className="!text-[var(--app-text-primary)] focus:bg-[var(--app-bg-card)] focus:text-[var(--app-text-primary)]"
               >
                 <span className="flex items-center gap-2">
                   <span

@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useProjects } from '@/hooks/useProjects'
 import { useProjectTasks } from '@/hooks/useProjectTasks'
-import { FolderKanban, User } from 'lucide-react'
+import { FolderKanban } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -24,7 +24,9 @@ function MiniTaskCard({
   projectId: string
 }) {
   const navigate = useNavigate()
-  const assignee = (task as any).assigneeDetails?.[0]
+  const assignees = (task as any).assigneeDetails || []
+  const visibleAssignees = assignees.slice(0, 3)
+  const extraAssignees = assignees.length - visibleAssignees.length
 
   const priorityClass =
     task.priority === 'urgent' || task.priority === 'high'
@@ -46,16 +48,22 @@ function MiniTaskCard({
         <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium uppercase ${priorityClass}`}>
           {task.priority}
         </span>
-        {assignee ? (
-          <img
-            src={assignee.avatar || assignee.image}
-            alt={assignee.name}
-            className="h-5 w-5 rounded-full object-cover"
-            title={assignee.name}
-          />
-        ) : (
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--app-bg-elevated)]">
-            <User size={10} className="text-[var(--app-text-muted)]" />
+        {assignees.length > 0 && (
+          <div className="flex -space-x-1.5">
+            {visibleAssignees.map((assignee: any) => (
+              <img
+                key={assignee.id}
+                src={assignee.avatar || assignee.image}
+                alt={assignee.name}
+                className="h-5 w-5 rounded-full border-2 border-[var(--app-bg-card)] object-cover"
+                title={assignee.name}
+              />
+            ))}
+            {extraAssignees > 0 && (
+              <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-[var(--app-bg-card)] bg-[var(--app-bg-elevated)] text-[9px] font-medium text-[var(--app-text-muted)]">
+                +{extraAssignees}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -129,15 +137,15 @@ export function ProjectKanbanPanel({ workspaceSlug }: DashboardPanelProps) {
     <div className="flex h-full max-h-[480px] min-h-[280px] flex-col rounded-2xl bg-[var(--app-bg-card)] p-5">
       <div className="mb-3">
         <Select value={selectedProjectId} onValueChange={handleProjectChange}>
-          <SelectTrigger className="w-auto min-w-[180px] border-[var(--app-border)] bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] focus:ring-amber-500 focus:ring-offset-0">
+          <SelectTrigger className="w-auto min-w-[180px] border-[var(--app-border)] bg-[var(--app-bg-elevated)] !text-[var(--app-text-primary)] focus:ring-amber-500 focus:ring-offset-0">
             <SelectValue placeholder={t('dashboard.selectProject')} />
           </SelectTrigger>
-          <SelectContent className="border-[var(--app-border)] bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)]">
+          <SelectContent className="border-[var(--app-border)] bg-[var(--app-bg-elevated)] !text-[var(--app-text-primary)]">
             {projects.map((project) => (
               <SelectItem
                 key={project.id}
                 value={project.id}
-                className="focus:bg-[var(--app-bg-card)] focus:text-[var(--app-text-primary)]"
+                className="!text-[var(--app-text-primary)] focus:bg-[var(--app-bg-card)] focus:text-[var(--app-text-primary)]"
               >
                 <span className="flex items-center gap-2">
                   <span
@@ -181,7 +189,7 @@ export function ProjectKanbanPanel({ workspaceSlug }: DashboardPanelProps) {
                   {tasks.length}
                 </span>
               </div>
-              <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
+              <div className="custom-gantt-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
                 {tasks.length === 0 ? (
                   <p className="py-4 text-center text-[10px] text-[var(--app-text-muted)]">
                     {t('dashboard.noTasks', 'Brak zadań')}
