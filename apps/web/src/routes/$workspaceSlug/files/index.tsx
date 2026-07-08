@@ -11,219 +11,228 @@ import { useFiles } from '@/hooks/useFiles'
 
 // Map a mimeType string to our filter category
 function mimeToCategory(mimeType: string | undefined | null): string | null {
-    if (!mimeType) return null
-    if (mimeType.includes('pdf')) return 'pdf'
-    if (mimeType.includes('word') || mimeType.includes('document')) return 'document'
-    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'spreadsheet'
-    if (mimeType.startsWith('image/')) return 'image'
-    if (mimeType.startsWith('video/')) return 'video'
-    return null
+  if (!mimeType) return null
+  if (mimeType.includes('pdf')) return 'pdf'
+  if (mimeType.includes('word') || mimeType.includes('document')) return 'document'
+  if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return 'spreadsheet'
+  if (mimeType.startsWith('image/')) return 'image'
+  if (mimeType.startsWith('video/')) return 'video'
+  return null
 }
 
 export interface FilesSearch {
-    fileId?: string
+  fileId?: string
 }
 
 export const Route = createFileRoute('/$workspaceSlug/files/')({
-    component: FilesPage,
-    validateSearch: (search: Record<string, unknown>): FilesSearch => {
-        return {
-            fileId: search.fileId as string | undefined,
-        }
-    },
+  component: FilesPage,
+  validateSearch: (search: Record<string, unknown>): FilesSearch => {
+    return {
+      fileId: search.fileId as string | undefined,
+    }
+  },
 })
 
 function FilesPage() {
-    const { workspaceSlug } = useParams({ from: '/$workspaceSlug/files/' })
-    const search = Route.useSearch()
-    const { data: session } = useSession()
+  const { workspaceSlug } = useParams({ from: '/$workspaceSlug/files/' })
+  const search = Route.useSearch()
+  const { data: session } = useSession()
 
-    // Folder state
-    const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
+  // Folder state
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
 
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
-    // Fetch Workspace Details for role
-    const { data: workspaceData } = useQuery({
-        queryKey: ['workspace', workspaceSlug, session?.user?.id],
-        queryFn: async () => {
-            if (!workspaceSlug) return null
-            const json = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`, {
-                headers: {
-                    'x-user-id': session?.user?.id || ''
-                }
-            })
-            return json
+  // Fetch Workspace Details for role
+  const { data: workspaceData } = useQuery({
+    queryKey: ['workspace', workspaceSlug, session?.user?.id],
+    queryFn: async () => {
+      if (!workspaceSlug) return null
+      const json = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`, {
+        headers: {
+          'x-user-id': session?.user?.id || '',
         },
-        enabled: !!workspaceSlug && !!session?.user?.id
+      })
+      return json
+    },
+    enabled: !!workspaceSlug && !!session?.user?.id,
+  })
+
+  const userRole = workspaceData?.userRole
+
+  const [fileTypeFilter, setFileTypeFilter] = useState<string>('all')
+  const [startDate, setStartDate] = useState<Date | null>(null)
+  const [endDate, setEndDate] = useState<Date | null>(null)
+
+  const [sortBy, setSortBy] = useState<'name' | 'size' | 'date' | 'type'>('date')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
+  // Upload panel state
+  const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false)
+  const [droppedFiles, setDroppedFiles] = useState<File[]>([])
+  const [isDraggingOver, setIsDraggingOver] = useState(false)
+
+  // Fetch all files recursively to derive available categories
+  const { data: allFiles } = useFiles(workspaceSlug, null, true)
+  const availableTypes = useMemo(() => {
+    if (!allFiles || allFiles.length === 0) return []
+    const cats = new Set<string>()
+    allFiles.forEach((f: any) => {
+      const cat = mimeToCategory(f.mimeType)
+      if (cat) cats.add(cat)
     })
+    return Array.from(cats)
+  }, [allFiles])
 
-    const userRole = workspaceData?.userRole
+  const handleDateRangeChange = (start: Date | null, end: Date | null) => {
+    setStartDate(start)
+    setEndDate(end)
+  }
 
-    const [fileTypeFilter, setFileTypeFilter] = useState<string>('all')
-    const [startDate, setStartDate] = useState<Date | null>(null)
-    const [endDate, setEndDate] = useState<Date | null>(null)
+  const handleSortChange = (field: 'name' | 'size' | 'date' | 'type') => {
+    if (sortBy === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(field)
+      setSortOrder('desc')
+    }
+  }
 
-    const [sortBy, setSortBy] = useState<'name' | 'size' | 'date' | 'type'>('date')
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const handleOpenUploadPanel = () => {
+    setDroppedFiles([])
+    setIsUploadPanelOpen(true)
+  }
 
-    // Upload panel state
-    const [isUploadPanelOpen, setIsUploadPanelOpen] = useState(false)
-    const [droppedFiles, setDroppedFiles] = useState<File[]>([])
-    const [isDraggingOver, setIsDraggingOver] = useState(false)
+  const handleCloseUploadPanel = () => {
+    setIsUploadPanelOpen(false)
+    setDroppedFiles([])
+  }
 
-    // Fetch all files recursively to derive available categories
-    const { data: allFiles } = useFiles(workspaceSlug, null, true)
-    const availableTypes = useMemo(() => {
-        if (!allFiles || allFiles.length === 0) return []
-        const cats = new Set<string>()
-        allFiles.forEach((f: any) => {
-            const cat = mimeToCategory(f.mimeType)
-            if (cat) cats.add(cat)
-        })
-        return Array.from(cats)
-    }, [allFiles])
+  // Global drag-and-drop handlers for the page
+  const handlePageDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDraggingOver(true)
+    }
+  }, [])
 
-    const handleDateRangeChange = (start: Date | null, end: Date | null) => {
-        setStartDate(start)
-        setEndDate(end)
+  const handlePageDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.currentTarget === e.target) {
+      setIsDraggingOver(false)
+    }
+  }, [])
+
+  const handlePageDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingOver(false)
+
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length > 0) {
+      setDroppedFiles(files)
+      setIsUploadPanelOpen(true)
+    }
+  }, [])
+
+  // Listen for dragenter on window
+  useEffect(() => {
+    const handleWindowDragEnter = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes('Files')) {
+        setIsDraggingOver(true)
+      }
     }
 
-    const handleSortChange = (field: 'name' | 'size' | 'date' | 'type') => {
-        if (sortBy === field) {
-            setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
-        } else {
-            setSortBy(field)
-            setSortOrder('desc')
-        }
-    }
-
-    const handleOpenUploadPanel = () => {
-        setDroppedFiles([])
-        setIsUploadPanelOpen(true)
-    }
-
-    const handleCloseUploadPanel = () => {
-        setIsUploadPanelOpen(false)
-        setDroppedFiles([])
-    }
-
-    // Global drag-and-drop handlers for the page
-    const handlePageDragOver = useCallback((e: React.DragEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        if (e.dataTransfer.types.includes('Files')) {
-            setIsDraggingOver(true)
-        }
-    }, [])
-
-    const handlePageDragLeave = useCallback((e: React.DragEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        if (e.currentTarget === e.target) {
-            setIsDraggingOver(false)
-        }
-    }, [])
-
-    const handlePageDrop = useCallback((e: React.DragEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
+    const handleWindowDragLeave = (e: DragEvent) => {
+      if (e.relatedTarget === null) {
         setIsDraggingOver(false)
+      }
+    }
 
-        const files = Array.from(e.dataTransfer.files)
-        if (files.length > 0) {
-            setDroppedFiles(files)
-            setIsUploadPanelOpen(true)
-        }
-    }, [])
+    window.addEventListener('dragenter', handleWindowDragEnter)
+    window.addEventListener('dragleave', handleWindowDragLeave)
 
-    // Listen for dragenter on window
-    useEffect(() => {
-        const handleWindowDragEnter = (e: DragEvent) => {
-            if (e.dataTransfer?.types.includes('Files')) {
-                setIsDraggingOver(true)
-            }
-        }
+    return () => {
+      window.removeEventListener('dragenter', handleWindowDragEnter)
+      window.removeEventListener('dragleave', handleWindowDragLeave)
+    }
+  }, [])
 
-        const handleWindowDragLeave = (e: DragEvent) => {
-            if (e.relatedTarget === null) {
-                setIsDraggingOver(false)
-            }
-        }
-
-        window.addEventListener('dragenter', handleWindowDragEnter)
-        window.addEventListener('dragleave', handleWindowDragLeave)
-
-        return () => {
-            window.removeEventListener('dragenter', handleWindowDragEnter)
-            window.removeEventListener('dragleave', handleWindowDragLeave)
-        }
-    }, [])
-
-    return (
-        <div
-            className="flex flex-col h-[calc(100vh-64px)] -m-4 -mb-24 lg:-m-6 lg:-mb-6 relative overflow-hidden"
-            onDragOver={handlePageDragOver}
-            onDragLeave={handlePageDragLeave}
-            onDrop={handlePageDrop}
-        >
-            {/* Global Drop Overlay */}
-            {isDraggingOver && !isUploadPanelOpen && (
-                <div className="absolute inset-0 z-30 bg-amber-500/5 border-2 border-dashed border-amber-500 rounded-xl flex items-center justify-center pointer-events-none">
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
-                            <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                            </svg>
-                        </div>
-                        <p className="text-lg font-medium text-amber-500">Drop files to upload</p>
-                    </div>
-                </div>
-            )}
-
-            {/* Header */}
-            <FilesHeader
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                fileTypeFilter={fileTypeFilter}
-                onFileTypeFilterChange={setFileTypeFilter}
-                availableTypes={availableTypes}
-                startDate={startDate}
-                endDate={endDate}
-                onDateRangeChange={handleDateRangeChange}
-                onUploadClick={handleOpenUploadPanel}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                onSortChange={handleSortChange}
-            />
-
-            {/* Content */}
-            <div className="flex-1 overflow-auto px-6 py-2">
-                <FileExplorer
-                    viewMode={viewMode}
-                    fileTypeFilter={fileTypeFilter}
-                    startDate={startDate}
-                    endDate={endDate}
-                    sortBy={sortBy}
-                    sortOrder={sortOrder}
-                    onSort={handleSortChange}
-                    userRole={userRole}
-                    highlightFileId={search.fileId}
-                    onFolderChange={setCurrentFolderId}
+  return (
+    <div
+      className="relative -m-4 -mb-24 flex h-[calc(100vh-64px)] flex-col overflow-hidden lg:-m-6 lg:-mb-6"
+      onDragOver={handlePageDragOver}
+      onDragLeave={handlePageDragLeave}
+      onDrop={handlePageDrop}
+    >
+      {/* Global Drop Overlay */}
+      {isDraggingOver && !isUploadPanelOpen && (
+        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-xl border-2 border-dashed border-amber-500 bg-amber-500/5">
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/20">
+              <svg
+                className="h-8 w-8 text-amber-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                 />
+              </svg>
             </div>
-
-            {/* Upload Panel */}
-            <FileUploadPanel
-                isOpen={isUploadPanelOpen}
-                onClose={handleCloseUploadPanel}
-                folderId={currentFolderId}
-                initialFiles={droppedFiles}
-                onUploadComplete={() => {
-                    console.log('Upload complete')
-                }}
-            />
+            <p className="text-lg font-medium text-amber-500">Drop files to upload</p>
+          </div>
         </div>
-    )
-}
+      )}
 
+      {/* Header */}
+      <FilesHeader
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        fileTypeFilter={fileTypeFilter}
+        onFileTypeFilterChange={setFileTypeFilter}
+        availableTypes={availableTypes}
+        startDate={startDate}
+        endDate={endDate}
+        onDateRangeChange={handleDateRangeChange}
+        onUploadClick={handleOpenUploadPanel}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={handleSortChange}
+      />
+
+      {/* Content */}
+      <div className="flex-1 overflow-auto px-6 py-2">
+        <FileExplorer
+          viewMode={viewMode}
+          fileTypeFilter={fileTypeFilter}
+          startDate={startDate}
+          endDate={endDate}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSortChange}
+          userRole={userRole}
+          highlightFileId={search.fileId}
+          onFolderChange={setCurrentFolderId}
+        />
+      </div>
+
+      {/* Upload Panel */}
+      <FileUploadPanel
+        isOpen={isUploadPanelOpen}
+        onClose={handleCloseUploadPanel}
+        folderId={currentFolderId}
+        initialFiles={droppedFiles}
+        onUploadComplete={() => {
+          console.log('Upload complete')
+        }}
+      />
+    </div>
+  )
+}

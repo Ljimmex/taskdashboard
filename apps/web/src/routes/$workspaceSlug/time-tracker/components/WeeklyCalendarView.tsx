@@ -1,14 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import {
-  format,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  isSameDay,
-  parseISO,
-} from 'date-fns'
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO } from 'date-fns'
 import { enUS, pl } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Clock, ArrowDown, ArrowUp } from 'lucide-react'
 import { apiFetchJson } from '@/lib/api'
@@ -53,7 +46,10 @@ const ENTRY_COLORS = {
   },
 }
 
-function getEntryColor(entryType?: 'task' | 'meeting', approvalStatus?: 'pending' | 'approved' | 'rejected') {
+function getEntryColor(
+  entryType?: 'task' | 'meeting',
+  approvalStatus?: 'pending' | 'approved' | 'rejected'
+) {
   const isApproved = approvalStatus === 'approved'
   if (entryType === 'meeting') {
     return isApproved ? ENTRY_COLORS.approvedMeeting : ENTRY_COLORS.pendingMeeting
@@ -97,7 +93,8 @@ function splitEntryIntoDays(entry: TimeEntryRaw, days: Date[]): EntryFragment[] 
         end: fragmentEnd,
         durationMinutes: duration,
         continuesToNextDay: fragmentEnd.getTime() === dayEnd.getTime() && entryEnd > dayEnd,
-        continuedFromPrevDay: fragmentStart.getTime() === dayStart.getTime() && entryStart < dayStart,
+        continuedFromPrevDay:
+          fragmentStart.getTime() === dayStart.getTime() && entryStart < dayStart,
       })
     }
   })
@@ -110,14 +107,8 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
   const locale = i18n.language === 'pl' ? pl : enUS
   const [currentDate, setCurrentDate] = useState(new Date())
 
-  const weekStart = useMemo(
-    () => startOfWeek(currentDate, { weekStartsOn: 1 }),
-    [currentDate]
-  )
-  const weekEnd = useMemo(
-    () => endOfWeek(currentDate, { weekStartsOn: 1 }),
-    [currentDate]
-  )
+  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate])
+  const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate])
   const days = useMemo(
     () => eachDayOfInterval({ start: weekStart, end: weekEnd }),
     [weekStart, weekEnd]
@@ -175,14 +166,14 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
   const isCurrentWeek = isSameDay(weekStart, startOfWeek(new Date(), { weekStartsOn: 1 }))
 
   return (
-    <div className="flex flex-col h-full bg-[var(--app-bg-card)] rounded-2xl border border-[var(--app-border)] shadow-sm overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-bg-card)] shadow-sm">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 border-b border-[var(--app-border)] bg-[var(--app-bg-card)]">
+      <div className="flex flex-col justify-between gap-4 border-b border-[var(--app-border)] bg-[var(--app-bg-card)] px-5 py-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-[var(--app-bg-elevated)] rounded-full border border-[var(--app-border)] p-1">
+          <div className="flex items-center rounded-full border border-[var(--app-border)] bg-[var(--app-bg-elevated)] p-1">
             <button
               onClick={handlePrev}
-              className="p-1.5 rounded-full text-[var(--app-text-muted)] hover:bg-[var(--app-bg-deepest)] hover:text-[var(--app-text-primary)] transition-colors"
+              className="rounded-full p-1.5 text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-bg-deepest)] hover:text-[var(--app-text-primary)]"
               aria-label={t('common.previous', 'Previous')}
             >
               <ChevronLeft size={18} />
@@ -190,7 +181,7 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
             <button
               onClick={goToToday}
               className={cn(
-                'px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full transition-colors',
+                'rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors',
                 isCurrentWeek
                   ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)]'
                   : 'text-[var(--app-text-muted)] hover:bg-[var(--app-bg-deepest)] hover:text-[var(--app-text-primary)]'
@@ -200,7 +191,7 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
             </button>
             <button
               onClick={handleNext}
-              className="p-1.5 rounded-full text-[var(--app-text-muted)] hover:bg-[var(--app-bg-deepest)] hover:text-[var(--app-text-primary)] transition-colors"
+              className="rounded-full p-1.5 text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-bg-deepest)] hover:text-[var(--app-text-primary)]"
               aria-label={t('common.next', 'Next')}
             >
               <ChevronRight size={18} />
@@ -209,43 +200,45 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
 
           <div className="flex flex-col">
             <span className="text-sm font-bold text-[var(--app-text-primary)]">
-              {format(weekStart, 'MMM d', { locale })} – {format(weekEnd, 'MMM d, yyyy', { locale })}
+              {format(weekStart, 'MMM d', { locale })} –{' '}
+              {format(weekEnd, 'MMM d, yyyy', { locale })}
             </span>
             <span className="text-[10px] uppercase tracking-wider text-[var(--app-text-muted)]">
-              {entries.length} {entries.length === 1 ? t('timeTracker.worklog', 'worklog') : t('timeTracker.worklogs', 'worklogs')}
+              {entries.length}{' '}
+              {entries.length === 1
+                ? t('timeTracker.worklog', 'worklog')
+                : t('timeTracker.worklogs', 'worklogs')}
             </span>
           </div>
         </div>
-
-
       </div>
 
       {/* Calendar */}
       <div
-        className="flex-1 overflow-auto weekly-calendar-scroll"
+        className="weekly-calendar-scroll flex-1 overflow-auto"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <style>{`.weekly-calendar-scroll::-webkit-scrollbar { display: none; }`}</style>
         <div className="min-w-[720px]">
           {/* Day headers */}
           <div
-            className="grid border-b border-[var(--app-border)] sticky top-0 z-10 bg-[var(--app-bg-card)]"
+            className="sticky top-0 z-10 grid border-b border-[var(--app-border)] bg-[var(--app-bg-card)]"
             style={{ gridTemplateColumns: '48px repeat(7, 1fr)' }}
           >
-            <div className="py-3 border-r border-[var(--app-border)]" />
+            <div className="border-r border-[var(--app-border)] py-3" />
             {days.map((day, idx) => {
               const isToday = isSameDay(day, new Date())
               return (
                 <div
                   key={idx}
                   className={cn(
-                    'py-3 text-center border-r border-[var(--app-border)] last:border-r-0',
+                    'border-r border-[var(--app-border)] py-3 text-center last:border-r-0',
                     isToday && 'bg-[var(--app-accent)]/5'
                   )}
                 >
                   <span
                     className={cn(
-                      'text-[10px] font-bold uppercase tracking-wider block',
+                      'block text-[10px] font-bold uppercase tracking-wider',
                       isToday ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'
                     )}
                   >
@@ -253,7 +246,7 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
                   </span>
                   <span
                     className={cn(
-                      'text-sm font-bold mt-0.5 inline-flex items-center justify-center w-7 h-7 rounded-full',
+                      'mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold',
                       isToday
                         ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)]'
                         : 'text-[var(--app-text-primary)]'
@@ -268,17 +261,20 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
 
           {/* Time grid */}
           <div
-            className="grid relative"
-            style={{ gridTemplateColumns: '48px repeat(7, 1fr)', height: VISIBLE_HOURS * HOUR_HEIGHT }}
+            className="relative grid"
+            style={{
+              gridTemplateColumns: '48px repeat(7, 1fr)',
+              height: VISIBLE_HOURS * HOUR_HEIGHT,
+            }}
           >
             {/* Hour labels */}
-            <div className="border-r border-[var(--app-border)] relative bg-[var(--app-bg-deepest)]/20">
+            <div className="bg-[var(--app-bg-deepest)]/20 relative border-r border-[var(--app-border)]">
               {Array.from({ length: VISIBLE_HOURS + 1 }).map((_, idx) => {
                 const hour = START_HOUR + idx
                 return (
                   <div
                     key={hour}
-                    className="absolute left-0 right-0 flex items-start justify-end pr-1 -mt-2"
+                    className="absolute left-0 right-0 -mt-2 flex items-start justify-end pr-1"
                     style={{ top: idx * HOUR_HEIGHT }}
                   >
                     <span className="text-[10px] font-medium text-[var(--app-text-muted)]">
@@ -304,7 +300,13 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
                 >
                   {/* Entries */}
                   {dayEntries.map((fragment, fragmentIdx) => {
-                    const { entry, start, durationMinutes, continuesToNextDay, continuedFromPrevDay } = fragment
+                    const {
+                      entry,
+                      start,
+                      durationMinutes,
+                      continuesToNextDay,
+                      continuedFromPrevDay,
+                    } = fragment
                     const startHour = start.getHours()
                     const startMinute = start.getMinutes()
 
@@ -323,14 +325,21 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
                     const palette = getEntryColor(entry.entryType, entry.approvalStatus)
 
                     const fullDurationMinutes = entry.endedAt
-                      ? Math.max(0, Math.round((parseISO(entry.endedAt).getTime() - parseISO(entry.startedAt).getTime()) / 60000))
+                      ? Math.max(
+                          0,
+                          Math.round(
+                            (parseISO(entry.endedAt).getTime() -
+                              parseISO(entry.startedAt).getTime()) /
+                              60000
+                          )
+                        )
                       : durationMinutes
 
                     return (
                       <div
                         key={`${entry.id}-${fragmentIdx}`}
                         className={cn(
-                          'absolute left-1 right-1 px-2 py-1 border-l-4 text-xs cursor-pointer overflow-hidden shadow-sm hover:z-10 hover:shadow-md transition-all',
+                          'absolute left-1 right-1 cursor-pointer overflow-hidden border-l-4 px-2 py-1 text-xs shadow-sm transition-all hover:z-10 hover:shadow-md',
                           'flex flex-col',
                           continuedFromPrevDay ? 'rounded-t-none' : 'rounded-t-md',
                           continuesToNextDay ? 'rounded-b-none' : 'rounded-b-md',
@@ -346,19 +355,21 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
                         title={`${entry.taskTitle}${entry.description ? ` – ${entry.description}` : ''}`}
                       >
                         {continuedFromPrevDay ? (
-                          <div className="flex-1 flex items-center justify-center">
+                          <div className="flex flex-1 items-center justify-center">
                             <ArrowUp size={12} className="opacity-80" />
                           </div>
                         ) : (
                           <>
-                            <div className="font-semibold truncate leading-tight">
+                            <div className="truncate font-semibold leading-tight">
                               {entry.taskTitle}
                             </div>
-                            <div className="text-[10px] opacity-90 truncate">
-                              {formatMinutes(continuesToNextDay ? fullDurationMinutes : durationMinutes)}
+                            <div className="truncate text-[10px] opacity-90">
+                              {formatMinutes(
+                                continuesToNextDay ? fullDurationMinutes : durationMinutes
+                              )}
                             </div>
                             {entry.description && height >= 52 && (
-                              <div className="text-[10px] opacity-75 truncate mt-0.5 leading-tight">
+                              <div className="mt-0.5 truncate text-[10px] leading-tight opacity-75">
                                 {entry.description}
                               </div>
                             )}
@@ -386,7 +397,7 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
         </div>
       )}
       {!isLoading && entries.length === 0 && (
-        <div className="px-5 py-8 text-center border-t border-[var(--app-border)]">
+        <div className="border-t border-[var(--app-border)] px-5 py-8 text-center">
           <p className="text-sm text-[var(--app-text-muted)]">
             {t('timeTracker.noTimeEntriesThisWeek', 'No time entries this week.')}
           </p>
@@ -394,12 +405,12 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
       )}
 
       {/* Footer summary */}
-      <div className="px-5 py-4 border-t border-[var(--app-border)] bg-[var(--app-bg-deepest)]/30">
+      <div className="bg-[var(--app-bg-deepest)]/30 border-t border-[var(--app-border)] px-5 py-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Clock size={18} className="text-[var(--app-accent)]" />
             <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-[var(--app-text-muted)]">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
                 {t('timeTracker.totalThisWeek', 'Total this week')}
               </p>
               <p className="text-lg font-bold text-[var(--app-text-primary)]">
@@ -408,21 +419,21 @@ export function WeeklyCalendarView({ workspaceSlug, userId }: WeeklyCalendarView
             </div>
           </div>
 
-          <div className="flex items-center gap-3 text-[10px] text-[var(--app-text-muted)] uppercase tracking-wider">
+          <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider text-[var(--app-text-muted)]">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="h-2 w-2 rounded-full bg-amber-500" />
               {t('timeTracker.pendingTask', 'Pending Task')}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
               {t('timeTracker.approvedTask', 'Accepted Task')}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-purple-500" />
+              <span className="h-2 w-2 rounded-full bg-purple-500" />
               {t('timeTracker.pendingMeeting', 'Pending Meeting')}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="h-2 w-2 rounded-full bg-blue-500" />
               {t('timeTracker.approvedMeeting', 'Accepted Meeting')}
             </span>
           </div>

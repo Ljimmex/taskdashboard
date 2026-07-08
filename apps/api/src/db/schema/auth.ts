@@ -8,7 +8,9 @@ import { sql } from 'drizzle-orm'
 /**
  * Sessions table - stores active user sessions
  */
-export const sessions = pgTable('sessions', {
+export const sessions = pgTable(
+  'sessions',
+  {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
     token: text('token').notNull().unique(),
@@ -17,21 +19,25 @@ export const sessions = pgTable('sessions', {
     userAgent: text('user_agent'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Users can view own sessions", {
-        for: "select",
-        using: sql`user_id = auth.uid()::text`,
+  },
+  (_table) => [
+    pgPolicy('Users can view own sessions', {
+      for: 'select',
+      using: sql`user_id = auth.uid()::text`,
     }),
-    pgPolicy("Users can delete own sessions", {
-        for: "delete",
-        using: sql`user_id = auth.uid()::text`,
+    pgPolicy('Users can delete own sessions', {
+      for: 'delete',
+      using: sql`user_id = auth.uid()::text`,
     }),
-])
+  ]
+)
 
 /**
  * Accounts table - stores OAuth provider connections
  */
-export const accounts = pgTable('accounts', {
+export const accounts = pgTable(
+  'accounts',
+  {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
     accountId: text('account_id').notNull(),
@@ -45,61 +51,75 @@ export const accounts = pgTable('accounts', {
     password: text('password'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Users can view own accounts", {
-        for: "select",
-        using: sql`user_id = auth.uid()::text`,
+  },
+  (_table) => [
+    pgPolicy('Users can view own accounts', {
+      for: 'select',
+      using: sql`user_id = auth.uid()::text`,
     }),
-    pgPolicy("Users can delete own accounts", {
-        for: "delete",
-        using: sql`user_id = auth.uid()::text`,
+    pgPolicy('Users can delete own accounts', {
+      for: 'delete',
+      using: sql`user_id = auth.uid()::text`,
     }),
-])
+  ]
+)
 
 /**
  * Verifications table - email verification, password reset tokens
  */
-export const verifications = pgTable('verifications', {
+export const verifications = pgTable(
+  'verifications',
+  {
     id: text('id').primaryKey(),
     identifier: text('identifier').notNull(),
     value: text('value').notNull(),
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Backend can manage verifications", {
-        for: "all",
-        using: sql`true`,
+  },
+  (_table) => [
+    pgPolicy('Backend can manage verifications', {
+      for: 'all',
+      using: sql`true`,
     }),
-])
+  ]
+)
 
-export const twoFactors = pgTable('two_factors', {
+export const twoFactors = pgTable(
+  'two_factors',
+  {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
     secret: text('secret').notNull(),
     backupCodes: text('backup_codes').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Backend can manage two factor", {
-        for: "all",
-        using: sql`true`,
+  },
+  (_table) => [
+    pgPolicy('Backend can manage two factor', {
+      for: 'all',
+      using: sql`true`,
     }),
-])
+  ]
+)
 
-export const twoFactorTrust = pgTable('two_factor_trust', {
+export const twoFactorTrust = pgTable(
+  'two_factor_trust',
+  {
     id: text('id').primaryKey(),
     userId: text('user_id').notNull(),
     deviceId: text('device_id').notNull(),
     metadata: text('metadata'),
     expiresAt: timestamp('expires_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Backend can manage trusted devices", {
-        for: "all",
-        using: sql`true`,
+  },
+  (_table) => [
+    pgPolicy('Backend can manage trusted devices', {
+      for: 'all',
+      using: sql`true`,
     }),
-])
+  ]
+)
 
 // =============================================================================
 // TYPES

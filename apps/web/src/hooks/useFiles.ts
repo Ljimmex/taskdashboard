@@ -5,290 +5,344 @@ import { apiFetch, apiFetchJson } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 
 async function getWorkspaceId(workspaceSlug: string): Promise<string> {
-    const data = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
-    return data.id
+  const data = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+  return data.id
 }
 
 // Fetch files from API (with optional recursive fetch from all folders)
-const fetchFiles = async (workspaceSlug: string, folderId: string | null, recursive = false): Promise<FileRecord[]> => {
-    const workspaceId = await getWorkspaceId(workspaceSlug)
-    const params = new URLSearchParams()
-    params.append('workspaceId', workspaceId)
+const fetchFiles = async (
+  workspaceSlug: string,
+  folderId: string | null,
+  recursive = false
+): Promise<FileRecord[]> => {
+  const workspaceId = await getWorkspaceId(workspaceSlug)
+  const params = new URLSearchParams()
+  params.append('workspaceId', workspaceId)
 
-    if (recursive) {
-        params.append('recursive', 'true')
-    } else {
-        const folderParam = folderId || 'root'
-        params.append('folderId', folderParam)
-    }
+  if (recursive) {
+    params.append('recursive', 'true')
+  } else {
+    const folderParam = folderId || 'root'
+    params.append('folderId', folderParam)
+  }
 
-    const data = await apiFetchJson<any>(`/api/files?${params}`)
-    return data.data || []
+  const data = await apiFetchJson<any>(`/api/files?${params}`)
+  return data.data || []
 }
 
 // Fetch folders from API
 const fetchFolders = async (workspaceSlug: string, parentId: string | null): Promise<Folder[]> => {
-    const workspaceId = await getWorkspaceId(workspaceSlug)
-    const parentParam = parentId ? `&parentId=${parentId}` : '&parentId=root'
-    const data = await apiFetchJson<any>(`/api/folders?workspaceId=${workspaceId}${parentParam}`)
-    return data.data || []
+  const workspaceId = await getWorkspaceId(workspaceSlug)
+  const parentParam = parentId ? `&parentId=${parentId}` : '&parentId=root'
+  const data = await apiFetchJson<any>(`/api/folders?workspaceId=${workspaceId}${parentParam}`)
+  return data.data || []
 }
 
 export function useFiles(workspaceSlug: string, folderId: string | null = null, recursive = false) {
-    const queryClient = useQueryClient()
-    const queryKey = ['files', workspaceSlug, folderId, recursive]
+  const queryClient = useQueryClient()
+  const queryKey = ['files', workspaceSlug, folderId, recursive]
 
-    const query = useQuery({
-        queryKey,
-        queryFn: () => fetchFiles(workspaceSlug, folderId, recursive),
-        staleTime: 30000,
-    })
+  const query = useQuery({
+    queryKey,
+    queryFn: () => fetchFiles(workspaceSlug, folderId, recursive),
+    staleTime: 30000,
+  })
 
-    // Realtime subscription for file changes
-    useEffect(() => {
-        if (!workspaceSlug) return
+  // Realtime subscription for file changes
+  useEffect(() => {
+    if (!workspaceSlug) return
 
-        const channel = supabase
-            .channel(`files-${workspaceSlug}-${folderId || 'root'}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'files'
-                },
-                (payload) => {
-                    console.log('File change detected:', payload)
-                    // Invalidate query to refetch
-                    queryClient.invalidateQueries({ queryKey })
-                }
-            )
-            .subscribe()
-
-        return () => {
-            supabase.removeChannel(channel)
+    const channel = supabase
+      .channel(`files-${workspaceSlug}-${folderId || 'root'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'files',
+        },
+        (payload) => {
+          console.log('File change detected:', payload)
+          // Invalidate query to refetch
+          queryClient.invalidateQueries({ queryKey })
         }
-    }, [workspaceSlug, folderId, queryClient])
+      )
+      .subscribe()
 
-    return query
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [workspaceSlug, folderId, queryClient])
+
+  return query
 }
 
 export function useFolders(workspaceSlug: string, parentId: string | null = null) {
-    const queryClient = useQueryClient()
-    const queryKey = ['folders', workspaceSlug, parentId]
+  const queryClient = useQueryClient()
+  const queryKey = ['folders', workspaceSlug, parentId]
 
-    const query = useQuery({
-        queryKey,
-        queryFn: () => fetchFolders(workspaceSlug, parentId),
-        staleTime: 30000,
-    })
+  const query = useQuery({
+    queryKey,
+    queryFn: () => fetchFolders(workspaceSlug, parentId),
+    staleTime: 30000,
+  })
 
-    // Realtime subscription for folder changes  
-    useEffect(() => {
-        if (!workspaceSlug) return
+  // Realtime subscription for folder changes
+  useEffect(() => {
+    if (!workspaceSlug) return
 
-        const channel = supabase
-            .channel(`folders-${workspaceSlug}-${parentId || 'root'}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'folders'
-                },
-                (payload) => {
-                    console.log('Folder change detected:', payload)
-                    // Invalidate query to refetch
-                    queryClient.invalidateQueries({ queryKey })
-                }
-            )
-            .subscribe()
-
-        return () => {
-            supabase.removeChannel(channel)
+    const channel = supabase
+      .channel(`folders-${workspaceSlug}-${parentId || 'root'}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'folders',
+        },
+        (payload) => {
+          console.log('Folder change detected:', payload)
+          // Invalidate query to refetch
+          queryClient.invalidateQueries({ queryKey })
         }
-    }, [workspaceSlug, parentId, queryClient])
+      )
+      .subscribe()
 
-    return query
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [workspaceSlug, parentId, queryClient])
+
+  return query
 }
 
 export function useCreateFolder() {
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: async ({ workspaceSlug, name, parentId }: { workspaceSlug: string, name: string, parentId: string | null }) => {
-            const workspaceId = await getWorkspaceId(workspaceSlug)
-            const data = await apiFetchJson<any>('/api/folders', {
-                method: 'POST',
-                body: JSON.stringify({ name, parentId, workspaceId })
-            })
-            return data
-        },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug, variables.parentId] })
-        }
-    })
+  return useMutation({
+    mutationFn: async ({
+      workspaceSlug,
+      name,
+      parentId,
+    }: {
+      workspaceSlug: string
+      name: string
+      parentId: string | null
+    }) => {
+      const workspaceId = await getWorkspaceId(workspaceSlug)
+      const data = await apiFetchJson<any>('/api/folders', {
+        method: 'POST',
+        body: JSON.stringify({ name, parentId, workspaceId }),
+      })
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['folders', variables.workspaceSlug, variables.parentId],
+      })
+    },
+  })
 }
 
 export function useUploadFile() {
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: async ({
-            workspaceSlug,
-            file,
-            folderId,
-            onProgress
-        }: {
-            workspaceSlug: string
-            file: File
-            folderId: string | null
-            onProgress?: (progress: number) => void
-        }) => {
-            // 1. Get workspace ID
-            const workspaceId = await getWorkspaceId(workspaceSlug)
+  return useMutation({
+    mutationFn: async ({
+      workspaceSlug,
+      file,
+      folderId,
+      onProgress,
+    }: {
+      workspaceSlug: string
+      file: File
+      folderId: string | null
+      onProgress?: (progress: number) => void
+    }) => {
+      // 1. Get workspace ID
+      const workspaceId = await getWorkspaceId(workspaceSlug)
 
-            onProgress?.(10)
+      onProgress?.(10)
 
-            // 2. Get presigned URL from API
-            const uploadRes = await apiFetch('/api/files/upload', {
-                method: 'POST',
-                body: JSON.stringify({
-                    name: file.name,
-                    size: file.size,
-                    mimeType: file.type || 'application/octet-stream',
-                    folderId: folderId || undefined,
-                    workspaceId
-                })
-            })
+      // 2. Get presigned URL from API
+      const uploadRes = await apiFetch('/api/files/upload', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: file.name,
+          size: file.size,
+          mimeType: file.type || 'application/octet-stream',
+          folderId: folderId || undefined,
+          workspaceId,
+        }),
+      })
 
-            if (!uploadRes.ok) {
-                const error = await uploadRes.text()
-                throw new Error(`Failed to get upload URL: ${error}`)
-            }
+      if (!uploadRes.ok) {
+        const error = await uploadRes.text()
+        throw new Error(`Failed to get upload URL: ${error}`)
+      }
 
-            const { uploadUrl, file: fileRecord } = await uploadRes.json()
+      const { uploadUrl, file: fileRecord } = await uploadRes.json()
 
-            onProgress?.(30)
+      onProgress?.(30)
 
-            // 3. Upload file to R2 using presigned URL
-            const finalUploadUrl = uploadUrl.startsWith('http') ? uploadUrl : `https://${uploadUrl}`
+      // 3. Upload file to R2 using presigned URL
+      const finalUploadUrl = uploadUrl.startsWith('http') ? uploadUrl : `https://${uploadUrl}`
 
-            try {
-                const uploadToR2 = await fetch(finalUploadUrl, {
-                    method: 'PUT',
-                    body: file,
-                    headers: {
-                        'Content-Type': file.type || 'application/octet-stream',
-                    }
-                })
+      try {
+        const uploadToR2 = await fetch(finalUploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type || 'application/octet-stream',
+          },
+        })
 
-                if (!uploadToR2.ok) {
-                    const status = uploadToR2.status
-                    const text = await uploadToR2.text().catch(() => 'No error body')
-                    console.error('R2 Upload failed:', { status, text })
-                    throw new Error(`Storage upload failed (${status}): ${text}`)
-                }
-            } catch (err: any) {
-                const urlObj = new URL(finalUploadUrl);
-                const baseUrl = `${urlObj.origin}${urlObj.pathname}`;
-                console.error('Direct upload fetch failed:', {
-                    error: err,
-                    target: baseUrl,
-                    method: 'PUT'
-                })
-                if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
-                    throw new Error(`Upload failed: Network or CORS error when connecting to ${urlObj.host}. Please ensure Cloudflare R2 CORS allows PUT from this domain.`)
-                }
-                throw err
-            }
-
-            onProgress?.(100)
-
-            return fileRecord
-        },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug, variables.folderId] })
-            queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug, null] })
+        if (!uploadToR2.ok) {
+          const status = uploadToR2.status
+          const text = await uploadToR2.text().catch(() => 'No error body')
+          console.error('R2 Upload failed:', { status, text })
+          throw new Error(`Storage upload failed (${status}): ${text}`)
         }
-    })
+      } catch (err: any) {
+        const urlObj = new URL(finalUploadUrl)
+        const baseUrl = `${urlObj.origin}${urlObj.pathname}`
+        console.error('Direct upload fetch failed:', {
+          error: err,
+          target: baseUrl,
+          method: 'PUT',
+        })
+        if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+          throw new Error(
+            `Upload failed: Network or CORS error when connecting to ${urlObj.host}. Please ensure Cloudflare R2 CORS allows PUT from this domain.`
+          )
+        }
+        throw err
+      }
+
+      onProgress?.(100)
+
+      return fileRecord
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['files', variables.workspaceSlug, variables.folderId],
+      })
+      queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug, null] })
+    },
+  })
 }
 
 export function useDeleteFile() {
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: async ({ fileId, workspaceSlug: _workspaceSlug }: { fileId: string, workspaceSlug: string }) => {
-            const data = await apiFetchJson<any>(`/api/files/${fileId}`, { method: 'DELETE' })
-            return data
-        },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
-        }
-    })
+  return useMutation({
+    mutationFn: async ({
+      fileId,
+      workspaceSlug: _workspaceSlug,
+    }: {
+      fileId: string
+      workspaceSlug: string
+    }) => {
+      const data = await apiFetchJson<any>(`/api/files/${fileId}`, { method: 'DELETE' })
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
+    },
+  })
 }
 
 export function useRenameFile() {
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: async ({ fileId, name, workspaceSlug: _workspaceSlug }: { fileId: string, name: string, workspaceSlug: string }) => {
-            const data = await apiFetchJson<any>(`/api/files/${fileId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ name })
-            })
-            return data
-        },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
-        }
-    })
+  return useMutation({
+    mutationFn: async ({
+      fileId,
+      name,
+      workspaceSlug: _workspaceSlug,
+    }: {
+      fileId: string
+      name: string
+      workspaceSlug: string
+    }) => {
+      const data = await apiFetchJson<any>(`/api/files/${fileId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      })
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
+    },
+  })
 }
 
 export function useMoveFile() {
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: async ({ fileId, folderId, workspaceSlug: _workspaceSlug }: { fileId: string, folderId: string | null, workspaceSlug: string }) => {
-            const data = await apiFetchJson<any>(`/api/files/${fileId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ folderId })
-            })
-            return data
-        },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
-        }
-    })
+  return useMutation({
+    mutationFn: async ({
+      fileId,
+      folderId,
+      workspaceSlug: _workspaceSlug,
+    }: {
+      fileId: string
+      folderId: string | null
+      workspaceSlug: string
+    }) => {
+      const data = await apiFetchJson<any>(`/api/files/${fileId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ folderId }),
+      })
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['files', variables.workspaceSlug] })
+    },
+  })
 }
 
 export function useRenameFolder() {
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: async ({ folderId, name, workspaceSlug: _workspaceSlug }: { folderId: string, name: string, workspaceSlug: string }) => {
-            const data = await apiFetchJson<any>(`/api/folders/${folderId}`, {
-                method: 'PATCH',
-                body: JSON.stringify({ name })
-            })
-            return data
-        },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug] })
-        }
-    })
+  return useMutation({
+    mutationFn: async ({
+      folderId,
+      name,
+      workspaceSlug: _workspaceSlug,
+    }: {
+      folderId: string
+      name: string
+      workspaceSlug: string
+    }) => {
+      const data = await apiFetchJson<any>(`/api/folders/${folderId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      })
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug] })
+    },
+  })
 }
 
 export function useDeleteFolder() {
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: async ({ folderId, workspaceSlug: _workspaceSlug }: { folderId: string, workspaceSlug: string }) => {
-            const data = await apiFetchJson<any>(`/api/folders/${folderId}`, { method: 'DELETE' })
-            return data
-        },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug] })
-        }
-    })
+  return useMutation({
+    mutationFn: async ({
+      folderId,
+      workspaceSlug: _workspaceSlug,
+    }: {
+      folderId: string
+      workspaceSlug: string
+    }) => {
+      const data = await apiFetchJson<any>(`/api/folders/${folderId}`, { method: 'DELETE' })
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['folders', variables.workspaceSlug] })
+    },
+  })
 }

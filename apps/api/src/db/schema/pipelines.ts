@@ -1,11 +1,22 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, boolean, pgPolicy } from 'drizzle-orm/pg-core'
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  timestamp,
+  integer,
+  boolean,
+  pgPolicy,
+} from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
 
 // =============================================================================
 // INDUSTRY TEMPLATES TABLE (System templates)
 // =============================================================================
 
-export const industryTemplates = pgTable('industry_templates', {
+export const industryTemplates = pgTable(
+  'industry_templates',
+  {
     id: uuid('id').primaryKey().defaultRandom(),
     slug: varchar('slug', { length: 50 }).notNull().unique(), // 'hr_hiring', 'software_dev'
     name: varchar('name', { length: 100 }).notNull(), // 'Rekrutacja (HR & Hiring)'
@@ -14,38 +25,48 @@ export const industryTemplates = pgTable('industry_templates', {
     icon: varchar('icon', { length: 10 }), // emoji
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Anyone can view templates", {
-        for: "select",
-        using: sql`true`,
+  },
+  (_table) => [
+    pgPolicy('Anyone can view templates', {
+      for: 'select',
+      using: sql`true`,
     }),
-])
+  ]
+)
 
 // =============================================================================
 // INDUSTRY TEMPLATE STAGES (Predefined stages per template)
 // =============================================================================
 
-export const industryTemplateStages = pgTable('industry_template_stages', {
+export const industryTemplateStages = pgTable(
+  'industry_template_stages',
+  {
     id: uuid('id').primaryKey().defaultRandom(),
-    templateId: uuid('template_id').notNull().references(() => industryTemplates.id, { onDelete: 'cascade' }),
+    templateId: uuid('template_id')
+      .notNull()
+      .references(() => industryTemplates.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 100 }).notNull(), // Polish name
     nameEn: varchar('name_en', { length: 100 }), // English name
     color: varchar('color', { length: 7 }).default('#6B7280').notNull(),
     position: integer('position').notNull(),
     isFinal: boolean('is_final').default(false).notNull(), // marks "done" stages
     createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Anyone can view template stages", {
-        for: "select",
-        using: sql`true`,
+  },
+  (_table) => [
+    pgPolicy('Anyone can view template stages', {
+      for: 'select',
+      using: sql`true`,
     }),
-])
+  ]
+)
 
 // =============================================================================
 // PROJECT STAGES (Custom stages per project) - projectId added via relation
 // =============================================================================
 
-export const projectStages = pgTable('project_stages', {
+export const projectStages = pgTable(
+  'project_stages',
+  {
     id: uuid('id').primaryKey().defaultRandom(),
     projectId: uuid('project_id').notNull(), // FK added in migration, not here to avoid circular
     name: varchar('name', { length: 100 }).notNull(),
@@ -53,43 +74,48 @@ export const projectStages = pgTable('project_stages', {
     position: integer('position').notNull(),
     isFinal: boolean('is_final').default(false).notNull(), // marks completion stage
     createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Team members can view project stages", {
-        for: "select",
-        using: sql`project_id IN (
+  },
+  (_table) => [
+    pgPolicy('Team members can view project stages', {
+      for: 'select',
+      using: sql`project_id IN (
             SELECT id FROM projects WHERE team_id IN (
                 SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
             )
         )`,
     }),
-    pgPolicy("Team members can create project stages", {
-        for: "insert",
-        withCheck: sql`project_id IN (
+    pgPolicy('Team members can create project stages', {
+      for: 'insert',
+      withCheck: sql`project_id IN (
             SELECT id FROM projects WHERE team_id IN (
                 SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
             )
         )`,
     }),
-    pgPolicy("Team members can update project stages", {
-        for: "update",
-        using: sql`project_id IN (
+    pgPolicy('Team members can update project stages', {
+      for: 'update',
+      using: sql`project_id IN (
             SELECT id FROM projects WHERE team_id IN (
                 SELECT team_id FROM team_members WHERE user_id = auth.uid()::text
             )
         )`,
     }),
-])
+  ]
+)
 
 // =============================================================================
 // RELATIONS
 // =============================================================================
 
 export const industryTemplatesRelations = relations(industryTemplates, ({ many }) => ({
-    stages: many(industryTemplateStages),
+  stages: many(industryTemplateStages),
 }))
 
 export const industryTemplateStagesRelations = relations(industryTemplateStages, ({ one }) => ({
-    template: one(industryTemplates, { fields: [industryTemplateStages.templateId], references: [industryTemplates.id] }),
+  template: one(industryTemplates, {
+    fields: [industryTemplateStages.templateId],
+    references: [industryTemplates.id],
+  }),
 }))
 
 // Note: projectStages relations defined in projects.ts to avoid circular dependency

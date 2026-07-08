@@ -1,1 +1,0 @@
-ALTER TABLE "users" ADD COLUMN "internal_flags" jsonb DEFAULT '{}'::jsonb;

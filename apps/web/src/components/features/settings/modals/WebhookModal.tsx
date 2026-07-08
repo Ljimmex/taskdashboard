@@ -8,390 +8,492 @@ import { cn } from '@/lib/utils'
 import { X, AlertCircle, Check } from 'lucide-react'
 
 interface WebhookModalProps {
-    isOpen: boolean
-    onClose: () => void
-    webhook?: any // If provided, edit mode
+  isOpen: boolean
+  onClose: () => void
+  webhook?: any // If provided, edit mode
 }
 
 export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
-    const { t } = useTranslation()
-    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
-    const queryClient = useQueryClient()
-    const { data: session } = useSession()
-    const userId = session?.user?.id
+  const { t } = useTranslation()
+  const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
+  const queryClient = useQueryClient()
+  const { data: session } = useSession()
+  const userId = session?.user?.id
 
-    const [url, setUrl] = useState('')
-    const [description, setDescription] = useState('')
-    const [selectedEvents, setSelectedEvents] = useState<string[]>([])
-    const [silentMode, setSilentMode] = useState(false)
-    const [type, setType] = useState<'generic' | 'discord' | 'slack'>('generic')
-    const [error, setError] = useState('')
+  const [url, setUrl] = useState('')
+  const [description, setDescription] = useState('')
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([])
+  const [silentMode, setSilentMode] = useState(false)
+  const [type, setType] = useState<'generic' | 'discord' | 'slack'>('generic')
+  const [error, setError] = useState('')
 
-    const EVENT_GROUPS = useMemo(() => [
-        {
-            title: t('settings.organization.integrations.webhook_modal.groups.tasks'),
-            items: [
-                { id: 'task.created', label: t('settings.organization.integrations.webhook_modal.events.task_created') },
-                { id: 'task.updated', label: t('settings.organization.integrations.webhook_modal.events.task_updated') },
-                { id: 'task.status_changed', label: t('settings.organization.integrations.webhook_modal.events.task_status_changed') },
-                { id: 'task.priority_changed', label: t('settings.organization.integrations.webhook_modal.events.task_priority_changed') },
-                { id: 'task.assigned', label: t('settings.organization.integrations.webhook_modal.events.task_assigned') },
-                { id: 'task.due_date_changed', label: t('settings.organization.integrations.webhook_modal.events.task_due_date_changed') },
-                { id: 'task.deleted', label: t('settings.organization.integrations.webhook_modal.events.task_deleted') },
-            ]
-        },
-        {
-            title: t('settings.organization.integrations.webhook_modal.groups.subtasks'),
-            items: [
-                { id: 'subtask.created', label: t('settings.organization.integrations.webhook_modal.events.subtask_created') },
-                { id: 'subtask.updated', label: t('settings.organization.integrations.webhook_modal.events.subtask_updated') },
-                { id: 'subtask.completed', label: t('settings.organization.integrations.webhook_modal.events.subtask_completed') },
-            ]
-        },
-        {
-            title: t('settings.organization.integrations.webhook_modal.groups.comments'),
-            items: [
-                { id: 'comment.added', label: t('settings.organization.integrations.webhook_modal.events.comment_added') },
-            ]
-        },
-        {
-            title: t('settings.organization.integrations.webhook_modal.groups.files'),
-            items: [
-                { id: 'file.uploaded', label: t('settings.organization.integrations.webhook_modal.events.file_uploaded') },
-                { id: 'file.deleted', label: t('settings.organization.integrations.webhook_modal.events.file_deleted') },
-            ]
-        },
-        {
-            title: t('settings.organization.integrations.webhook_modal.groups.calendar'),
-            items: [
-                { id: 'calendar.created', label: t('settings.organization.integrations.webhook_modal.events.calendar_created') },
-                { id: 'calendar.updated', label: t('settings.organization.integrations.webhook_modal.events.calendar_updated') },
-                { id: 'calendar.deleted', label: t('settings.organization.integrations.webhook_modal.events.calendar_deleted') },
-            ]
-        },
-        {
-            title: t('settings.organization.integrations.webhook_modal.groups.members'),
-            items: [
-                { id: 'member.added', label: t('settings.organization.integrations.webhook_modal.events.member_added') },
-                { id: 'member.removed', label: t('settings.organization.integrations.webhook_modal.events.member_removed') },
-            ]
-        }
-    ], [t])
+  const EVENT_GROUPS = useMemo(
+    () => [
+      {
+        title: t('settings.organization.integrations.webhook_modal.groups.tasks'),
+        items: [
+          {
+            id: 'task.created',
+            label: t('settings.organization.integrations.webhook_modal.events.task_created'),
+          },
+          {
+            id: 'task.updated',
+            label: t('settings.organization.integrations.webhook_modal.events.task_updated'),
+          },
+          {
+            id: 'task.status_changed',
+            label: t('settings.organization.integrations.webhook_modal.events.task_status_changed'),
+          },
+          {
+            id: 'task.priority_changed',
+            label: t(
+              'settings.organization.integrations.webhook_modal.events.task_priority_changed'
+            ),
+          },
+          {
+            id: 'task.assigned',
+            label: t('settings.organization.integrations.webhook_modal.events.task_assigned'),
+          },
+          {
+            id: 'task.due_date_changed',
+            label: t(
+              'settings.organization.integrations.webhook_modal.events.task_due_date_changed'
+            ),
+          },
+          {
+            id: 'task.deleted',
+            label: t('settings.organization.integrations.webhook_modal.events.task_deleted'),
+          },
+        ],
+      },
+      {
+        title: t('settings.organization.integrations.webhook_modal.groups.subtasks'),
+        items: [
+          {
+            id: 'subtask.created',
+            label: t('settings.organization.integrations.webhook_modal.events.subtask_created'),
+          },
+          {
+            id: 'subtask.updated',
+            label: t('settings.organization.integrations.webhook_modal.events.subtask_updated'),
+          },
+          {
+            id: 'subtask.completed',
+            label: t('settings.organization.integrations.webhook_modal.events.subtask_completed'),
+          },
+        ],
+      },
+      {
+        title: t('settings.organization.integrations.webhook_modal.groups.comments'),
+        items: [
+          {
+            id: 'comment.added',
+            label: t('settings.organization.integrations.webhook_modal.events.comment_added'),
+          },
+        ],
+      },
+      {
+        title: t('settings.organization.integrations.webhook_modal.groups.files'),
+        items: [
+          {
+            id: 'file.uploaded',
+            label: t('settings.organization.integrations.webhook_modal.events.file_uploaded'),
+          },
+          {
+            id: 'file.deleted',
+            label: t('settings.organization.integrations.webhook_modal.events.file_deleted'),
+          },
+        ],
+      },
+      {
+        title: t('settings.organization.integrations.webhook_modal.groups.calendar'),
+        items: [
+          {
+            id: 'calendar.created',
+            label: t('settings.organization.integrations.webhook_modal.events.calendar_created'),
+          },
+          {
+            id: 'calendar.updated',
+            label: t('settings.organization.integrations.webhook_modal.events.calendar_updated'),
+          },
+          {
+            id: 'calendar.deleted',
+            label: t('settings.organization.integrations.webhook_modal.events.calendar_deleted'),
+          },
+        ],
+      },
+      {
+        title: t('settings.organization.integrations.webhook_modal.groups.members'),
+        items: [
+          {
+            id: 'member.added',
+            label: t('settings.organization.integrations.webhook_modal.events.member_added'),
+          },
+          {
+            id: 'member.removed',
+            label: t('settings.organization.integrations.webhook_modal.events.member_removed'),
+          },
+        ],
+      },
+    ],
+    [t]
+  )
 
-    // Initialize state when webhook prop changes
-    useEffect(() => {
-        if (webhook) {
-            setUrl(webhook.url)
-            setDescription(webhook.description || '')
-            setSelectedEvents(webhook.events || [])
-            setSilentMode(webhook.silentMode || false)
-            setType(webhook.type)
-        } else {
-            setUrl('')
-            setDescription('')
-            setSelectedEvents([])
-            setSilentMode(false)
-            setType('discord') // Default to Discord as it's most common
-        }
-    }, [webhook, isOpen])
+  // Initialize state when webhook prop changes
+  useEffect(() => {
+    if (webhook) {
+      setUrl(webhook.url)
+      setDescription(webhook.description || '')
+      setSelectedEvents(webhook.events || [])
+      setSilentMode(webhook.silentMode || false)
+      setType(webhook.type)
+    } else {
+      setUrl('')
+      setDescription('')
+      setSelectedEvents([])
+      setSilentMode(false)
+      setType('discord') // Default to Discord as it's most common
+    }
+  }, [webhook, isOpen])
 
-    // Auto-detect type based on URL (only if user hasn't manually selected or just as a helper)
-    useEffect(() => {
-        if (!webhook && url) {
-            if (url.includes('discord.com/api/webhooks') && type !== 'discord') setType('discord')
-            else if (url.includes('hooks.slack.com') && type !== 'slack') setType('slack')
-        }
-    }, [url, webhook])
+  // Auto-detect type based on URL (only if user hasn't manually selected or just as a helper)
+  useEffect(() => {
+    if (!webhook && url) {
+      if (url.includes('discord.com/api/webhooks') && type !== 'discord') setType('discord')
+      else if (url.includes('hooks.slack.com') && type !== 'slack') setType('slack')
+    }
+  }, [url, webhook])
 
-    // Mutations
-    const mutation = useMutation({
-        mutationFn: async (data: any) => {
-            if (!userId) {
-                throw new Error('Unauthorized: User not found')
-            }
+  // Mutations
+  const mutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (!userId) {
+        throw new Error('Unauthorized: User not found')
+      }
 
-            // Re-fetching workspace by slug to get ID
-            const workspaceRes = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
-            const workspaceId = workspaceRes.id
+      // Re-fetching workspace by slug to get ID
+      const workspaceRes = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+      const workspaceId = workspaceRes.id
 
-            if (webhook) {
-                // Update
-                await apiFetchJson(`/api/webhooks/${webhook.id}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify(data),
-                    headers: { 'x-user-id': userId }
-                })
-            } else {
-                // Create
-                await apiFetchJson(`/api/webhooks`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        ...data,
-                        workspaceId, // Required for creation
-                        secret: 'ignore-for-discord'
-                    }),
-                    headers: { 'x-user-id': userId }
-                })
-            }
-        },
-        onSuccess: () => {
-            // Invalidate queries
-            queryClient.invalidateQueries({ queryKey: ['webhooks'] })
-            onClose()
-        },
-        onError: (err: any) => {
-            setError(err.message || t('settings.organization.integrations.webhook_modal.error_saving'))
-        }
-    })
-
-    const handleSubmit = () => {
-        if (!url) {
-            setError(t('settings.organization.integrations.webhook_modal.error_url_required'))
-            return
-        }
-        if (selectedEvents.length === 0) {
-            setError(t('settings.organization.integrations.webhook_modal.error_no_events'))
-            return
-        }
-
-        mutation.mutate({
-            url,
-            description,
-            events: selectedEvents,
-            type,
-            silentMode: type === 'discord' ? silentMode : false, // Only send silentMode for Discord
-            isActive: true
+      if (webhook) {
+        // Update
+        await apiFetchJson(`/api/webhooks/${webhook.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+          headers: { 'x-user-id': userId },
         })
+      } else {
+        // Create
+        await apiFetchJson(`/api/webhooks`, {
+          method: 'POST',
+          body: JSON.stringify({
+            ...data,
+            workspaceId, // Required for creation
+            secret: 'ignore-for-discord',
+          }),
+          headers: { 'x-user-id': userId },
+        })
+      }
+    },
+    onSuccess: () => {
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] })
+      onClose()
+    },
+    onError: (err: any) => {
+      setError(err.message || t('settings.organization.integrations.webhook_modal.error_saving'))
+    },
+  })
+
+  const handleSubmit = () => {
+    if (!url) {
+      setError(t('settings.organization.integrations.webhook_modal.error_url_required'))
+      return
+    }
+    if (selectedEvents.length === 0) {
+      setError(t('settings.organization.integrations.webhook_modal.error_no_events'))
+      return
     }
 
-    // Icons
-    const DiscordIcon = () => (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z" />
-        </svg>
-    )
+    mutation.mutate({
+      url,
+      description,
+      events: selectedEvents,
+      type,
+      silentMode: type === 'discord' ? silentMode : false, // Only send silentMode for Discord
+      isActive: true,
+    })
+  }
 
-    const SlackIcon = () => (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 15a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2h2v2zm1 0a2 2 0 0 1 2-2a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2a2 2 0 0 1-2-2v-5z" />
-            <path d="M9 6a2 2 0 0 1-2-2a2 2 0 0 1 2-2a2 2 0 0 1 2 2v2H9zm0 1a2 2 0 0 1 2 2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2a2 2 0 0 1 2-2h5z" />
-            <path d="M18 9a2 2 0 0 1 2-2a2 2 0 0 1 2 2a2 2 0 0 1-2 2h-2V9zm-1 0a2 2 0 0 1-2 2a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2a2 2 0 0 1 2 2v5z" />
-            <path d="M15 18a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2v-2h2zm0-1a2 2 0 0 1-2-2a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2a2 2 0 0 1-2 2h-5z" />
-        </svg>
-    )
+  // Icons
+  const DiscordIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z" />
+    </svg>
+  )
 
-    const GenericIcon = () => (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-        </svg>
-    )
+  const SlackIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M6 15a2 2 0 0 1-2 2a2 2 0 0 1-2-2a2 2 0 0 1 2-2h2v2zm1 0a2 2 0 0 1 2-2a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2a2 2 0 0 1-2-2v-5z" />
+      <path d="M9 6a2 2 0 0 1-2-2a2 2 0 0 1 2-2a2 2 0 0 1 2 2v2H9zm0 1a2 2 0 0 1 2 2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2a2 2 0 0 1 2-2h5z" />
+      <path d="M18 9a2 2 0 0 1 2-2a2 2 0 0 1 2 2a2 2 0 0 1-2 2h-2V9zm-1 0a2 2 0 0 1-2 2a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2a2 2 0 0 1 2 2v5z" />
+      <path d="M15 18a2 2 0 0 1 2 2a2 2 0 0 1-2 2a2 2 0 0 1-2-2v-2h2zm0-1a2 2 0 0 1-2-2a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2a2 2 0 0 1-2 2h-5z" />
+    </svg>
+  )
 
-    if (!isOpen) return null
+  const GenericIcon = () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+    </svg>
+  )
 
-    return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
-            <div className="bg-[var(--app-bg-card)] rounded-t-3xl rounded-b-none sm:rounded-2xl w-full max-w-lg shadow-2xl border border-[var(--app-border)] flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in slide-in-from-bottom sm:zoom-in duration-200">
-                {/* Header */}
-                <div className="p-6 border-b border-[var(--app-border)] flex items-center justify-between bg-[var(--app-bg-card)] rounded-t-2xl">
-                    <h2 className="text-xl font-bold text-[var(--app-text-primary)]">
-                        {webhook ? t('settings.organization.integrations.webhook_modal.edit_webhook') : t('settings.organization.integrations.webhook_modal.add_webhook')}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-[var(--app-bg-elevated)] rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+  if (!isOpen) return null
 
-                <div className="p-6 overflow-y-auto space-y-6">
-                    {error && (
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-center gap-2">
-                            <AlertCircle className="w-4 h-4" />
-                            {error}
-                        </div>
-                    )}
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="animate-in fade-in slide-in-from-bottom sm:zoom-in flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-b-none rounded-t-3xl border border-[var(--app-border)] bg-[var(--app-bg-card)] shadow-2xl duration-200 sm:rounded-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between rounded-t-2xl border-b border-[var(--app-border)] bg-[var(--app-bg-card)] p-6">
+          <h2 className="text-xl font-bold text-[var(--app-text-primary)]">
+            {webhook
+              ? t('settings.organization.integrations.webhook_modal.edit_webhook')
+              : t('settings.organization.integrations.webhook_modal.add_webhook')}
+          </h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-                    {/* Platform Selector */}
-                    <div>
-                        <label className="block text-sm font-medium text-[var(--app-text-muted)] mb-3">{t('settings.organization.integrations.webhook_modal.platform')}</label>
-                        <div className="flex bg-[var(--app-bg-elevated)] p-1 rounded-xl w-full border border-[var(--app-border)]">
-                            <button
-                                onClick={() => setType('discord')}
-                                className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all",
-                                    type === 'discord'
-                                        ? "bg-[var(--app-bg-card)] text-[var(--app-text-primary)] shadow-sm border border-[var(--app-border)]"
-                                        : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
-                                )}
-                            >
-                                <div className="scale-75 origin-center text-[#5865F2]">
-                                    <DiscordIcon />
-                                </div>
-                                Discord
-                            </button>
-
-                            <button
-                                onClick={() => setType('slack')}
-                                className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all",
-                                    type === 'slack'
-                                        ? "bg-[var(--app-bg-card)] text-[var(--app-text-primary)] shadow-sm border border-[var(--app-border)]"
-                                        : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
-                                )}
-                            >
-                                <div className="scale-75 origin-center">
-                                    <SlackIcon />
-                                </div>
-                                Slack
-                            </button>
-
-                            <button
-                                onClick={() => setType('generic')}
-                                className={cn(
-                                    "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold transition-all",
-                                    type === 'generic'
-                                        ? "bg-[var(--app-bg-card)] text-[var(--app-text-primary)] shadow-sm border border-[var(--app-border)]"
-                                        : "text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]"
-                                )}
-                            >
-                                <div className="scale-75 origin-center text-[var(--app-accent)]">
-                                    <GenericIcon />
-                                </div>
-                                {t('settings.organization.integrations.webhook_modal.other')}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* URL Input */}
-                    <div>
-                        <label className="block text-sm font-medium text-[var(--app-text-muted)] mb-2">{t('settings.organization.integrations.webhook_modal.url_label')}</label>
-                        <input
-                            type="text"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                            placeholder={
-                                type === 'discord' ? "https://discord.com/api/webhooks/..." :
-                                    type === 'slack' ? "https://hooks.slack.com/services/..." :
-                                        "https://example.com/webhook"
-                            }
-                            className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)]/50 focus:border-[var(--app-accent)] focus:ring-2 focus:ring-[var(--app-accent)]/10 outline-none transition-all font-mono text-sm"
-                        />
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                        <label className="block text-sm font-medium text-[var(--app-text-muted)] mb-2">
-                            {t('settings.organization.integrations.webhook_modal.description_label')} <span className="text-[var(--app-text-muted)]/60 font-normal">({t('settings.organization.integrations.webhook_modal.optional')})</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder={
-                                type === 'discord' ? t('settings.organization.integrations.webhook_modal.description_placeholder_discord') :
-                                    type === 'slack' ? t('settings.organization.integrations.webhook_modal.description_placeholder_slack') :
-                                        t('settings.organization.integrations.webhook_modal.description_placeholder_generic')
-                            }
-                            className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-xl px-4 py-3 text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)]/50 focus:border-[var(--app-accent)] focus:ring-2 focus:ring-[var(--app-accent)]/10 outline-none transition-all"
-                        />
-                    </div>
-
-                    {/* Silent Mode */}
-                    {type === 'discord' && (
-                        <label className="flex items-center gap-3 p-4 bg-[var(--app-bg-elevated)] rounded-xl border border-[var(--app-border)] cursor-pointer hover:bg-[var(--app-bg-card)] transition-colors group">
-                            <div className="relative flex items-center justify-center">
-                                <input
-                                    type="checkbox"
-                                    checked={silentMode}
-                                    onChange={(e) => setSilentMode(e.target.checked)}
-                                    className="sr-only"
-                                />
-                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${silentMode
-                                    ? 'bg-[var(--app-accent)] border-[var(--app-accent)] text-white'
-                                    : 'bg-transparent border-[var(--app-border-hover)] group-hover:border-[var(--app-text-muted)]'
-                                    }`}>
-                                    {silentMode && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                                </div>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-medium text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)] transition-colors">{t('settings.organization.integrations.webhook_modal.silent_mode_title')}</span>
-                                <span className="text-xs text-[var(--app-text-muted)]">{t('settings.organization.integrations.webhook_modal.silent_mode_description')}</span>
-                            </div>
-                        </label>
-                    )}
-
-                    {/* Events Selection */}
-                    <div>
-                        <label className="block text-sm font-medium text-[var(--app-text-muted)] mb-3">{t('settings.organization.integrations.webhook_modal.events_label')}</label>
-                        <div className="bg-[var(--app-bg-elevated)] rounded-xl border border-[var(--app-border)] p-2 max-h-[280px] overflow-y-auto custom-scrollbar">
-                            {EVENT_GROUPS.map(group => (
-                                <div key={group.title} className="mb-2 last:mb-0">
-                                    <h3 className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase tracking-widest px-3 py-2">
-                                        {group.title}
-                                    </h3>
-                                    <div className="space-y-0.5">
-                                        {group.items.map(event => {
-                                            const isSelected = selectedEvents.includes(event.id)
-                                            return (
-                                                <label
-                                                    key={event.id}
-                                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${isSelected
-                                                        ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
-                                                        : 'hover:bg-[var(--app-bg-card)] text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
-                                                        }`}
-                                                >
-                                                    <div className="relative flex items-center justify-center">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isSelected}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedEvents([...selectedEvents, event.id])
-                                                                } else {
-                                                                    setSelectedEvents(selectedEvents.filter(id => id !== event.id))
-                                                                }
-                                                            }}
-                                                            className="sr-only"
-                                                        />
-                                                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${isSelected
-                                                            ? 'bg-[var(--app-accent)] border-[var(--app-accent)] text-white'
-                                                            : 'bg-transparent border-[var(--app-border-hover)]'
-                                                            }`}>
-                                                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                                                        </div>
-                                                    </div>
-                                                    <span className={`text-sm ${isSelected ? 'font-medium' : ''}`}>
-                                                        {event.label}
-                                                    </span>
-                                                </label>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="p-5 border-t border-[var(--app-border)] flex justify-end gap-3 bg-[var(--app-bg-card)]">
-                    <button
-                        onClick={onClose}
-                        className="px-5 py-2.5 rounded-xl text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] font-medium transition-colors text-sm"
-                    >
-                        {t('common.cancel')}
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={mutation.isPending}
-                        className="px-6 py-2.5 bg-[var(--app-accent)] hover:opacity-90 active:translate-y-[1px] text-[var(--app-accent-text)] font-bold rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[var(--app-accent)]/10 text-sm"
-                    >
-                        {mutation.isPending ? t('common.saving') : t('common.save')}
-                    </button>
-                </div>
+        <div className="space-y-6 overflow-y-auto p-6">
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500">
+              <AlertCircle className="h-4 w-4" />
+              {error}
             </div>
-            <style>{`
+          )}
+
+          {/* Platform Selector */}
+          <div>
+            <label className="mb-3 block text-sm font-medium text-[var(--app-text-muted)]">
+              {t('settings.organization.integrations.webhook_modal.platform')}
+            </label>
+            <div className="flex w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-elevated)] p-1">
+              <button
+                onClick={() => setType('discord')}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+                  type === 'discord'
+                    ? 'border border-[var(--app-border)] bg-[var(--app-bg-card)] text-[var(--app-text-primary)] shadow-sm'
+                    : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
+                )}
+              >
+                <div className="origin-center scale-75 text-[#5865F2]">
+                  <DiscordIcon />
+                </div>
+                Discord
+              </button>
+
+              <button
+                onClick={() => setType('slack')}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+                  type === 'slack'
+                    ? 'border border-[var(--app-border)] bg-[var(--app-bg-card)] text-[var(--app-text-primary)] shadow-sm'
+                    : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
+                )}
+              >
+                <div className="origin-center scale-75">
+                  <SlackIcon />
+                </div>
+                Slack
+              </button>
+
+              <button
+                onClick={() => setType('generic')}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold transition-all',
+                  type === 'generic'
+                    ? 'border border-[var(--app-border)] bg-[var(--app-bg-card)] text-[var(--app-text-primary)] shadow-sm'
+                    : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
+                )}
+              >
+                <div className="origin-center scale-75 text-[var(--app-accent)]">
+                  <GenericIcon />
+                </div>
+                {t('settings.organization.integrations.webhook_modal.other')}
+              </button>
+            </div>
+          </div>
+
+          {/* URL Input */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[var(--app-text-muted)]">
+              {t('settings.organization.integrations.webhook_modal.url_label')}
+            </label>
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder={
+                type === 'discord'
+                  ? 'https://discord.com/api/webhooks/...'
+                  : type === 'slack'
+                    ? 'https://hooks.slack.com/services/...'
+                    : 'https://example.com/webhook'
+              }
+              className="placeholder-[var(--app-text-muted)]/50 focus:ring-[var(--app-accent)]/10 w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-elevated)] px-4 py-3 font-mono text-sm text-[var(--app-text-primary)] outline-none transition-all focus:border-[var(--app-accent)] focus:ring-2"
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[var(--app-text-muted)]">
+              {t('settings.organization.integrations.webhook_modal.description_label')}{' '}
+              <span className="text-[var(--app-text-muted)]/60 font-normal">
+                ({t('settings.organization.integrations.webhook_modal.optional')})
+              </span>
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={
+                type === 'discord'
+                  ? t(
+                      'settings.organization.integrations.webhook_modal.description_placeholder_discord'
+                    )
+                  : type === 'slack'
+                    ? t(
+                        'settings.organization.integrations.webhook_modal.description_placeholder_slack'
+                      )
+                    : t(
+                        'settings.organization.integrations.webhook_modal.description_placeholder_generic'
+                      )
+              }
+              className="placeholder-[var(--app-text-muted)]/50 focus:ring-[var(--app-accent)]/10 w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-elevated)] px-4 py-3 text-[var(--app-text-primary)] outline-none transition-all focus:border-[var(--app-accent)] focus:ring-2"
+            />
+          </div>
+
+          {/* Silent Mode */}
+          {type === 'discord' && (
+            <label className="group flex cursor-pointer items-center gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-elevated)] p-4 transition-colors hover:bg-[var(--app-bg-card)]">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={silentMode}
+                  onChange={(e) => setSilentMode(e.target.checked)}
+                  className="sr-only"
+                />
+                <div
+                  className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
+                    silentMode
+                      ? 'border-[var(--app-accent)] bg-[var(--app-accent)] text-white'
+                      : 'border-[var(--app-border-hover)] bg-transparent group-hover:border-[var(--app-text-muted)]'
+                  }`}
+                >
+                  {silentMode && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-[var(--app-text-primary)] transition-colors group-hover:text-[var(--app-accent)]">
+                  {t('settings.organization.integrations.webhook_modal.silent_mode_title')}
+                </span>
+                <span className="text-xs text-[var(--app-text-muted)]">
+                  {t('settings.organization.integrations.webhook_modal.silent_mode_description')}
+                </span>
+              </div>
+            </label>
+          )}
+
+          {/* Events Selection */}
+          <div>
+            <label className="mb-3 block text-sm font-medium text-[var(--app-text-muted)]">
+              {t('settings.organization.integrations.webhook_modal.events_label')}
+            </label>
+            <div className="custom-scrollbar max-h-[280px] overflow-y-auto rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-elevated)] p-2">
+              {EVENT_GROUPS.map((group) => (
+                <div key={group.title} className="mb-2 last:mb-0">
+                  <h3 className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--app-text-muted)]">
+                    {group.title}
+                  </h3>
+                  <div className="space-y-0.5">
+                    {group.items.map((event) => {
+                      const isSelected = selectedEvents.includes(event.id)
+                      return (
+                        <label
+                          key={event.id}
+                          className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
+                            isSelected
+                              ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
+                              : 'text-[var(--app-text-muted)] hover:bg-[var(--app-bg-card)] hover:text-[var(--app-text-primary)]'
+                          }`}
+                        >
+                          <div className="relative flex items-center justify-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedEvents([...selectedEvents, event.id])
+                                } else {
+                                  setSelectedEvents(selectedEvents.filter((id) => id !== event.id))
+                                }
+                              }}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`flex h-4 w-4 items-center justify-center rounded border-2 transition-all ${
+                                isSelected
+                                  ? 'border-[var(--app-accent)] bg-[var(--app-accent)] text-white'
+                                  : 'border-[var(--app-border-hover)] bg-transparent'
+                              }`}
+                            >
+                              {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                            </div>
+                          </div>
+                          <span className={`text-sm ${isSelected ? 'font-medium' : ''}`}>
+                            {event.label}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 border-t border-[var(--app-border)] bg-[var(--app-bg-card)] p-5">
+          <button
+            onClick={onClose}
+            className="rounded-xl px-5 py-2.5 text-sm font-medium text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={mutation.isPending}
+            className="shadow-[var(--app-accent)]/10 flex items-center gap-2 rounded-xl bg-[var(--app-accent)] px-6 py-2.5 text-sm font-bold text-[var(--app-accent-text)] shadow-lg transition-all hover:opacity-90 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {mutation.isPending ? t('common.saving') : t('common.save')}
+          </button>
+        </div>
+      </div>
+      <style>{`
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                 }
@@ -406,6 +508,6 @@ export function WebhookModal({ isOpen, onClose, webhook }: WebhookModalProps) {
                     background: var(--app-border-hover);
                 }
             `}</style>
-        </div>
-    )
+    </div>
+  )
 }

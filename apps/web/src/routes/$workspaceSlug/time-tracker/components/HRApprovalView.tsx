@@ -11,8 +11,14 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
 
   const DIFFICULTIES = [
     { value: 'basic', label: t('timeTracker.factors.difficulty.basic', 'Podstawowy (×0.75)') },
-    { value: 'standard', label: t('timeTracker.factors.difficulty.standard', 'Standardowy (×1.00)') },
-    { value: 'advanced', label: t('timeTracker.factors.difficulty.advanced', 'Zaawansowany (×1.30)') },
+    {
+      value: 'standard',
+      label: t('timeTracker.factors.difficulty.standard', 'Standardowy (×1.00)'),
+    },
+    {
+      value: 'advanced',
+      label: t('timeTracker.factors.difficulty.advanced', 'Zaawansowany (×1.30)'),
+    },
     { value: 'critical', label: t('timeTracker.factors.difficulty.critical', 'Krytyczny (×1.50)') },
   ]
 
@@ -26,12 +32,19 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
   const queryClient = useQueryClient()
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
-  const [openDropdown, setOpenDropdown] = useState<{ id: string, type: 'diff' | 'bonus' } | null>(null)
-  const [selectedValues, setSelectedValues] = useState<Record<string, { diff: string, bonus: string }>>({})
+  const [openDropdown, setOpenDropdown] = useState<{ id: string; type: 'diff' | 'bonus' } | null>(
+    null
+  )
+  const [selectedValues, setSelectedValues] = useState<
+    Record<string, { diff: string; bonus: string }>
+  >({})
 
   const { data: pendingData, isLoading } = useQuery({
     queryKey: ['pending-time-entries', workspaceSlug],
-    queryFn: () => apiFetchJson<{ success: boolean; data: any[] }>(`/api/time/pending?workspaceSlug=${workspaceSlug}`),
+    queryFn: () =>
+      apiFetchJson<{ success: boolean; data: any[] }>(
+        `/api/time/pending?workspaceSlug=${workspaceSlug}`
+      ),
     enabled: !!workspaceSlug,
     refetchInterval: 5000,
   })
@@ -41,7 +54,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
     mutationFn: ({ id, difficultyLevel, bonusPoints }: any) =>
       apiFetchJson(`/api/time/${id}/approve`, {
         method: 'PATCH',
-        body: JSON.stringify({ difficultyLevel, bonusPoints })
+        body: JSON.stringify({ difficultyLevel, bonusPoints }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['revshare'] })
@@ -50,14 +63,14 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
     },
     onError: () => {
       toast.error(t('timeTracker.approveError', 'Błąd podczas zatwierdzania wpisu.'))
-    }
+    },
   })
 
   const rejectMutation = useMutation({
     mutationFn: ({ id, reason }: any) =>
       apiFetchJson(`/api/time/${id}/reject`, {
         method: 'PATCH',
-        body: JSON.stringify({ rejectionReason: reason })
+        body: JSON.stringify({ rejectionReason: reason }),
       }),
     onSuccess: () => {
       setRejectingId(null)
@@ -67,46 +80,66 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
     },
     onError: () => {
       toast.error(t('timeTracker.rejectError', 'Błąd podczas odrzucania wpisu.'))
-    }
+    },
   })
 
-  if (isLoading) return <div className="text-center py-20 text-[var(--app-text-muted)]">{t('common.loading', 'Loading...')}</div>
+  if (isLoading)
+    return (
+      <div className="py-20 text-center text-[var(--app-text-muted)]">
+        {t('common.loading', 'Loading...')}
+      </div>
+    )
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-[var(--app-text-primary)]">{t('timeTracker.approval', 'Approval')}</h2>
-          <p className="text-sm text-[var(--app-text-muted)]">{t('timeTracker.pending', 'Pending entries requiring review')}</p>
+          <h2 className="text-2xl font-bold text-[var(--app-text-primary)]">
+            {t('timeTracker.approval', 'Approval')}
+          </h2>
+          <p className="text-sm text-[var(--app-text-muted)]">
+            {t('timeTracker.pending', 'Pending entries requiring review')}
+          </p>
         </div>
-        <div className="bg-[var(--app-accent)]/10 text-[var(--app-accent)] px-4 py-2 rounded-full font-bold text-sm">
+        <div className="bg-[var(--app-accent)]/10 rounded-full px-4 py-2 text-sm font-bold text-[var(--app-accent)]">
           {entries.length} {t('timeTracker.pending', 'Pending')}
         </div>
       </div>
 
       {entries.length === 0 ? (
-        <div className="bg-[var(--app-bg-card)] rounded-2xl p-20 text-center shadow-sm">
-          <CheckCircle size={48} className="mx-auto text-emerald-500 mb-4 opacity-20" />
-          <p className="text-[var(--app-text-muted)]">{t('timeTracker.noSessions', 'No pending entries to review.')}</p>
+        <div className="rounded-2xl bg-[var(--app-bg-card)] p-20 text-center shadow-sm">
+          <CheckCircle size={48} className="mx-auto mb-4 text-emerald-500 opacity-20" />
+          <p className="text-[var(--app-text-muted)]">
+            {t('timeTracker.noSessions', 'No pending entries to review.')}
+          </p>
         </div>
       ) : (
         <div className="grid gap-4">
           {entries.map((entry: any) => (
-            <div key={entry.id} className="bg-[var(--app-bg-card)] rounded-2xl p-6 shadow-sm hover:bg-[var(--app-bg-elevated)]/30 transition-all flex flex-col gap-4">
+            <div
+              key={entry.id}
+              className="hover:bg-[var(--app-bg-elevated)]/30 flex flex-col gap-4 rounded-2xl bg-[var(--app-bg-card)] p-6 shadow-sm transition-all"
+            >
               {/* Header: User Info & Role */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[var(--app-bg-deepest)] flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                    {entry.userImage ? <img src={entry.userImage} alt="" className="w-full h-full object-cover" /> : <div className="text-xs font-bold">{entry.userName?.[0]}</div>}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--app-bg-deepest)] shadow-inner">
+                    {entry.userImage ? (
+                      <img src={entry.userImage} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="text-xs font-bold">{entry.userName?.[0]}</div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="font-bold text-[var(--app-text-primary)] text-sm">{entry.userName}</div>
-                    <span className="px-2 py-0.5 rounded-lg bg-[var(--app-accent)]/10 text-[var(--app-accent)] text-[9px] uppercase font-black tracking-widest whitespace-nowrap">
+                    <div className="text-sm font-bold text-[var(--app-text-primary)]">
+                      {entry.userName}
+                    </div>
+                    <span className="bg-[var(--app-accent)]/10 whitespace-nowrap rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[var(--app-accent)]">
                       {entry.projectRole?.replace('_', ' ')}
                     </span>
                     {!entry.endedAt && (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-[#F2CE88]/20 text-[#F2CE88] bg-transparent text-[9px] uppercase font-black tracking-widest shadow-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#F2CE88] animate-pulse" />
+                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#F2CE88]/20 bg-transparent px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#F2CE88] shadow-sm">
+                        <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#F2CE88]" />
                         {t('timeTracker.pending', 'W Trakcie')}
                       </span>
                     )}
@@ -115,59 +148,80 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
               </div>
 
               {/* Main Info Row: Type, Task, Date, Duration */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm bg-[var(--app-bg-deepest)]/30 p-3 rounded-xl">
-                <div className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest shrink-0 ${entry.entryType === 'meeting'
-                  ? 'bg-amber-500/10 text-amber-500'
-                  : 'bg-blue-500/10 text-blue-500'
-                  }`}>
-                  {entry.entryType === 'meeting' ? t('timeTracker.isMeeting', 'Meeting') : t('timeTracker.task', 'Task')}
+              <div className="bg-[var(--app-bg-deepest)]/30 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl p-3 text-sm">
+                <div
+                  className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest ${
+                    entry.entryType === 'meeting'
+                      ? 'bg-amber-500/10 text-amber-500'
+                      : 'bg-blue-500/10 text-blue-500'
+                  }`}
+                >
+                  {entry.entryType === 'meeting'
+                    ? t('timeTracker.isMeeting', 'Meeting')
+                    : t('timeTracker.task', 'Task')}
                 </div>
 
-                <span className="font-bold text-[var(--app-text-primary)] truncate max-w-[200px]" title={entry.taskTitle}>
+                <span
+                  className="max-w-[200px] truncate font-bold text-[var(--app-text-primary)]"
+                  title={entry.taskTitle}
+                >
                   {entry.taskTitle}
                 </span>
 
-                <div className="h-4 w-px bg-[var(--app-divider)]/20 mx-1 hidden md:block" />
+                <div className="bg-[var(--app-divider)]/20 mx-1 hidden h-4 w-px md:block" />
 
-                <div className="flex items-center gap-2 text-[var(--app-text-muted)] text-xs">
+                <div className="flex items-center gap-2 text-xs text-[var(--app-text-muted)]">
                   <Calendar size={14} className="opacity-50" />
-                  <span>{new Date(entry.startedAt).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                  <span>
+                    {new Date(entry.startedAt).toLocaleString('pl-PL', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
                 </div>
 
-                <div className="h-4 w-px bg-[var(--app-divider)]/20 mx-1 hidden md:block" />
+                <div className="bg-[var(--app-divider)]/20 mx-1 hidden h-4 w-px md:block" />
 
                 <div className="flex items-center gap-2">
                   <Clock size={14} className="text-[var(--app-accent)] opacity-70" />
-                  <span className="font-mono font-black text-[var(--app-accent)] tracking-tighter">
+                  <span className="font-mono font-black tracking-tighter text-[var(--app-accent)]">
                     {formatMinutes(entry.durationMinutes)}
                   </span>
-                  <span className="text-[10px] text-[var(--app-text-muted)] font-bold uppercase tracking-tighter">
+                  <span className="text-[10px] font-bold uppercase tracking-tighter text-[var(--app-text-muted)]">
                     {t('timeTracker.duration', 'Czas trwania')}
                   </span>
                 </div>
               </div>
 
               {entry.description && (
-                <div className="text-sm text-[var(--app-text-secondary)] bg-[var(--app-bg-deepest)]/10 p-3 rounded-xl italic">
+                <div className="bg-[var(--app-bg-deepest)]/10 rounded-xl p-3 text-sm italic text-[var(--app-text-secondary)]">
                   "{entry.description}"
                 </div>
               )}
 
-              <div className="md:w-full flex items-end gap-4 mt-2 pt-4 border-t border-[var(--app-divider)]/10">
+              <div className="border-[var(--app-divider)]/10 mt-2 flex items-end gap-4 border-t pt-4 md:w-full">
                 {rejectingId === entry.id ? (
-                  <div className="w-full space-y-3 animate-in fade-in slide-in-from-bottom-2">
+                  <div className="animate-in fade-in slide-in-from-bottom-2 w-full space-y-3">
                     <textarea
-                      placeholder={t('timeTracker.rejectionReasonPlaceholder', 'Podaj powód odrzucenia (min. 5 znaków)...')}
-                      className="w-full bg-[var(--app-bg-deepest)] rounded-xl p-3 text-sm text-[var(--app-text-primary)] focus:ring-1 focus:ring-rose-500 outline-none shadow-inner"
+                      placeholder={t(
+                        'timeTracker.rejectionReasonPlaceholder',
+                        'Podaj powód odrzucenia (min. 5 znaków)...'
+                      )}
+                      className="w-full rounded-xl bg-[var(--app-bg-deepest)] p-3 text-sm text-[var(--app-text-primary)] shadow-inner outline-none focus:ring-1 focus:ring-rose-500"
                       rows={2}
                       value={rejectionReason}
                       onChange={(e) => setRejectionReason(e.target.value)}
                     />
                     <div className="flex gap-2">
                       <button
-                        onClick={() => rejectMutation.mutate({ id: entry.id, reason: rejectionReason })}
+                        onClick={() =>
+                          rejectMutation.mutate({ id: entry.id, reason: rejectionReason })
+                        }
                         disabled={rejectionReason.length < 5 || rejectMutation.isPending}
-                        className="flex-1 bg-rose-500 text-white font-bold py-2.5 px-6 rounded-xl text-sm hover:bg-rose-600 transition-colors disabled:opacity-40 flex items-center justify-center gap-2 shadow-md"
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 px-6 py-2.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-rose-600 disabled:opacity-40"
                       >
                         <XCircle size={16} /> {t('timeTracker.reject', 'Odrzuć')}
                       </button>
@@ -176,7 +230,7 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                           setRejectingId(null)
                           setRejectionReason('')
                         }}
-                        className="flex-1 py-2.5 px-6 bg-[var(--app-bg-deepest)] text-[var(--app-text-muted)] rounded-xl text-sm hover:bg-[var(--app-bg-elevated)] transition-colors border border-[var(--app-divider)]/50"
+                        className="border-[var(--app-divider)]/50 flex-1 rounded-xl border bg-[var(--app-bg-deepest)] px-6 py-2.5 text-sm text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-bg-elevated)]"
                       >
                         {t('common.cancel', 'Anuluj')}
                       </button>
@@ -184,71 +238,129 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                   </div>
                 ) : (
                   <>
-                    <div className="flex flex-1 gap-3 min-w-0 h-full">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase mb-1.5 ml-1">{t('timeTracker.difficulty', 'Trudność')}</div>
+                    <div className="flex h-full min-w-0 flex-1 gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1.5 ml-1 text-[10px] font-bold uppercase text-[var(--app-text-muted)]">
+                          {t('timeTracker.difficulty', 'Trudność')}
+                        </div>
                         <div className="relative">
                           <button
                             type="button"
-                            onClick={() => setOpenDropdown(openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? null : { id: entry.id, type: 'diff' })}
-                            className={`w-full flex items-center justify-between px-4 py-2.5 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl text-left transition-all outline-none text-xs font-bold ${openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? 'ring-1 ring-[var(--app-accent)] border-[var(--app-accent)]' : 'hover:border-[var(--app-accent)]/50'
-                              }`}
+                            onClick={() =>
+                              setOpenDropdown(
+                                openDropdown?.id === entry.id && openDropdown?.type === 'diff'
+                                  ? null
+                                  : { id: entry.id, type: 'diff' }
+                              )
+                            }
+                            className={`flex w-full items-center justify-between rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] px-4 py-2.5 text-left text-xs font-bold outline-none transition-all ${
+                              openDropdown?.id === entry.id && openDropdown?.type === 'diff'
+                                ? 'border-[var(--app-accent)] ring-1 ring-[var(--app-accent)]'
+                                : 'hover:border-[var(--app-accent)]/50'
+                            }`}
                           >
-                            <span className="text-[var(--app-text-primary)] truncate">
-                              {DIFFICULTIES.find(d => d.value === (selectedValues[entry.id]?.diff || 'standard'))?.label}
+                            <span className="truncate text-[var(--app-text-primary)]">
+                              {
+                                DIFFICULTIES.find(
+                                  (d) => d.value === (selectedValues[entry.id]?.diff || 'standard')
+                                )?.label
+                              }
                             </span>
-                            <ChevronDown size={14} className={`text-[var(--app-text-muted)] transition-transform duration-200 ${openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? 'rotate-180' : ''}`} />
+                            <ChevronDown
+                              size={14}
+                              className={`text-[var(--app-text-muted)] transition-transform duration-200 ${openDropdown?.id === entry.id && openDropdown?.type === 'diff' ? 'rotate-180' : ''}`}
+                            />
                           </button>
                           {openDropdown?.id === entry.id && openDropdown?.type === 'diff' && (
-                            <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                              {DIFFICULTIES.map(d => (
+                            <div className="animate-in fade-in zoom-in-95 absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] shadow-[0_10px_40px_rgba(0,0,0,0.8)] duration-200">
+                              {DIFFICULTIES.map((d) => (
                                 <button
                                   key={d.value}
                                   type="button"
                                   onClick={() => {
-                                    setSelectedValues(prev => ({ ...prev, [entry.id]: { ...(prev[entry.id] || { diff: 'standard', bonus: '1.0' }), diff: d.value } }))
+                                    setSelectedValues((prev) => ({
+                                      ...prev,
+                                      [entry.id]: {
+                                        ...(prev[entry.id] || { diff: 'standard', bonus: '1.0' }),
+                                        diff: d.value,
+                                      },
+                                    }))
                                     setOpenDropdown(null)
                                   }}
-                                  className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors flex items-center justify-between ${(selectedValues[entry.id]?.diff || 'standard') === d.value ? 'text-[var(--app-accent)] bg-[var(--app-bg-deepest)]' : 'text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'
-                                    }`}
+                                  className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition-colors ${
+                                    (selectedValues[entry.id]?.diff || 'standard') === d.value
+                                      ? 'bg-[var(--app-bg-deepest)] text-[var(--app-accent)]'
+                                      : 'text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'
+                                  }`}
                                 >
                                   {d.label}
-                                  {(selectedValues[entry.id]?.diff || 'standard') === d.value && <Check size={12} />}
+                                  {(selectedValues[entry.id]?.diff || 'standard') === d.value && (
+                                    <Check size={12} />
+                                  )}
                                 </button>
                               ))}
                             </div>
                           )}
                         </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-bold text-[var(--app-text-muted)] uppercase mb-1.5 ml-1">{t('timeTracker.bonusFactor', 'Premia')}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1.5 ml-1 text-[10px] font-bold uppercase text-[var(--app-text-muted)]">
+                          {t('timeTracker.bonusFactor', 'Premia')}
+                        </div>
                         <div className="relative">
                           <button
                             type="button"
-                            onClick={() => setOpenDropdown(openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? null : { id: entry.id, type: 'bonus' })}
-                            className={`w-full flex items-center justify-between px-4 py-2.5 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl text-left transition-all outline-none text-xs font-bold ${openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? 'ring-1 ring-[var(--app-accent)] border-[var(--app-accent)]' : 'hover:border-[var(--app-accent)]/50'
-                              }`}
+                            onClick={() =>
+                              setOpenDropdown(
+                                openDropdown?.id === entry.id && openDropdown?.type === 'bonus'
+                                  ? null
+                                  : { id: entry.id, type: 'bonus' }
+                              )
+                            }
+                            className={`flex w-full items-center justify-between rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] px-4 py-2.5 text-left text-xs font-bold outline-none transition-all ${
+                              openDropdown?.id === entry.id && openDropdown?.type === 'bonus'
+                                ? 'border-[var(--app-accent)] ring-1 ring-[var(--app-accent)]'
+                                : 'hover:border-[var(--app-accent)]/50'
+                            }`}
                           >
-                            <span className="text-[var(--app-text-primary)] truncate">
-                              {BONUSES.find(b => b.value === (selectedValues[entry.id]?.bonus || '1.0'))?.label}
+                            <span className="truncate text-[var(--app-text-primary)]">
+                              {
+                                BONUSES.find(
+                                  (b) => b.value === (selectedValues[entry.id]?.bonus || '1.0')
+                                )?.label
+                              }
                             </span>
-                            <ChevronDown size={14} className={`text-[var(--app-text-muted)] transition-transform duration-200 ${openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? 'rotate-180' : ''}`} />
+                            <ChevronDown
+                              size={14}
+                              className={`text-[var(--app-text-muted)] transition-transform duration-200 ${openDropdown?.id === entry.id && openDropdown?.type === 'bonus' ? 'rotate-180' : ''}`}
+                            />
                           </button>
                           {openDropdown?.id === entry.id && openDropdown?.type === 'bonus' && (
-                            <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                              {BONUSES.map(b => (
+                            <div className="animate-in fade-in zoom-in-95 absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] shadow-[0_10px_40px_rgba(0,0,0,0.8)] duration-200">
+                              {BONUSES.map((b) => (
                                 <button
                                   key={b.value}
                                   type="button"
                                   onClick={() => {
-                                    setSelectedValues(prev => ({ ...prev, [entry.id]: { ...(prev[entry.id] || { diff: 'standard', bonus: '1.0' }), bonus: b.value } }))
+                                    setSelectedValues((prev) => ({
+                                      ...prev,
+                                      [entry.id]: {
+                                        ...(prev[entry.id] || { diff: 'standard', bonus: '1.0' }),
+                                        bonus: b.value,
+                                      },
+                                    }))
                                     setOpenDropdown(null)
                                   }}
-                                  className={`w-full px-4 py-2.5 text-left text-xs font-bold transition-colors flex items-center justify-between ${(selectedValues[entry.id]?.bonus || '1.0') === b.value ? 'text-[var(--app-accent)] bg-[var(--app-bg-deepest)]' : 'text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'
-                                    }`}
+                                  className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-xs font-bold transition-colors ${
+                                    (selectedValues[entry.id]?.bonus || '1.0') === b.value
+                                      ? 'bg-[var(--app-bg-deepest)] text-[var(--app-accent)]'
+                                      : 'text-[var(--app-text-primary)] hover:bg-[var(--app-bg-deepest)]'
+                                  }`}
                                 >
                                   {b.label}
-                                  {(selectedValues[entry.id]?.bonus || '1.0') === b.value && <Check size={12} />}
+                                  {(selectedValues[entry.id]?.bonus || '1.0') === b.value && (
+                                    <Check size={12} />
+                                  )}
                                 </button>
                               ))}
                             </div>
@@ -259,21 +371,24 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
-                            const values = selectedValues[entry.id] || { diff: 'standard', bonus: '1.0' }
+                            const values = selectedValues[entry.id] || {
+                              diff: 'standard',
+                              bonus: '1.0',
+                            }
                             approveMutation.mutate({
                               id: entry.id,
                               difficultyLevel: values.diff,
-                              bonusPoints: parseFloat(values.bonus)
+                              bonusPoints: parseFloat(values.bonus),
                             })
                           }}
                           disabled={approveMutation.isPending || !entry.endedAt}
-                          className="bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl text-sm hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 disabled:opacity-40"
+                          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/10 transition-all hover:bg-emerald-600 disabled:opacity-40"
                         >
                           <CheckCircle size={16} /> {t('timeTracker.approve', 'Zatwierdź')}
                         </button>
                         <button
                           onClick={() => setRejectingId(entry.id)}
-                          className="py-2.5 px-4 bg-rose-500/10 text-rose-500 rounded-xl text-sm hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20"
+                          className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm text-rose-500 transition-all hover:bg-rose-500 hover:text-white"
                         >
                           <XCircle size={16} />
                         </button>

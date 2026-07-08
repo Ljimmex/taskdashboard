@@ -2,14 +2,21 @@ import { Hono } from 'hono'
 import { db } from '../../db'
 import { type Auth } from '../../lib/auth'
 import { eq, asc, and, or } from 'drizzle-orm'
-import { projects, projectMembers, projectTeams, industryTemplateStages, projectStages, type NewProject } from '../../db/schema'
+import {
+  projects,
+  projectMembers,
+  projectTeams,
+  industryTemplateStages,
+  projectStages,
+  type NewProject,
+} from '../../db/schema'
 import { teamMembers } from '../../db/schema/teams'
 import {
-    canCreateProjects,
-    canUpdateProjects,
-    canDeleteProjects,
-    type WorkspaceRole,
-    type TeamLevel
+  canCreateProjects,
+  canUpdateProjects,
+  canDeleteProjects,
+  type WorkspaceRole,
+  type TeamLevel,
 } from '../../lib/permissions'
 import { triggerWebhook } from '../webhooks/trigger'
 import { teams } from '../../db/schema'
@@ -17,548 +24,584 @@ import { NotificationService } from '../notifications/service'
 import { checkWorkspaceProjectLimit } from '../../lib/workspaceLimits'
 
 type Env = {
-    Variables: {
-        user: Auth['$Infer']['Session']['user']
-        session: Auth['$Infer']['Session']['session']
-    }
+  Variables: {
+    user: Auth['$Infer']['Session']['user']
+    session: Auth['$Infer']['Session']['session']
+  }
 }
-
-
 
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
 
 const createProjectSchema = z.object({
-    teamId: z.string().optional(), // Keep for backward compatibility or primary team
-    teamIds: z.array(z.string()).optional(), // New multi-team support
-    workspaceId: z.string().optional(),
-    name: zSanitizedString(),
-    description: zSanitizedStringOptional(),
-    color: zSanitizedString().optional(),
-    industryTemplateId: z.string().optional().nullable(),
-    startDate: z.string().optional().nullable(),
-    deadline: z.string().optional().nullable(),
+  teamId: z.string().optional(), // Keep for backward compatibility or primary team
+  teamIds: z.array(z.string()).optional(), // New multi-team support
+  workspaceId: z.string().optional(),
+  name: zSanitizedString(),
+  description: zSanitizedStringOptional(),
+  color: zSanitizedString().optional(),
+  industryTemplateId: z.string().optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  deadline: z.string().optional().nullable(),
 })
 
 const updateProjectSchema = z.object({
-    name: zSanitizedString().optional(),
-    description: zSanitizedStringOptional(),
-    status: z.enum(['pending', 'active', 'on_hold', 'completed', 'archived']).optional(),
-    deadline: z.string().optional().nullable(),
-    teamIds: z.array(z.string()).optional(),
+  name: zSanitizedString().optional(),
+  description: zSanitizedStringOptional(),
+  status: z.enum(['pending', 'active', 'on_hold', 'completed', 'archived']).optional(),
+  deadline: z.string().optional().nullable(),
+  teamIds: z.array(z.string()).optional(),
 })
 
 export const projectsRoutes = new Hono<Env>()
 
 // Helper: Get user's workspace role
-async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
-    const member = await db.query.workspaceMembers.findFirst({
-        where: (wm, { eq, and }) => and(
-            eq(wm.userId, userId),
-            eq(wm.workspaceId, workspaceId),
-            eq(wm.status, 'active')
-        )
-    })
-    return (member?.role as WorkspaceRole) || null
+async function getUserWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<WorkspaceRole | null> {
+  const member = await db.query.workspaceMembers.findFirst({
+    where: (wm, { eq, and }) =>
+      and(eq(wm.userId, userId), eq(wm.workspaceId, workspaceId), eq(wm.status, 'active')),
+  })
+  return (member?.role as WorkspaceRole) || null
 }
 
 // Helper: Get user's team level for a project's team
 async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
-    const member = await db.query.teamMembers.findFirst({
-        where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId))
-    })
-    return (member?.teamLevel as TeamLevel) || null
+  const member = await db.query.teamMembers.findFirst({
+    where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId)),
+  })
+  return (member?.teamLevel as TeamLevel) || null
 }
 
 // GET /api/projects - List projects (anyone logged in can see projects they have access to)
 projectsRoutes.get('/', async (c) => {
-    try {
-        const user = c.get('user')
-        const userId = user.id
-        const { workspaceSlug } = c.req.query()
+  try {
+    const user = c.get('user')
+    const userId = user.id
+    const { workspaceSlug } = c.req.query()
 
-        let workspaceId: string | null = null
-        let userWorkspaceRole: WorkspaceRole | null = null
+    let workspaceId: string | null = null
+    let userWorkspaceRole: WorkspaceRole | null = null
 
+    if (workspaceSlug) {
+      const ws = await db.query.workspaces.findFirst({
+        where: (ws, { eq }) => eq(ws.slug, workspaceSlug),
+      })
+      if (!ws) {
+        console.warn(`[GET /api/projects] Workspace not found for slug: ${workspaceSlug}`)
+        return c.json({ success: true, data: [] })
+      }
+      workspaceId = ws.id
+      userWorkspaceRole = await getUserWorkspaceRole(userId, workspaceId)
 
-
-        if (workspaceSlug) {
-            const ws = await db.query.workspaces.findFirst({
-                where: (ws, { eq }) => eq(ws.slug, workspaceSlug)
-            })
-            if (!ws) {
-                console.warn(`[GET /api/projects] Workspace not found for slug: ${workspaceSlug}`)
-                return c.json({ success: true, data: [] })
-            }
-            workspaceId = ws.id
-            userWorkspaceRole = await getUserWorkspaceRole(userId, workspaceId)
-
-            // Safety fallback: workspace owner should always have access
-            const isWorkspaceOwner = ws.ownerId === userId
-            if (!userWorkspaceRole && !isWorkspaceOwner) {
-                console.warn(`[GET /api/projects] User ${userId} is not an active member of workspace ${workspaceId}`)
-                return c.json({ success: false, error: 'Forbidden: You are not a member of this workspace' }, 403)
-            }
-            if (!userWorkspaceRole && isWorkspaceOwner) {
-                console.warn(`[GET /api/projects] User ${userId} is workspace owner but has no active workspace_members row; granting owner access`)
-                userWorkspaceRole = 'owner'
-            }
-        }
-
-        let teamIds: string[] = []
-        if (workspaceId) {
-            const workspaceTeams = await db.query.teams.findMany({
-                where: (t, { eq }) => eq(t.workspaceId, workspaceId)
-            })
-            teamIds = workspaceTeams.map(t => t.id)
-            if (teamIds.length === 0) {
-                console.warn(`[GET /api/projects] Workspace ${workspaceId} has no teams`)
-                return c.json({ success: true, data: [] })
-            }
-        }
-
-        const isProjectManagerOrHigher = userWorkspaceRole && ['owner', 'admin', 'project_manager'].includes(userWorkspaceRole)
-
-        const result = await db.query.projects.findMany({
-            where: (p, { inArray, and, exists, eq }) => {
-                const wheres: any[] = []
-
-                if (teamIds.length > 0) {
-                    wheres.push(
-                        or(
-                            inArray(p.teamId, teamIds),
-                            exists(
-                                db.select()
-                                    .from(projectTeams)
-                                    .where(and(
-                                        eq(projectTeams.projectId, p.id),
-                                        inArray(projectTeams.teamId, teamIds)
-                                    ))
-                            )
-                        )
-                    )
-                }
-
-                // Filter by membership if not manager
-                // Allow if user is a project member OR a member of any team linked to the project
-                if (!isProjectManagerOrHigher) {
-                    wheres.push(
-                        or(
-                            exists(
-                                db.select()
-                                    .from(projectMembers)
-                                    .where(and(
-                                        eq(projectMembers.projectId, p.id),
-                                        eq(projectMembers.userId, userId)
-                                    ))
-                            ),
-                            exists(
-                                db.select()
-                                    .from(projectTeams)
-                                    .innerJoin(teamMembers, eq(teamMembers.teamId, projectTeams.teamId))
-                                    .where(and(
-                                        eq(projectTeams.projectId, p.id),
-                                        eq(teamMembers.userId, userId)
-                                    ))
-                            )
-                        )
-                    )
-                }
-
-                return wheres.length > 0 ? and(...wheres) : undefined
-            },
-            with: {
-                stages: {
-                    orderBy: (s, { asc }) => [asc(s.position)]
-                },
-                members: {
-                    with: {
-                        user: {
-                            columns: { id: true, name: true, image: true }
-                        }
-                    }
-                },
-                team: {
-                    with: {
-                        members: {
-                            with: {
-                                user: {
-                                    columns: { id: true, name: true, image: true }
-                                }
-                            }
-                        }
-                    }
-                },
-                projectTeams: {
-                    with: {
-                        team: true
-                    }
-                }
-            },
-            orderBy: (p, { desc }) => [desc(p.createdAt)]
-        })
-        console.log(`[GET /api/projects] workspaceSlug=${workspaceSlug} workspaceId=${workspaceId} userId=${userId} role=${userWorkspaceRole} teams=${teamIds.length} returned=${result.length} projects`, JSON.stringify(result.map(p => ({ id: p.id, name: p.name, status: p.status, startDate: p.startDate }))))
-        return c.json({ success: true, data: result })
-    } catch (error) {
-        console.error('Error fetching projects:', error)
-        return c.json({ success: false, error: 'Failed to fetch projects' }, 500)
+      // Safety fallback: workspace owner should always have access
+      const isWorkspaceOwner = ws.ownerId === userId
+      if (!userWorkspaceRole && !isWorkspaceOwner) {
+        console.warn(
+          `[GET /api/projects] User ${userId} is not an active member of workspace ${workspaceId}`
+        )
+        return c.json(
+          { success: false, error: 'Forbidden: You are not a member of this workspace' },
+          403
+        )
+      }
+      if (!userWorkspaceRole && isWorkspaceOwner) {
+        console.warn(
+          `[GET /api/projects] User ${userId} is workspace owner but has no active workspace_members row; granting owner access`
+        )
+        userWorkspaceRole = 'owner'
+      }
     }
+
+    let teamIds: string[] = []
+    if (workspaceId) {
+      const workspaceTeams = await db.query.teams.findMany({
+        where: (t, { eq }) => eq(t.workspaceId, workspaceId),
+      })
+      teamIds = workspaceTeams.map((t) => t.id)
+      if (teamIds.length === 0) {
+        console.warn(`[GET /api/projects] Workspace ${workspaceId} has no teams`)
+        return c.json({ success: true, data: [] })
+      }
+    }
+
+    const isProjectManagerOrHigher =
+      userWorkspaceRole && ['owner', 'admin', 'project_manager'].includes(userWorkspaceRole)
+
+    const result = await db.query.projects.findMany({
+      where: (p, { inArray, and, exists, eq }) => {
+        const wheres: any[] = []
+
+        if (teamIds.length > 0) {
+          wheres.push(
+            or(
+              inArray(p.teamId, teamIds),
+              exists(
+                db
+                  .select()
+                  .from(projectTeams)
+                  .where(
+                    and(eq(projectTeams.projectId, p.id), inArray(projectTeams.teamId, teamIds))
+                  )
+              )
+            )
+          )
+        }
+
+        // Filter by membership if not manager
+        // Allow if user is a project member OR a member of any team linked to the project
+        if (!isProjectManagerOrHigher) {
+          wheres.push(
+            or(
+              exists(
+                db
+                  .select()
+                  .from(projectMembers)
+                  .where(and(eq(projectMembers.projectId, p.id), eq(projectMembers.userId, userId)))
+              ),
+              exists(
+                db
+                  .select()
+                  .from(projectTeams)
+                  .innerJoin(teamMembers, eq(teamMembers.teamId, projectTeams.teamId))
+                  .where(and(eq(projectTeams.projectId, p.id), eq(teamMembers.userId, userId)))
+              )
+            )
+          )
+        }
+
+        return wheres.length > 0 ? and(...wheres) : undefined
+      },
+      with: {
+        stages: {
+          orderBy: (s, { asc }) => [asc(s.position)],
+        },
+        members: {
+          with: {
+            user: {
+              columns: { id: true, name: true, image: true },
+            },
+          },
+        },
+        team: {
+          with: {
+            members: {
+              with: {
+                user: {
+                  columns: { id: true, name: true, image: true },
+                },
+              },
+            },
+          },
+        },
+        projectTeams: {
+          with: {
+            team: true,
+          },
+        },
+      },
+      orderBy: (p, { desc }) => [desc(p.createdAt)],
+    })
+    console.log(
+      `[GET /api/projects] workspaceSlug=${workspaceSlug} workspaceId=${workspaceId} userId=${userId} role=${userWorkspaceRole} teams=${teamIds.length} returned=${result.length} projects`,
+      JSON.stringify(
+        result.map((p) => ({ id: p.id, name: p.name, status: p.status, startDate: p.startDate }))
+      )
+    )
+    return c.json({ success: true, data: result })
+  } catch (error) {
+    console.error('Error fetching projects:', error)
+    return c.json({ success: false, error: 'Failed to fetch projects' }, 500)
+  }
 })
 
 // GET /api/projects/:id - Get single project
 projectsRoutes.get('/:id', async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user') as any
-        const userId = user.id
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user') as any
+    const userId = user.id
 
-        const project = await db.query.projects.findFirst({
-            where: (p, { eq }) => eq(p.id, id),
-            with: {
-                stages: {
-                    orderBy: (s, { asc }) => [asc(s.position)]
-                },
-                projectTeams: {
-                    with: {
-                        team: true
-                    }
-                }
-            }
-        })
+    const project = await db.query.projects.findFirst({
+      where: (p, { eq }) => eq(p.id, id),
+      with: {
+        stages: {
+          orderBy: (s, { asc }) => [asc(s.position)],
+        },
+        projectTeams: {
+          with: {
+            team: true,
+          },
+        },
+      },
+    })
 
-        if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
+    if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
 
-        // Check Access
-        const team = await db.query.teams.findFirst({
-            where: (t, { eq }) => eq(t.id, project.teamId)
-        })
+    // Check Access
+    const team = await db.query.teams.findFirst({
+      where: (t, { eq }) => eq(t.id, project.teamId),
+    })
 
-        let workspaceRole: WorkspaceRole | null = null
-        if (team) {
-            workspaceRole = await getUserWorkspaceRole(userId, team.workspaceId)
-        }
-
-        const isProjectManagerOrHigher = workspaceRole && ['owner', 'admin', 'project_manager'].includes(workspaceRole)
-
-        if (!isProjectManagerOrHigher) {
-            const isMember = await db.query.projectMembers.findFirst({
-                where: (pm, { eq, and }) => and(eq(pm.projectId, id), eq(pm.userId, userId))
-            })
-            if (!isMember) {
-                return c.json({ success: false, error: 'Access denied' }, 403)
-            }
-        }
-
-        return c.json({ success: true, data: project })
-    } catch (error) {
-        console.error('Error fetching project:', error)
-        return c.json({ success: false, error: 'Failed to fetch project' }, 500)
+    let workspaceRole: WorkspaceRole | null = null
+    if (team) {
+      workspaceRole = await getUserWorkspaceRole(userId, team.workspaceId)
     }
+
+    const isProjectManagerOrHigher =
+      workspaceRole && ['owner', 'admin', 'project_manager'].includes(workspaceRole)
+
+    if (!isProjectManagerOrHigher) {
+      const isMember = await db.query.projectMembers.findFirst({
+        where: (pm, { eq, and }) => and(eq(pm.projectId, id), eq(pm.userId, userId)),
+      })
+      if (!isMember) {
+        return c.json({ success: false, error: 'Access denied' }, 403)
+      }
+    }
+
+    return c.json({ success: true, data: project })
+  } catch (error) {
+    console.error('Error fetching project:', error)
+    return c.json({ success: false, error: 'Failed to fetch project' }, 500)
+  }
 })
 
 // POST /api/projects - Create project (requires projects.create permission)
 projectsRoutes.post('/', zValidator('json', createProjectSchema), async (c) => {
-    try {
-        const user = c.get('user') as any
-        const userId = user.id
-        const body = c.req.valid('json')
-        const { teamId, workspaceId } = body
+  try {
+    const user = c.get('user') as any
+    const userId = user.id
+    const body = c.req.valid('json')
+    const { teamId, workspaceId } = body
 
-        // Create project
-        const rawProjectTeamIds = body.teamIds || (teamId ? [teamId] : [])
-        const projectTeamIds = Array.from(new Set(rawProjectTeamIds))
-        if (projectTeamIds.length === 0) {
-            return c.json({ success: false, error: 'At least one teamId is required' }, 400)
-        }
-
-        // 1. Get permissions and check
-        // Check for the first team (primary) or all? Usually primary team manage projects.
-        const workspaceRole = workspaceId ? await getUserWorkspaceRole(userId, workspaceId) : null
-        const teamLevel = await getUserTeamLevel(userId, projectTeamIds[0])
-
-        if (!canCreateProjects(workspaceRole, teamLevel)) {
-            return c.json({ success: false, error: 'Unauthorized to create projects' }, 403)
-        }
-
-        // Resolve final workspace id early for limit check and notifications
-        let finalWorkspaceId = workspaceId
-        if (!finalWorkspaceId) {
-            const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, projectTeamIds[0])).limit(1)
-            if (team?.workspaceId) {
-                finalWorkspaceId = team.workspaceId
-            }
-        }
-
-        if (!finalWorkspaceId) {
-            return c.json({ success: false, error: 'Unable to determine workspace' }, 400)
-        }
-
-        // Enforce workspace project limit
-        const limitCheck = await checkWorkspaceProjectLimit(finalWorkspaceId)
-        if (!limitCheck.allowed) {
-            return c.json({ success: false, error: limitCheck.error!.message, code: limitCheck.error!.code }, 402)
-        }
-
-        const newProject: NewProject = {
-            teamId: projectTeamIds[0], // Set first team as primary for legacy compatibility
-            name: body.name,
-            description: body.description,
-            color: body.color,
-            industryTemplateId: body.industryTemplateId || null,
-            startDate: body.startDate ? new Date(body.startDate) : null,
-            deadline: body.deadline ? new Date(body.deadline) : null,
-        }
-
-        const result = await db.transaction(async (tx) => {
-            const [created] = await tx.insert(projects).values(newProject).returning()
-
-            // 1. Link multiple teams
-            await tx.insert(projectTeams).values(
-                projectTeamIds.map(tid => ({
-                    projectId: created.id,
-                    teamId: tid
-                }))
-            )
-
-            // 2. Initialize stages if template is selected
-            if (body.industryTemplateId) {
-                const templateStages = await tx
-                    .select()
-                    .from(industryTemplateStages)
-                    .where(eq(industryTemplateStages.templateId, body.industryTemplateId))
-                    .orderBy(asc(industryTemplateStages.position))
-
-                if (templateStages.length > 0) {
-                    await tx.insert(projectStages).values(
-                        templateStages.map((ts) => ({
-                            projectId: created.id,
-                            name: ts.name,
-                            color: ts.color,
-                            position: ts.position,
-                            isFinal: ts.isFinal,
-                        }))
-                    )
-                }
-            }
-
-            // 3. Auto-add team members from ALL selected teams
-            const teamMems = await tx.query.teamMembers.findMany({
-                where: (tm, { inArray }) => inArray(tm.teamId, projectTeamIds)
-            })
-
-            if (teamMems.length > 0) {
-                // Use a Map to ensure unique user IDs
-                const uniqueUserIds = Array.from(new Set(teamMems.map(tm => tm.userId)))
-                await tx.insert(projectMembers).values(
-                    uniqueUserIds.map(uid => ({
-                        projectId: created.id,
-                        userId: uid,
-                        role: 'member'
-                    }))
-                )
-            }
-
-            return created
-        })
-
-        // Notify auto-added members
-        const teamMems = await db.query.teamMembers.findMany({
-            where: (tm, { inArray }) => inArray(tm.teamId, projectTeamIds)
-        })
-
-        if (teamMems.length > 0) {
-            const workspace = await db.query.workspaces.findFirst({
-                where: (w, { eq }) => eq(w.id, finalWorkspaceId),
-                columns: { slug: true }
-            })
-
-            const uniqueUserIds = Array.from(new Set(teamMems.map(tm => tm.userId))).filter(uid => uid !== userId)
-            for (const uid of uniqueUserIds) {
-                await NotificationService.push(uid, {
-                    type: 'project_access',
-                    title: 'notifications.titles.project_access',
-                    message: 'notifications.messages.project_access',
-                    link: `/${workspace?.slug}/projects/${result.id}`,
-                    actor: { name: user.name, image: user.image || undefined },
-                    metadata: { projectId: result.id, title: result.name }
-                })
-            }
-        }
-
-        // TRIGGER WEBHOOK
-        triggerWebhook('project.created', result, finalWorkspaceId)
-
-        return c.json({ success: true, data: result }, 201)
-    } catch (error) {
-        console.error('Error creating project:', error)
-        return c.json({ success: false, error: 'Failed to create project' }, 500)
+    // Create project
+    const rawProjectTeamIds = body.teamIds || (teamId ? [teamId] : [])
+    const projectTeamIds = Array.from(new Set(rawProjectTeamIds))
+    if (projectTeamIds.length === 0) {
+      return c.json({ success: false, error: 'At least one teamId is required' }, 400)
     }
+
+    // 1. Get permissions and check
+    // Check for the first team (primary) or all? Usually primary team manage projects.
+    const workspaceRole = workspaceId ? await getUserWorkspaceRole(userId, workspaceId) : null
+    const teamLevel = await getUserTeamLevel(userId, projectTeamIds[0])
+
+    if (!canCreateProjects(workspaceRole, teamLevel)) {
+      return c.json({ success: false, error: 'Unauthorized to create projects' }, 403)
+    }
+
+    // Resolve final workspace id early for limit check and notifications
+    let finalWorkspaceId = workspaceId
+    if (!finalWorkspaceId) {
+      const [team] = await db
+        .select({ workspaceId: teams.workspaceId })
+        .from(teams)
+        .where(eq(teams.id, projectTeamIds[0]))
+        .limit(1)
+      if (team?.workspaceId) {
+        finalWorkspaceId = team.workspaceId
+      }
+    }
+
+    if (!finalWorkspaceId) {
+      return c.json({ success: false, error: 'Unable to determine workspace' }, 400)
+    }
+
+    // Enforce workspace project limit
+    const limitCheck = await checkWorkspaceProjectLimit(finalWorkspaceId)
+    if (!limitCheck.allowed) {
+      return c.json(
+        { success: false, error: limitCheck.error!.message, code: limitCheck.error!.code },
+        402
+      )
+    }
+
+    const newProject: NewProject = {
+      teamId: projectTeamIds[0], // Set first team as primary for legacy compatibility
+      name: body.name,
+      description: body.description,
+      color: body.color,
+      industryTemplateId: body.industryTemplateId || null,
+      startDate: body.startDate ? new Date(body.startDate) : null,
+      deadline: body.deadline ? new Date(body.deadline) : null,
+    }
+
+    const result = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(projects).values(newProject).returning()
+
+      // 1. Link multiple teams
+      await tx.insert(projectTeams).values(
+        projectTeamIds.map((tid) => ({
+          projectId: created.id,
+          teamId: tid,
+        }))
+      )
+
+      // 2. Initialize stages if template is selected
+      if (body.industryTemplateId) {
+        const templateStages = await tx
+          .select()
+          .from(industryTemplateStages)
+          .where(eq(industryTemplateStages.templateId, body.industryTemplateId))
+          .orderBy(asc(industryTemplateStages.position))
+
+        if (templateStages.length > 0) {
+          await tx.insert(projectStages).values(
+            templateStages.map((ts) => ({
+              projectId: created.id,
+              name: ts.name,
+              color: ts.color,
+              position: ts.position,
+              isFinal: ts.isFinal,
+            }))
+          )
+        }
+      }
+
+      // 3. Auto-add team members from ALL selected teams
+      const teamMems = await tx.query.teamMembers.findMany({
+        where: (tm, { inArray }) => inArray(tm.teamId, projectTeamIds),
+      })
+
+      if (teamMems.length > 0) {
+        // Use a Map to ensure unique user IDs
+        const uniqueUserIds = Array.from(new Set(teamMems.map((tm) => tm.userId)))
+        await tx.insert(projectMembers).values(
+          uniqueUserIds.map((uid) => ({
+            projectId: created.id,
+            userId: uid,
+            role: 'member',
+          }))
+        )
+      }
+
+      return created
+    })
+
+    // Notify auto-added members
+    const teamMems = await db.query.teamMembers.findMany({
+      where: (tm, { inArray }) => inArray(tm.teamId, projectTeamIds),
+    })
+
+    if (teamMems.length > 0) {
+      const workspace = await db.query.workspaces.findFirst({
+        where: (w, { eq }) => eq(w.id, finalWorkspaceId),
+        columns: { slug: true },
+      })
+
+      const uniqueUserIds = Array.from(new Set(teamMems.map((tm) => tm.userId))).filter(
+        (uid) => uid !== userId
+      )
+      for (const uid of uniqueUserIds) {
+        await NotificationService.push(uid, {
+          type: 'project_access',
+          title: 'notifications.titles.project_access',
+          message: 'notifications.messages.project_access',
+          link: `/${workspace?.slug}/projects/${result.id}`,
+          actor: { name: user.name, image: user.image || undefined },
+          metadata: { projectId: result.id, title: result.name },
+        })
+      }
+    }
+
+    // TRIGGER WEBHOOK
+    triggerWebhook('project.created', result, finalWorkspaceId)
+
+    return c.json({ success: true, data: result }, 201)
+  } catch (error) {
+    console.error('Error creating project:', error)
+    return c.json({ success: false, error: 'Failed to create project' }, 500)
+  }
 })
 
 // PATCH /api/projects/:id - Update project (requires projects.update permission)
 projectsRoutes.patch('/:id', zValidator('json', updateProjectSchema), async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user')
-        const userId = user.id
-        const body = c.req.valid('json')
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user')
+    const userId = user.id
+    const body = c.req.valid('json')
 
-        // Get project to find teamId
-        const [project] = await db.select().from(projects).where(eq(projects.id, id)).limit(1)
-        if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
+    // Get project to find teamId
+    const [project] = await db.select().from(projects).where(eq(projects.id, id)).limit(1)
+    if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
 
-        // Get permissions
-        const teamLevel = await getUserTeamLevel(userId, project.teamId)
+    // Get permissions
+    const teamLevel = await getUserTeamLevel(userId, project.teamId)
 
-        if (!canUpdateProjects(null, teamLevel)) {
-            return c.json({ success: false, error: 'Unauthorized to update project' }, 403)
-        }
-
-        const updateData: Partial<NewProject> = {}
-        if (body.name !== undefined) updateData.name = body.name
-        if (body.description !== undefined) updateData.description = body.description
-        if (body.status !== undefined) updateData.status = body.status
-        if (body.deadline !== undefined) updateData.deadline = body.deadline ? new Date(body.deadline) : null
-
-        // Handle team changes if teamIds are provided
-        if (body.teamIds !== undefined && Array.isArray(body.teamIds) && body.teamIds.length > 0) {
-            updateData.teamId = body.teamIds[0] // Set primary for backward compat
-
-            await db.transaction(async (tx) => {
-                // Determine missing teamIds so we can remove their users if needed later
-                // Just dropping old relations and adding new one is safest
-                await tx.delete(projectTeams).where(eq(projectTeams.projectId, id))
-                await tx.insert(projectTeams).values(
-                    body.teamIds!.map(tid => ({
-                        projectId: id,
-                        teamId: tid
-                    }))
-                )
-
-                // Sync project members based on the new scope of teams
-                // A better approach in a real app is to do an intersection
-                const teamMems = await tx.query.teamMembers.findMany({
-                    where: (tm, { inArray }) => inArray(tm.teamId, body.teamIds!)
-                })
-
-                if (teamMems.length > 0) {
-                    const validUserIds = Array.from(new Set(teamMems.map(tm => tm.userId)))
-
-                    // Remove users who are no longer in any of the project's teams
-                    // This could be restricted to just 'member' roles but for safety remove any
-                    const currentProjectMems = await tx.query.projectMembers.findMany({
-                        where: (pm, { eq }) => eq(pm.projectId, id)
-                    })
-
-                    const toDelete = currentProjectMems.filter(pm => !validUserIds.includes(pm.userId))
-                    const toAdd = validUserIds.filter(uid => !currentProjectMems.find(pm => pm.userId === uid))
-
-                    // delete old members
-                    if (toDelete.length > 0) {
-                        for (const pm of toDelete) {
-                            await tx.delete(projectMembers).where(
-                                and(eq(projectMembers.projectId, id), eq(projectMembers.userId, pm.userId))
-                            )
-                        }
-                    }
-
-                    // Add new ones
-                    if (toAdd.length > 0) {
-                        await tx.insert(projectMembers).values(
-                            toAdd.map(uid => ({
-                                projectId: id,
-                                userId: uid,
-                                role: 'member'
-                            }))
-                        )
-
-                        // Notify added users
-                        const [team] = await tx.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, project.teamId)).limit(1)
-                        const workspace = team?.workspaceId ? await tx.query.workspaces.findFirst({
-                            where: (w, { eq }) => eq(w.id, team.workspaceId),
-                            columns: { slug: true }
-                        }) : null
-
-                        for (const uid of toAdd) {
-                            if (uid !== userId) {
-                                await NotificationService.push(uid, {
-                                    type: 'project_access',
-                                    title: 'notifications.titles.project_access',
-                                    message: 'notifications.messages.project_access',
-                                    link: `/${workspace?.slug}/projects/${id}`,
-                                    actor: { name: user.name, image: user.image || undefined },
-                                    metadata: { projectId: id, title: project.name }
-                                })
-                            }
-                        }
-                    }
-
-                    // Notify removed users
-                    if (toDelete.length > 0) {
-                        for (const pm of toDelete) {
-                            if (pm.userId !== userId) {
-                                await NotificationService.push(pm.userId, {
-                                    type: 'project_access',
-                                    title: 'notifications.titles.project_removed',
-                                    message: 'notifications.messages.project_removed',
-                                    link: `/`,
-                                    actor: { name: user.name, image: user.image || undefined },
-                                    metadata: { projectId: id, title: project.name }
-                                })
-                            }
-                        }
-                    }
-                }
-            })
-        }
-
-        const [updated] = await db.update(projects).set(updateData).where(eq(projects.id, id)).returning()
-        if (!updated) return c.json({ success: false, error: 'Project not found' }, 404)
-
-        // TRIGGER WEBHOOK
-        const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, updated.teamId)).limit(1)
-        if (team?.workspaceId) {
-            triggerWebhook('project.updated', updated, team.workspaceId)
-        }
-
-        return c.json({ success: true, data: updated })
-    } catch (error) {
-        console.error('Error updating project:', error)
-        return c.json({ success: false, error: 'Failed to update project' }, 500)
+    if (!canUpdateProjects(null, teamLevel)) {
+      return c.json({ success: false, error: 'Unauthorized to update project' }, 403)
     }
+
+    const updateData: Partial<NewProject> = {}
+    if (body.name !== undefined) updateData.name = body.name
+    if (body.description !== undefined) updateData.description = body.description
+    if (body.status !== undefined) updateData.status = body.status
+    if (body.deadline !== undefined)
+      updateData.deadline = body.deadline ? new Date(body.deadline) : null
+
+    // Handle team changes if teamIds are provided
+    if (body.teamIds !== undefined && Array.isArray(body.teamIds) && body.teamIds.length > 0) {
+      updateData.teamId = body.teamIds[0] // Set primary for backward compat
+
+      await db.transaction(async (tx) => {
+        // Determine missing teamIds so we can remove their users if needed later
+        // Just dropping old relations and adding new one is safest
+        await tx.delete(projectTeams).where(eq(projectTeams.projectId, id))
+        await tx.insert(projectTeams).values(
+          body.teamIds!.map((tid) => ({
+            projectId: id,
+            teamId: tid,
+          }))
+        )
+
+        // Sync project members based on the new scope of teams
+        // A better approach in a real app is to do an intersection
+        const teamMems = await tx.query.teamMembers.findMany({
+          where: (tm, { inArray }) => inArray(tm.teamId, body.teamIds!),
+        })
+
+        if (teamMems.length > 0) {
+          const validUserIds = Array.from(new Set(teamMems.map((tm) => tm.userId)))
+
+          // Remove users who are no longer in any of the project's teams
+          // This could be restricted to just 'member' roles but for safety remove any
+          const currentProjectMems = await tx.query.projectMembers.findMany({
+            where: (pm, { eq }) => eq(pm.projectId, id),
+          })
+
+          const toDelete = currentProjectMems.filter((pm) => !validUserIds.includes(pm.userId))
+          const toAdd = validUserIds.filter(
+            (uid) => !currentProjectMems.find((pm) => pm.userId === uid)
+          )
+
+          // delete old members
+          if (toDelete.length > 0) {
+            for (const pm of toDelete) {
+              await tx
+                .delete(projectMembers)
+                .where(and(eq(projectMembers.projectId, id), eq(projectMembers.userId, pm.userId)))
+            }
+          }
+
+          // Add new ones
+          if (toAdd.length > 0) {
+            await tx.insert(projectMembers).values(
+              toAdd.map((uid) => ({
+                projectId: id,
+                userId: uid,
+                role: 'member',
+              }))
+            )
+
+            // Notify added users
+            const [team] = await tx
+              .select({ workspaceId: teams.workspaceId })
+              .from(teams)
+              .where(eq(teams.id, project.teamId))
+              .limit(1)
+            const workspace = team?.workspaceId
+              ? await tx.query.workspaces.findFirst({
+                  where: (w, { eq }) => eq(w.id, team.workspaceId),
+                  columns: { slug: true },
+                })
+              : null
+
+            for (const uid of toAdd) {
+              if (uid !== userId) {
+                await NotificationService.push(uid, {
+                  type: 'project_access',
+                  title: 'notifications.titles.project_access',
+                  message: 'notifications.messages.project_access',
+                  link: `/${workspace?.slug}/projects/${id}`,
+                  actor: { name: user.name, image: user.image || undefined },
+                  metadata: { projectId: id, title: project.name },
+                })
+              }
+            }
+          }
+
+          // Notify removed users
+          if (toDelete.length > 0) {
+            for (const pm of toDelete) {
+              if (pm.userId !== userId) {
+                await NotificationService.push(pm.userId, {
+                  type: 'project_access',
+                  title: 'notifications.titles.project_removed',
+                  message: 'notifications.messages.project_removed',
+                  link: `/`,
+                  actor: { name: user.name, image: user.image || undefined },
+                  metadata: { projectId: id, title: project.name },
+                })
+              }
+            }
+          }
+        }
+      })
+    }
+
+    const [updated] = await db
+      .update(projects)
+      .set(updateData)
+      .where(eq(projects.id, id))
+      .returning()
+    if (!updated) return c.json({ success: false, error: 'Project not found' }, 404)
+
+    // TRIGGER WEBHOOK
+    const [team] = await db
+      .select({ workspaceId: teams.workspaceId })
+      .from(teams)
+      .where(eq(teams.id, updated.teamId))
+      .limit(1)
+    if (team?.workspaceId) {
+      triggerWebhook('project.updated', updated, team.workspaceId)
+    }
+
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Error updating project:', error)
+    return c.json({ success: false, error: 'Failed to update project' }, 500)
+  }
 })
 
 // DELETE /api/projects/:id - Delete project (requires projects.delete permission)
 projectsRoutes.delete('/:id', async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user')
-        const userId = user.id
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user')
+    const userId = user.id
 
-        // Get project to find teamId
-        const [project] = await db.select().from(projects).where(eq(projects.id, id)).limit(1)
-        if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
+    // Get project to find teamId
+    const [project] = await db.select().from(projects).where(eq(projects.id, id)).limit(1)
+    if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
 
-        // Get permissions
-        const teamLevel = await getUserTeamLevel(userId, project.teamId)
+    // Get permissions
+    const teamLevel = await getUserTeamLevel(userId, project.teamId)
 
-        if (!canDeleteProjects(null, teamLevel)) {
-            return c.json({ success: false, error: 'Unauthorized to delete project' }, 403)
-        }
-
-        const [deleted] = await db.delete(projects).where(eq(projects.id, id)).returning()
-        if (!deleted) return c.json({ success: false, error: 'Project not found' }, 404)
-
-        // TRIGGER WEBHOOK
-        const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, project.teamId)).limit(1)
-        if (team?.workspaceId) {
-            triggerWebhook('project.deleted', deleted, team.workspaceId)
-        }
-
-        return c.json({ success: true, message: `Project "${deleted.name}" deleted` })
-    } catch (error) {
-        console.error('Error deleting project:', error)
-        return c.json({ success: false, error: 'Failed to delete project' }, 500)
+    if (!canDeleteProjects(null, teamLevel)) {
+      return c.json({ success: false, error: 'Unauthorized to delete project' }, 403)
     }
+
+    const [deleted] = await db.delete(projects).where(eq(projects.id, id)).returning()
+    if (!deleted) return c.json({ success: false, error: 'Project not found' }, 404)
+
+    // TRIGGER WEBHOOK
+    const [team] = await db
+      .select({ workspaceId: teams.workspaceId })
+      .from(teams)
+      .where(eq(teams.id, project.teamId))
+      .limit(1)
+    if (team?.workspaceId) {
+      triggerWebhook('project.deleted', deleted, team.workspaceId)
+    }
+
+    return c.json({ success: true, message: `Project "${deleted.name}" deleted` })
+  } catch (error) {
+    console.error('Error deleting project:', error)
+    return c.json({ success: false, error: 'Failed to delete project' }, 500)
+  }
 })

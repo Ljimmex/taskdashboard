@@ -10,257 +10,499 @@ import { LanguageSwitcher } from '@/components/language-switcher'
 import { useNotifications } from '@/hooks/useNotifications'
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
-    const { t } = useTranslation()
-    const { data: session } = useSession()
-    const [showUserMenu, setShowUserMenu] = useState(false)
-    const [showNotifications, setShowNotifications] = useState(false)
-    const [userPosition, setUserPosition] = useState<string>('')
-    const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false)
-    const { unreadCount } = useNotifications()
+  const { t } = useTranslation()
+  const { data: session } = useSession()
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [userPosition, setUserPosition] = useState<string>('')
+  const [isUserSettingsOpen, setIsUserSettingsOpen] = useState(false)
+  const { unreadCount } = useNotifications()
 
-    // Fetch user data for position
-    useEffect(() => {
-        const fetchUserData = async () => {
-            if (!session?.user?.id) return
-            try {
-                const data = await apiFetchJson<any>('/api/users/me')
-                // Handle both wrapped and unwrapped responses
-                const userData = data.data || data
-                if (userData && userData.position) {
-                    setUserPosition(userData.position)
-                }
-            } catch (err) {
-                console.error('Failed to fetch user position', err)
-            }
+  // Fetch user data for position
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!session?.user?.id) return
+      try {
+        const data = await apiFetchJson<any>('/api/users/me')
+        // Handle both wrapped and unwrapped responses
+        const userData = data.data || data
+        if (userData && userData.position) {
+          setUserPosition(userData.position)
         }
-        fetchUserData()
-    }, [session?.user?.id])
+      } catch (err) {
+        console.error('Failed to fetch user position', err)
+      }
+    }
+    fetchUserData()
+  }, [session?.user?.id])
 
-    // Refs for click outside
-    const userMenuRef = useRef<HTMLDivElement>(null)
+  // Refs for click outside
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-                setShowUserMenu(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
-    const user = session?.user
-    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
-    const baseUrl = workspaceSlug ? `/${workspaceSlug}` : '/dashboard'
+  const user = session?.user
+  const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
+  const baseUrl = workspaceSlug ? `/${workspaceSlug}` : '/dashboard'
 
-    return (
-        <header className="h-16 bg-[var(--app-bg-sidebar)] flex items-center justify-between lg:justify-between px-4 lg:px-6 gap-2 lg:gap-4 transition-colors duration-300 relative z-40">
-            {/* Left side: Mobile Menu + Search */}
-            <div className="flex items-center gap-2 lg:gap-4 flex-1">
-                {/* Hamburger Layout Toggle */}
-                <button
-                    onClick={onMenuClick}
-                    className="lg:hidden p-2 -ml-2 text-[var(--app-text-secondary)] hover:text-amber-500 rounded-lg hover:bg-[var(--app-bg-elevated)]"
+  return (
+    <header className="relative z-40 flex h-16 items-center justify-between gap-2 bg-[var(--app-bg-sidebar)] px-4 transition-colors duration-300 lg:justify-between lg:gap-4 lg:px-6">
+      {/* Left side: Mobile Menu + Search */}
+      <div className="flex flex-1 items-center gap-2 lg:gap-4">
+        {/* Hamburger Layout Toggle */}
+        <button
+          onClick={onMenuClick}
+          className="-ml-2 rounded-lg p-2 text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 lg:hidden"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
+        {/* Search Bar with SVG icon */}
+        <div className="hidden w-full max-w-md md:block">
+          <div className="group relative">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 32 32"
+                fill="none"
+                className="group-focus-within:hidden"
+              >
+                <circle cx="14" cy="14" r="8" stroke="#9E9E9E" strokeWidth="4" />
+                <path d="M21 21L27 27" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
+              </svg>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 32 32"
+                fill="none"
+                className="hidden group-focus-within:block"
+              >
+                <circle cx="14" cy="14" r="8" stroke="#F2CE88" strokeWidth="4" />
+                <path d="M21 21L27 27" stroke="#7A664E" strokeWidth="4" strokeLinecap="round" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-input)] py-2.5 pl-10 pr-4 text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] transition-colors duration-300 focus:border-amber-500/50 focus:outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side */}
+      <div className="flex items-center gap-4">
+        {/* Language Selector */}
+        <LanguageSwitcher />
+
+        {/* Notifications with SVG icon */}
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="group relative rounded-lg p-2 text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-bg-elevated)]"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 32 32"
+              fill="none"
+              className="group-hover:hidden"
+            >
+              <path
+                d="M16 8C12.6863 8 10 10.6863 10 14V20H8C7.44772 20 7 20.4477 7 21C7 21.5523 7.44772 22 8 22H24C24.5523 22 25 21.5523 25 21C25 20.4477 24.5523 20 24 20H22V14C22 10.6863 19.3137 8 16 8Z"
+                fill="#9E9E9E"
+              />
+              <circle cx="16" cy="25" r="3" fill="#9E9E9E" />
+              <path d="M16 4V8" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
+              <path
+                d="M26 10C27.5 11.5 28 13.5 28 16"
+                stroke="#545454"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+            </svg>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 32 32"
+              fill="none"
+              className="hidden group-hover:block"
+            >
+              <path
+                d="M16 8C12.6863 8 10 10.6863 10 14V20H8C7.44772 20 7 20.4477 7 21C7 21.5523 7.44772 22 8 22H24C24.5523 22 25 21.5523 25 21C25 20.4477 24.5523 20 24 20H22V14C22 10.6863 19.3137 8 16 8Z"
+                fill="#F2CE88"
+              />
+              <circle cx="16" cy="25" r="3" fill="#F2CE88" />
+              <path d="M16 4V8" stroke="#7A664E" strokeWidth="3" strokeLinecap="round" />
+              <path
+                d="M26 10C27.5 11.5 28 13.5 28 16"
+                stroke="#7A664E"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+            </svg>
+            {unreadCount > 0 && (
+              <span className="animate-in zoom-in absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[var(--app-bg-sidebar)] bg-amber-500 px-1 text-[10px] font-bold text-black duration-300">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </button>
+          <NotificationPanel
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+          />
+        </div>
+
+        {/* User Profile */}
+        <div className="relative" ref={userMenuRef}>
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="group flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-[var(--app-bg-elevated)]"
+          >
+            <div
+              className={`flex h-8 w-8 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-black ring-2 ring-[#1a1a24] ${user?.image ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}
+            >
+              {user?.image ? (
+                <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                user?.name?.charAt(0) || user?.email?.charAt(0) || '?'
+              )}
+            </div>
+            <div className="hidden text-left md:block">
+              <p className="text-sm font-medium text-[var(--app-text-primary)]">
+                {user?.name || 'User'}
+              </p>
+              <p className="text-xs text-[var(--app-text-secondary)]">{userPosition || 'Member'}</p>
+            </div>
+            {/* Arrow icon - changes direction based on menu state */}
+            {showUserMenu ? (
+              <DropdownArrowUp isHovered={false} />
+            ) : (
+              <DropdownArrowDown isHovered={false} />
+            )}
+          </button>
+
+          {showUserMenu && (
+            <div className="absolute right-0 top-14 z-50 w-56 overflow-hidden rounded-xl bg-[var(--app-bg-card)] shadow-2xl">
+              <div className="space-y-1 p-2">
+                <a
+                  href={baseUrl}
+                  className="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-amber-500"
                 >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                  {/* My Profile icon */}
+                  <div className="flex h-5 w-5 items-center justify-center">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="group-hover:hidden"
+                    >
+                      <circle cx="16" cy="16" r="12" fill="var(--app-text-muted)" />
+                      <circle cx="16" cy="12" r="4" fill="var(--app-bg-sidebar)" />
+                      <path
+                        d="M8.5 24C8.5 20 11.5 18 16 18C20.5 18 23.5 20 23.5 24"
+                        stroke="var(--app-bg-sidebar)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
                     </svg>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="hidden group-hover:block"
+                    >
+                      <circle cx="16" cy="16" r="12" fill="var(--app-accent)" />
+                      <circle cx="16" cy="12" r="4" fill="var(--app-bg-elevated)" />
+                      <path
+                        d="M8.5 24C8.5 20 11.5 18 16 18C20.5 18 23.5 20 23.5 24"
+                        stroke="var(--app-bg-elevated)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <span>{t('dashboard.myProfile')}</span>
+                </a>
+                <a
+                  href={baseUrl}
+                  className="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-amber-500"
+                >
+                  {/* My Chat icon - Messages from Sidebar */}
+                  <div className="flex h-5 w-5 items-center justify-center">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="group-hover:hidden"
+                    >
+                      <path
+                        d="M4 10C4 6.68629 6.68629 4 10 4H22C25.3137 4 28 6.68629 28 10V18C28 21.3137 25.3137 24 22 24H12L6 28V22H10C6.68629 22 4 19.3137 4 16V10Z"
+                        fill="var(--app-text-muted)"
+                      />
+                      <rect
+                        x="10"
+                        y="11"
+                        width="12"
+                        height="3"
+                        rx="1.5"
+                        fill="var(--app-bg-sidebar)"
+                      />
+                      <rect
+                        x="10"
+                        y="17"
+                        width="8"
+                        height="3"
+                        rx="1.5"
+                        fill="var(--app-bg-sidebar)"
+                      />
+                    </svg>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="hidden group-hover:block"
+                    >
+                      <path
+                        d="M4 10C4 6.68629 6.68629 4 10 4H22C25.3137 4 28 6.68629 28 10V18C28 21.3137 25.3137 24 22 24H12L6 28V22H10C6.68629 22 4 19.3137 4 16V10Z"
+                        fill="var(--app-accent)"
+                      />
+                      <rect
+                        x="10"
+                        y="11"
+                        width="12"
+                        height="3"
+                        rx="1.5"
+                        fill="var(--app-bg-elevated)"
+                      />
+                      <rect
+                        x="10"
+                        y="17"
+                        width="8"
+                        height="3"
+                        rx="1.5"
+                        fill="var(--app-bg-elevated)"
+                      />
+                    </svg>
+                  </div>
+                  <span>{t('dashboard.myChat')}</span>
+                </a>
+                <a
+                  href={`${baseUrl}/my-tasks`}
+                  className="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-amber-500"
+                >
+                  {/* Tasks icon */}
+                  <div className="flex h-5 w-5 items-center justify-center">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="group-hover:hidden"
+                    >
+                      <rect
+                        x="10"
+                        y="8"
+                        width="16"
+                        height="4"
+                        rx="2"
+                        fill="var(--app-text-secondary)"
+                      />
+                      <rect
+                        x="10"
+                        y="16"
+                        width="16"
+                        height="4"
+                        rx="2"
+                        fill="var(--app-text-secondary)"
+                      />
+                      <rect
+                        x="10"
+                        y="24"
+                        width="12"
+                        height="4"
+                        rx="2"
+                        fill="var(--app-text-secondary)"
+                      />
+                      <rect x="4" y="8" width="4" height="4" rx="1" fill="var(--app-text-muted)" />
+                      <rect x="4" y="16" width="4" height="4" rx="1" fill="var(--app-text-muted)" />
+                      <rect x="4" y="24" width="4" height="4" rx="1" fill="var(--app-text-muted)" />
+                    </svg>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="hidden group-hover:block"
+                    >
+                      <rect x="10" y="8" width="16" height="4" rx="2" fill="var(--app-accent)" />
+                      <rect x="10" y="16" width="16" height="4" rx="2" fill="var(--app-accent)" />
+                      <rect x="10" y="24" width="12" height="4" rx="2" fill="var(--app-accent)" />
+                      <rect x="4" y="8" width="4" height="4" rx="1" fill="var(--app-bg-elevated)" />
+                      <rect
+                        x="4"
+                        y="16"
+                        width="4"
+                        height="4"
+                        rx="1"
+                        fill="var(--app-bg-elevated)"
+                      />
+                      <rect
+                        x="4"
+                        y="24"
+                        width="4"
+                        height="4"
+                        rx="1"
+                        fill="var(--app-bg-elevated)"
+                      />
+                    </svg>
+                  </div>
+                  <span>{t('dashboard.myTasks')}</span>
+                </a>
+                <button
+                  onClick={() => {
+                    setIsUserSettingsOpen(true)
+                    setShowUserMenu(false)
+                  }}
+                  className="group flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-amber-500"
+                >
+                  {/* Settings icon */}
+                  <div className="flex h-5 w-5 items-center justify-center">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="group-hover:hidden"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M26.5 16C26.5 17.3 26.3 18.6 25.9 19.8L28.8 22.1L26 27L22.5 25.8C21.1 26.8 19.6 27.6 17.9 28L17.3 31.7H13.8L13.2 28C11.5 27.6 9.9 26.8 8.5 25.8L5.1 27L2.3 22.1L5.1 19.8C4.7 18.6 4.5 17.3 4.5 16C4.5 14.7 4.7 13.4 5.1 12.2L2.3 9.9L5.1 5L8.5 6.2C9.9 5.2 11.5 4.4 13.2 4L13.2 0.3H17.3L17.9 4C19.6 4.4 21.1 5.2 22.5 6.2L26 5L28.8 9.9L25.9 12.2C26.3 13.4 26.5 14.7 26.5 16Z"
+                        fill="var(--app-text-muted)"
+                      />
+                      <circle cx="15.5" cy="16" r="5.5" fill="var(--app-bg-card)" />
+                    </svg>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="hidden group-hover:block"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M26.5 16C26.5 17.3 26.3 18.6 25.9 19.8L28.8 22.1L26 27L22.5 25.8C21.1 26.8 19.6 27.6 17.9 28L17.3 31.7H13.8L13.2 28C11.5 27.6 9.9 26.8 8.5 25.8L5.1 27L2.3 22.1L5.1 19.8C4.7 18.6 4.5 17.3 4.5 16C4.5 14.7 4.7 13.4 5.1 12.2L2.3 9.9L5.1 5L8.5 6.2C9.9 5.2 11.5 4.4 13.2 4L13.2 0.3H17.3L17.9 4C19.6 4.4 21.1 5.2 22.5 6.2L26 5L28.8 9.9L25.9 12.2C26.3 13.4 26.5 14.7 26.5 16Z"
+                        fill="var(--app-accent)"
+                      />
+                      <circle cx="15.5" cy="16" r="5.5" fill="var(--app-bg-elevated)" />
+                    </svg>
+                  </div>
+                  <span>{t('dashboard.userSettings')}</span>
                 </button>
 
-                {/* Search Bar with SVG icon */}
-                <div className="max-w-md w-full hidden md:block">
-                    <div className="relative group">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="group-focus-within:hidden">
-                                <circle cx="14" cy="14" r="8" stroke="#9E9E9E" strokeWidth="4" />
-                                <path d="M21 21L27 27" stroke="#545454" strokeWidth="4" strokeLinecap="round" />
-                            </svg>
-                            <svg width="16" height="16" viewBox="0 0 32 32" fill="none" className="hidden group-focus-within:block">
-                                <circle cx="14" cy="14" r="8" stroke="#F2CE88" strokeWidth="4" />
-                                <path d="M21 21L27 27" stroke="#7A664E" strokeWidth="4" strokeLinecap="round" />
-                            </svg>
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--app-bg-input)] border border-[var(--app-border)] text-[var(--app-text-primary)] placeholder-[var(--app-text-muted)] focus:outline-none focus:border-amber-500/50 transition-colors duration-300"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Right Side */}
-            <div className="flex items-center gap-4">
-                {/* Language Selector */}
-                <LanguageSwitcher />
-
-                {/* Notifications with SVG icon */}
-                <div className="relative">
-                    <button
-                        onClick={() => setShowNotifications(!showNotifications)}
-                        className="relative p-2 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] transition-colors group"
+                <button
+                  onClick={async () => {
+                    await signOut()
+                    window.location.href = '/'
+                  }}
+                  className="group flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-amber-500"
+                >
+                  {/* Logout icon */}
+                  <div className="flex h-5 w-5 items-center justify-center">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="group-hover:hidden"
                     >
-                        <svg width="20" height="20" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                            <path d="M16 8C12.6863 8 10 10.6863 10 14V20H8C7.44772 20 7 20.4477 7 21C7 21.5523 7.44772 22 8 22H24C24.5523 22 25 21.5523 25 21C25 20.4477 24.5523 20 24 20H22V14C22 10.6863 19.3137 8 16 8Z" fill="#9E9E9E" />
-                            <circle cx="16" cy="25" r="3" fill="#9E9E9E" />
-                            <path d="M16 4V8" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
-                            <path d="M26 10C27.5 11.5 28 13.5 28 16" stroke="#545454" strokeWidth="3" strokeLinecap="round" />
-                        </svg>
-                        <svg width="20" height="20" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                            <path d="M16 8C12.6863 8 10 10.6863 10 14V20H8C7.44772 20 7 20.4477 7 21C7 21.5523 7.44772 22 8 22H24C24.5523 22 25 21.5523 25 21C25 20.4477 24.5523 20 24 20H22V14C22 10.6863 19.3137 8 16 8Z" fill="#F2CE88" />
-                            <circle cx="16" cy="25" r="3" fill="#F2CE88" />
-                            <path d="M16 4V8" stroke="#7A664E" strokeWidth="3" strokeLinecap="round" />
-                            <path d="M26 10C27.5 11.5 28 13.5 28 16" stroke="#7A664E" strokeWidth="3" strokeLinecap="round" />
-                        </svg>
-                        {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-amber-500 rounded-full flex items-center justify-center text-[10px] font-bold text-black border-2 border-[var(--app-bg-sidebar)] animate-in zoom-in duration-300">
-                                {unreadCount > 99 ? '99+' : unreadCount}
-                            </span>
-                        )}
-                    </button>
-                    <NotificationPanel
-                        isOpen={showNotifications}
-                        onClose={() => setShowNotifications(false)}
-                    />
-                </div>
-
-                {/* User Profile */}
-                <div className="relative" ref={userMenuRef}>
-                    <button
-                        onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[var(--app-bg-elevated)] transition-colors group"
+                      <path
+                        d="M12 8H8C5.79086 8 4 9.79086 4 12V20C4 22.2091 5.79086 24 8 24H12"
+                        stroke="var(--app-text-muted)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M16 16H28"
+                        stroke="var(--app-text-muted)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M22 10L28 16L22 22"
+                        stroke="var(--app-text-muted)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      className="hidden group-hover:block"
                     >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-black font-bold text-xs ring-2 ring-[#1a1a24] overflow-hidden ${user?.image ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}>
-                            {user?.image ? (
-                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                            ) : (
-                                user?.name?.charAt(0) || user?.email?.charAt(0) || '?'
-                            )}
-                        </div>
-                        <div className="text-left hidden md:block">
-                            <p className="text-sm font-medium text-[var(--app-text-primary)]">{user?.name || 'User'}</p>
-                            <p className="text-xs text-[var(--app-text-secondary)]">{userPosition || 'Member'}</p>
-                        </div>
-                        {/* Arrow icon - changes direction based on menu state */}
-                        {showUserMenu ? (
-                            <DropdownArrowUp isHovered={false} />
-                        ) : (
-                            <DropdownArrowDown isHovered={false} />
-                        )}
-                    </button>
-
-                    {showUserMenu && (
-                        <div className="absolute right-0 top-14 w-56 bg-[var(--app-bg-card)] rounded-xl shadow-2xl overflow-hidden z-50">
-                            <div className="p-2 space-y-1">
-                                <a href={baseUrl} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group">
-                                    {/* My Profile icon */}
-                                    <div className="w-5 h-5 flex items-center justify-center">
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                            <circle cx="16" cy="16" r="12" fill="var(--app-text-muted)" />
-                                            <circle cx="16" cy="12" r="4" fill="var(--app-bg-sidebar)" />
-                                            <path d="M8.5 24C8.5 20 11.5 18 16 18C20.5 18 23.5 20 23.5 24" stroke="var(--app-bg-sidebar)" strokeWidth="3" strokeLinecap="round" />
-                                        </svg>
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                            <circle cx="16" cy="16" r="12" fill="var(--app-accent)" />
-                                            <circle cx="16" cy="12" r="4" fill="var(--app-bg-elevated)" />
-                                            <path d="M8.5 24C8.5 20 11.5 18 16 18C20.5 18 23.5 20 23.5 24" stroke="var(--app-bg-elevated)" strokeWidth="3" strokeLinecap="round" />
-                                        </svg>
-                                    </div>
-                                    <span>{t('dashboard.myProfile')}</span>
-                                </a>
-                                <a href={baseUrl} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group">
-                                    {/* My Chat icon - Messages from Sidebar */}
-                                    <div className="w-5 h-5 flex items-center justify-center">
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                            <path d="M4 10C4 6.68629 6.68629 4 10 4H22C25.3137 4 28 6.68629 28 10V18C28 21.3137 25.3137 24 22 24H12L6 28V22H10C6.68629 22 4 19.3137 4 16V10Z" fill="var(--app-text-muted)" />
-                                            <rect x="10" y="11" width="12" height="3" rx="1.5" fill="var(--app-bg-sidebar)" />
-                                            <rect x="10" y="17" width="8" height="3" rx="1.5" fill="var(--app-bg-sidebar)" />
-                                        </svg>
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                            <path d="M4 10C4 6.68629 6.68629 4 10 4H22C25.3137 4 28 6.68629 28 10V18C28 21.3137 25.3137 24 22 24H12L6 28V22H10C6.68629 22 4 19.3137 4 16V10Z" fill="var(--app-accent)" />
-                                            <rect x="10" y="11" width="12" height="3" rx="1.5" fill="var(--app-bg-elevated)" />
-                                            <rect x="10" y="17" width="8" height="3" rx="1.5" fill="var(--app-bg-elevated)" />
-                                        </svg>
-                                    </div>
-                                    <span>{t('dashboard.myChat')}</span>
-                                </a>
-                                <a href={`${baseUrl}/my-tasks`} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group">
-                                    {/* Tasks icon */}
-                                    <div className="w-5 h-5 flex items-center justify-center">
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                            <rect x="10" y="8" width="16" height="4" rx="2" fill="var(--app-text-secondary)" />
-                                            <rect x="10" y="16" width="16" height="4" rx="2" fill="var(--app-text-secondary)" />
-                                            <rect x="10" y="24" width="12" height="4" rx="2" fill="var(--app-text-secondary)" />
-                                            <rect x="4" y="8" width="4" height="4" rx="1" fill="var(--app-text-muted)" />
-                                            <rect x="4" y="16" width="4" height="4" rx="1" fill="var(--app-text-muted)" />
-                                            <rect x="4" y="24" width="4" height="4" rx="1" fill="var(--app-text-muted)" />
-                                        </svg>
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                            <rect x="10" y="8" width="16" height="4" rx="2" fill="var(--app-accent)" />
-                                            <rect x="10" y="16" width="16" height="4" rx="2" fill="var(--app-accent)" />
-                                            <rect x="10" y="24" width="12" height="4" rx="2" fill="var(--app-accent)" />
-                                            <rect x="4" y="8" width="4" height="4" rx="1" fill="var(--app-bg-elevated)" />
-                                            <rect x="4" y="16" width="4" height="4" rx="1" fill="var(--app-bg-elevated)" />
-                                            <rect x="4" y="24" width="4" height="4" rx="1" fill="var(--app-bg-elevated)" />
-                                        </svg>
-                                    </div>
-                                    <span>{t('dashboard.myTasks')}</span>
-                                </a>
-                                <button
-                                    onClick={() => {
-                                        setIsUserSettingsOpen(true)
-                                        setShowUserMenu(false)
-                                    }}
-                                    className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group text-left"
-                                >
-                                    {/* Settings icon */}
-                                    <div className="w-5 h-5 flex items-center justify-center">
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                            <path fillRule="evenodd" clipRule="evenodd" d="M26.5 16C26.5 17.3 26.3 18.6 25.9 19.8L28.8 22.1L26 27L22.5 25.8C21.1 26.8 19.6 27.6 17.9 28L17.3 31.7H13.8L13.2 28C11.5 27.6 9.9 26.8 8.5 25.8L5.1 27L2.3 22.1L5.1 19.8C4.7 18.6 4.5 17.3 4.5 16C4.5 14.7 4.7 13.4 5.1 12.2L2.3 9.9L5.1 5L8.5 6.2C9.9 5.2 11.5 4.4 13.2 4L13.2 0.3H17.3L17.9 4C19.6 4.4 21.1 5.2 22.5 6.2L26 5L28.8 9.9L25.9 12.2C26.3 13.4 26.5 14.7 26.5 16Z" fill="var(--app-text-muted)" />
-                                            <circle cx="15.5" cy="16" r="5.5" fill="var(--app-bg-card)" />
-                                        </svg>
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                            <path fillRule="evenodd" clipRule="evenodd" d="M26.5 16C26.5 17.3 26.3 18.6 25.9 19.8L28.8 22.1L26 27L22.5 25.8C21.1 26.8 19.6 27.6 17.9 28L17.3 31.7H13.8L13.2 28C11.5 27.6 9.9 26.8 8.5 25.8L5.1 27L2.3 22.1L5.1 19.8C4.7 18.6 4.5 17.3 4.5 16C4.5 14.7 4.7 13.4 5.1 12.2L2.3 9.9L5.1 5L8.5 6.2C9.9 5.2 11.5 4.4 13.2 4L13.2 0.3H17.3L17.9 4C19.6 4.4 21.1 5.2 22.5 6.2L26 5L28.8 9.9L25.9 12.2C26.3 13.4 26.5 14.7 26.5 16Z" fill="var(--app-accent)" />
-                                            <circle cx="15.5" cy="16" r="5.5" fill="var(--app-bg-elevated)" />
-                                        </svg>
-                                    </div>
-                                    <span>{t('dashboard.userSettings')}</span>
-                                </button>
-
-                                <button
-                                    onClick={async () => {
-                                        await signOut()
-                                        window.location.href = '/'
-                                    }}
-                                    className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-amber-500 transition-colors group"
-                                >
-                                    {/* Logout icon */}
-                                    <div className="w-5 h-5 flex items-center justify-center">
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="group-hover:hidden">
-                                            <path d="M12 8H8C5.79086 8 4 9.79086 4 12V20C4 22.2091 5.79086 24 8 24H12" stroke="var(--app-text-muted)" strokeWidth="3" strokeLinecap="round" />
-                                            <path d="M16 16H28" stroke="var(--app-text-muted)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M22 10L28 16L22 22" stroke="var(--app-text-muted)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                        <svg width="18" height="18" viewBox="0 0 32 32" fill="none" className="hidden group-hover:block">
-                                            <path d="M12 8H8C5.79086 8 4 9.79086 4 12V20C4 22.2091 5.79086 24 8 24H12" stroke="var(--app-accent)" strokeWidth="3" strokeLinecap="round" />
-                                            <path d="M16 16H28" stroke="var(--app-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M22 10L28 16L22 22" stroke="var(--app-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </div>
-                                    <span>{t('dashboard.logout')}</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                      <path
+                        d="M12 8H8C5.79086 8 4 9.79086 4 12V20C4 22.2091 5.79086 24 8 24H12"
+                        stroke="var(--app-accent)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M16 16H28"
+                        stroke="var(--app-accent)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M22 10L28 16L22 22"
+                        stroke="var(--app-accent)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <span>{t('dashboard.logout')}</span>
+                </button>
+              </div>
             </div>
-            {/* User Settings Panel */}
-            <UserSettingsPanel
-                isOpen={isUserSettingsOpen}
-                onClose={() => setIsUserSettingsOpen(false)}
-            />
-        </header>
-    )
+          )}
+        </div>
+      </div>
+      {/* User Settings Panel */}
+      <UserSettingsPanel isOpen={isUserSettingsOpen} onClose={() => setIsUserSettingsOpen(false)} />
+    </header>
+  )
 }

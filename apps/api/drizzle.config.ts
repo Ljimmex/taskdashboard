@@ -8,12 +8,12 @@ config({ path: resolve(__dirname, '.env') })
 config({ path: resolve(__dirname, '../../.env.local') })
 
 export default defineConfig({
-    schema: './src/db/schema/index.ts',
-    out: './drizzle/migrations',
-    dialect: 'postgresql',
-    dbCredentials: {
-        url: process.env.DATABASE_URL!,
-    },
-    verbose: true,
-    strict: true,
+  schema: './src/db/schema/index.ts',
+  out: './drizzle/migrations',
+  dialect: 'postgresql',
+  dbCredentials: {
+    url: process.env.DATABASE_URL!,
+  },
+  verbose: true,
+  strict: true,
 })

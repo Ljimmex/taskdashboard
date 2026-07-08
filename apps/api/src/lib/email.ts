@@ -12,78 +12,88 @@ const RESEND_USER = 'resend'
 let transporter: Transporter | null = null
 
 function getTransporter(): Transporter {
-    if (transporter) return transporter
+  if (transporter) return transporter
 
-    const apiKey = process.env.RESEND_API_KEY
+  const apiKey = process.env.RESEND_API_KEY
 
-    if (!apiKey) {
-        console.warn('⚠️ RESEND_API_KEY is missing. Emails will not be sent.')
-    }
+  if (!apiKey) {
+    console.warn('⚠️ RESEND_API_KEY is missing. Emails will not be sent.')
+  }
 
-    console.log('📬 Creating Resend transporter')
+  console.log('📬 Creating Resend transporter')
 
-    transporter = nodemailer.createTransport({
-        host: RESEND_HOST,
-        port: RESEND_PORT,
-        secure: true, // true for 465, false for other ports
-        auth: {
-            user: RESEND_USER,
-            pass: apiKey,
-        },
-    })
+  transporter = nodemailer.createTransport({
+    host: RESEND_HOST,
+    port: RESEND_PORT,
+    secure: true, // true for 465, false for other ports
+    auth: {
+      user: RESEND_USER,
+      pass: apiKey,
+    },
+  })
 
-    return transporter
+  return transporter
 }
 
 export interface SendOTPEmailOptions {
-    to: string
-    otp: string
-    type: 'sign-in' | 'email-verification' | 'forget-password'
+  to: string
+  otp: string
+  type: 'sign-in' | 'email-verification' | 'forget-password'
 }
 
 /**
  * Send OTP email using Mailtrap
  */
 export async function sendOTPEmail({ to, otp, type }: SendOTPEmailOptions): Promise<void> {
-    const transport = getTransporter()
-    const subject = getSubject(type)
-    const html = getEmailHtml(otp, type)
+  const transport = getTransporter()
+  const subject = getSubject(type)
+  const html = getEmailHtml(otp, type)
 
-    try {
-        const result = await transport.sendMail({
-            from: FROM_EMAIL,
-            to,
-            subject,
-            html,
-        })
-        console.log(`✅ OTP email sent to ${to} (${type})`, result.messageId)
-    } catch (error) {
-        console.error('❌ Failed to send OTP email:', error)
-        throw error
-    }
+  try {
+    const result = await transport.sendMail({
+      from: FROM_EMAIL,
+      to,
+      subject,
+      html,
+    })
+    console.log(`✅ OTP email sent to ${to} (${type})`, result.messageId)
+  } catch (error) {
+    console.error('❌ Failed to send OTP email:', error)
+    throw error
+  }
 }
 
 function getSubject(type: string): string {
-    switch (type) {
-        case 'sign-in':
-            return 'Zadano.app - Your Login Code'
-        case 'email-verification':
-            return 'Zadano.app - Verify Your Email'
-        case 'forget-password':
-            return 'Zadano.app - Reset Your Password'
-        default:
-            return 'Zadano.app - Your Verification Code'
-    }
+  switch (type) {
+    case 'sign-in':
+      return 'Zadano.app - Your Login Code'
+    case 'email-verification':
+      return 'Zadano.app - Verify Your Email'
+    case 'forget-password':
+      return 'Zadano.app - Reset Your Password'
+    default:
+      return 'Zadano.app - Your Verification Code'
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 function getEmailHtml(otp: string, type: string): string {
-    const actionText = type === 'forget-password'
-        ? 'reset your password'
-        : type === 'email-verification'
-            ? 'verify your email'
-            : 'log in to your account'
+  const actionText =
+    type === 'forget-password'
+      ? 'reset your password'
+      : type === 'email-verification'
+        ? 'verify your email'
+        : 'log in to your account'
 
-    return `
+  return `
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -133,7 +143,7 @@ function getEmailHtml(otp: string, type: string): string {
                     <tr>
                         <td align="center" style="padding: 0 40px;">
                             <p style="margin: 0; color: #9ca3af; font-size: 16px; line-height: 1.6;">
-                                Cześć! Użyj poniższego kodu, aby <span style="color: #e5e7eb;">${actionText}</span>.
+                                Cześć! Użyj poniższego kodu, aby <span style="color: #e5e7eb;">${escapeHtml(actionText)}</span>.
                             </p>
                         </td>
                     </tr>
@@ -144,7 +154,7 @@ function getEmailHtml(otp: string, type: string): string {
                                 <tr>
                                     <td align="center" style="background-color: #1f1f2e; border: 1px solid #3f3f50; border-radius: 12px; padding: 24px;">
                                         <span style="font-family: 'Courier New', Courier, monospace; color: #f59e0b; font-size: 36px; font-weight: 700; letter-spacing: 8px; display: block; line-height: 1;">
-                                            ${otp}
+                                            ${escapeHtml(otp)}
                                         </span>
                                     </td>
                                 </tr>

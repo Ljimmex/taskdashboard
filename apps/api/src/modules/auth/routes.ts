@@ -5,5 +5,5 @@ export const authRoutes = new Hono()
 
 // Auth routes handler
 authRoutes.on(['POST', 'GET'], '/*', (c) => {
-    return auth.handler(c.req.raw)
+  return auth.handler(c.req.raw)
 })

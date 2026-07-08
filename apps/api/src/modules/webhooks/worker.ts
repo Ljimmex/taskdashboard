@@ -8,255 +8,273 @@ import { WebhookAdapters } from './adapters'
  * Checks for localhost, private IP ranges, and AWS metadata service.
  */
 function isPrivateUrl(urlStr: string): boolean {
-    try {
-        const url = new URL(urlStr)
-        const hostname = url.hostname
+  try {
+    const url = new URL(urlStr)
+    const hostname = url.hostname
 
-        // 1. Block localhost
-        if (hostname === 'localhost' || hostname === '::1' || hostname === '0.0.0.0') return true
+    // 1. Block localhost
+    if (hostname === 'localhost' || hostname === '::1' || hostname === '0.0.0.0') return true
 
-        // 2. Block numeric IP addresses that are private
-        // IPv4 regex pattern for private ranges
-        // 10.x.x.x
-        // 172.16.x.x - 172.31.x.x
-        // 192.168.x.x
-        // 127.x.x.x (Loopback)
-        // 169.254.x.x (Link-local / Cloud Metadata)
+    // 2. Block numeric IP addresses that are private
+    // IPv4 regex pattern for private ranges
+    // 10.x.x.x
+    // 172.16.x.x - 172.31.x.x
+    // 192.168.x.x
+    // 127.x.x.x (Loopback)
+    // 169.254.x.x (Link-local / Cloud Metadata)
 
-        // Simple check if it looks like an IP
-        const isIP = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)
+    // Simple check if it looks like an IP
+    const isIP = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)
 
-        if (isIP) {
-            const parts = hostname.split('.').map(Number)
+    if (isIP) {
+      const parts = hostname.split('.').map(Number)
 
-            // 10.0.0.0/8
-            if (parts[0] === 10) return true
+      // 10.0.0.0/8
+      if (parts[0] === 10) return true
 
-            // 172.16.0.0/12
-            if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true
+      // 172.16.0.0/12
+      if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true
 
-            // 192.168.0.0/16
-            if (parts[0] === 192 && parts[1] === 168) return true
+      // 192.168.0.0/16
+      if (parts[0] === 192 && parts[1] === 168) return true
 
-            // 127.0.0.0/8
-            if (parts[0] === 127) return true
+      // 127.0.0.0/8
+      if (parts[0] === 127) return true
 
-            // 169.254.0.0/16
-            if (parts[0] === 169 && parts[1] === 254) return true
-        }
-
-        // Note: This does not protect against DNS rebinding attacks where a domain resolves to a private IP.
-        // For full protection, a custom HTTP agent that validates the resolved IP address is required.
-        // But this covers the immediate requirement.
-
-        return false
-    } catch (e) {
-        // Invalid URL is considered "unsafe" or at least unusable
-        return true
+      // 169.254.0.0/16
+      if (parts[0] === 169 && parts[1] === 254) return true
     }
+
+    // Note: This does not protect against DNS rebinding attacks where a domain resolves to a private IP.
+    // For full protection, a custom HTTP agent that validates the resolved IP address is required.
+    // But this covers the immediate requirement.
+
+    return false
+  } catch (e) {
+    // Invalid URL is considered "unsafe" or at least unusable
+    return true
+  }
 }
 
 import { inArray } from 'drizzle-orm'
 
-let isProcessingWebhookQueue = false;
+let isProcessingWebhookQueue = false
 
 /**
  * The Webhook Worker processes the persistent job queue.
- * It uses a concurrency lock and 'processing' state to safely allow multiple 
+ * It uses a concurrency lock and 'processing' state to safely allow multiple
  * instances to process the same queue without race conditions.
  */
 export async function processWebhookQueue() {
-    if (isProcessingWebhookQueue) return;
-    isProcessingWebhookQueue = true;
+  if (isProcessingWebhookQueue) return
+  isProcessingWebhookQueue = true
 
-    try {
-        while (true) {
-            const now = new Date()
+  try {
+    while (true) {
+      const now = new Date()
 
-            // 1. Find jobs that are due for processing
-            const jobs = await db.select()
-                .from(webhookQueue)
-                .where(
-                    and(
-                        eq(webhookQueue.status, 'pending'),
-                        lte(webhookQueue.nextRunAt, now)
-                    )
-                )
-                .limit(10) // Process in chunks
+      // 1. Find jobs that are due for processing
+      const jobs = await db
+        .select()
+        .from(webhookQueue)
+        .where(and(eq(webhookQueue.status, 'pending'), lte(webhookQueue.nextRunAt, now)))
+        .limit(10) // Process in chunks
 
-            if (jobs.length === 0) break;
+      if (jobs.length === 0) break
 
-            // 2. Atomically lock the jobs by changing status to 'processing'
-            const jobIds = jobs.map(j => j.id)
-            const lockedJobs = await db.update(webhookQueue)
-                .set({ status: 'processing', updatedAt: new Date() })
-                .where(
-                    and(
-                        inArray(webhookQueue.id, jobIds),
-                        eq(webhookQueue.status, 'pending') // Double check they are still pending
-                    )
-                )
-                .returning()
+      // 2. Atomically lock the jobs by changing status to 'processing'
+      const jobIds = jobs.map((j) => j.id)
+      const lockedJobs = await db
+        .update(webhookQueue)
+        .set({ status: 'processing', updatedAt: new Date() })
+        .where(
+          and(
+            inArray(webhookQueue.id, jobIds),
+            eq(webhookQueue.status, 'pending') // Double check they are still pending
+          )
+        )
+        .returning()
 
-            if (lockedJobs.length === 0) {
-                // All jobs were taken by another worker
-                break;
-            }
+      if (lockedJobs.length === 0) {
+        // All jobs were taken by another worker
+        break
+      }
 
-            for (const job of lockedJobs) {
-                console.log(`[Webhook Worker] Delivering job ${job.id} for webhook ${job.webhookId}`)
-                await deliverWebhook(job)
-            }
-        }
-    } catch (error) {
-        console.error('[Webhook Worker] Error:', error)
-    } finally {
-        isProcessingWebhookQueue = false;
+      for (const job of lockedJobs) {
+        console.log(`[Webhook Worker] Delivering job ${job.id} for webhook ${job.webhookId}`)
+        await deliverWebhook(job)
+      }
     }
+  } catch (error) {
+    console.error('[Webhook Worker] Error:', error)
+  } finally {
+    isProcessingWebhookQueue = false
+  }
 }
 
 async function deliverWebhook(job: any) {
-    const startTime = Date.now()
-    let responseStatus: number | undefined
-    let responseBody: string | undefined
-    let requestHeaders: any = {}
+  const startTime = Date.now()
+  let responseStatus: number | undefined
+  let responseBody: string | undefined
+  let requestHeaders: any = {}
 
-    try {
-        // Fetch webhook configuration
-        const [config] = await db.select()
-            .from(webhooks)
-            .where(eq(webhooks.id, job.webhookId))
-            .limit(1)
+  try {
+    // Fetch webhook configuration
+    const [config] = await db.select().from(webhooks).where(eq(webhooks.id, job.webhookId)).limit(1)
 
-        if (!config || !config.isActive) {
-            console.log(`[Webhook Worker] Webhook ${job.webhookId} not found or inactive, removing job`)
-            await db.delete(webhookQueue).where(eq(webhookQueue.id, job.id))
-            return
-        }
-
-        // IMPROVEMENT: Ensure payload is an object (Drizzle sometimes returns string for jsonb)
-        if (typeof job.payload === 'string') {
-            try {
-                job.payload = JSON.parse(job.payload)
-            } catch (e) {
-                console.error(`[Webhook Worker] Failed to parse payload for job ${job.id}`, e)
-            }
-        }
-
-        // IMPROVEMENT: Inject App URL and Workspace ID if missing
-        ; (config as any).appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-
-        // If job doesn't have workspaceId, try to find it (it sits on the webhook config usually)
-        if (!job.workspaceId && config.workspaceId) {
-            job.workspaceId = config.workspaceId
-        }
-
-        console.log(`[Webhook Worker] Preparing ${config.type} request for ${config.url}`)
-
-        // 2. SELECT ADAPTER
-        const type = (config.type || 'generic') as keyof typeof WebhookAdapters
-        const adapter = WebhookAdapters[type] || WebhookAdapters.generic
-
-        // 3. PREPARE REQUEST
-        const request = await adapter(job, config)
-        requestHeaders = request.headers
-
-        // SSRF PROTECTION
-        if (isPrivateUrl(request.url)) {
-            throw new Error(`Blocked restricted URL: ${request.url}`)
-        }
-
-        console.log(`[Webhook Worker] Sending to ${request.url}`)
-        console.log(`[Webhook Worker] Body: ${request.body}`)
-
-        const response = await fetch(request.url, {
-            method: request.method || 'POST',
-            headers: request.headers,
-            body: request.body,
-            // Set a timeout
-            signal: AbortSignal.timeout(10000)
-        })
-
-        responseStatus = response.status
-        responseBody = await response.text()
-
-        console.log(`[Webhook Worker] Response: ${responseStatus} - ${responseBody}`)
-
-        if (response.ok) {
-            // Success!
-            console.log(`[Webhook Worker] ✓ Delivery successful for job ${job.id}`)
-            await finalizeJob(job.id, 'completed', responseStatus, responseBody || 'OK (No Content)', requestHeaders, startTime)
-            // Reset failure count on webhook config
-            await db.update(webhooks).set({ failureCount: 0 }).where(eq(webhooks.id, config.id))
-        } else {
-            throw new Error(`Endpoint returned status ${response.status}: ${responseBody}`)
-        }
-
-    } catch (error: any) {
-        console.error(`[Webhook Worker] ✗ Delivery failed for job ${job.id}:`, error.message)
-        // Failure! Schedule retry or fail permanently
-        const maxRetries = 5
-        const attemptCount = job.attemptCount + 1
-
-        if (attemptCount >= maxRetries) {
-            // Permanent failure
-            await finalizeJob(job.id, 'failed', responseStatus, error.message || responseBody, requestHeaders, startTime)
-            // Increment circuit breaker
-            await db.execute(sql`UPDATE webhooks SET failure_count = failure_count + 1 WHERE id = ${job.webhookId}`)
-        } else {
-            // Exponential backoff: 30s, 2m, 10m, 30m, 1h
-            const backoffMinutes = Math.pow(4, attemptCount - 1) * 0.5
-            const nextRunAt = new Date(Date.now() + backoffMinutes * 60000)
-
-            await db.update(webhookQueue)
-                .set({
-                    status: 'pending',
-                    attemptCount,
-                    nextRunAt,
-                    lastError: error.message,
-                    updatedAt: new Date()
-                })
-                .where(eq(webhookQueue.id, job.id))
-
-            // Still log the failed attempt
-            await db.insert(webhookDeliveries).values({
-                webhookId: job.webhookId,
-                event: job.event,
-                payload: job.payload,
-                requestHeaders,
-                responseStatus,
-                responseBody: error.message,
-                durationMs: Date.now() - startTime,
-                attemptIndex: job.attemptCount
-            })
-        }
+    if (!config || !config.isActive) {
+      console.log(`[Webhook Worker] Webhook ${job.webhookId} not found or inactive, removing job`)
+      await db.delete(webhookQueue).where(eq(webhookQueue.id, job.id))
+      return
     }
-}
 
-async function finalizeJob(jobId: string, status: string, responseStatus: number | undefined, responseBody: string | undefined, requestHeaders: any, startTime: number) {
-    const [job] = await db.select().from(webhookQueue).where(eq(webhookQueue.id, jobId)).limit(1)
-    if (!job) return
+    // IMPROVEMENT: Ensure payload is an object (Drizzle sometimes returns string for jsonb)
+    if (typeof job.payload === 'string') {
+      try {
+        job.payload = JSON.parse(job.payload)
+      } catch (e) {
+        console.error(`[Webhook Worker] Failed to parse payload for job ${job.id}`, e)
+      }
+    }
 
-    // Log the delivery
-    await db.insert(webhookDeliveries).values({
+    // IMPROVEMENT: Inject App URL and Workspace ID if missing
+    ;(config as any).appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+    // If job doesn't have workspaceId, try to find it (it sits on the webhook config usually)
+    if (!job.workspaceId && config.workspaceId) {
+      job.workspaceId = config.workspaceId
+    }
+
+    console.log(`[Webhook Worker] Preparing ${config.type} request for ${config.url}`)
+
+    // 2. SELECT ADAPTER
+    const type = (config.type || 'generic') as keyof typeof WebhookAdapters
+    const adapter = WebhookAdapters[type] || WebhookAdapters.generic
+
+    // 3. PREPARE REQUEST
+    const request = await adapter(job, config)
+    requestHeaders = request.headers
+
+    // SSRF PROTECTION
+    if (isPrivateUrl(request.url)) {
+      throw new Error(`Blocked restricted URL: ${request.url}`)
+    }
+
+    console.log(`[Webhook Worker] Sending to ${request.url}`)
+    console.log(`[Webhook Worker] Body: ${request.body}`)
+
+    const response = await fetch(request.url, {
+      method: request.method || 'POST',
+      headers: request.headers,
+      body: request.body,
+      // Set a timeout
+      signal: AbortSignal.timeout(10000),
+    })
+
+    responseStatus = response.status
+    responseBody = await response.text()
+
+    console.log(`[Webhook Worker] Response: ${responseStatus} - ${responseBody}`)
+
+    if (response.ok) {
+      // Success!
+      console.log(`[Webhook Worker] ✓ Delivery successful for job ${job.id}`)
+      await finalizeJob(
+        job.id,
+        'completed',
+        responseStatus,
+        responseBody || 'OK (No Content)',
+        requestHeaders,
+        startTime
+      )
+      // Reset failure count on webhook config
+      await db.update(webhooks).set({ failureCount: 0 }).where(eq(webhooks.id, config.id))
+    } else {
+      throw new Error(`Endpoint returned status ${response.status}: ${responseBody}`)
+    }
+  } catch (error: any) {
+    console.error(`[Webhook Worker] ✗ Delivery failed for job ${job.id}:`, error.message)
+    // Failure! Schedule retry or fail permanently
+    const maxRetries = 5
+    const attemptCount = job.attemptCount + 1
+
+    if (attemptCount >= maxRetries) {
+      // Permanent failure
+      await finalizeJob(
+        job.id,
+        'failed',
+        responseStatus,
+        error.message || responseBody,
+        requestHeaders,
+        startTime
+      )
+      // Increment circuit breaker
+      await db.execute(
+        sql`UPDATE webhooks SET failure_count = failure_count + 1 WHERE id = ${job.webhookId}`
+      )
+    } else {
+      // Exponential backoff: 30s, 2m, 10m, 30m, 1h
+      const backoffMinutes = Math.pow(4, attemptCount - 1) * 0.5
+      const nextRunAt = new Date(Date.now() + backoffMinutes * 60000)
+
+      await db
+        .update(webhookQueue)
+        .set({
+          status: 'pending',
+          attemptCount,
+          nextRunAt,
+          lastError: error.message,
+          updatedAt: new Date(),
+        })
+        .where(eq(webhookQueue.id, job.id))
+
+      // Still log the failed attempt
+      await db.insert(webhookDeliveries).values({
         webhookId: job.webhookId,
         event: job.event,
         payload: job.payload,
         requestHeaders,
         responseStatus,
-        responseBody,
+        responseBody: error.message,
         durationMs: Date.now() - startTime,
-        attemptIndex: job.attemptCount
-    })
-
-    // Update or delete queue item
-    if (status === 'completed') {
-        await db.delete(webhookQueue).where(eq(webhookQueue.id, jobId))
-    } else {
-        await db.update(webhookQueue)
-            .set({ status: 'failed', lastError: responseBody, updatedAt: new Date() })
-            .where(eq(webhookQueue.id, jobId))
+        attemptIndex: job.attemptCount,
+      })
     }
+  }
+}
+
+async function finalizeJob(
+  jobId: string,
+  status: string,
+  responseStatus: number | undefined,
+  responseBody: string | undefined,
+  requestHeaders: any,
+  startTime: number
+) {
+  const [job] = await db.select().from(webhookQueue).where(eq(webhookQueue.id, jobId)).limit(1)
+  if (!job) return
+
+  // Log the delivery
+  await db.insert(webhookDeliveries).values({
+    webhookId: job.webhookId,
+    event: job.event,
+    payload: job.payload,
+    requestHeaders,
+    responseStatus,
+    responseBody,
+    durationMs: Date.now() - startTime,
+    attemptIndex: job.attemptCount,
+  })
+
+  // Update or delete queue item
+  if (status === 'completed') {
+    await db.delete(webhookQueue).where(eq(webhookQueue.id, jobId))
+  } else {
+    await db
+      .update(webhookQueue)
+      .set({ status: 'failed', lastError: responseBody, updatedAt: new Date() })
+      .where(eq(webhookQueue.id, jobId))
+  }
 }
 
 /**
@@ -264,21 +282,20 @@ async function finalizeJob(jobId: string, status: string, responseStatus: number
  * Only runs in production to avoid overwhelming shared database connections
  */
 export function startWebhookWorker(intervalMs = 60000) {
-    // Only run in production to avoid DB connection issues in development
-    if (process.env.NODE_ENV !== 'production') {
-        console.log('⚠️ Webhook worker disabled in development mode')
-        return
-    }
+  // Only run in production to avoid DB connection issues in development
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('⚠️ Webhook worker disabled in development mode')
+    return
+  }
 
-    console.log('🚀 Webhook worker started (interval: ' + (intervalMs / 1000) + 's)')
+  console.log('🚀 Webhook worker started (interval: ' + intervalMs / 1000 + 's)')
 
-    // Delay first run to allow DB pool to initialize
-    setTimeout(() => {
-        processWebhookQueue()
+  // Delay first run to allow DB pool to initialize
+  setTimeout(() => {
+    processWebhookQueue()
 
-        setInterval(() => {
-            processWebhookQueue()
-        }, intervalMs)
-    }, 5000)
+    setInterval(() => {
+      processWebhookQueue()
+    }, intervalMs)
+  }, 5000)
 }
-

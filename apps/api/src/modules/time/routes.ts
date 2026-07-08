@@ -8,10 +8,10 @@ import { workspaces, workspaceMembers } from '../../db/schema/workspaces'
 import { users } from '../../db/schema/users'
 import { eq, desc, and, inArray, or, sql, gte } from 'drizzle-orm'
 import {
-    canCreateTimeEntries,
-    canViewAllTimeEntries,
-    canManageTimeEntries,
-    type TeamLevel
+  canCreateTimeEntries,
+  canViewAllTimeEntries,
+  canManageTimeEntries,
+  type TeamLevel,
 } from '../../lib/permissions'
 
 import { type Auth } from '../../lib/auth'
@@ -22,1532 +22,1875 @@ import { zSanitizedString } from '../../lib/zod-extensions'
 
 // Default role multipliers for revshare calculation
 const ROLE_COEFFICIENTS: Record<string, number> = {
-    Project_Leader: 1.25,
-    Team_Leader: 1.10,
-    Participant: 1.00,
+  Project_Leader: 1.25,
+  Team_Leader: 1.1,
+  Participant: 1.0,
 }
 
 const DIFFICULTY_COEFFICIENTS: Record<string, number> = {
-    basic: 0.75,
-    standard: 1.00,
-    advanced: 1.30,
-    critical: 1.50,
+  basic: 0.75,
+  standard: 1.0,
+  advanced: 1.3,
+  critical: 1.5,
 }
 
 const isUUID = (val: string | null | undefined): boolean => {
-    if (!val) return false
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+  if (!val) return false
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 }
 
 // Mapowanie ról workspace/team → współczynnik projektu
 export function resolveProjectRole(wsRole: string, isAnyTeamLead: boolean): string {
-    // Owner, Admin, Project Manager → Lider Projektu (Najwyższa ranga)
-    if (['owner', 'admin', 'project_manager'].includes(wsRole)) return 'Project_Leader'
-    // Jeśli jest leaderem w DOWOLNYM zespole w tym workspace → Lider Obszaru
-    if (isAnyTeamLead) return 'Team_Leader'
-    // Wszyscy inni → Uczestnik
-    return 'Participant'
+  // Owner, Admin, Project Manager → Lider Projektu (Najwyższa ranga)
+  if (['owner', 'admin', 'project_manager'].includes(wsRole)) return 'Project_Leader'
+  // Jeśli jest leaderem w DOWOLNYM zespole w tym workspace → Lider Obszaru
+  if (isAnyTeamLead) return 'Team_Leader'
+  // Wszyscy inni → Uczestnik
+  return 'Participant'
 }
 
 const createTimeEntrySchema = z.object({
-    taskId: z.string().optional().nullable(),
-    subtaskId: z.string().optional().nullable(),
-    userId: z.string().optional(),
-    workspaceSlug: z.string().optional(),
-    description: zSanitizedString().optional(),
-    durationMinutes: z.number().int().nonnegative(),
-    startedAt: z.string().datetime().or(z.date()), // Accepts ISO string or Date object
-    endedAt: z.string().datetime().or(z.date()).optional().nullable(),
-    entryType: z.enum(['task', 'meeting']).default('task'),
+  taskId: z.string().optional().nullable(),
+  subtaskId: z.string().optional().nullable(),
+  userId: z.string().optional(),
+  workspaceSlug: z.string().optional(),
+  description: zSanitizedString().optional(),
+  durationMinutes: z.number().int().nonnegative(),
+  startedAt: z.iso.datetime().or(z.date()), // Accepts ISO string or Date object
+  endedAt: z.iso.datetime().or(z.date()).optional().nullable(),
+  entryType: z.enum(['task', 'meeting']).default('task'),
 })
 
 const approveTimeEntrySchema = z.object({
-    difficultyLevel: z.enum(['basic', 'standard', 'advanced', 'critical']),
-    bonusPoints: z.number().int().nonnegative().optional(),
+  difficultyLevel: z.enum(['basic', 'standard', 'advanced', 'critical']),
+  bonusPoints: z.number().int().nonnegative().optional(),
 })
 
 const rejectTimeEntrySchema = z.object({
-    rejectionReason: z.string().min(5).max(500),
+  rejectionReason: z.string().min(5).max(500),
 })
 
 const startTimeEntrySchema = z.object({
-    taskId: z.string().optional().nullable(),
-    subtaskId: z.string().optional().nullable(),
-    userId: z.string().optional(),
-    workspaceSlug: z.string().optional(),
-    description: zSanitizedString().optional(),
-    entryType: z.enum(['task', 'meeting']).default('task'),
+  taskId: z.string().optional().nullable(),
+  subtaskId: z.string().optional().nullable(),
+  userId: z.string().optional(),
+  workspaceSlug: z.string().optional(),
+  description: zSanitizedString().optional(),
+  entryType: z.enum(['task', 'meeting']).default('task'),
 })
 
 const updateTimeEntrySchema = z.object({
-    description: zSanitizedString().optional(),
-    durationMinutes: z.number().int().nonnegative().optional(),
-    startedAt: z.string().datetime().or(z.date()).optional(),
-    endedAt: z.string().datetime().or(z.date()).optional().nullable(),
-    entryType: z.enum(['task', 'meeting']).optional(),
-    taskId: z.string().optional().nullable(),
-    subtaskId: z.string().optional().nullable(),
+  description: zSanitizedString().optional(),
+  durationMinutes: z.number().int().nonnegative().optional(),
+  startedAt: z.iso.datetime().or(z.date()).optional(),
+  endedAt: z.iso.datetime().or(z.date()).optional().nullable(),
+  entryType: z.enum(['task', 'meeting']).optional(),
+  taskId: z.string().optional().nullable(),
+  subtaskId: z.string().optional().nullable(),
 })
 
-export const timeRoutes = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
+export const timeRoutes = new Hono<{
+  Variables: {
+    user: Auth['$Infer']['Session']['user']
+    session: Auth['$Infer']['Session']['session']
+  }
+}>()
 
 // Helper: Get user's team level for a project's team
 async function getUserTeamLevel(userId: string, teamId: string): Promise<TeamLevel | null> {
-    const member = await db.query.teamMembers.findFirst({
-        where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId))
-    })
-    return (member?.teamLevel as TeamLevel) || null
+  const member = await db.query.teamMembers.findFirst({
+    where: (tm, { eq, and }) => and(eq(tm.userId, userId), eq(tm.teamId, teamId)),
+  })
+  return (member?.teamLevel as TeamLevel) || null
 }
 
 // Helper: Get teamId from taskId
 async function getTeamIdFromTask(taskId: string | null | undefined): Promise<string | null> {
-    if (!taskId || !isUUID(taskId)) return null
-    const [task] = await db.select({ projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1)
-    if (!task) return null
-    const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, task.projectId)).limit(1)
-    return project?.teamId || null
+  if (!taskId || !isUUID(taskId)) return null
+  const [task] = await db
+    .select({ projectId: tasks.projectId })
+    .from(tasks)
+    .where(eq(tasks.id, taskId))
+    .limit(1)
+  if (!task) return null
+  const [project] = await db
+    .select({ teamId: projects.teamId })
+    .from(projects)
+    .where(eq(projects.id, task.projectId))
+    .limit(1)
+  return project?.teamId || null
 }
 
 // Helper: Check if user is a team_lead in ANY team within a workspace
 async function isUserAnyTeamLead(userId: string, workspaceId: string): Promise<boolean> {
-    const [lead] = await db.select({ id: teamMembers.id })
-        .from(teamMembers)
-        .innerJoin(teams, eq(teamMembers.teamId, teams.id))
-        .where(
-            and(
-                eq(teamMembers.userId, userId),
-                eq(teamMembers.teamLevel, 'team_lead'),
-                eq(teams.workspaceId, workspaceId)
-            )
-        )
-        .limit(1)
-    return !!lead
+  const [lead] = await db
+    .select({ id: teamMembers.id })
+    .from(teamMembers)
+    .innerJoin(teams, eq(teamMembers.teamId, teams.id))
+    .where(
+      and(
+        eq(teamMembers.userId, userId),
+        eq(teamMembers.teamLevel, 'team_lead'),
+        eq(teams.workspaceId, workspaceId)
+      )
+    )
+    .limit(1)
+  return !!lead
 }
 // Helper: Get workspace role from a taskId
-async function getWorkspaceRoleFromTask(userId: string, taskId: string | null | undefined): Promise<string | null> {
-    if (!taskId || !isUUID(taskId)) return null
-    const [task] = await db.select({ projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1)
-    if (!task) return null
-    const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, task.projectId)).limit(1)
-    if (!project) return null
-    const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, project.teamId)).limit(1)
-    if (!team) return null
-    const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-        .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, team.workspaceId))).limit(1)
-    return wsMember?.role || null
+async function getWorkspaceRoleFromTask(
+  userId: string,
+  taskId: string | null | undefined
+): Promise<string | null> {
+  if (!taskId || !isUUID(taskId)) return null
+  const [task] = await db
+    .select({ projectId: tasks.projectId })
+    .from(tasks)
+    .where(eq(tasks.id, taskId))
+    .limit(1)
+  if (!task) return null
+  const [project] = await db
+    .select({ teamId: projects.teamId })
+    .from(projects)
+    .where(eq(projects.id, task.projectId))
+    .limit(1)
+  if (!project) return null
+  const [team] = await db
+    .select({ workspaceId: teams.workspaceId })
+    .from(teams)
+    .where(eq(teams.id, project.teamId))
+    .limit(1)
+  if (!team) return null
+  const [wsMember] = await db
+    .select({ role: workspaceMembers.role })
+    .from(workspaceMembers)
+    .where(
+      and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, team.workspaceId))
+    )
+    .limit(1)
+  return wsMember?.role || null
 }
 
 // Helper: Get workspaceId from a taskId
 async function getWorkspaceIdFromTask(taskId: string | null | undefined): Promise<string | null> {
-    if (!taskId || !isUUID(taskId)) return null
-    const [task] = await db.select({ projectId: tasks.projectId }).from(tasks).where(eq(tasks.id, taskId)).limit(1)
-    if (!task) return null
-    const [project] = await db.select({ teamId: projects.teamId }).from(projects).where(eq(projects.id, task.projectId)).limit(1)
-    if (!project) return null
-    const [team] = await db.select({ workspaceId: teams.workspaceId }).from(teams).where(eq(teams.id, project.teamId)).limit(1)
-    return team?.workspaceId || null
+  if (!taskId || !isUUID(taskId)) return null
+  const [task] = await db
+    .select({ projectId: tasks.projectId })
+    .from(tasks)
+    .where(eq(tasks.id, taskId))
+    .limit(1)
+  if (!task) return null
+  const [project] = await db
+    .select({ teamId: projects.teamId })
+    .from(projects)
+    .where(eq(projects.id, task.projectId))
+    .limit(1)
+  if (!project) return null
+  const [team] = await db
+    .select({ workspaceId: teams.workspaceId })
+    .from(teams)
+    .where(eq(teams.id, project.teamId))
+    .limit(1)
+  return team?.workspaceId || null
 }
 
 // GET /api/time - List time entries (own entries OR viewAll permission)
 timeRoutes.get('/', async (c) => {
-    try {
-        const user = c.get('user')
-        const userId = user.id
-        const { taskId, projectId, startDate, endDate, approvalStatus } = c.req.query()
-        const filterUserId = c.req.query('userId')
+  try {
+    const user = c.get('user')
+    const userId = user.id
+    const { taskId, projectId, startDate, endDate, approvalStatus } = c.req.query()
+    const filterUserId = c.req.query('userId')
 
-        let query = db.select().from(timeEntries).orderBy(desc(timeEntries.startedAt))
-        let result = await query
+    let query = db.select().from(timeEntries).orderBy(desc(timeEntries.startedAt))
+    let result = await query
 
-        // Check if viewing all or filtering by specific user
-        if (filterUserId && filterUserId !== userId) {
-            // Need viewAll permission to see others' entries
-            if (taskId) {
-                const teamId = await getTeamIdFromTask(taskId as string)
-                if (teamId) {
-                    const teamLevel = await getUserTeamLevel(userId, teamId)
-                    if (!canViewAllTimeEntries(null, teamLevel as any)) {
-                        return c.json({ success: false, error: 'Unauthorized to view all time entries' }, 403)
-                    }
-                }
-            }
+    // Check if viewing all or filtering by specific user
+    if (filterUserId && filterUserId !== userId) {
+      // Need viewAll permission to see others' entries
+      if (taskId) {
+        const teamId = await getTeamIdFromTask(taskId as string)
+        if (teamId) {
+          const teamLevel = await getUserTeamLevel(userId, teamId)
+          if (!canViewAllTimeEntries(null, teamLevel as any)) {
+            return c.json({ success: false, error: 'Unauthorized to view all time entries' }, 403)
+          }
         }
-
-        if (taskId) result = result.filter(e => e.taskId === taskId)
-
-        if (projectId) {
-            const [project] = await db.select({ id: projects.id, teamId: projects.teamId })
-                .from(projects)
-                .where(eq(projects.id, projectId))
-                .limit(1)
-
-            if (!project) {
-                return c.json({ success: false, error: 'Project not found' }, 404)
-            }
-
-            const [team] = await db.select({ workspaceId: teams.workspaceId })
-                .from(teams)
-                .where(eq(teams.id, project.teamId))
-                .limit(1)
-
-            if (!team) {
-                return c.json({ success: false, error: 'Team not found' }, 404)
-            }
-
-            const projectTasks = await db.select({ id: tasks.id })
-                .from(tasks)
-                .where(eq(tasks.projectId, projectId))
-
-            const projectTaskIds = new Set(projectTasks.map(task => task.id))
-
-            result = result.filter(entry =>
-                (entry.taskId ? projectTaskIds.has(entry.taskId) : false) ||
-                (
-                    entry.workspaceId === team.workspaceId &&
-                    entry.entryType === 'meeting' &&
-                    entry.taskId === null
-                )
-            )
-        }
-
-        if (filterUserId) result = result.filter(e => e.userId === filterUserId)
-        else result = result.filter(e => e.userId === userId) // Default: own entries only
-        if (startDate) result = result.filter(e => new Date(e.startedAt) >= new Date(startDate))
-        if (endDate) result = result.filter(e => new Date(e.startedAt) <= new Date(endDate))
-        if (approvalStatus) result = result.filter(e => e.approvalStatus === approvalStatus)
-
-        // Fetch task and subtask titles for display
-        const taskIds = [...new Set(result.map(e => e.taskId).filter(Boolean) as string[])]
-        let taskMap: Record<string, string> = {
-            'standalone-meetings': 'Meetings & Calendar Events'
-        }
-        if (taskIds.length > 0) {
-            const taskList = await db.select({ id: tasks.id, title: tasks.title }).from(tasks).where(inArray(tasks.id, taskIds))
-            taskList.forEach(t => { taskMap[t.id] = t.title })
-        }
-
-        const subtaskIds = [...new Set(result.map(e => e.subtaskId).filter(Boolean) as string[])]
-        let subtaskMap: Record<string, string> = {}
-        if (subtaskIds.length > 0) {
-            const subtaskList = await db.select({ id: subtasks.id, title: subtasks.title }).from(subtasks).where(inArray(subtasks.id, subtaskIds))
-            subtaskMap = Object.fromEntries(subtaskList.map(s => [s.id, s.title]))
-        }
-
-        // Apply 50% rule for meetings and calculate points
-        const enrichedResult = result.map(e => {
-            const rawDuration = e.durationMinutes
-            const effectiveDuration = e.entryType === 'meeting' ? rawDuration * 0.5 : rawDuration
-
-            const roleFactor = ROLE_COEFFICIENTS[e.projectRole] ?? 1.0
-            const diffFactor = DIFFICULTY_COEFFICIENTS[e.difficultyLevel] ?? 1.0
-            const points = Math.round(((effectiveDuration / 60) * roleFactor * diffFactor + (e.bonusPoints || 0)) * 100) / 100
-
-            return {
-                ...e,
-                durationMinutes: effectiveDuration, // Override with effective duration
-                rawDurationMinutes: rawDuration,
-                points,
-                taskTitle: (e.taskId ? taskMap[e.taskId] : taskMap['standalone-meetings']) || 'General',
-                subtaskTitle: (e.subtaskId && typeof e.subtaskId === 'string') ? subtaskMap[e.subtaskId] || null : null
-            }
-        })
-
-        const totalMinutes = enrichedResult.reduce((sum, e) => sum + e.durationMinutes, 0)
-
-        return c.json({ success: true, data: enrichedResult, totalMinutes })
-    } catch (error: any) {
-        console.error('Error fetching time entries:', error)
-        return c.json({ success: false, error: 'Failed to fetch time entries', details: error.message }, 500)
+      }
     }
+
+    if (taskId) result = result.filter((e) => e.taskId === taskId)
+
+    if (projectId) {
+      const [project] = await db
+        .select({ id: projects.id, teamId: projects.teamId })
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1)
+
+      if (!project) {
+        return c.json({ success: false, error: 'Project not found' }, 404)
+      }
+
+      const [team] = await db
+        .select({ workspaceId: teams.workspaceId })
+        .from(teams)
+        .where(eq(teams.id, project.teamId))
+        .limit(1)
+
+      if (!team) {
+        return c.json({ success: false, error: 'Team not found' }, 404)
+      }
+
+      const projectTasks = await db
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(eq(tasks.projectId, projectId))
+
+      const projectTaskIds = new Set(projectTasks.map((task) => task.id))
+
+      result = result.filter(
+        (entry) =>
+          (entry.taskId ? projectTaskIds.has(entry.taskId) : false) ||
+          (entry.workspaceId === team.workspaceId &&
+            entry.entryType === 'meeting' &&
+            entry.taskId === null)
+      )
+    }
+
+    if (filterUserId) result = result.filter((e) => e.userId === filterUserId)
+    else result = result.filter((e) => e.userId === userId) // Default: own entries only
+    if (startDate) result = result.filter((e) => new Date(e.startedAt) >= new Date(startDate))
+    if (endDate) result = result.filter((e) => new Date(e.startedAt) <= new Date(endDate))
+    if (approvalStatus) result = result.filter((e) => e.approvalStatus === approvalStatus)
+
+    // Fetch task and subtask titles for display
+    const taskIds = [...new Set(result.map((e) => e.taskId).filter(Boolean) as string[])]
+    let taskMap: Record<string, string> = {
+      'standalone-meetings': 'Meetings & Calendar Events',
+    }
+    if (taskIds.length > 0) {
+      const taskList = await db
+        .select({ id: tasks.id, title: tasks.title })
+        .from(tasks)
+        .where(inArray(tasks.id, taskIds))
+      taskList.forEach((t) => {
+        taskMap[t.id] = t.title
+      })
+    }
+
+    const subtaskIds = [...new Set(result.map((e) => e.subtaskId).filter(Boolean) as string[])]
+    let subtaskMap: Record<string, string> = {}
+    if (subtaskIds.length > 0) {
+      const subtaskList = await db
+        .select({ id: subtasks.id, title: subtasks.title })
+        .from(subtasks)
+        .where(inArray(subtasks.id, subtaskIds))
+      subtaskMap = Object.fromEntries(subtaskList.map((s) => [s.id, s.title]))
+    }
+
+    // Apply 50% rule for meetings and calculate points
+    const enrichedResult = result.map((e) => {
+      const rawDuration = e.durationMinutes
+      const effectiveDuration = e.entryType === 'meeting' ? rawDuration * 0.5 : rawDuration
+
+      const roleFactor = ROLE_COEFFICIENTS[e.projectRole] ?? 1.0
+      const diffFactor = DIFFICULTY_COEFFICIENTS[e.difficultyLevel] ?? 1.0
+      const points =
+        Math.round(
+          ((effectiveDuration / 60) * roleFactor * diffFactor + (e.bonusPoints || 0)) * 100
+        ) / 100
+
+      return {
+        ...e,
+        durationMinutes: effectiveDuration, // Override with effective duration
+        rawDurationMinutes: rawDuration,
+        points,
+        taskTitle: (e.taskId ? taskMap[e.taskId] : taskMap['standalone-meetings']) || 'General',
+        subtaskTitle:
+          e.subtaskId && typeof e.subtaskId === 'string' ? subtaskMap[e.subtaskId] || null : null,
+      }
+    })
+
+    const totalMinutes = enrichedResult.reduce((sum, e) => sum + e.durationMinutes, 0)
+
+    return c.json({ success: true, data: enrichedResult, totalMinutes })
+  } catch (error: any) {
+    console.error('Error fetching time entries:', error)
+    return c.json(
+      { success: false, error: 'Failed to fetch time entries', details: error.message },
+      500
+    )
+  }
 })
 
 timeRoutes.get('/summary', async (c) => {
-    try {
-        const user = c.get('user')
-        const userId = user.id
-        const { startDate, endDate } = c.req.query()
-        const filterUserId = c.req.query('userId')
+  try {
+    const user = c.get('user')
+    const userId = user.id
+    const { startDate, endDate } = c.req.query()
+    const filterUserId = c.req.query('userId')
 
-        let result = await db.select({ durationMinutes: timeEntries.durationMinutes, entryType: timeEntries.entryType, userId: timeEntries.userId, startedAt: timeEntries.startedAt }).from(timeEntries)
+    let result = await db
+      .select({
+        durationMinutes: timeEntries.durationMinutes,
+        entryType: timeEntries.entryType,
+        userId: timeEntries.userId,
+        startedAt: timeEntries.startedAt,
+      })
+      .from(timeEntries)
 
-        if (filterUserId) result = result.filter(e => e.userId === filterUserId)
-        else result = result.filter(e => e.userId === userId)
+    if (filterUserId) result = result.filter((e) => e.userId === filterUserId)
+    else result = result.filter((e) => e.userId === userId)
 
-        if (startDate) result = result.filter(e => new Date(e.startedAt) >= new Date(startDate))
-        if (endDate) result = result.filter(e => new Date(e.startedAt) <= new Date(endDate))
+    if (startDate) result = result.filter((e) => new Date(e.startedAt) >= new Date(startDate))
+    if (endDate) result = result.filter((e) => new Date(e.startedAt) <= new Date(endDate))
 
-        const totalMinutes = result.reduce((sum, e) => {
-            const effective = e.entryType === 'meeting' ? e.durationMinutes * 0.5 : e.durationMinutes
-            return sum + effective
-        }, 0)
-        return c.json({ success: true, totalMinutes, totalHours: Math.round(totalMinutes / 60 * 100) / 100 })
-    } catch (error: any) {
-        console.error('Error fetching time summary:', error)
-        return c.json({ success: false, error: 'Failed to fetch summary', details: error.message }, 500)
-    }
+    const totalMinutes = result.reduce((sum, e) => {
+      const effective = e.entryType === 'meeting' ? e.durationMinutes * 0.5 : e.durationMinutes
+      return sum + effective
+    }, 0)
+    return c.json({
+      success: true,
+      totalMinutes,
+      totalHours: Math.round((totalMinutes / 60) * 100) / 100,
+    })
+  } catch (error: any) {
+    console.error('Error fetching time summary:', error)
+    return c.json({ success: false, error: 'Failed to fetch summary', details: error.message }, 500)
+  }
 })
 
 // GET /api/time/my-tasks - Get tasks assigned to the current user (for task selector)
 timeRoutes.get('/my-tasks', async (c) => {
-    try {
-        const user = c.get('user')
-        const userId = user.id
-        const workspaceSlug = c.req.query('workspaceSlug')
+  try {
+    const user = c.get('user')
+    const userId = user.id
+    const workspaceSlug = c.req.query('workspaceSlug')
 
-        if (!workspaceSlug) {
-            return c.json({ success: false, error: 'workspaceSlug is required' }, 400)
-        }
-
-        // Get workspace
-        const [workspace] = await db.select().from(workspaces).where(eq(workspaces.slug, workspaceSlug)).limit(1)
-        if (!workspace) {
-            return c.json({ success: false, error: 'Workspace not found' }, 404)
-        }
-
-        // Get user's active team memberships for visibility
-        const userTeamsRows = await db.select({ teamId: teamMembers.teamId })
-            .from(teamMembers)
-            .where(eq(teamMembers.userId, userId))
-        const userTeamIds = userTeamsRows.map(ut => ut.teamId)
-
-        // Get teams in this workspace
-        const workspaceTeams = await db.select({ id: teams.id }).from(teams).where(eq(teams.workspaceId, workspace.id))
-        const teamIds = workspaceTeams.map(t => t.id)
-
-        if (teamIds.length === 0) {
-            return c.json({ success: true, data: [] })
-        }
-
-        // Get projects for those teams
-        const teamProjects = await db.select({
-            id: projects.id,
-            name: projects.name,
-            teamId: projects.teamId
-        }).from(projects).where(inArray(projects.teamId, teamIds))
-
-        if (teamProjects.length === 0) {
-            return c.json({ success: true, data: [] })
-        }
-        const projectIds = teamProjects.map(p => p.id)
-
-        // Get ALL tasks in these projects to find associated meetings
-        const allTasksInProjects = await db.select().from(tasks)
-            .where(inArray(tasks.projectId, projectIds))
-            .orderBy(desc(tasks.updatedAt))
-
-        const targetUserId = c.req.query('targetUserId') || userId
-        const allTaskIds = allTasksInProjects.map(t => t.id)
-
-        let allSubtasks: any[] = []
-        let allMeetings: any[] = []
-
-        if (allTaskIds.length > 0) {
-            allSubtasks = await db.select({
-                id: subtasks.id,
-                title: subtasks.title,
-                taskId: subtasks.taskId,
-                isCompleted: subtasks.isCompleted
-            }).from(subtasks).where(inArray(subtasks.taskId, allTaskIds))
-        }
-
-        // Fetch meetings separately with a more robust approach
-        try {
-            const validTaskIds = allTaskIds.filter(id => isUUID(id))
-
-            // Build OR conditions for meetings safely
-            const meetingConditions = [
-                eq(calendarEvents.createdBy, userId),
-                sql`${userId} = ANY(${calendarEvents.attendeeIds})`,
-            ]
-
-            // Only add taskId filter if we have valid UUIDs
-            if (validTaskIds.length > 0) {
-                meetingConditions.push(inArray(calendarEvents.taskId, validTaskIds))
-            }
-
-            // Only add team overlap filter if user has teams AND teams belong to this workspace
-            const userWorkspaceTeamIds = userTeamIds.filter(tid => teamIds.includes(tid))
-            if (userWorkspaceTeamIds.length > 0) {
-                const pgTeamIds = `{${userWorkspaceTeamIds.join(',')}}`
-                meetingConditions.push(sql`${calendarEvents.teamIds} && ${pgTeamIds}::uuid[]`)
-            }
-
-            allMeetings = await db.select({
-                id: calendarEvents.id,
-                title: calendarEvents.title,
-                taskId: calendarEvents.taskId,
-                startAt: calendarEvents.startAt,
-            }).from(calendarEvents).where(
-                and(
-                    eq(calendarEvents.workspaceId, workspace.id),
-                    inArray(calendarEvents.type, ['meeting', 'event']),
-                    // Relaxed time window: allow logging time for meetings up to 48 hours ago
-                    gte(calendarEvents.endAt, sql`now() - interval '48 hours'`),
-                    or(...meetingConditions)
-                )
-            ).orderBy(desc(calendarEvents.startAt))
-        } catch (meetingError: any) {
-            console.error('Error fetching meetings for my-tasks (non-fatal):', meetingError)
-            // Continue without meetings - tasks will still be returned
-        }
-
-        // Filter to only show:
-        // 1. Tasks where the target user is in assignees (and not completed)
-        // 2. Tasks that have associated meetings (so user can pick the meeting)
-        const myTasks = allTasksInProjects.filter(t => {
-            const isAssigned = t.assignees && t.assignees.includes(targetUserId);
-            const hasMeeting = allMeetings.some(m => m.taskId === t.id);
-            return (isAssigned && !t.isCompleted) || hasMeeting;
-        })
-
-        // Build project map
-        const projectMap = Object.fromEntries(teamProjects.map(p => [p.id, p]))
-
-        // Build response with tasks grouped by project
-        const taskResults = myTasks.map(t => ({
-            id: t.id,
-            title: t.title,
-            status: t.status,
-            priority: t.priority,
-            projectId: t.projectId,
-            projectName: projectMap[t.projectId]?.name || 'Unknown',
-            type: 'task',
-            subtasks: allSubtasks
-                .filter(s => s.taskId === t.id && !s.isCompleted)
-                .map(s => ({
-                    id: s.id,
-                    title: s.title,
-                    isCompleted: s.isCompleted,
-                })),
-            meetings: allMeetings
-                .filter(m => m.taskId === t.id)
-                .map(m => ({
-                    id: m.id,
-                    title: m.title,
-                    taskId: m.taskId,
-                    date: m.startAt,
-                })),
-        }))
-
-        // Filter standalone meetings (no taskId or taskId not in our projects)
-        const standaloneMeetings = allMeetings.filter(m => !m.taskId || !allTaskIds.includes(m.taskId))
-
-        if (standaloneMeetings.length > 0) {
-            // Add a virtual task for standalone meetings
-            taskResults.push({
-                id: 'standalone-meetings',
-                title: 'Meetings & Calendar Events',
-                status: 'todo',
-                priority: 'medium',
-                projectId: 'calendar',
-                projectName: 'Calendar',
-                type: 'task',
-                subtasks: [],
-                meetings: standaloneMeetings.map(m => ({
-                    id: m.id,
-                    title: m.title,
-                    taskId: 'standalone-meetings',
-                    date: m.startAt,
-                }))
-            } as any)
-        }
-
-        return c.json({ success: true, data: taskResults })
-    } catch (error: any) {
-        console.error('Error fetching my tasks:', error)
-        return c.json({ success: false, error: 'Failed to fetch tasks', details: error.message }, 500)
+    if (!workspaceSlug) {
+      return c.json({ success: false, error: 'workspaceSlug is required' }, 400)
     }
+
+    // Get workspace
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.slug, workspaceSlug))
+      .limit(1)
+    if (!workspace) {
+      return c.json({ success: false, error: 'Workspace not found' }, 404)
+    }
+
+    // Get user's active team memberships for visibility
+    const userTeamsRows = await db
+      .select({ teamId: teamMembers.teamId })
+      .from(teamMembers)
+      .where(eq(teamMembers.userId, userId))
+    const userTeamIds = userTeamsRows.map((ut) => ut.teamId)
+
+    // Get teams in this workspace
+    const workspaceTeams = await db
+      .select({ id: teams.id })
+      .from(teams)
+      .where(eq(teams.workspaceId, workspace.id))
+    const teamIds = workspaceTeams.map((t) => t.id)
+
+    if (teamIds.length === 0) {
+      return c.json({ success: true, data: [] })
+    }
+
+    // Get projects for those teams
+    const teamProjects = await db
+      .select({
+        id: projects.id,
+        name: projects.name,
+        teamId: projects.teamId,
+      })
+      .from(projects)
+      .where(inArray(projects.teamId, teamIds))
+
+    if (teamProjects.length === 0) {
+      return c.json({ success: true, data: [] })
+    }
+    const projectIds = teamProjects.map((p) => p.id)
+
+    // Get ALL tasks in these projects to find associated meetings
+    const allTasksInProjects = await db
+      .select()
+      .from(tasks)
+      .where(inArray(tasks.projectId, projectIds))
+      .orderBy(desc(tasks.updatedAt))
+
+    const targetUserId = c.req.query('targetUserId') || userId
+    const allTaskIds = allTasksInProjects.map((t) => t.id)
+
+    let allSubtasks: any[] = []
+    let allMeetings: any[] = []
+
+    if (allTaskIds.length > 0) {
+      allSubtasks = await db
+        .select({
+          id: subtasks.id,
+          title: subtasks.title,
+          taskId: subtasks.taskId,
+          isCompleted: subtasks.isCompleted,
+        })
+        .from(subtasks)
+        .where(inArray(subtasks.taskId, allTaskIds))
+    }
+
+    // Fetch meetings separately with a more robust approach
+    try {
+      const validTaskIds = allTaskIds.filter((id) => isUUID(id))
+
+      // Build OR conditions for meetings safely
+      const meetingConditions = [
+        eq(calendarEvents.createdBy, userId),
+        sql`${userId} = ANY(${calendarEvents.attendeeIds})`,
+      ]
+
+      // Only add taskId filter if we have valid UUIDs
+      if (validTaskIds.length > 0) {
+        meetingConditions.push(inArray(calendarEvents.taskId, validTaskIds))
+      }
+
+      // Only add team overlap filter if user has teams AND teams belong to this workspace
+      const userWorkspaceTeamIds = userTeamIds.filter((tid) => teamIds.includes(tid))
+      if (userWorkspaceTeamIds.length > 0) {
+        const pgTeamIds = `{${userWorkspaceTeamIds.join(',')}}`
+        meetingConditions.push(sql`${calendarEvents.teamIds} && ${pgTeamIds}::uuid[]`)
+      }
+
+      allMeetings = await db
+        .select({
+          id: calendarEvents.id,
+          title: calendarEvents.title,
+          taskId: calendarEvents.taskId,
+          startAt: calendarEvents.startAt,
+        })
+        .from(calendarEvents)
+        .where(
+          and(
+            eq(calendarEvents.workspaceId, workspace.id),
+            inArray(calendarEvents.type, ['meeting', 'event']),
+            // Relaxed time window: allow logging time for meetings up to 48 hours ago
+            gte(calendarEvents.endAt, sql`now() - interval '48 hours'`),
+            or(...meetingConditions)
+          )
+        )
+        .orderBy(desc(calendarEvents.startAt))
+    } catch (meetingError: any) {
+      console.error('Error fetching meetings for my-tasks (non-fatal):', meetingError)
+      // Continue without meetings - tasks will still be returned
+    }
+
+    // Filter to only show:
+    // 1. Tasks where the target user is in assignees (and not completed)
+    // 2. Tasks that have associated meetings (so user can pick the meeting)
+    const myTasks = allTasksInProjects.filter((t) => {
+      const isAssigned = t.assignees && t.assignees.includes(targetUserId)
+      const hasMeeting = allMeetings.some((m) => m.taskId === t.id)
+      return (isAssigned && !t.isCompleted) || hasMeeting
+    })
+
+    // Build project map
+    const projectMap = Object.fromEntries(teamProjects.map((p) => [p.id, p]))
+
+    // Build response with tasks grouped by project
+    const taskResults = myTasks.map((t) => ({
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      projectId: t.projectId,
+      projectName: projectMap[t.projectId]?.name || 'Unknown',
+      type: 'task',
+      subtasks: allSubtasks
+        .filter((s) => s.taskId === t.id && !s.isCompleted)
+        .map((s) => ({
+          id: s.id,
+          title: s.title,
+          isCompleted: s.isCompleted,
+        })),
+      meetings: allMeetings
+        .filter((m) => m.taskId === t.id)
+        .map((m) => ({
+          id: m.id,
+          title: m.title,
+          taskId: m.taskId,
+          date: m.startAt,
+        })),
+    }))
+
+    // Filter standalone meetings (no taskId or taskId not in our projects)
+    const standaloneMeetings = allMeetings.filter(
+      (m) => !m.taskId || !allTaskIds.includes(m.taskId)
+    )
+
+    if (standaloneMeetings.length > 0) {
+      // Add a virtual task for standalone meetings
+      taskResults.push({
+        id: 'standalone-meetings',
+        title: 'Meetings & Calendar Events',
+        status: 'todo',
+        priority: 'medium',
+        projectId: 'calendar',
+        projectName: 'Calendar',
+        type: 'task',
+        subtasks: [],
+        meetings: standaloneMeetings.map((m) => ({
+          id: m.id,
+          title: m.title,
+          taskId: 'standalone-meetings',
+          date: m.startAt,
+        })),
+      } as any)
+    }
+
+    return c.json({ success: true, data: taskResults })
+  } catch (error: any) {
+    console.error('Error fetching my tasks:', error)
+    return c.json({ success: false, error: 'Failed to fetch tasks', details: error.message }, 500)
+  }
 })
 
 // GET /api/time/contribution/:projectId - Calculate contribution points & revshare percentages
 // GET /api/time/contribution/:projectId/monthly - Monthly view
 timeRoutes.get('/contribution/:projectId/monthly', async (c) => {
-    return handleContribution(c, 'monthly')
+  return handleContribution(c, 'monthly')
 })
 
 // GET /api/time/contribution/:projectId/cumulative - Cumulative view
 timeRoutes.get('/contribution/:projectId/cumulative', async (c) => {
-    return handleContribution(c, 'cumulative')
+  return handleContribution(c, 'cumulative')
 })
 
 // GET /api/time/contribution/:projectId/custom - Custom date range
 timeRoutes.get('/contribution/:projectId/custom', async (c) => {
-    return handleContribution(c, 'custom')
+  return handleContribution(c, 'custom')
 })
 
 // GET /api/time/contribution/:projectId - Base route (defaults to cumulative)
 timeRoutes.get('/contribution/:projectId', async (c) => {
-    return handleContribution(c, 'cumulative')
+  return handleContribution(c, 'cumulative')
 })
 
 // GET /api/time/contribution/:projectId/member - Single member view
 timeRoutes.get('/contribution/:projectId/member', async (c) => {
-    const userId = c.req.query('userId')
-    if (!userId) return c.json({ success: false, error: 'userId is required' }, 400)
-    return handleContribution(c, 'cumulative', userId)
+  const userId = c.req.query('userId')
+  if (!userId) return c.json({ success: false, error: 'userId is required' }, 400)
+  return handleContribution(c, 'cumulative', userId)
 })
 
 async function handleContribution(c: any, type: string, targetUserId?: string) {
-    try {
-        const projectId = c.req.param('projectId')
-        const { month, startDate, endDate } = c.req.query() // month='YYYY-MM', or startDate/endDate for custom
+  try {
+    const projectId = c.req.param('projectId')
+    const { month, startDate, endDate } = c.req.query() // month='YYYY-MM', or startDate/endDate for custom
 
-        // Get project and workspace
-        const [project] = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1)
-        if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
+    // Get project and workspace
+    const [project] = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1)
+    if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
 
-        const [team] = await db.select().from(teams).where(eq(teams.id, project.teamId)).limit(1)
-        if (!team) return c.json({ success: false, error: 'Team not found' }, 404)
+    const [team] = await db.select().from(teams).where(eq(teams.id, project.teamId)).limit(1)
+    if (!team) return c.json({ success: false, error: 'Team not found' }, 404)
 
-        const [workspace] = await db.select().from(workspaces).where(eq(workspaces.id, team.workspaceId)).limit(1)
-        if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, team.workspaceId))
+      .limit(1)
+    if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
 
-        // Get active workspace members to exclude users no longer in the workspace
-        const activeWorkspaceMembers = await db.select({ userId: workspaceMembers.userId })
-            .from(workspaceMembers)
-            .where(and(
-                eq(workspaceMembers.workspaceId, workspace.id),
-                eq(workspaceMembers.status, 'active')
-            ))
-        const activeUserIds = new Set(activeWorkspaceMembers.map(m => m.userId))
+    // Get active workspace members to exclude users no longer in the workspace
+    const activeWorkspaceMembers = await db
+      .select({ userId: workspaceMembers.userId })
+      .from(workspaceMembers)
+      .where(
+        and(eq(workspaceMembers.workspaceId, workspace.id), eq(workspaceMembers.status, 'active'))
+      )
+    const activeUserIds = new Set(activeWorkspaceMembers.map((m) => m.userId))
 
-        // If requesting a single member who is no longer active, return empty result
-        if (targetUserId && !activeUserIds.has(targetUserId)) {
-            return c.json({
-                success: true,
-                data: {
-                    summary: null,
-                    recentEntries: [],
-                    hourThreshold: workspace.settings?.revshareHourThreshold || 200
-                }
-            })
-        }
+    // If requesting a single member who is no longer active, return empty result
+    if (targetUserId && !activeUserIds.has(targetUserId)) {
+      return c.json({
+        success: true,
+        data: {
+          summary: null,
+          recentEntries: [],
+          hourThreshold: workspace.settings?.revshareHourThreshold || 200,
+        },
+      })
+    }
 
-        // Get threshold from settings (default 200)
-        const hourThreshold = workspace.settings?.revshareHourThreshold || 200
+    // Get threshold from settings (default 200)
+    const hourThreshold = workspace.settings?.revshareHourThreshold || 200
 
-        // Get all tasks in this project
-        const projectTasks = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.projectId, projectId))
-        const taskIds = projectTasks.map(t => t.id)
+    // Get all tasks in this project
+    const projectTasks = await db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(eq(tasks.projectId, projectId))
+    const taskIds = projectTasks.map((t) => t.id)
 
-        // --- FETCH ALL APPROVED ENTRIES ---
-        const allApprovedEntriesRaw = await db.select().from(timeEntries).where(
+    // --- FETCH ALL APPROVED ENTRIES ---
+    const allApprovedEntriesRaw = await db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          or(
+            taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
             and(
-                or(
-                    taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
-                    and(
-                        eq(timeEntries.workspaceId, workspace.id),
-                        eq(timeEntries.entryType, 'meeting'),
-                        sql`${timeEntries.taskId} IS NULL`
-                    )
-                ),
-                eq(timeEntries.approvalStatus, 'approved')
+              eq(timeEntries.workspaceId, workspace.id),
+              eq(timeEntries.entryType, 'meeting'),
+              sql`${timeEntries.taskId} IS NULL`
             )
+          ),
+          eq(timeEntries.approvalStatus, 'approved')
         )
+      )
 
-        // Exclude entries from users no longer active in the workspace
-        const allApprovedEntries = allApprovedEntriesRaw.filter(e => activeUserIds.has(e.userId))
+    // Exclude entries from users no longer active in the workspace
+    const allApprovedEntries = allApprovedEntriesRaw.filter((e) => activeUserIds.has(e.userId))
 
-        // --- FILTER ENTRIES BY RANGE ---
-        let targetEntries = allApprovedEntries
-        if (type === 'monthly' && month) {
-            const [yearStr, monthStr] = month.split('-')
-            const yr = parseInt(yearStr, 10)
-            const mo = parseInt(monthStr, 10) - 1
-            const startOfMonth = new Date(yr, mo, 1)
-            const endOfMonth = new Date(yr, mo + 1, 0, 23, 59, 59)
-            targetEntries = allApprovedEntries.filter(e => {
-                const d = new Date(e.startedAt)
-                return d >= startOfMonth && d <= endOfMonth
-            })
-        } else if (type === 'custom' && startDate && endDate) {
-            const start = new Date(startDate)
-            const end = new Date(endDate)
-            end.setHours(23, 59, 59, 999)
-            targetEntries = allApprovedEntries.filter(e => {
-                const d = new Date(e.startedAt)
-                return d >= start && d <= end
-            })
-        }
+    // --- FILTER ENTRIES BY RANGE ---
+    let targetEntries = allApprovedEntries
+    if (type === 'monthly' && month) {
+      const [yearStr, monthStr] = month.split('-')
+      const yr = parseInt(yearStr, 10)
+      const mo = parseInt(monthStr, 10) - 1
+      const startOfMonth = new Date(yr, mo, 1)
+      const endOfMonth = new Date(yr, mo + 1, 0, 23, 59, 59)
+      targetEntries = allApprovedEntries.filter((e) => {
+        const d = new Date(e.startedAt)
+        return d >= startOfMonth && d <= endOfMonth
+      })
+    } else if (type === 'custom' && startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      targetEntries = allApprovedEntries.filter((e) => {
+        const d = new Date(e.startedAt)
+        return d >= start && d <= end
+      })
+    }
 
-        // Exclude entries from users no longer active in the workspace
-        targetEntries = targetEntries.filter(e => activeUserIds.has(e.userId))
+    // Exclude entries from users no longer active in the workspace
+    targetEntries = targetEntries.filter((e) => activeUserIds.has(e.userId))
 
-        // Fetch project mapping for active workspace members only to get CURRENT roles
-        const membersData = await db.select({
-            userId: projectMembers.userId,
-            wsRole: workspaceMembers.role,
-            isAnyTeamLead: sql<boolean>`EXISTS (
+    // Fetch project mapping for active workspace members only to get CURRENT roles
+    const membersData = await db
+      .select({
+        userId: projectMembers.userId,
+        wsRole: workspaceMembers.role,
+        isAnyTeamLead: sql<boolean>`EXISTS (
                 SELECT 1 FROM team_members tm 
                 JOIN teams t ON tm.team_id = t.id 
                 WHERE tm.user_id = ${projectMembers.userId} 
                 AND tm.team_level = 'team_lead' 
                 AND t.workspace_id = ${workspace.id}
-            )`
-        }).from(projectMembers)
-            .innerJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, workspace.id)))
-            .where(and(
-                eq(projectMembers.projectId, projectId),
-                eq(workspaceMembers.status, 'active')
-            ))
+            )`,
+      })
+      .from(projectMembers)
+      .innerJoin(
+        workspaceMembers,
+        and(
+          eq(workspaceMembers.userId, projectMembers.userId),
+          eq(workspaceMembers.workspaceId, workspace.id)
+        )
+      )
+      .where(and(eq(projectMembers.projectId, projectId), eq(workspaceMembers.status, 'active')))
 
-        const memberRoleMap = Object.fromEntries(membersData.map(m => {
-            const resolved = resolveProjectRole(m.wsRole || 'member', !!m.isAnyTeamLead)
-            return [m.userId, resolved]
-        }))
+    const memberRoleMap = Object.fromEntries(
+      membersData.map((m) => {
+        const resolved = resolveProjectRole(m.wsRole || 'member', !!m.isAnyTeamLead)
+        return [m.userId, resolved]
+      })
+    )
 
-        // --- CALCULATE USER TOTAL APPROVED HOURS (GLOBAL FOR 200H CHECK) ---
-        const userTotalApprovedMinutes: Record<string, number> = {}
-        for (const entry of allApprovedEntries) {
-            const effectiveDuration = entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
-            userTotalApprovedMinutes[entry.userId] = (userTotalApprovedMinutes[entry.userId] || 0) + effectiveDuration
-        }
-
-        const allProjectUserIds = membersData.map(m => m.userId)
-        const displayUserIds = targetUserId ? [targetUserId] : allProjectUserIds
-
-        const userDetails = displayUserIds.length > 0
-            ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, displayUserIds))
-            : []
-        const userMap = Object.fromEntries(userDetails.map(u => [u.id, u]))
-
-        // Calculate Stats for current range AND total project PW
-        const userStats: Record<string, any> = {}
-        let totalProjectPW = 0
-
-        for (const entry of targetEntries) {
-            const effectiveDuration = entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
-            const timeHours = effectiveDuration / 60
-
-            // PRIORITY: Use current project role if available, fallback to stored role
-            const currentResolvedRole = memberRoleMap[entry.userId] || entry.projectRole || 'participant'
-            const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
-            const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
-
-            const points = timeHours * roleFactor * diffFactor + (entry.bonusPoints || 0)
-
-            if (!userStats[entry.userId]) {
-                userStats[entry.userId] = { totalMinutes: 0, pw: 0, bonus: 0, role: currentResolvedRole, averageDifficulty: 0, taskCount: 0 }
-            }
-            const stats = userStats[entry.userId]
-
-            stats.totalMinutes += effectiveDuration
-            stats.pw += points
-            stats.bonus += (entry.bonusPoints || 0)
-            if (entry.durationMinutes > 0) {
-                stats.averageDifficulty += diffFactor
-                stats.taskCount++
-            }
-
-            totalProjectPW += points
-        }
-
-        // Calculate total PW for pool (qualifying users only)
-        let totalRevSharePW = 0
-        const poolUserStats: Record<string, number> = {}
-        for (const entry of allApprovedEntries) {
-            const effectiveDuration = entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
-            const currentResolvedRole = memberRoleMap[entry.userId] || entry.projectRole || 'participant'
-            const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
-            const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
-            const points = (effectiveDuration / 60) * roleFactor * diffFactor + (entry.bonusPoints || 0)
-            poolUserStats[entry.userId] = (poolUserStats[entry.userId] || 0) + points
-        }
-
-        for (const [uId, pw] of Object.entries(poolUserStats)) {
-            if ((userTotalApprovedMinutes[uId] || 0) / 60 >= hourThreshold) {
-                totalRevSharePW += pw
-            }
-        }
-
-        const participants = displayUserIds.map(uId => {
-            const currentRole = memberRoleMap[uId] || 'participant'
-            const data = userStats[uId] || { totalMinutes: 0, pw: 0, bonus: 0, role: currentRole, averageDifficulty: 0, taskCount: 0 }
-            const approvedHoursTotal = (userTotalApprovedMinutes[uId] || 0) / 60
-            const hasThreshold = approvedHoursTotal >= hourThreshold
-            let sharePercent = 0
-            if (hasThreshold && totalRevSharePW > 0) {
-                sharePercent = Math.round((data.pw / totalRevSharePW) * 10000) / 100
-            }
-
-            return {
-                userId: uId,
-                name: userMap[uId]?.name || 'Unknown',
-                image: userMap[uId]?.image || null,
-                role: currentRole, // Use current role here
-                totalMinutes: data.totalMinutes,
-                totalHours: Math.round(data.totalMinutes / 60 * 100) / 100,
-                averageDifficulty: data.taskCount > 0 ? (Math.round((data.averageDifficulty / data.taskCount) * 100) / 100) : 0,
-                bonusPoints: data.bonus,
-                contributionPoints: Math.round(data.pw * 100) / 100,
-                hasThreshold,
-                approvedBaseHoursTotal: Math.round(approvedHoursTotal * 100) / 100,
-                sharePercent
-            }
-        })
-
-        const sortedParticipants = [...participants].sort((a, b) => b.contributionPoints - a.contributionPoints)
-        const dashboardParticipants = sortedParticipants.filter(p => p.totalMinutes > 0 || p.bonusPoints > 0)
-
-        if (targetUserId) {
-            const recentQuery = db.select().from(timeEntries)
-                .where(
-                    and(
-                        or(
-                            taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
-                            and(
-                                eq(timeEntries.workspaceId, workspace.id),
-                                eq(timeEntries.entryType, 'meeting'),
-                                sql`${timeEntries.taskId} IS NULL`
-                            )
-                        ),
-                        eq(timeEntries.userId, targetUserId)
-                    )
-                )
-                .orderBy(desc(timeEntries.startedAt))
-            // .limit(10) // Removed to allow frontend pagination
-
-            const recent = await recentQuery
-
-            const recentTaskIds = [...new Set(recent.map(r => r.taskId).filter(Boolean) as string[])]
-            let recentTaskMap: Record<string, string> = {
-                'standalone-meetings': 'Meetings & Calendar Events'
-            }
-            if (recentTaskIds.length > 0) {
-                const recentTasks = await db.select({ id: tasks.id, title: tasks.title })
-                    .from(tasks)
-                    .where(inArray(tasks.id, recentTaskIds))
-                recentTasks.forEach(t => { recentTaskMap[t.id] = t.title })
-            }
-
-            const mappedRecent = recent.map(r => {
-                const effective = r.entryType === 'meeting' ? r.durationMinutes * 0.5 : r.durationMinutes
-                const currentResolvedRole = memberRoleMap[r.userId] || r.projectRole || 'participant'
-                const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
-                const diffFactor = DIFFICULTY_COEFFICIENTS[r.difficultyLevel] ?? 1.0
-                const points = Math.round(((effective / 60) * roleFactor * diffFactor + (r.bonusPoints || 0)) * 100) / 100
-
-                return {
-                    id: r.id,
-                    taskId: r.taskId,
-                    taskTitle: (r.taskId ? recentTaskMap[r.taskId] : recentTaskMap['standalone-meetings']) || 'General',
-                    durationMinutes: effective,
-                    rawDurationMinutes: r.durationMinutes,
-                    description: r.description,
-                    startedAt: r.startedAt,
-                    endedAt: r.endedAt,
-                    entryType: r.entryType,
-                    approvalStatus: r.approvalStatus,
-                    points
-                }
-            })
-
-            return c.json({
-                success: true,
-                data: {
-                    summary: participants[0],
-                    recentEntries: mappedRecent,
-                    hourThreshold
-                }
-            })
-        }
-
-        return c.json({
-            success: true,
-            data: {
-                participants: dashboardParticipants,
-                totalPW: Math.round(totalRevSharePW * 100) / 100,
-                totalProjectPW: Math.round(totalProjectPW * 100) / 100,
-                hourThreshold
-            }
-        })
-    } catch (error: any) {
-        console.error('Error calculating contribution:', error)
-        return c.json({ success: false, error: 'Failed to calculate contribution', details: error.message }, 500)
+    // --- CALCULATE USER TOTAL APPROVED HOURS (GLOBAL FOR 200H CHECK) ---
+    const userTotalApprovedMinutes: Record<string, number> = {}
+    for (const entry of allApprovedEntries) {
+      const effectiveDuration =
+        entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
+      userTotalApprovedMinutes[entry.userId] =
+        (userTotalApprovedMinutes[entry.userId] || 0) + effectiveDuration
     }
+
+    const allProjectUserIds = membersData.map((m) => m.userId)
+    const displayUserIds = targetUserId ? [targetUserId] : allProjectUserIds
+
+    const userDetails =
+      displayUserIds.length > 0
+        ? await db
+            .select({ id: users.id, name: users.name, image: users.image })
+            .from(users)
+            .where(inArray(users.id, displayUserIds))
+        : []
+    const userMap = Object.fromEntries(userDetails.map((u) => [u.id, u]))
+
+    // Calculate Stats for current range AND total project PW
+    const userStats: Record<string, any> = {}
+    let totalProjectPW = 0
+
+    for (const entry of targetEntries) {
+      const effectiveDuration =
+        entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
+      const timeHours = effectiveDuration / 60
+
+      // PRIORITY: Use current project role if available, fallback to stored role
+      const currentResolvedRole = memberRoleMap[entry.userId] || entry.projectRole || 'participant'
+      const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
+      const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
+
+      const points = timeHours * roleFactor * diffFactor + (entry.bonusPoints || 0)
+
+      if (!userStats[entry.userId]) {
+        userStats[entry.userId] = {
+          totalMinutes: 0,
+          pw: 0,
+          bonus: 0,
+          role: currentResolvedRole,
+          averageDifficulty: 0,
+          taskCount: 0,
+        }
+      }
+      const stats = userStats[entry.userId]
+
+      stats.totalMinutes += effectiveDuration
+      stats.pw += points
+      stats.bonus += entry.bonusPoints || 0
+      if (entry.durationMinutes > 0) {
+        stats.averageDifficulty += diffFactor
+        stats.taskCount++
+      }
+
+      totalProjectPW += points
+    }
+
+    // Calculate total PW for pool (qualifying users only)
+    let totalRevSharePW = 0
+    const poolUserStats: Record<string, number> = {}
+    for (const entry of allApprovedEntries) {
+      const effectiveDuration =
+        entry.entryType === 'meeting' ? entry.durationMinutes * 0.5 : entry.durationMinutes
+      const currentResolvedRole = memberRoleMap[entry.userId] || entry.projectRole || 'participant'
+      const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
+      const diffFactor = DIFFICULTY_COEFFICIENTS[entry.difficultyLevel] ?? 1.0
+      const points = (effectiveDuration / 60) * roleFactor * diffFactor + (entry.bonusPoints || 0)
+      poolUserStats[entry.userId] = (poolUserStats[entry.userId] || 0) + points
+    }
+
+    for (const [uId, pw] of Object.entries(poolUserStats)) {
+      if ((userTotalApprovedMinutes[uId] || 0) / 60 >= hourThreshold) {
+        totalRevSharePW += pw
+      }
+    }
+
+    const participants = displayUserIds.map((uId) => {
+      const currentRole = memberRoleMap[uId] || 'participant'
+      const data = userStats[uId] || {
+        totalMinutes: 0,
+        pw: 0,
+        bonus: 0,
+        role: currentRole,
+        averageDifficulty: 0,
+        taskCount: 0,
+      }
+      const approvedHoursTotal = (userTotalApprovedMinutes[uId] || 0) / 60
+      const hasThreshold = approvedHoursTotal >= hourThreshold
+      let sharePercent = 0
+      if (hasThreshold && totalRevSharePW > 0) {
+        sharePercent = Math.round((data.pw / totalRevSharePW) * 10000) / 100
+      }
+
+      return {
+        userId: uId,
+        name: userMap[uId]?.name || 'Unknown',
+        image: userMap[uId]?.image || null,
+        role: currentRole, // Use current role here
+        totalMinutes: data.totalMinutes,
+        totalHours: Math.round((data.totalMinutes / 60) * 100) / 100,
+        averageDifficulty:
+          data.taskCount > 0
+            ? Math.round((data.averageDifficulty / data.taskCount) * 100) / 100
+            : 0,
+        bonusPoints: data.bonus,
+        contributionPoints: Math.round(data.pw * 100) / 100,
+        hasThreshold,
+        approvedBaseHoursTotal: Math.round(approvedHoursTotal * 100) / 100,
+        sharePercent,
+      }
+    })
+
+    const sortedParticipants = [...participants].sort(
+      (a, b) => b.contributionPoints - a.contributionPoints
+    )
+    const dashboardParticipants = sortedParticipants.filter(
+      (p) => p.totalMinutes > 0 || p.bonusPoints > 0
+    )
+
+    if (targetUserId) {
+      const recentQuery = db
+        .select()
+        .from(timeEntries)
+        .where(
+          and(
+            or(
+              taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
+              and(
+                eq(timeEntries.workspaceId, workspace.id),
+                eq(timeEntries.entryType, 'meeting'),
+                sql`${timeEntries.taskId} IS NULL`
+              )
+            ),
+            eq(timeEntries.userId, targetUserId)
+          )
+        )
+        .orderBy(desc(timeEntries.startedAt))
+      // .limit(10) // Removed to allow frontend pagination
+
+      const recent = await recentQuery
+
+      const recentTaskIds = [...new Set(recent.map((r) => r.taskId).filter(Boolean) as string[])]
+      let recentTaskMap: Record<string, string> = {
+        'standalone-meetings': 'Meetings & Calendar Events',
+      }
+      if (recentTaskIds.length > 0) {
+        const recentTasks = await db
+          .select({ id: tasks.id, title: tasks.title })
+          .from(tasks)
+          .where(inArray(tasks.id, recentTaskIds))
+        recentTasks.forEach((t) => {
+          recentTaskMap[t.id] = t.title
+        })
+      }
+
+      const mappedRecent = recent.map((r) => {
+        const effective = r.entryType === 'meeting' ? r.durationMinutes * 0.5 : r.durationMinutes
+        const currentResolvedRole = memberRoleMap[r.userId] || r.projectRole || 'participant'
+        const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
+        const diffFactor = DIFFICULTY_COEFFICIENTS[r.difficultyLevel] ?? 1.0
+        const points =
+          Math.round(((effective / 60) * roleFactor * diffFactor + (r.bonusPoints || 0)) * 100) /
+          100
+
+        return {
+          id: r.id,
+          taskId: r.taskId,
+          taskTitle:
+            (r.taskId ? recentTaskMap[r.taskId] : recentTaskMap['standalone-meetings']) ||
+            'General',
+          durationMinutes: effective,
+          rawDurationMinutes: r.durationMinutes,
+          description: r.description,
+          startedAt: r.startedAt,
+          endedAt: r.endedAt,
+          entryType: r.entryType,
+          approvalStatus: r.approvalStatus,
+          points,
+        }
+      })
+
+      return c.json({
+        success: true,
+        data: {
+          summary: participants[0],
+          recentEntries: mappedRecent,
+          hourThreshold,
+        },
+      })
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        participants: dashboardParticipants,
+        totalPW: Math.round(totalRevSharePW * 100) / 100,
+        totalProjectPW: Math.round(totalProjectPW * 100) / 100,
+        hourThreshold,
+      },
+    })
+  } catch (error: any) {
+    console.error('Error calculating contribution:', error)
+    return c.json(
+      { success: false, error: 'Failed to calculate contribution', details: error.message },
+      500
+    )
+  }
 }
 
 // GET /api/time/contribution/:projectId/custom - Custom view
 timeRoutes.get('/contribution/:projectId/custom', async (c) => {
-    return handleContribution(c, 'custom')
+  return handleContribution(c, 'custom')
 })
-
 
 // GET /api/time/project/:projectId - List time entries for a project (owner/admin view)
 timeRoutes.get('/project/:projectId', async (c) => {
-    try {
-        const projectId = c.req.param('projectId')
+  try {
+    const projectId = c.req.param('projectId')
 
-        // Get project and workspace
-        const [project] = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1)
-        if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
+    // Get project and workspace
+    const [project] = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1)
+    if (!project) return c.json({ success: false, error: 'Project not found' }, 404)
 
-        const [team] = await db.select().from(teams).where(eq(teams.id, project.teamId)).limit(1)
-        if (!team) return c.json({ success: false, error: 'Team not found' }, 404)
+    const [team] = await db.select().from(teams).where(eq(teams.id, project.teamId)).limit(1)
+    if (!team) return c.json({ success: false, error: 'Team not found' }, 404)
 
-        // Get active workspace members to exclude users no longer in the workspace
-        const activeWorkspaceMembers = await db.select({ userId: workspaceMembers.userId })
-            .from(workspaceMembers)
-            .where(and(
-                eq(workspaceMembers.workspaceId, team.workspaceId),
-                eq(workspaceMembers.status, 'active')
-            ))
-        const activeUserIds = new Set(activeWorkspaceMembers.map(m => m.userId))
+    // Get active workspace members to exclude users no longer in the workspace
+    const activeWorkspaceMembers = await db
+      .select({ userId: workspaceMembers.userId })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, team.workspaceId),
+          eq(workspaceMembers.status, 'active')
+        )
+      )
+    const activeUserIds = new Set(activeWorkspaceMembers.map((m) => m.userId))
 
-        // Get tasks in project
-        const projectTasks = await db.select({
-            id: tasks.id,
-            title: tasks.title,
-        }).from(tasks).where(eq(tasks.projectId, projectId))
-        const taskIds = projectTasks.map(t => t.id)
+    // Get tasks in project
+    const projectTasks = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+      })
+      .from(tasks)
+      .where(eq(tasks.projectId, projectId))
+    const taskIds = projectTasks.map((t) => t.id)
 
-        const taskMap = Object.fromEntries(projectTasks.map(t => [t.id, t]))
+    const taskMap = Object.fromEntries(projectTasks.map((t) => [t.id, t]))
 
-        const membersData = await db.select({
-            userId: projectMembers.userId,
-            wsRole: workspaceMembers.role,
-            isAnyTeamLead: sql<boolean>`EXISTS (
+    const membersData = await db
+      .select({
+        userId: projectMembers.userId,
+        wsRole: workspaceMembers.role,
+        isAnyTeamLead: sql<boolean>`EXISTS (
                 SELECT 1 FROM team_members tm 
                 JOIN teams t ON tm.team_id = t.id 
                 WHERE tm.user_id = ${projectMembers.userId} 
                 AND tm.team_level = 'team_lead' 
                 AND t.workspace_id = ${team.workspaceId}
-            )`
-        }).from(projectMembers)
-            .innerJoin(workspaceMembers, and(eq(workspaceMembers.userId, projectMembers.userId), eq(workspaceMembers.workspaceId, team.workspaceId)))
-            .where(and(
-                eq(projectMembers.projectId, projectId),
-                eq(workspaceMembers.status, 'active')
-            ))
+            )`,
+      })
+      .from(projectMembers)
+      .innerJoin(
+        workspaceMembers,
+        and(
+          eq(workspaceMembers.userId, projectMembers.userId),
+          eq(workspaceMembers.workspaceId, team.workspaceId)
+        )
+      )
+      .where(and(eq(projectMembers.projectId, projectId), eq(workspaceMembers.status, 'active')))
 
-        const memberRoleMap = Object.fromEntries(membersData.map(m => {
-            const resolved = resolveProjectRole(m.wsRole || 'member', !!m.isAnyTeamLead)
-            return [m.userId, resolved]
-        }))
+    const memberRoleMap = Object.fromEntries(
+      membersData.map((m) => {
+        const resolved = resolveProjectRole(m.wsRole || 'member', !!m.isAnyTeamLead)
+        return [m.userId, resolved]
+      })
+    )
 
-        // Get all time entries for these tasks + standalone meetings of the same workspace
-        const { month, startDate, endDate } = c.req.query()
+    // Get all time entries for these tasks + standalone meetings of the same workspace
+    const { month, startDate, endDate } = c.req.query()
 
-        const entries = await db.select().from(timeEntries)
-            .where(
-                and(
-                    or(
-                        taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
-                        and(
-                            eq(timeEntries.workspaceId, team.workspaceId),
-                            eq(timeEntries.entryType, 'meeting'),
-                            sql`${timeEntries.taskId} IS NULL`
-                        )
-                    )
-                )
+    const entries = await db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          or(
+            taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
+            and(
+              eq(timeEntries.workspaceId, team.workspaceId),
+              eq(timeEntries.entryType, 'meeting'),
+              sql`${timeEntries.taskId} IS NULL`
             )
-            .orderBy(desc(timeEntries.startedAt))
+          )
+        )
+      )
+      .orderBy(desc(timeEntries.startedAt))
 
-        // --- FILTER ENTRIES BY RANGE (Work Timeline Fix) ---
-        let filteredEntries = entries
-        if (month !== undefined) {
-            // Default to current month if specifically requested as empty/invalid
-            let monthToUse = month
-            if (!monthToUse || monthToUse === 'null' || monthToUse === '') {
-                monthToUse = new Date().toISOString().slice(0, 7)
-            }
+    // --- FILTER ENTRIES BY RANGE (Work Timeline Fix) ---
+    let filteredEntries = entries
+    if (month !== undefined) {
+      // Default to current month if specifically requested as empty/invalid
+      let monthToUse = month
+      if (!monthToUse || monthToUse === 'null' || monthToUse === '') {
+        monthToUse = new Date().toISOString().slice(0, 7)
+      }
 
-            const [yearStr, monthStr] = monthToUse.split('-')
-            const yr = parseInt(yearStr, 10)
-            const mo = parseInt(monthStr, 10) - 1
-            const startOfMonth = new Date(yr, mo, 1)
-            const endOfMonth = new Date(yr, mo + 1, 0, 23, 59, 59)
-            filteredEntries = entries.filter(e => {
-                const d = new Date(e.startedAt)
-                return d >= startOfMonth && d <= endOfMonth
-            })
-        } else if (startDate && endDate) {
-            const start = new Date(startDate)
-            const end = new Date(endDate)
-            end.setHours(23, 59, 59, 999)
-            filteredEntries = entries.filter(e => {
-                const d = new Date(e.startedAt)
-                return d >= start && d <= end
-            })
-        }
-
-        // Exclude entries from users no longer active in the workspace
-        filteredEntries = filteredEntries.filter(e => activeUserIds.has(e.userId))
-
-        // Get subtask info
-        const subtaskIds = filteredEntries.filter(e => e.subtaskId).map(e => e.subtaskId!) as string[]
-        let subtaskMap: Record<string, any> = {}
-        if (subtaskIds.length > 0) {
-            const subtaskList = await db.select({ id: subtasks.id, title: subtasks.title }).from(subtasks).where(inArray(subtasks.id, subtaskIds))
-            subtaskMap = Object.fromEntries(subtaskList.map(s => [s.id, s]))
-        }
-
-        // Get user info
-        const userIds = [...new Set(filteredEntries.map(e => e.userId))]
-        const userDetails = userIds.length > 0
-            ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, userIds))
-            : []
-        const userMap = Object.fromEntries(userDetails.map(u => [u.id, u]))
-
-        const result = filteredEntries.map(e => {
-            const effective = e.entryType === 'meeting' ? e.durationMinutes * 0.5 : e.durationMinutes
-            const currentResolvedRole = memberRoleMap[e.userId] || e.projectRole || 'participant'
-            const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
-            const diffFactor = DIFFICULTY_COEFFICIENTS[e.difficultyLevel] ?? 1.0
-            const points = Math.round(((effective / 60) * roleFactor * diffFactor + (e.bonusPoints || 0)) * 100) / 100
-
-            return {
-                ...e,
-                durationMinutes: effective,
-                rawDurationMinutes: e.durationMinutes,
-                points,
-                projectRole: currentResolvedRole, // Use current role
-                taskTitle: (e.taskId ? taskMap[e.taskId]?.title : 'Meetings & Calendar Events') || 'General',
-                subtaskTitle: e.subtaskId ? subtaskMap[e.subtaskId]?.title || null : null,
-                userName: userMap[e.userId]?.name || 'Unknown',
-                userImage: userMap[e.userId]?.image || null,
-            }
-        })
-
-        return c.json({ success: true, data: result })
-    } catch (error: any) {
-        console.error('Error fetching project time entries:', error)
-        return c.json({ success: false, error: 'Failed to fetch project time entries', details: error.message }, 500)
+      const [yearStr, monthStr] = monthToUse.split('-')
+      const yr = parseInt(yearStr, 10)
+      const mo = parseInt(monthStr, 10) - 1
+      const startOfMonth = new Date(yr, mo, 1)
+      const endOfMonth = new Date(yr, mo + 1, 0, 23, 59, 59)
+      filteredEntries = entries.filter((e) => {
+        const d = new Date(e.startedAt)
+        return d >= startOfMonth && d <= endOfMonth
+      })
+    } else if (startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      filteredEntries = entries.filter((e) => {
+        const d = new Date(e.startedAt)
+        return d >= start && d <= end
+      })
     }
+
+    // Exclude entries from users no longer active in the workspace
+    filteredEntries = filteredEntries.filter((e) => activeUserIds.has(e.userId))
+
+    // Get subtask info
+    const subtaskIds = filteredEntries
+      .filter((e) => e.subtaskId)
+      .map((e) => e.subtaskId!) as string[]
+    let subtaskMap: Record<string, any> = {}
+    if (subtaskIds.length > 0) {
+      const subtaskList = await db
+        .select({ id: subtasks.id, title: subtasks.title })
+        .from(subtasks)
+        .where(inArray(subtasks.id, subtaskIds))
+      subtaskMap = Object.fromEntries(subtaskList.map((s) => [s.id, s]))
+    }
+
+    // Get user info
+    const userIds = [...new Set(filteredEntries.map((e) => e.userId))]
+    const userDetails =
+      userIds.length > 0
+        ? await db
+            .select({ id: users.id, name: users.name, image: users.image })
+            .from(users)
+            .where(inArray(users.id, userIds))
+        : []
+    const userMap = Object.fromEntries(userDetails.map((u) => [u.id, u]))
+
+    const result = filteredEntries.map((e) => {
+      const effective = e.entryType === 'meeting' ? e.durationMinutes * 0.5 : e.durationMinutes
+      const currentResolvedRole = memberRoleMap[e.userId] || e.projectRole || 'participant'
+      const roleFactor = ROLE_COEFFICIENTS[currentResolvedRole] ?? 1.0
+      const diffFactor = DIFFICULTY_COEFFICIENTS[e.difficultyLevel] ?? 1.0
+      const points =
+        Math.round(((effective / 60) * roleFactor * diffFactor + (e.bonusPoints || 0)) * 100) / 100
+
+      return {
+        ...e,
+        durationMinutes: effective,
+        rawDurationMinutes: e.durationMinutes,
+        points,
+        projectRole: currentResolvedRole, // Use current role
+        taskTitle:
+          (e.taskId ? taskMap[e.taskId]?.title : 'Meetings & Calendar Events') || 'General',
+        subtaskTitle: e.subtaskId ? subtaskMap[e.subtaskId]?.title || null : null,
+        userName: userMap[e.userId]?.name || 'Unknown',
+        userImage: userMap[e.userId]?.image || null,
+      }
+    })
+
+    return c.json({ success: true, data: result })
+  } catch (error: any) {
+    console.error('Error fetching project time entries:', error)
+    return c.json(
+      { success: false, error: 'Failed to fetch project time entries', details: error.message },
+      500
+    )
+  }
 })
 
 // POST /api/time - Create time entry (requires timeTracking.create permission)
 timeRoutes.post('/', zValidator('json', createTimeEntrySchema), async (c) => {
-    try {
-        const currentUser = c.get('user')
-        const body = c.req.valid('json')
-        const targetUserId = body.userId || currentUser.id
+  try {
+    const currentUser = c.get('user')
+    const body = c.req.valid('json')
+    const targetUserId = body.userId || currentUser.id
 
-        // Resolve context for the CURRENT user (to check permissions)
-        let currentUserWsRole: string | null = null
-        let currentUserTeamLevel: string | null = null
-        let wsId: string | null = null
+    // Resolve context for the CURRENT user (to check permissions)
+    let currentUserWsRole: string | null = null
+    let currentUserTeamLevel: string | null = null
+    let wsId: string | null = null
 
-        if (body.workspaceSlug) {
-            const [workspace] = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.slug, body.workspaceSlug)).limit(1)
-            if (workspace) {
-                wsId = workspace.id
-                const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                    .where(and(eq(workspaceMembers.userId, currentUser.id), eq(workspaceMembers.workspaceId, wsId))).limit(1)
-                currentUserWsRole = wsMember?.role || null
-            }
-        }
-
-        if (body.taskId && body.taskId !== 'standalone-meetings') {
-            const teamId = await getTeamIdFromTask(body.taskId)
-            if (teamId) {
-                currentUserTeamLevel = await getUserTeamLevel(currentUser.id, teamId)
-                if (!currentUserWsRole) {
-                    currentUserWsRole = await getWorkspaceRoleFromTask(currentUser.id, body.taskId)
-                }
-            }
-        }
-
-        if (!currentUserWsRole && !currentUserTeamLevel) {
-            return c.json({ success: false, error: 'Unauthorized context' }, 403)
-        }
-
-        // Basic permission check for current user
-        if (!canCreateTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
-            return c.json({ success: false, error: 'Unauthorized' }, 403)
-        }
-
-        // If adding for someone else, need manage permission
-        if (targetUserId !== currentUser.id) {
-            if (!canManageTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
-                return c.json({ success: false, error: 'Unauthorized to create entries for others' }, 403)
-            }
-        }
-
-        // NOW: Resolve role for the TARGET user (the entry owner)
-        let targetWsRole: string | null = null
-        let targetAnyTeamLead = false
-
-        if (wsId) {
-            const [targetWsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                .where(and(eq(workspaceMembers.userId, targetUserId), eq(workspaceMembers.workspaceId, wsId))).limit(1)
-            targetWsRole = targetWsMember?.role || null
-            targetAnyTeamLead = await isUserAnyTeamLead(targetUserId, wsId)
-        }
-
-        const newEntry = {
-            taskId: (body.taskId === 'standalone-meetings' || !body.taskId) ? null : body.taskId,
-            subtaskId: body.subtaskId || null,
-            userId: targetUserId,
-            workspaceId: wsId,
-            description: body.description || null,
-            durationMinutes: body.durationMinutes,
-            startedAt: new Date(body.startedAt),
-            endedAt: body.endedAt ? new Date(body.endedAt) : null,
-            entryType: body.entryType || 'task',
-            projectRole: resolveProjectRole(targetWsRole as any, targetAnyTeamLead),
-            approvalStatus: 'pending'
-        }
-        const [created] = await db.insert(timeEntries).values(newEntry).returning()
-
-        // Notify HR/Admins about new pending entry
-        if (created && created.workspaceId) {
-            notifyHR(created.workspaceId, {
-                id: currentUser.id,
-                name: currentUser.name,
-                image: currentUser.image || undefined
-            }, created.durationMinutes).catch(err => console.error('[Time] notifyHR error:', err))
-        }
-
-        return c.json({ success: true, data: created }, 201)
-    } catch (error: any) {
-        console.error('Error creating time entry:', error)
-        return c.json({ success: false, error: 'Failed to create time entry' }, 500)
+    if (body.workspaceSlug) {
+      const [workspace] = await db
+        .select({ id: workspaces.id })
+        .from(workspaces)
+        .where(eq(workspaces.slug, body.workspaceSlug))
+        .limit(1)
+      if (workspace) {
+        wsId = workspace.id
+        const [wsMember] = await db
+          .select({ role: workspaceMembers.role })
+          .from(workspaceMembers)
+          .where(
+            and(eq(workspaceMembers.userId, currentUser.id), eq(workspaceMembers.workspaceId, wsId))
+          )
+          .limit(1)
+        currentUserWsRole = wsMember?.role || null
+      }
     }
+
+    if (body.taskId && body.taskId !== 'standalone-meetings') {
+      const teamId = await getTeamIdFromTask(body.taskId)
+      if (teamId) {
+        currentUserTeamLevel = await getUserTeamLevel(currentUser.id, teamId)
+        if (!currentUserWsRole) {
+          currentUserWsRole = await getWorkspaceRoleFromTask(currentUser.id, body.taskId)
+        }
+      }
+    }
+
+    if (!currentUserWsRole && !currentUserTeamLevel) {
+      return c.json({ success: false, error: 'Unauthorized context' }, 403)
+    }
+
+    // Basic permission check for current user
+    if (!canCreateTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
+      return c.json({ success: false, error: 'Unauthorized' }, 403)
+    }
+
+    // If adding for someone else, need manage permission
+    if (targetUserId !== currentUser.id) {
+      if (!canManageTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
+        return c.json({ success: false, error: 'Unauthorized to create entries for others' }, 403)
+      }
+    }
+
+    // NOW: Resolve role for the TARGET user (the entry owner)
+    let targetWsRole: string | null = null
+    let targetAnyTeamLead = false
+
+    if (wsId) {
+      const [targetWsMember] = await db
+        .select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(
+          and(eq(workspaceMembers.userId, targetUserId), eq(workspaceMembers.workspaceId, wsId))
+        )
+        .limit(1)
+      targetWsRole = targetWsMember?.role || null
+      targetAnyTeamLead = await isUserAnyTeamLead(targetUserId, wsId)
+    }
+
+    const newEntry = {
+      taskId: body.taskId === 'standalone-meetings' || !body.taskId ? null : body.taskId,
+      subtaskId: body.subtaskId || null,
+      userId: targetUserId,
+      workspaceId: wsId,
+      description: body.description || null,
+      durationMinutes: body.durationMinutes,
+      startedAt: new Date(body.startedAt),
+      endedAt: body.endedAt ? new Date(body.endedAt) : null,
+      entryType: body.entryType || 'task',
+      projectRole: resolveProjectRole(targetWsRole as any, targetAnyTeamLead),
+      approvalStatus: 'pending',
+    }
+    const [created] = await db.insert(timeEntries).values(newEntry).returning()
+
+    // Notify HR/Admins about new pending entry
+    if (created && created.workspaceId) {
+      notifyHR(
+        created.workspaceId,
+        {
+          id: currentUser.id,
+          name: currentUser.name,
+          image: currentUser.image || undefined,
+        },
+        created.durationMinutes
+      ).catch((err) => console.error('[Time] notifyHR error:', err))
+    }
+
+    return c.json({ success: true, data: created }, 201)
+  } catch (error: any) {
+    console.error('Error creating time entry:', error)
+    return c.json({ success: false, error: 'Failed to create time entry' }, 500)
+  }
 })
 
 // POST /api/time/start - Start timer
 timeRoutes.post('/start', zValidator('json', startTimeEntrySchema), async (c) => {
-    try {
-        const currentUser = c.get('user')
-        const body = c.req.valid('json')
-        const targetUserId = body.userId || currentUser.id
+  try {
+    const currentUser = c.get('user')
+    const body = c.req.valid('json')
+    const targetUserId = body.userId || currentUser.id
 
-        // Resolve context for CURRENT user
-        let currentUserWsRole: string | null = null
-        let currentUserTeamLevel: string | null = null
-        let wsId: string | null = null
+    // Resolve context for CURRENT user
+    let currentUserWsRole: string | null = null
+    let currentUserTeamLevel: string | null = null
+    let wsId: string | null = null
 
-        if (body.workspaceSlug) {
-            const [workspace] = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.slug, body.workspaceSlug)).limit(1)
-            if (workspace) {
-                wsId = workspace.id
-                const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                    .where(and(eq(workspaceMembers.userId, currentUser.id), eq(workspaceMembers.workspaceId, wsId))).limit(1)
-                currentUserWsRole = wsMember?.role || null
-            }
-        }
-
-        if (body.taskId && body.taskId !== 'standalone-meetings') {
-            const teamId = await getTeamIdFromTask(body.taskId)
-            if (teamId) {
-                currentUserTeamLevel = await getUserTeamLevel(currentUser.id, teamId)
-                if (!currentUserWsRole) {
-                    currentUserWsRole = await getWorkspaceRoleFromTask(currentUser.id, body.taskId)
-                }
-            }
-        }
-
-        if (!canCreateTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
-            return c.json({ success: false, error: 'Unauthorized' }, 403)
-        }
-
-        // TARGET user context
-        let targetWsRole: string | null = null
-        let targetAnyTeamLead = false
-        if (wsId) {
-            const [targetWsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                .where(and(eq(workspaceMembers.userId, targetUserId), eq(workspaceMembers.workspaceId, wsId))).limit(1)
-            targetWsRole = targetWsMember?.role || null
-            targetAnyTeamLead = await isUserAnyTeamLead(targetUserId, wsId)
-        }
-
-        const newEntry = {
-            taskId: (body.taskId === 'standalone-meetings' || !body.taskId) ? null : body.taskId,
-            subtaskId: body.subtaskId || null,
-            userId: targetUserId,
-            workspaceId: wsId,
-            description: body.description || null,
-            durationMinutes: 0,
-            startedAt: new Date(),
-            entryType: body.entryType || 'task',
-            projectRole: resolveProjectRole(targetWsRole as any, targetAnyTeamLead),
-            approvalStatus: 'pending'
-        }
-        const [created] = await db.insert(timeEntries).values(newEntry).returning()
-        return c.json({ success: true, data: created }, 201)
-    } catch (error: any) {
-        console.error('Error starting timer:', error)
-        return c.json({ success: false, error: 'Failed to start timer' }, 500)
+    if (body.workspaceSlug) {
+      const [workspace] = await db
+        .select({ id: workspaces.id })
+        .from(workspaces)
+        .where(eq(workspaces.slug, body.workspaceSlug))
+        .limit(1)
+      if (workspace) {
+        wsId = workspace.id
+        const [wsMember] = await db
+          .select({ role: workspaceMembers.role })
+          .from(workspaceMembers)
+          .where(
+            and(eq(workspaceMembers.userId, currentUser.id), eq(workspaceMembers.workspaceId, wsId))
+          )
+          .limit(1)
+        currentUserWsRole = wsMember?.role || null
+      }
     }
+
+    if (body.taskId && body.taskId !== 'standalone-meetings') {
+      const teamId = await getTeamIdFromTask(body.taskId)
+      if (teamId) {
+        currentUserTeamLevel = await getUserTeamLevel(currentUser.id, teamId)
+        if (!currentUserWsRole) {
+          currentUserWsRole = await getWorkspaceRoleFromTask(currentUser.id, body.taskId)
+        }
+      }
+    }
+
+    if (!canCreateTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
+      return c.json({ success: false, error: 'Unauthorized' }, 403)
+    }
+
+    // TARGET user context
+    let targetWsRole: string | null = null
+    let targetAnyTeamLead = false
+    if (wsId) {
+      const [targetWsMember] = await db
+        .select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(
+          and(eq(workspaceMembers.userId, targetUserId), eq(workspaceMembers.workspaceId, wsId))
+        )
+        .limit(1)
+      targetWsRole = targetWsMember?.role || null
+      targetAnyTeamLead = await isUserAnyTeamLead(targetUserId, wsId)
+    }
+
+    const newEntry = {
+      taskId: body.taskId === 'standalone-meetings' || !body.taskId ? null : body.taskId,
+      subtaskId: body.subtaskId || null,
+      userId: targetUserId,
+      workspaceId: wsId,
+      description: body.description || null,
+      durationMinutes: 0,
+      startedAt: new Date(),
+      entryType: body.entryType || 'task',
+      projectRole: resolveProjectRole(targetWsRole as any, targetAnyTeamLead),
+      approvalStatus: 'pending',
+    }
+    const [created] = await db.insert(timeEntries).values(newEntry).returning()
+    return c.json({ success: true, data: created }, 201)
+  } catch (error: any) {
+    console.error('Error starting timer:', error)
+    return c.json({ success: false, error: 'Failed to start timer' }, 500)
+  }
 })
 
 // PATCH /api/time/:id/stop - Stop timer
 timeRoutes.patch('/:id/stop', async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user')
-        const userId = user.id
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user')
+    const userId = user.id
 
-        const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
-        if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
+    const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
+    if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
 
-        // Only owner can stop their timer
-        if (entry.userId !== userId) {
-            return c.json({ success: false, error: 'Unauthorized to stop this timer' }, 403)
-        }
-
-        const endedAt = new Date()
-        const startedAt = new Date(entry.startedAt)
-
-        // Calculate total pause duration
-        let finalPausedMinutes = entry.totalPausedMinutes
-        if (entry.isPaused && entry.pausedAt) {
-            finalPausedMinutes += Math.round((endedAt.getTime() - new Date(entry.pausedAt).getTime()) / 60000)
-        }
-
-        const durationMinutes = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 60000) - finalPausedMinutes)
-
-        const [updated] = await db.update(timeEntries)
-            .set({
-                endedAt,
-                durationMinutes,
-                isPaused: false,
-                pausedAt: null,
-                totalPausedMinutes: finalPausedMinutes
-            })
-            .where(eq(timeEntries.id, id))
-            .returning()
-
-        // Notify HR/Admins about new pending entry
-        if (updated && updated.workspaceId && updated.durationMinutes > 0) {
-            notifyHR(updated.workspaceId, {
-                id: user.id,
-                name: user.name,
-                image: user.image || undefined
-            }, updated.durationMinutes).catch(err => console.error('[Time] notifyHR error:', err))
-        }
-
-        return c.json({ success: true, data: updated })
-    } catch (error) {
-        console.error('Error stopping timer:', error)
-        return c.json({ success: false, error: 'Failed to stop timer' }, 500)
+    // Only owner can stop their timer
+    if (entry.userId !== userId) {
+      return c.json({ success: false, error: 'Unauthorized to stop this timer' }, 403)
     }
+
+    const endedAt = new Date()
+    const startedAt = new Date(entry.startedAt)
+
+    // Calculate total pause duration
+    let finalPausedMinutes = entry.totalPausedMinutes
+    if (entry.isPaused && entry.pausedAt) {
+      finalPausedMinutes += Math.round(
+        (endedAt.getTime() - new Date(entry.pausedAt).getTime()) / 60000
+      )
+    }
+
+    const durationMinutes = Math.max(
+      0,
+      Math.round((endedAt.getTime() - startedAt.getTime()) / 60000) - finalPausedMinutes
+    )
+
+    const [updated] = await db
+      .update(timeEntries)
+      .set({
+        endedAt,
+        durationMinutes,
+        isPaused: false,
+        pausedAt: null,
+        totalPausedMinutes: finalPausedMinutes,
+      })
+      .where(eq(timeEntries.id, id))
+      .returning()
+
+    // Notify HR/Admins about new pending entry
+    if (updated && updated.workspaceId && updated.durationMinutes > 0) {
+      notifyHR(
+        updated.workspaceId,
+        {
+          id: user.id,
+          name: user.name,
+          image: user.image || undefined,
+        },
+        updated.durationMinutes
+      ).catch((err) => console.error('[Time] notifyHR error:', err))
+    }
+
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Error stopping timer:', error)
+    return c.json({ success: false, error: 'Failed to stop timer' }, 500)
+  }
 })
 
 // PATCH /api/time/:id/pause - Pause timer
 timeRoutes.patch('/:id/pause', async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user')
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user')
 
-        const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
-        if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
-        if (entry.userId !== user.id) return c.json({ success: false, error: 'Unauthorized' }, 403)
-        if (entry.isPaused) return c.json({ success: false, error: 'Timer already paused' }, 400)
-        if (entry.endedAt) return c.json({ success: false, error: 'Timer already finished' }, 400)
+    const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
+    if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
+    if (entry.userId !== user.id) return c.json({ success: false, error: 'Unauthorized' }, 403)
+    if (entry.isPaused) return c.json({ success: false, error: 'Timer already paused' }, 400)
+    if (entry.endedAt) return c.json({ success: false, error: 'Timer already finished' }, 400)
 
-        const [updated] = await db.update(timeEntries)
-            .set({ isPaused: true, pausedAt: new Date() })
-            .where(eq(timeEntries.id, id))
-            .returning()
+    const [updated] = await db
+      .update(timeEntries)
+      .set({ isPaused: true, pausedAt: new Date() })
+      .where(eq(timeEntries.id, id))
+      .returning()
 
-        return c.json({ success: true, data: updated })
-    } catch (error) {
-        console.error('Error pausing timer:', error)
-        return c.json({ success: false, error: 'Failed' }, 500)
-    }
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Error pausing timer:', error)
+    return c.json({ success: false, error: 'Failed' }, 500)
+  }
 })
 
 // PATCH /api/time/:id/resume - Resume timer
 timeRoutes.patch('/:id/resume', async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user')
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user')
 
-        const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
-        if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
-        if (entry.userId !== user.id) return c.json({ success: false, error: 'Unauthorized' }, 403)
-        if (!entry.isPaused || !entry.pausedAt) return c.json({ success: false, error: 'Timer not paused' }, 400)
+    const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
+    if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
+    if (entry.userId !== user.id) return c.json({ success: false, error: 'Unauthorized' }, 403)
+    if (!entry.isPaused || !entry.pausedAt)
+      return c.json({ success: false, error: 'Timer not paused' }, 400)
 
-        const now = new Date()
-        const pausedDurationMinutes = Math.round((now.getTime() - new Date(entry.pausedAt).getTime()) / 60000)
+    const now = new Date()
+    const pausedDurationMinutes = Math.round(
+      (now.getTime() - new Date(entry.pausedAt).getTime()) / 60000
+    )
 
-        const [updated] = await db.update(timeEntries)
-            .set({
-                isPaused: false,
-                pausedAt: null,
-                totalPausedMinutes: entry.totalPausedMinutes + pausedDurationMinutes
-            })
-            .where(eq(timeEntries.id, id))
-            .returning()
+    const [updated] = await db
+      .update(timeEntries)
+      .set({
+        isPaused: false,
+        pausedAt: null,
+        totalPausedMinutes: entry.totalPausedMinutes + pausedDurationMinutes,
+      })
+      .where(eq(timeEntries.id, id))
+      .returning()
 
-        return c.json({ success: true, data: updated })
-    } catch (error) {
-        console.error('Error resuming timer:', error)
-        return c.json({ success: false, error: 'Failed' }, 500)
-    }
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Error resuming timer:', error)
+    return c.json({ success: false, error: 'Failed' }, 500)
+  }
 })
 
 // PATCH /api/time/:id - Update time entry (owner OR manage permission)
 timeRoutes.patch('/:id', zValidator('json', updateTimeEntrySchema), async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user')
-        const userId = user.id
-        const body = c.req.valid('json')
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user')
+    const userId = user.id
+    const body = c.req.valid('json')
 
-        const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
-        if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
+    const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
+    if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
 
-        const isOwner = entry.userId === userId
+    const isOwner = entry.userId === userId
 
-        // Get context
-        let teamId: string | null = null
-        let wsRole: string | null = null
-        if (entry.taskId) {
-            teamId = await getTeamIdFromTask(entry.taskId)
-            wsRole = await getWorkspaceRoleFromTask(userId, entry.taskId)
-        } else if (entry.workspaceId) {
-            const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, entry.workspaceId))).limit(1)
-            wsRole = wsMember?.role || null
-        }
-
-        // Get permissions
-        const teamLevel = teamId ? await getUserTeamLevel(userId, teamId) : null
-
-        // Allow if: is owner OR has manage permission
-        if (!isOwner && !canManageTimeEntries(wsRole as any, teamLevel as any)) {
-            return c.json({ success: false, error: 'Unauthorized to update time entry' }, 403)
-        }
-
-        if (isOwner && entry.approvalStatus !== 'pending') {
-            return c.json({ success: false, error: 'Only pending entries can be updated by the owner' }, 403)
-        }
-
-        const updateData: Partial<NewTimeEntry> = {}
-        const nextStartedAt = body.startedAt !== undefined ? new Date(body.startedAt) : new Date(entry.startedAt)
-        const nextEndedAt = body.endedAt !== undefined
-            ? (body.endedAt ? new Date(body.endedAt) : null)
-            : (entry.endedAt ? new Date(entry.endedAt) : null)
-
-        if (Number.isNaN(nextStartedAt.getTime())) {
-            return c.json({ success: false, error: 'Invalid startedAt value' }, 400)
-        }
-
-        if (nextEndedAt && Number.isNaN(nextEndedAt.getTime())) {
-            return c.json({ success: false, error: 'Invalid endedAt value' }, 400)
-        }
-
-        let nextDurationMinutes = body.durationMinutes ?? entry.durationMinutes
-        if (nextEndedAt) {
-            const derivedDurationMinutes = Math.round((nextEndedAt.getTime() - nextStartedAt.getTime()) / 60000)
-            if (derivedDurationMinutes <= 0) {
-                return c.json({ success: false, error: 'endedAt must be after startedAt' }, 400)
-            }
-            nextDurationMinutes = body.durationMinutes ?? derivedDurationMinutes
-        }
-
-        if (body.description !== undefined) updateData.description = body.description || null
-        if (body.startedAt !== undefined) updateData.startedAt = nextStartedAt
-        if (body.endedAt !== undefined) updateData.endedAt = nextEndedAt
-        if (body.entryType !== undefined) updateData.entryType = body.entryType
-        if (body.durationMinutes !== undefined || body.startedAt !== undefined || body.endedAt !== undefined) {
-            if (nextDurationMinutes <= 0) {
-                return c.json({ success: false, error: 'durationMinutes must be greater than 0' }, 400)
-            }
-            updateData.durationMinutes = nextDurationMinutes
-        }
-
-        // Handle task change: update derived workspace/role context for the entry owner
-        const taskIdChanged = body.taskId !== undefined && body.taskId !== entry.taskId
-        if (taskIdChanged) {
-            if (!body.taskId || body.taskId === 'standalone-meetings') {
-                updateData.taskId = null
-                updateData.subtaskId = null
-                // Preserve existing workspace context; user cannot remove a task in this UI
-            } else {
-                const newWorkspaceId = await getWorkspaceIdFromTask(body.taskId)
-                if (!newWorkspaceId) {
-                    return c.json({ success: false, error: 'Selected task does not belong to a workspace' }, 400)
-                }
-                const [targetWsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                    .where(and(eq(workspaceMembers.userId, entry.userId), eq(workspaceMembers.workspaceId, newWorkspaceId))).limit(1)
-                const targetAnyTeamLead = await isUserAnyTeamLead(entry.userId, newWorkspaceId)
-                updateData.taskId = body.taskId
-                updateData.workspaceId = newWorkspaceId
-                updateData.projectRole = resolveProjectRole(targetWsMember?.role as any, targetAnyTeamLead)
-            }
-        }
-        if (body.subtaskId !== undefined) {
-            updateData.subtaskId = body.subtaskId || null
-        } else if (taskIdChanged && body.taskId && body.taskId !== 'standalone-meetings') {
-            // Reset subtask when task changes and no new subtask was provided
-            updateData.subtaskId = null
-        }
-
-        const [updated] = await db.update(timeEntries).set(updateData).where(eq(timeEntries.id, id)).returning()
-        if (!updated) return c.json({ success: false, error: 'Time entry not found' }, 404)
-        return c.json({ success: true, data: updated })
-    } catch (error) {
-        console.error('Error updating time entry:', error)
-        return c.json({ success: false, error: 'Failed to update time entry' }, 500)
+    // Get context
+    let teamId: string | null = null
+    let wsRole: string | null = null
+    if (entry.taskId) {
+      teamId = await getTeamIdFromTask(entry.taskId)
+      wsRole = await getWorkspaceRoleFromTask(userId, entry.taskId)
+    } else if (entry.workspaceId) {
+      const [wsMember] = await db
+        .select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, userId),
+            eq(workspaceMembers.workspaceId, entry.workspaceId)
+          )
+        )
+        .limit(1)
+      wsRole = wsMember?.role || null
     }
+
+    // Get permissions
+    const teamLevel = teamId ? await getUserTeamLevel(userId, teamId) : null
+
+    // Allow if: is owner OR has manage permission
+    if (!isOwner && !canManageTimeEntries(wsRole as any, teamLevel as any)) {
+      return c.json({ success: false, error: 'Unauthorized to update time entry' }, 403)
+    }
+
+    if (isOwner && entry.approvalStatus !== 'pending') {
+      return c.json(
+        { success: false, error: 'Only pending entries can be updated by the owner' },
+        403
+      )
+    }
+
+    const updateData: Partial<NewTimeEntry> = {}
+    const nextStartedAt =
+      body.startedAt !== undefined ? new Date(body.startedAt) : new Date(entry.startedAt)
+    const nextEndedAt =
+      body.endedAt !== undefined
+        ? body.endedAt
+          ? new Date(body.endedAt)
+          : null
+        : entry.endedAt
+          ? new Date(entry.endedAt)
+          : null
+
+    if (Number.isNaN(nextStartedAt.getTime())) {
+      return c.json({ success: false, error: 'Invalid startedAt value' }, 400)
+    }
+
+    if (nextEndedAt && Number.isNaN(nextEndedAt.getTime())) {
+      return c.json({ success: false, error: 'Invalid endedAt value' }, 400)
+    }
+
+    let nextDurationMinutes = body.durationMinutes ?? entry.durationMinutes
+    if (nextEndedAt) {
+      const derivedDurationMinutes = Math.round(
+        (nextEndedAt.getTime() - nextStartedAt.getTime()) / 60000
+      )
+      if (derivedDurationMinutes <= 0) {
+        return c.json({ success: false, error: 'endedAt must be after startedAt' }, 400)
+      }
+      nextDurationMinutes = body.durationMinutes ?? derivedDurationMinutes
+    }
+
+    if (body.description !== undefined) updateData.description = body.description || null
+    if (body.startedAt !== undefined) updateData.startedAt = nextStartedAt
+    if (body.endedAt !== undefined) updateData.endedAt = nextEndedAt
+    if (body.entryType !== undefined) updateData.entryType = body.entryType
+    if (
+      body.durationMinutes !== undefined ||
+      body.startedAt !== undefined ||
+      body.endedAt !== undefined
+    ) {
+      if (nextDurationMinutes <= 0) {
+        return c.json({ success: false, error: 'durationMinutes must be greater than 0' }, 400)
+      }
+      updateData.durationMinutes = nextDurationMinutes
+    }
+
+    // Handle task change: update derived workspace/role context for the entry owner
+    const taskIdChanged = body.taskId !== undefined && body.taskId !== entry.taskId
+    if (taskIdChanged) {
+      if (!body.taskId || body.taskId === 'standalone-meetings') {
+        updateData.taskId = null
+        updateData.subtaskId = null
+        // Preserve existing workspace context; user cannot remove a task in this UI
+      } else {
+        const newWorkspaceId = await getWorkspaceIdFromTask(body.taskId)
+        if (!newWorkspaceId) {
+          return c.json(
+            { success: false, error: 'Selected task does not belong to a workspace' },
+            400
+          )
+        }
+        const [targetWsMember] = await db
+          .select({ role: workspaceMembers.role })
+          .from(workspaceMembers)
+          .where(
+            and(
+              eq(workspaceMembers.userId, entry.userId),
+              eq(workspaceMembers.workspaceId, newWorkspaceId)
+            )
+          )
+          .limit(1)
+        const targetAnyTeamLead = await isUserAnyTeamLead(entry.userId, newWorkspaceId)
+        updateData.taskId = body.taskId
+        updateData.workspaceId = newWorkspaceId
+        updateData.projectRole = resolveProjectRole(targetWsMember?.role as any, targetAnyTeamLead)
+      }
+    }
+    if (body.subtaskId !== undefined) {
+      updateData.subtaskId = body.subtaskId || null
+    } else if (taskIdChanged && body.taskId && body.taskId !== 'standalone-meetings') {
+      // Reset subtask when task changes and no new subtask was provided
+      updateData.subtaskId = null
+    }
+
+    const [updated] = await db
+      .update(timeEntries)
+      .set(updateData)
+      .where(eq(timeEntries.id, id))
+      .returning()
+    if (!updated) return c.json({ success: false, error: 'Time entry not found' }, 404)
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Error updating time entry:', error)
+    return c.json({ success: false, error: 'Failed to update time entry' }, 500)
+  }
 })
 
 // DELETE /api/time/:id - Delete time entry (owner OR manage permission)
 timeRoutes.delete('/:id', async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user')
-        const userId = user.id
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user')
+    const userId = user.id
 
-        const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
-        if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
+    const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
+    if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
 
-        const isOwner = entry.userId === userId
+    const isOwner = entry.userId === userId
 
-        // Get context
-        let teamId: string | null = null
-        let wsRole: string | null = null
-        if (entry.taskId) {
-            teamId = await getTeamIdFromTask(entry.taskId)
-            wsRole = await getWorkspaceRoleFromTask(userId, entry.taskId)
-        } else if (entry.workspaceId) {
-            const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, entry.workspaceId))).limit(1)
-            wsRole = wsMember?.role || null
-        }
-
-        // Get permissions
-        const teamLevel = teamId ? await getUserTeamLevel(userId, teamId) : null
-
-        // Allow if: is owner OR has manage permission
-        if (!isOwner && !canManageTimeEntries(wsRole as any, teamLevel as any)) {
-            return c.json({ success: false, error: 'Unauthorized to delete time entry' }, 403)
-        }
-
-        if (isOwner && entry.approvalStatus !== 'pending') {
-            return c.json({ success: false, error: 'Only pending entries can be deleted by the owner' }, 403)
-        }
-
-        const [deleted] = await db.delete(timeEntries).where(eq(timeEntries.id, id)).returning()
-        if (!deleted) return c.json({ success: false, error: 'Time entry not found' }, 404)
-        return c.json({ success: true, message: 'Time entry deleted' })
-    } catch (error) {
-        console.error('Error deleting time entry:', error)
-        return c.json({ success: false, error: 'Failed to delete time entry' }, 500)
+    // Get context
+    let teamId: string | null = null
+    let wsRole: string | null = null
+    if (entry.taskId) {
+      teamId = await getTeamIdFromTask(entry.taskId)
+      wsRole = await getWorkspaceRoleFromTask(userId, entry.taskId)
+    } else if (entry.workspaceId) {
+      const [wsMember] = await db
+        .select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, userId),
+            eq(workspaceMembers.workspaceId, entry.workspaceId)
+          )
+        )
+        .limit(1)
+      wsRole = wsMember?.role || null
     }
+
+    // Get permissions
+    const teamLevel = teamId ? await getUserTeamLevel(userId, teamId) : null
+
+    // Allow if: is owner OR has manage permission
+    if (!isOwner && !canManageTimeEntries(wsRole as any, teamLevel as any)) {
+      return c.json({ success: false, error: 'Unauthorized to delete time entry' }, 403)
+    }
+
+    if (isOwner && entry.approvalStatus !== 'pending') {
+      return c.json(
+        { success: false, error: 'Only pending entries can be deleted by the owner' },
+        403
+      )
+    }
+
+    const [deleted] = await db.delete(timeEntries).where(eq(timeEntries.id, id)).returning()
+    if (!deleted) return c.json({ success: false, error: 'Time entry not found' }, 404)
+    return c.json({ success: true, message: 'Time entry deleted' })
+  } catch (error) {
+    console.error('Error deleting time entry:', error)
+    return c.json({ success: false, error: 'Failed to delete time entry' }, 500)
+  }
 })
 
 // GET /api/time/pending - List pending time entries (HR Manager+ view)
 timeRoutes.get('/pending', async (c) => {
-    try {
-        const user = c.get('user')
-        const userId = user.id
-        const workspaceSlug = c.req.query('workspaceSlug')
+  try {
+    const user = c.get('user')
+    const userId = user.id
+    const workspaceSlug = c.req.query('workspaceSlug')
 
-        if (!workspaceSlug) {
-            return c.json({ success: false, error: 'workspaceSlug is required' }, 400)
-        }
-
-        const [workspace] = await db.select().from(workspaces).where(eq(workspaces.slug, workspaceSlug)).limit(1)
-        if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
-
-        // Get active workspace members to exclude users no longer in the workspace
-        const activeWorkspaceMembers = await db.select({ userId: workspaceMembers.userId })
-            .from(workspaceMembers)
-            .where(and(
-                eq(workspaceMembers.workspaceId, workspace.id),
-                eq(workspaceMembers.status, 'active')
-            ))
-        const activeUserIds = new Set(activeWorkspaceMembers.map(m => m.userId))
-
-        const [wsMember] = await db.select().from(workspaceMembers)
-            .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, workspace.id))).limit(1)
-
-        if (!wsMember || !['owner', 'admin', 'hr_manager'].includes(wsMember.role)) {
-            return c.json({ success: false, error: 'Unauthorized. HR Manager or higher required.' }, 403)
-        }
-
-        const workspaceTeams = await db.select({ id: teams.id }).from(teams).where(eq(teams.workspaceId, workspace.id))
-        const teamIds = workspaceTeams.map(t => t.id)
-        if (teamIds.length === 0) return c.json({ success: true, data: [] })
-
-        const teamProjects = await db.select({ id: projects.id }).from(projects).where(inArray(projects.teamId, teamIds))
-        const projectIds = teamProjects.map(p => p.id)
-        if (projectIds.length === 0) return c.json({ success: true, data: [] })
-
-        const projectTasks = await db.select({ id: tasks.id, title: tasks.title }).from(tasks).where(inArray(tasks.projectId, projectIds))
-        const taskIds = projectTasks.map(t => t.id)
-        if (taskIds.length === 0) return c.json({ success: true, data: [] })
-        const taskMap = Object.fromEntries(projectTasks.map(t => [t.id, t]))
-
-        const pendingEntriesRaw = await db.select().from(timeEntries)
-            .where(and(
-                or(
-                    taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
-                    eq(timeEntries.workspaceId, workspace.id)
-                ),
-                eq(timeEntries.approvalStatus, 'pending')
-            ))
-            .orderBy(desc(timeEntries.startedAt))
-
-        // Exclude entries from users no longer active in the workspace
-        const pendingEntries = pendingEntriesRaw.filter(e => activeUserIds.has(e.userId))
-
-        const entryUserIds = [...new Set(pendingEntries.map(e => e.userId))]
-        const userDetails = entryUserIds.length > 0
-            ? await db.select({ id: users.id, name: users.name, image: users.image }).from(users).where(inArray(users.id, entryUserIds))
-            : []
-        const userMap = Object.fromEntries(userDetails.map(u => [u.id, u]))
-
-        const result = pendingEntries.map(e => ({
-            ...e,
-            taskTitle: (e.taskId ? taskMap[e.taskId]?.title : 'Meetings & Calendar Events') || 'General',
-            userName: userMap[e.userId]?.name || 'Unknown',
-            userImage: userMap[e.userId]?.image || null,
-        }))
-
-        return c.json({ success: true, data: result })
-    } catch (error) {
-        console.error('Error fetching pending entries:', error)
-        return c.json({ success: false, error: 'Failed to fetch pending entries' }, 500)
+    if (!workspaceSlug) {
+      return c.json({ success: false, error: 'workspaceSlug is required' }, 400)
     }
+
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.slug, workspaceSlug))
+      .limit(1)
+    if (!workspace) return c.json({ success: false, error: 'Workspace not found' }, 404)
+
+    // Get active workspace members to exclude users no longer in the workspace
+    const activeWorkspaceMembers = await db
+      .select({ userId: workspaceMembers.userId })
+      .from(workspaceMembers)
+      .where(
+        and(eq(workspaceMembers.workspaceId, workspace.id), eq(workspaceMembers.status, 'active'))
+      )
+    const activeUserIds = new Set(activeWorkspaceMembers.map((m) => m.userId))
+
+    const [wsMember] = await db
+      .select()
+      .from(workspaceMembers)
+      .where(
+        and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, workspace.id))
+      )
+      .limit(1)
+
+    if (!wsMember || !['owner', 'admin', 'hr_manager'].includes(wsMember.role)) {
+      return c.json({ success: false, error: 'Unauthorized. HR Manager or higher required.' }, 403)
+    }
+
+    const workspaceTeams = await db
+      .select({ id: teams.id })
+      .from(teams)
+      .where(eq(teams.workspaceId, workspace.id))
+    const teamIds = workspaceTeams.map((t) => t.id)
+    if (teamIds.length === 0) return c.json({ success: true, data: [] })
+
+    const teamProjects = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(inArray(projects.teamId, teamIds))
+    const projectIds = teamProjects.map((p) => p.id)
+    if (projectIds.length === 0) return c.json({ success: true, data: [] })
+
+    const projectTasks = await db
+      .select({ id: tasks.id, title: tasks.title })
+      .from(tasks)
+      .where(inArray(tasks.projectId, projectIds))
+    const taskIds = projectTasks.map((t) => t.id)
+    if (taskIds.length === 0) return c.json({ success: true, data: [] })
+    const taskMap = Object.fromEntries(projectTasks.map((t) => [t.id, t]))
+
+    const pendingEntriesRaw = await db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          or(
+            taskIds.length > 0 ? inArray(timeEntries.taskId, taskIds) : sql`false`,
+            eq(timeEntries.workspaceId, workspace.id)
+          ),
+          eq(timeEntries.approvalStatus, 'pending')
+        )
+      )
+      .orderBy(desc(timeEntries.startedAt))
+
+    // Exclude entries from users no longer active in the workspace
+    const pendingEntries = pendingEntriesRaw.filter((e) => activeUserIds.has(e.userId))
+
+    const entryUserIds = [...new Set(pendingEntries.map((e) => e.userId))]
+    const userDetails =
+      entryUserIds.length > 0
+        ? await db
+            .select({ id: users.id, name: users.name, image: users.image })
+            .from(users)
+            .where(inArray(users.id, entryUserIds))
+        : []
+    const userMap = Object.fromEntries(userDetails.map((u) => [u.id, u]))
+
+    const result = pendingEntries.map((e) => ({
+      ...e,
+      taskTitle: (e.taskId ? taskMap[e.taskId]?.title : 'Meetings & Calendar Events') || 'General',
+      userName: userMap[e.userId]?.name || 'Unknown',
+      userImage: userMap[e.userId]?.image || null,
+    }))
+
+    return c.json({ success: true, data: result })
+  } catch (error) {
+    console.error('Error fetching pending entries:', error)
+    return c.json({ success: false, error: 'Failed to fetch pending entries' }, 500)
+  }
 })
 
 // PATCH /api/time/:id/approve - Approve time entry
 timeRoutes.patch('/:id/approve', zValidator('json', approveTimeEntrySchema), async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user')
-        const body = c.req.valid('json')
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user')
+    const body = c.req.valid('json')
 
-        const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
-        if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
+    const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
+    if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
 
-        let wsRole: string | null = null
-        if (entry.taskId) {
-            wsRole = await getWorkspaceRoleFromTask(user.id, entry.taskId)
-        } else if (entry.workspaceId) {
-            const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                .where(and(eq(workspaceMembers.userId, user.id), eq(workspaceMembers.workspaceId, entry.workspaceId))).limit(1)
-            wsRole = wsMember?.role || null
-        }
-
-        if (!['owner', 'admin', 'hr_manager', 'project_manager'].includes(wsRole || '')) {
-            return c.json({ success: false, error: 'Unauthorized to approve entries' }, 403)
-        }
-
-        const [updated] = await db.update(timeEntries)
-            .set({
-                approvalStatus: 'approved',
-                approvedBy: user.id,
-                approvedAt: new Date(),
-                difficultyLevel: body.difficultyLevel,
-                bonusPoints: body.bonusPoints || null,
-                rejectionReason: null
-            })
-            .where(eq(timeEntries.id, id))
-            .returning()
-
-        // Notify user about approval
-        if (updated && updated.userId) {
-            const [workspace] = await db.select({ slug: workspaces.slug }).from(workspaces)
-                .where(eq(workspaces.id, updated.workspaceId!)).limit(1)
-
-            await NotificationService.push(updated.userId, {
-                type: 'time_entry_approved',
-                title: 'notifications.titles.time_approved',
-                message: 'notifications.messages.time_approved',
-                link: `/${workspace?.slug}/time-tracker?view=manual`,
-                actor: { name: user.name, image: user.image || undefined },
-                metadata: { entryId: updated.id, duration: updated.durationMinutes }
-            })
-        }
-
-        return c.json({ success: true, data: updated })
-    } catch (error) {
-        console.error('Error approving entry:', error)
-        return c.json({ success: false, error: 'Failed to approve entry' }, 500)
+    let wsRole: string | null = null
+    if (entry.taskId) {
+      wsRole = await getWorkspaceRoleFromTask(user.id, entry.taskId)
+    } else if (entry.workspaceId) {
+      const [wsMember] = await db
+        .select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, user.id),
+            eq(workspaceMembers.workspaceId, entry.workspaceId)
+          )
+        )
+        .limit(1)
+      wsRole = wsMember?.role || null
     }
+
+    if (!['owner', 'admin', 'hr_manager', 'project_manager'].includes(wsRole || '')) {
+      return c.json({ success: false, error: 'Unauthorized to approve entries' }, 403)
+    }
+
+    const [updated] = await db
+      .update(timeEntries)
+      .set({
+        approvalStatus: 'approved',
+        approvedBy: user.id,
+        approvedAt: new Date(),
+        difficultyLevel: body.difficultyLevel,
+        bonusPoints: body.bonusPoints || null,
+        rejectionReason: null,
+      })
+      .where(eq(timeEntries.id, id))
+      .returning()
+
+    // Notify user about approval
+    if (updated && updated.userId) {
+      const [workspace] = await db
+        .select({ slug: workspaces.slug })
+        .from(workspaces)
+        .where(eq(workspaces.id, updated.workspaceId!))
+        .limit(1)
+
+      await NotificationService.push(updated.userId, {
+        type: 'time_entry_approved',
+        title: 'notifications.titles.time_approved',
+        message: 'notifications.messages.time_approved',
+        link: `/${workspace?.slug}/time-tracker?view=manual`,
+        actor: { name: user.name, image: user.image || undefined },
+        metadata: { entryId: updated.id, duration: updated.durationMinutes },
+      })
+    }
+
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Error approving entry:', error)
+    return c.json({ success: false, error: 'Failed to approve entry' }, 500)
+  }
 })
 
 // PATCH /api/time/:id/reject - Reject time entry
 timeRoutes.patch('/:id/reject', zValidator('json', rejectTimeEntrySchema), async (c) => {
-    try {
-        const id = c.req.param('id')
-        const user = c.get('user')
-        const body = c.req.valid('json')
+  try {
+    const id = c.req.param('id')
+    const user = c.get('user')
+    const body = c.req.valid('json')
 
-        const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
-        if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
+    const [entry] = await db.select().from(timeEntries).where(eq(timeEntries.id, id)).limit(1)
+    if (!entry) return c.json({ success: false, error: 'Time entry not found' }, 404)
 
-        let wsRole: string | null = null
-        if (entry.taskId) {
-            wsRole = await getWorkspaceRoleFromTask(user.id, entry.taskId)
-        } else if (entry.workspaceId) {
-            const [wsMember] = await db.select({ role: workspaceMembers.role }).from(workspaceMembers)
-                .where(and(eq(workspaceMembers.userId, user.id), eq(workspaceMembers.workspaceId, entry.workspaceId))).limit(1)
-            wsRole = wsMember?.role || null
-        }
-
-        if (!['owner', 'admin', 'hr_manager', 'project_manager'].includes(wsRole || '')) {
-            return c.json({ success: false, error: 'Unauthorized to reject entries' }, 403)
-        }
-
-        const [updated] = await db.update(timeEntries)
-            .set({
-                approvalStatus: 'rejected',
-                rejectionReason: body.rejectionReason,
-                approvedBy: null,
-                approvedAt: null
-            })
-            .where(eq(timeEntries.id, id))
-            .returning()
-
-        // Notify user about rejection
-        if (updated && updated.userId) {
-            const [workspace] = await db.select({ slug: workspaces.slug }).from(workspaces)
-                .where(eq(workspaces.id, updated.workspaceId!)).limit(1)
-
-            await NotificationService.push(updated.userId, {
-                type: 'time_entry_rejected',
-                title: 'notifications.titles.time_rejected',
-                message: 'notifications.messages.time_rejected',
-                link: `/${workspace?.slug}/time-tracker?view=manual`,
-                actor: { name: user.name, image: user.image || undefined },
-                metadata: { entryId: updated.id, reason: body.rejectionReason, duration: updated.durationMinutes }
-            })
-        }
-
-        return c.json({ success: true, data: updated })
-    } catch (error) {
-        console.error('Error rejecting entry:', error)
-        return c.json({ success: false, error: 'Failed to reject entry' }, 500)
+    let wsRole: string | null = null
+    if (entry.taskId) {
+      wsRole = await getWorkspaceRoleFromTask(user.id, entry.taskId)
+    } else if (entry.workspaceId) {
+      const [wsMember] = await db
+        .select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, user.id),
+            eq(workspaceMembers.workspaceId, entry.workspaceId)
+          )
+        )
+        .limit(1)
+      wsRole = wsMember?.role || null
     }
+
+    if (!['owner', 'admin', 'hr_manager', 'project_manager'].includes(wsRole || '')) {
+      return c.json({ success: false, error: 'Unauthorized to reject entries' }, 403)
+    }
+
+    const [updated] = await db
+      .update(timeEntries)
+      .set({
+        approvalStatus: 'rejected',
+        rejectionReason: body.rejectionReason,
+        approvedBy: null,
+        approvedAt: null,
+      })
+      .where(eq(timeEntries.id, id))
+      .returning()
+
+    // Notify user about rejection
+    if (updated && updated.userId) {
+      const [workspace] = await db
+        .select({ slug: workspaces.slug })
+        .from(workspaces)
+        .where(eq(workspaces.id, updated.workspaceId!))
+        .limit(1)
+
+      await NotificationService.push(updated.userId, {
+        type: 'time_entry_rejected',
+        title: 'notifications.titles.time_rejected',
+        message: 'notifications.messages.time_rejected',
+        link: `/${workspace?.slug}/time-tracker?view=manual`,
+        actor: { name: user.name, image: user.image || undefined },
+        metadata: {
+          entryId: updated.id,
+          reason: body.rejectionReason,
+          duration: updated.durationMinutes,
+        },
+      })
+    }
+
+    return c.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('Error rejecting entry:', error)
+    return c.json({ success: false, error: 'Failed to reject entry' }, 500)
+  }
 })
 
 /**
  * Notifies HR/Admins about a new pending time entry.
  */
-async function notifyHR(workspaceId: string, actor: { id: string, name: string, image?: string }, durationMinutes: number) {
-    try {
-        const hrUsers = await db.select({ userId: workspaceMembers.userId })
-            .from(workspaceMembers)
-            .where(and(
-                eq(workspaceMembers.workspaceId, workspaceId),
-                inArray(workspaceMembers.role, ['owner', 'admin', 'hr_manager']),
-                eq(workspaceMembers.status, 'active')
-            ))
+async function notifyHR(
+  workspaceId: string,
+  actor: { id: string; name: string; image?: string },
+  durationMinutes: number
+) {
+  try {
+    const hrUsers = await db
+      .select({ userId: workspaceMembers.userId })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, workspaceId),
+          inArray(workspaceMembers.role, ['owner', 'admin', 'hr_manager']),
+          eq(workspaceMembers.status, 'active')
+        )
+      )
 
-        const [workspace] = await db.select({ slug: workspaces.slug }).from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1)
+    const [workspace] = await db
+      .select({ slug: workspaces.slug })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId))
+      .limit(1)
 
-        for (const hr of hrUsers) {
-            // Don't notify the actor themselves
-            if (hr.userId === actor.id) continue
+    for (const hr of hrUsers) {
+      // Don't notify the actor themselves
+      if (hr.userId === actor.id) continue
 
-            await NotificationService.push(hr.userId, {
-                type: 'time_entry_pending',
-                title: 'notifications.titles.time_pending',
-                message: `Nowy wpis czasu do zaakceptowania (${durationMinutes} min) od [${actor.name}]`,
-                link: `/${workspace?.slug}/time-tracker?view=approval`,
-                actor: { name: actor.name, image: actor.image },
-                metadata: { workspaceId }
-            })
-        }
-    } catch (error) {
-        console.error('[TimeRoutes] Failed to notify HR:', error)
+      await NotificationService.push(hr.userId, {
+        type: 'time_entry_pending',
+        title: 'notifications.titles.time_pending',
+        message: `Nowy wpis czasu do zaakceptowania (${durationMinutes} min) od [${actor.name}]`,
+        link: `/${workspace?.slug}/time-tracker?view=approval`,
+        actor: { name: actor.name, image: actor.image },
+        metadata: { workspaceId },
+      })
     }
+  } catch (error) {
+    console.error('[TimeRoutes] Failed to notify HR:', error)
+  }
 }

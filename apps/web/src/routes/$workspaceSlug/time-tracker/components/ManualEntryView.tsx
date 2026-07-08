@@ -9,7 +9,15 @@ import { formatMinutes } from './utils'
 import { toast } from '@/hooks/useToast'
 import { sidebarIcons } from '@/components/dashboard/icons/SidebarIcons'
 
-function TimeSelect({ value, onChange, label }: { value: string, onChange: (v: string) => void, label: string }) {
+function TimeSelect({
+  value,
+  onChange,
+  label,
+}: {
+  value: string
+  onChange: (v: string) => void
+  label: string
+}) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -35,30 +43,40 @@ function TimeSelect({ value, onChange, label }: { value: string, onChange: (v: s
 
   return (
     <div className="relative" ref={ref}>
-      <label className="block text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 pl-1">
+      <label className="mb-2 block pl-1 text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
         {label}
       </label>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`w-full flex items-center justify-between px-4 py-3 bg-[var(--app-bg-elevated)] border rounded-xl text-left transition-all outline-none ${open ? 'border-[var(--app-accent)] ring-1 ring-[var(--app-accent)]/20 shadow-lg' : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
-          }`}
+        className={`flex w-full items-center justify-between rounded-xl border bg-[var(--app-bg-elevated)] px-4 py-3 text-left outline-none transition-all ${
+          open
+            ? 'ring-[var(--app-accent)]/20 border-[var(--app-accent)] shadow-lg ring-1'
+            : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
+        }`}
       >
-        <span className="font-mono text-[var(--app-text-primary)] font-semibold">{value}</span>
-        <Clock size={18} className={open ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'} />
+        <span className="font-mono font-semibold text-[var(--app-text-primary)]">{value}</span>
+        <Clock
+          size={18}
+          className={open ? 'text-[var(--app-accent)]' : 'text-[var(--app-text-muted)]'}
+        />
       </button>
       {open && (
-        <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar overflow-hidden backdrop-blur-xl">
+        <div className="custom-scrollbar absolute z-50 mt-2 max-h-60 w-full overflow-hidden overflow-y-auto rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] shadow-xl backdrop-blur-xl">
           <div className="p-1">
-            {times.map(t => (
+            {times.map((t) => (
               <button
                 key={t}
                 type="button"
-                onClick={() => { onChange(t); setOpen(false) }}
-                className={`w-full px-4 py-2 text-left font-mono text-sm rounded-lg transition-colors ${value === t
-                  ? 'text-[var(--app-accent)] font-bold bg-[var(--app-accent)]/10'
-                  : 'text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
-                  }`}
+                onClick={() => {
+                  onChange(t)
+                  setOpen(false)
+                }}
+                className={`w-full rounded-lg px-4 py-2 text-left font-mono text-sm transition-colors ${
+                  value === t
+                    ? 'bg-[var(--app-accent)]/10 font-bold text-[var(--app-accent)]'
+                    : 'text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
+                }`}
               >
                 {t}
               </button>
@@ -70,7 +88,15 @@ function TimeSelect({ value, onChange, label }: { value: string, onChange: (v: s
   )
 }
 
-export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspaceSlug: string; userId: string; canManage: boolean }) {
+export function ManualEntryView({
+  workspaceSlug,
+  userId,
+  canManage,
+}: {
+  workspaceSlug: string
+  userId: string
+  canManage: boolean
+}) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
@@ -106,7 +132,8 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
   // Fetch workspace members
   const { data: membersData } = useQuery({
     queryKey: ['workspace-members', workspaceSlug],
-    queryFn: () => apiFetchJson<{ success: boolean; data: any[] }>(`/api/workspaces/${workspaceSlug}/members`),
+    queryFn: () =>
+      apiFetchJson<{ success: boolean; data: any[] }>(`/api/workspaces/${workspaceSlug}/members`),
     enabled: !!workspaceSlug && canManage,
     refetchInterval: 5000,
   })
@@ -115,7 +142,10 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
   // Fetch tasks
   const { data: tasksData, isLoading: tasksLoading } = useQuery({
     queryKey: ['my-tasks', workspaceSlug, selectedUserId],
-    queryFn: () => apiFetchJson<{ success: boolean; data: MyTask[] }>(`/api/time/my-tasks?workspaceSlug=${workspaceSlug}&targetUserId=${selectedUserId}`),
+    queryFn: () =>
+      apiFetchJson<{ success: boolean; data: MyTask[] }>(
+        `/api/time/my-tasks?workspaceSlug=${workspaceSlug}&targetUserId=${selectedUserId}`
+      ),
     enabled: !!workspaceSlug && !!selectedUserId,
   })
   const myTasks = (tasksData?.data || []).filter((t: MyTask) => t.status !== 'done')
@@ -150,7 +180,7 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
     },
     onError: () => {
       toast.error(t('timeTracker.manualEntryError', 'Błąd podczas dodawania wpisu.'))
-    }
+    },
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -170,52 +200,60 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
       description,
       durationMinutes,
       startedAt: start.toISOString(),
-      endedAt: end.toISOString()
+      endedAt: end.toISOString(),
     })
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm">
-
-        <div className="mb-8 border-b border-[var(--app-divider)] pb-6 flex flex-col items-center text-center">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 flex items-center justify-center bg-[var(--app-accent)]/10 rounded-xl text-[var(--app-accent)]">
+    <div className="animate-in fade-in slide-in-from-bottom-4 mx-auto max-w-2xl space-y-6 duration-500">
+      <div className="rounded-3xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] p-6 shadow-sm md:p-8">
+        <div className="mb-8 flex flex-col items-center border-b border-[var(--app-divider)] pb-6 text-center">
+          <div className="mb-2 flex items-center gap-3">
+            <div className="bg-[var(--app-accent)]/10 flex h-10 w-10 items-center justify-center rounded-xl text-[var(--app-accent)]">
               {sidebarIcons.timetracker.gold}
             </div>
-            <h2 className="text-2xl font-bold text-[var(--app-text-primary)] tracking-tight">
+            <h2 className="text-2xl font-bold tracking-tight text-[var(--app-text-primary)]">
               {t('timeTracker.manual.title', 'Dodaj czas ręcznie')}
             </h2>
           </div>
-          <p className="text-sm text-[var(--app-text-muted)] mt-1.5 max-w-sm">
-            {t('timeTracker.manual.subtitle', 'Uzupełnij brakujące godziny pracy wybierając zadanie i przedział czasowy.')}
+          <p className="mt-1.5 max-w-sm text-sm text-[var(--app-text-muted)]">
+            {t(
+              'timeTracker.manual.subtitle',
+              'Uzupełnij brakujące godziny pracy wybierając zadanie i przedział czasowy.'
+            )}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-
           {canManage && (
             <div>
-              <label className="block text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 pl-1">
+              <label className="mb-2 block pl-1 text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
                 {t('timeTracker.manual.user', 'Użytkownik')}
               </label>
               <div className="relative" ref={userRef}>
                 <button
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className={`w-full flex items-center justify-between px-4 py-3 bg-[var(--app-bg-elevated)] border rounded-xl text-left transition-all outline-none ${userDropdownOpen ? 'border-[var(--app-accent)] ring-1 ring-[var(--app-accent)]/20 shadow-lg' : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
-                    }`}
+                  className={`flex w-full items-center justify-between rounded-xl border bg-[var(--app-bg-elevated)] px-4 py-3 text-left outline-none transition-all ${
+                    userDropdownOpen
+                      ? 'ring-[var(--app-accent)]/20 border-[var(--app-accent)] shadow-lg ring-1'
+                      : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <User size={18} className="text-[var(--app-text-muted)]" />
                     <span className="font-semibold text-[var(--app-text-primary)]">
-                      {members.find((m: any) => m.user?.id === selectedUserId)?.user?.name || selectedUserId}
+                      {members.find((m: any) => m.user?.id === selectedUserId)?.user?.name ||
+                        selectedUserId}
                     </span>
                   </div>
-                  <ChevronDown size={18} className={`text-[var(--app-text-muted)] transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    size={18}
+                    className={`text-[var(--app-text-muted)] transition-transform duration-200 ${userDropdownOpen ? 'rotate-180' : ''}`}
+                  />
                 </button>
                 {userDropdownOpen && (
-                  <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-xl max-h-60 overflow-y-auto custom-scrollbar p-1">
+                  <div className="custom-scrollbar absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] p-1 shadow-xl">
                     {members.map((m: any) => (
                       <button
                         key={m.user?.id}
@@ -226,8 +264,11 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
                           setSelectedSubtaskId(null)
                           setUserDropdownOpen(false)
                         }}
-                        className={`w-full px-4 py-3 text-left hover:bg-[var(--app-bg-deepest)] font-medium transition-colors flex items-center justify-between ${selectedUserId === m.user?.id ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/5' : 'text-[var(--app-text-primary)]'
-                          }`}
+                        className={`flex w-full items-center justify-between px-4 py-3 text-left font-medium transition-colors hover:bg-[var(--app-bg-deepest)] ${
+                          selectedUserId === m.user?.id
+                            ? 'bg-[var(--app-accent)]/5 text-[var(--app-accent)]'
+                            : 'text-[var(--app-text-primary)]'
+                        }`}
                       >
                         <span>{m.user?.name || m.user?.id}</span>
                       </button>
@@ -239,7 +280,7 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
           )}
 
           <div>
-            <label className="block text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 pl-1">
+            <label className="mb-2 block pl-1 text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
               {t('timeTracker.selectTask', 'Zadanie lub Spotkanie')}
             </label>
             <div className="relative" ref={taskRef}>
@@ -247,42 +288,56 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
                 type="button"
                 onClick={() => setTaskDropdownOpen(!taskDropdownOpen)}
                 disabled={tasksLoading}
-                className={`w-full flex items-center justify-between px-4 py-3 bg-[var(--app-bg-elevated)] border rounded-xl text-left transition-all outline-none ${taskDropdownOpen ? 'border-[var(--app-accent)] ring-1 ring-[var(--app-accent)]/20 shadow-lg' : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
-                  }`}
+                className={`flex w-full items-center justify-between rounded-xl border bg-[var(--app-bg-elevated)] px-4 py-3 text-left outline-none transition-all ${
+                  taskDropdownOpen
+                    ? 'ring-[var(--app-accent)]/20 border-[var(--app-accent)] shadow-lg ring-1'
+                    : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
+                }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <CheckSquare size={18} className="text-[var(--app-text-muted)] flex-shrink-0" />
+                <div className="flex min-w-0 items-center gap-3">
+                  <CheckSquare size={18} className="flex-shrink-0 text-[var(--app-text-muted)]" />
                   {selectedTask ? (
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-semibold text-[var(--app-text-primary)] truncate">
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate font-semibold text-[var(--app-text-primary)]">
                         {selectedTask.title}
                       </span>
-                      <span className="text-xs text-[var(--app-text-muted)] mt-0.5 truncate flex items-center gap-1">
+                      <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-[var(--app-text-muted)]">
                         {selectedTask.projectName}
                         {selectedEntryType === 'meeting' && selectedMeeting && (
-                          <span className="text-[var(--app-accent)] flex items-center gap-1">
-                            <span className="mx-1">•</span> <Calendar size={10} /> {selectedMeeting.title}
+                          <span className="flex items-center gap-1 text-[var(--app-accent)]">
+                            <span className="mx-1">•</span> <Calendar size={10} />{' '}
+                            {selectedMeeting.title}
                           </span>
                         )}
-                        {selectedEntryType === 'task' && selectedSubtaskId && selectedTask.subtasks.find((s: any) => s.id === selectedSubtaskId) && (
-                          <span className="text-[var(--app-accent)]">
-                            <span className="mx-1 text-[var(--app-text-muted)]">/</span>
-                            {selectedTask.subtasks.find((s: any) => s.id === selectedSubtaskId)?.title}
-                          </span>
-                        )}
+                        {selectedEntryType === 'task' &&
+                          selectedSubtaskId &&
+                          selectedTask.subtasks.find((s: any) => s.id === selectedSubtaskId) && (
+                            <span className="text-[var(--app-accent)]">
+                              <span className="mx-1 text-[var(--app-text-muted)]">/</span>
+                              {
+                                selectedTask.subtasks.find((s: any) => s.id === selectedSubtaskId)
+                                  ?.title
+                              }
+                            </span>
+                          )}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-[var(--app-text-muted)] font-medium">
-                      {tasksLoading ? t('common.loading', 'Ładowanie zadań...') : t('timeTracker.manual.pickTask', 'Wybierz nad czym pracowałeś...')}
+                    <span className="font-medium text-[var(--app-text-muted)]">
+                      {tasksLoading
+                        ? t('common.loading', 'Ładowanie zadań...')
+                        : t('timeTracker.manual.pickTask', 'Wybierz nad czym pracowałeś...')}
                     </span>
                   )}
                 </div>
-                <ChevronDown size={18} className={`text-[var(--app-text-muted)] flex-shrink-0 transition-transform duration-200 ${taskDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  size={18}
+                  className={`flex-shrink-0 text-[var(--app-text-muted)] transition-transform duration-200 ${taskDropdownOpen ? 'rotate-180' : ''}`}
+                />
               </button>
 
               {taskDropdownOpen && (
-                <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-xl max-h-80 overflow-y-auto custom-scrollbar overflow-hidden">
+                <div className="custom-scrollbar absolute z-50 mt-2 max-h-80 w-full overflow-hidden overflow-y-auto rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] shadow-xl">
                   {myTasks.length === 0 ? (
                     <div className="p-6 text-center text-sm font-medium text-[var(--app-text-muted)]">
                       {t('timeTracker.timer.noTasks', 'Brak przypisanych zadań.')}
@@ -290,83 +345,103 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
                   ) : (
                     <div className="py-2">
                       {/* TASKS */}
-                      {myTasks.filter(t => t.id !== 'standalone-meetings').length > 0 && (
-                        <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50">
+                      {myTasks.filter((t) => t.id !== 'standalone-meetings').length > 0 && (
+                        <div className="bg-[var(--app-bg-elevated)]/50 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
                           {t('timeTracker.tasksHeader', 'Zadania Projektowe')}
                         </div>
                       )}
 
-                      {myTasks.filter(t => t.id !== 'standalone-meetings').map((task: MyTask) => (
-                        <div key={task.id} className="border-b border-[var(--app-divider)] last:border-0">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedTaskId(task.id)
-                              setSelectedSubtaskId(null)
-                              setSelectedMeetingId(null)
-                              setSelectedEntryType('task')
-                              setTaskDropdownOpen(false)
-                            }}
-                            className={`w-full px-4 py-3 text-left hover:bg-[var(--app-bg-deepest)] flex flex-col transition-colors ${selectedTaskId === task.id && !selectedSubtaskId ? 'bg-[var(--app-accent)]/5 text-[var(--app-accent)]' : ''}`}
+                      {myTasks
+                        .filter((t) => t.id !== 'standalone-meetings')
+                        .map((task: MyTask) => (
+                          <div
+                            key={task.id}
+                            className="border-b border-[var(--app-divider)] last:border-0"
                           >
-                            <span className="font-semibold text-sm text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)] transition-colors">{task.title}</span>
-                            <span className="text-[11px] font-medium text-[var(--app-text-muted)] mt-0.5">{task.projectName}</span>
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTaskId(task.id)
+                                setSelectedSubtaskId(null)
+                                setSelectedMeetingId(null)
+                                setSelectedEntryType('task')
+                                setTaskDropdownOpen(false)
+                              }}
+                              className={`flex w-full flex-col px-4 py-3 text-left transition-colors hover:bg-[var(--app-bg-deepest)] ${selectedTaskId === task.id && !selectedSubtaskId ? 'bg-[var(--app-accent)]/5 text-[var(--app-accent)]' : ''}`}
+                            >
+                              <span className="text-sm font-semibold text-[var(--app-text-primary)] transition-colors group-hover:text-[var(--app-accent)]">
+                                {task.title}
+                              </span>
+                              <span className="mt-0.5 text-[11px] font-medium text-[var(--app-text-muted)]">
+                                {task.projectName}
+                              </span>
+                            </button>
 
-                          {/* Subtasks */}
-                          {task.subtasks.length > 0 && (
-                            <div className="bg-[var(--app-bg-elevated)]/30 pb-2 border-l-2 border-l-[var(--app-divider)] ml-4 mr-2 mb-2 rounded-r-lg">
-                              {task.subtasks.map(sub => (
-                                <button
-                                  type="button"
-                                  key={sub.id}
-                                  onClick={() => {
-                                    setSelectedTaskId(task.id)
-                                    setSelectedSubtaskId(sub.id)
-                                    setSelectedMeetingId(null)
-                                    setSelectedEntryType('task')
-                                    setTaskDropdownOpen(false)
-                                  }}
-                                  className={`w-full px-4 py-2 pl-8 text-left hover:bg-[var(--app-bg-elevated)] flex items-center gap-2 text-sm transition-colors ${selectedSubtaskId === sub.id ? 'bg-[var(--app-accent)]/5 text-[var(--app-accent)]' : ''}`}
-                                >
-                                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--app-divider)] group-hover:bg-[var(--app-accent)] transition-colors" />
-                                  <span className="text-[var(--app-text-secondary)] font-medium text-[13px]">{sub.title}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                            {/* Subtasks */}
+                            {task.subtasks.length > 0 && (
+                              <div className="bg-[var(--app-bg-elevated)]/30 mb-2 ml-4 mr-2 rounded-r-lg border-l-2 border-l-[var(--app-divider)] pb-2">
+                                {task.subtasks.map((sub) => (
+                                  <button
+                                    type="button"
+                                    key={sub.id}
+                                    onClick={() => {
+                                      setSelectedTaskId(task.id)
+                                      setSelectedSubtaskId(sub.id)
+                                      setSelectedMeetingId(null)
+                                      setSelectedEntryType('task')
+                                      setTaskDropdownOpen(false)
+                                    }}
+                                    className={`flex w-full items-center gap-2 px-4 py-2 pl-8 text-left text-sm transition-colors hover:bg-[var(--app-bg-elevated)] ${selectedSubtaskId === sub.id ? 'bg-[var(--app-accent)]/5 text-[var(--app-accent)]' : ''}`}
+                                  >
+                                    <div className="h-1.5 w-1.5 rounded-full bg-[var(--app-divider)] transition-colors group-hover:bg-[var(--app-accent)]" />
+                                    <span className="text-[13px] font-medium text-[var(--app-text-secondary)]">
+                                      {sub.title}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
 
                       {/* MEETINGS */}
-                      {myTasks.find(t => t.id === 'standalone-meetings') && (
+                      {myTasks.find((t) => t.id === 'standalone-meetings') && (
                         <>
-                          <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50 border-t border-[var(--app-divider)]">
+                          <div className="bg-[var(--app-bg-elevated)]/50 border-t border-[var(--app-divider)] px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
                             {t('timeTracker.meetingsHeader', 'Spotkania i Wydarzenia')}
                           </div>
                           <div>
-                            {myTasks.find(t => t.id === 'standalone-meetings')?.meetings?.map((m: any) => (
-                              <button
-                                type="button"
-                                key={m.id}
-                                onClick={() => {
-                                  setSelectedTaskId('standalone-meetings')
-                                  setSelectedSubtaskId(null)
-                                  setSelectedMeetingId(m.id)
-                                  setSelectedEntryType('meeting')
-                                  setTaskDropdownOpen(false)
-                                }}
-                                className="w-full px-4 py-3 text-left hover:bg-[var(--app-bg-elevated)] flex items-center gap-3 border-b border-[var(--app-divider)] last:border-0 transition-colors"
-                              >
-                                <div className="p-1.5 rounded-md bg-[var(--app-accent)]/10 text-[var(--app-accent)]">
-                                  <Calendar size={14} />
-                                </div>
-                                <div className="flex flex-col flex-1 min-w-0">
-                                  <span className="font-semibold text-sm text-[var(--app-text-primary)] truncate">{m.title}</span>
-                                  <span className="text-[10px] font-medium text-[var(--app-text-muted)] mt-0.5">{new Date(m.date).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                                </div>
-                              </button>
-                            ))}
+                            {myTasks
+                              .find((t) => t.id === 'standalone-meetings')
+                              ?.meetings?.map((m: any) => (
+                                <button
+                                  type="button"
+                                  key={m.id}
+                                  onClick={() => {
+                                    setSelectedTaskId('standalone-meetings')
+                                    setSelectedSubtaskId(null)
+                                    setSelectedMeetingId(m.id)
+                                    setSelectedEntryType('meeting')
+                                    setTaskDropdownOpen(false)
+                                  }}
+                                  className="flex w-full items-center gap-3 border-b border-[var(--app-divider)] px-4 py-3 text-left transition-colors last:border-0 hover:bg-[var(--app-bg-elevated)]"
+                                >
+                                  <div className="bg-[var(--app-accent)]/10 rounded-md p-1.5 text-[var(--app-accent)]">
+                                    <Calendar size={14} />
+                                  </div>
+                                  <div className="flex min-w-0 flex-1 flex-col">
+                                    <span className="truncate text-sm font-semibold text-[var(--app-text-primary)]">
+                                      {m.title}
+                                    </span>
+                                    <span className="mt-0.5 text-[10px] font-medium text-[var(--app-text-muted)]">
+                                      {new Date(m.date).toLocaleString('pl-PL', {
+                                        dateStyle: 'short',
+                                        timeStyle: 'short',
+                                      })}
+                                    </span>
+                                  </div>
+                                </button>
+                              ))}
                           </div>
                         </>
                       )}
@@ -377,9 +452,9 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
-              <label className="block text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 pl-1">
+              <label className="mb-2 block pl-1 text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
                 {t('timeTracker.manual.date', 'Data')}
               </label>
               <DueDatePicker
@@ -391,38 +466,57 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
                 triggerClassName="w-full px-4 py-3 bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] hover:border-[var(--app-text-muted)] rounded-xl outline-none transition-all font-mono text-[var(--app-text-primary)] flex items-center justify-between font-semibold"
               />
             </div>
-            <TimeSelect label={t('timeTracker.manual.startTime', 'Czas startu')} value={startTime} onChange={(val) => setStartTime(val)} />
-            <TimeSelect label={t('timeTracker.manual.endTime', 'Czas końca')} value={endTime} onChange={(val) => setEndTime(val)} />
+            <TimeSelect
+              label={t('timeTracker.manual.startTime', 'Czas startu')}
+              value={startTime}
+              onChange={(val) => setStartTime(val)}
+            />
+            <TimeSelect
+              label={t('timeTracker.manual.endTime', 'Czas końca')}
+              value={endTime}
+              onChange={(val) => setEndTime(val)}
+            />
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 pl-1 flex items-center gap-2">
+            <label className="mb-2 block flex items-center gap-2 pl-1 text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
               <AlignLeft size={12} />
               {t('timeTracker.description', 'Opis (Opcjonalnie)')}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('timeTracker.descriptionPlaceholderManual', 'Krótko opisz co zostało wykonane...')}
+              placeholder={t(
+                'timeTracker.descriptionPlaceholderManual',
+                'Krótko opisz co zostało wykonane...'
+              )}
               rows={3}
-              className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl px-4 py-3 text-sm text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] focus:ring-1 focus:ring-[var(--app-accent)]/20 transition-all resize-none placeholder:text-[var(--app-text-muted)]/50"
+              className="focus:ring-[var(--app-accent)]/20 placeholder:text-[var(--app-text-muted)]/50 w-full resize-none rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] px-4 py-3 text-sm text-[var(--app-text-primary)] outline-none transition-all focus:border-[var(--app-accent)] focus:ring-1"
             />
           </div>
 
           {/* DYNAMIC DURATION WIDGET */}
-          <div className={`flex items-center justify-between p-5 rounded-2xl transition-all duration-300 ${durationMinutes > 0
-            ? 'bg-gradient-to-r from-[var(--app-bg-elevated)] to-[var(--app-accent)]/10 border border-[var(--app-accent)]/20 shadow-[0_4px_12px_rgba(242,206,136,0.06)]'
-            : 'bg-gradient-to-r from-[var(--app-bg-elevated)] to-[var(--app-bg-deepest)] border border-transparent'
-            }`}>
+          <div
+            className={`flex items-center justify-between rounded-2xl p-5 transition-all duration-300 ${
+              durationMinutes > 0
+                ? 'to-[var(--app-accent)]/10 border-[var(--app-accent)]/20 border bg-gradient-to-r from-[var(--app-bg-elevated)] shadow-[0_4px_12px_rgba(242,206,136,0.06)]'
+                : 'border border-transparent bg-gradient-to-r from-[var(--app-bg-elevated)] to-[var(--app-bg-deepest)]'
+            }`}
+          >
             <span className="text-sm font-semibold text-[var(--app-text-secondary)]">
               {t('timeTracker.manual.durationAuto', 'Podsumowanie czasu')}
             </span>
-            <div className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border transition-all duration-300 ${durationMinutes > 0
-              ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] border-[var(--app-accent)] shadow-md'
-              : 'bg-[var(--app-bg-card)] text-[var(--app-text-muted)] border-[var(--app-divider)]'
-              }`}>
+            <div
+              className={`flex items-center gap-2.5 rounded-xl border px-4 py-2 transition-all duration-300 ${
+                durationMinutes > 0
+                  ? 'border-[var(--app-accent)] bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-md'
+                  : 'border-[var(--app-divider)] bg-[var(--app-bg-card)] text-[var(--app-text-muted)]'
+              }`}
+            >
               <Clock size={18} />
-              <span className="text-xl font-bold font-mono tracking-tight">{formatMinutes(durationMinutes)}</span>
+              <span className="font-mono text-xl font-bold tracking-tight">
+                {formatMinutes(durationMinutes)}
+              </span>
             </div>
           </div>
 
@@ -430,10 +524,10 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
             <button
               type="submit"
               disabled={!selectedTaskId || durationMinutes <= 0 || manualMutation.isPending}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-[var(--app-accent)] text-[var(--app-accent-text)] font-bold text-base hover:bg-[var(--app-accent-hover)] hover:shadow-lg hover:shadow-[var(--app-accent)]/20 disabled:opacity-50 disabled:grayscale disabled:hover:shadow-none transition-all active:scale-[0.98]"
+              className="hover:shadow-[var(--app-accent)]/20 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--app-accent)] py-4 text-base font-bold text-[var(--app-accent-text)] transition-all hover:bg-[var(--app-accent-hover)] hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:grayscale disabled:hover:shadow-none"
             >
               {manualMutation.isPending ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <>
                   <Plus size={20} />
@@ -442,7 +536,6 @@ export function ManualEntryView({ workspaceSlug, userId, canManage }: { workspac
               )}
             </button>
           </div>
-
         </form>
       </div>
     </div>

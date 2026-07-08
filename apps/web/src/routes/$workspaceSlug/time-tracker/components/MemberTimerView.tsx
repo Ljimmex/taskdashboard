@@ -2,11 +2,33 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { apiFetchJson } from '@/lib/api'
-import { Clock, Play, Pause, Square, ChevronDown, ChevronLeft, ChevronRight, Calendar, CheckSquare, AlignLeft, Activity, SkipForward, Coffee, Brain, ChevronUp } from 'lucide-react'
+import {
+  Clock,
+  Play,
+  Pause,
+  Square,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  CheckSquare,
+  AlignLeft,
+  Activity,
+  SkipForward,
+  Coffee,
+  Brain,
+  ChevronUp,
+} from 'lucide-react'
 import { formatTime, formatMinutes } from './utils'
 import { MyTask } from './types'
 
-export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: string; userId: string }) {
+export function MemberTimerView({
+  workspaceSlug,
+  userId,
+}: {
+  workspaceSlug: string
+  userId: string
+}) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
 
@@ -82,7 +104,9 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
           }
         }
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [userId])
 
   // Timer tick
@@ -100,7 +124,10 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
   // Fetch my tasks
   const { data: tasksData, isLoading: tasksLoading } = useQuery({
     queryKey: ['my-tasks', workspaceSlug],
-    queryFn: () => apiFetchJson<{ success: boolean; data: MyTask[] }>(`/api/time/my-tasks?workspaceSlug=${workspaceSlug}`),
+    queryFn: () =>
+      apiFetchJson<{ success: boolean; data: MyTask[] }>(
+        `/api/time/my-tasks?workspaceSlug=${workspaceSlug}`
+      ),
     enabled: !!workspaceSlug && !!userId,
     refetchInterval: 5000,
   })
@@ -109,7 +136,8 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
   // Fetch my time entries (history)
   const { data: historyData } = useQuery({
     queryKey: ['my-time-entries', userId],
-    queryFn: () => apiFetchJson<{ success: boolean; data: any[]; totalMinutes: number }>('/api/time'),
+    queryFn: () =>
+      apiFetchJson<{ success: boolean; data: any[]; totalMinutes: number }>('/api/time'),
     enabled: !!userId,
     refetchInterval: 5000,
   })
@@ -154,15 +182,18 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
 
       // Update localStorage to match server
       const saved = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
-      localStorage.setItem(`tt_${userId}`, JSON.stringify({
-        ...saved,
-        entryId: serverEntry.id,
-        taskId: serverEntry.taskId,
-        subtaskId: serverEntry.subtaskId,
-        startTime: startTimeRef.current,
-        isPaused: serverIsPaused,
-        pausedAt: serverPausedAt
-      }))
+      localStorage.setItem(
+        `tt_${userId}`,
+        JSON.stringify({
+          ...saved,
+          entryId: serverEntry.id,
+          taskId: serverEntry.taskId,
+          subtaskId: serverEntry.subtaskId,
+          startTime: startTimeRef.current,
+          isPaused: serverIsPaused,
+          pausedAt: serverPausedAt,
+        })
+      )
     }
   }, [activeEntryData, userId])
 
@@ -180,11 +211,11 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
 
   const startMutation = useMutation({
     mutationFn: (body: {
-      taskId: string;
-      subtaskId?: string | null;
-      workspaceSlug: string;
-      entryType: 'task' | 'meeting';
-      description?: string;
+      taskId: string
+      subtaskId?: string | null
+      workspaceSlug: string
+      entryType: 'task' | 'meeting'
+      description?: string
     }) =>
       apiFetchJson<{ success: boolean; data: any }>('/api/time/start', {
         method: 'POST',
@@ -197,15 +228,18 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
         setIsRunning(true)
         setElapsed(0)
         startTimeRef.current = now
-        localStorage.setItem(`tt_${userId}`, JSON.stringify({
-          entryId: res.data.id,
-          taskId: selectedTaskId,
-          subtaskId: selectedSubtaskId,
-          meetingId: selectedMeetingId,
-          entryType: selectedEntryType,
-          description: description,
-          startTime: now,
-        }))
+        localStorage.setItem(
+          `tt_${userId}`,
+          JSON.stringify({
+            entryId: res.data.id,
+            taskId: selectedTaskId,
+            subtaskId: selectedSubtaskId,
+            meetingId: selectedMeetingId,
+            entryType: selectedEntryType,
+            description: description,
+            startTime: now,
+          })
+        )
       }
     },
   })
@@ -214,7 +248,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
     mutationFn: (body: any) =>
       apiFetchJson<{ success: boolean; data: any }>('/api/time', {
         method: 'POST',
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       }),
     onSuccess: () => {
       setIsRunning(false)
@@ -224,27 +258,34 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
       startTimeRef.current = 0
       localStorage.removeItem(`tt_${userId}`)
       queryClient.invalidateQueries({ queryKey: ['my-time-entries'] })
-    }
+    },
   })
 
   const pauseMutation = useMutation({
     mutationFn: (entryId: string) =>
-      apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/pause`, { method: 'PATCH' }),
+      apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/pause`, {
+        method: 'PATCH',
+      }),
     onSuccess: (res) => {
       if (res.success) {
         setIsRunning(false)
         setIsPaused(true)
         const now = Date.now()
         const saved = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
-        localStorage.setItem(`tt_${userId}`, JSON.stringify({ ...saved, isPaused: true, pausedAt: now }))
+        localStorage.setItem(
+          `tt_${userId}`,
+          JSON.stringify({ ...saved, isPaused: true, pausedAt: now })
+        )
         queryClient.invalidateQueries({ queryKey: ['active-time-entry', activeEntryId] })
       }
-    }
+    },
   })
 
   const resumeMutation = useMutation({
     mutationFn: (entryId: string) =>
-      apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/resume`, { method: 'PATCH' }),
+      apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/resume`, {
+        method: 'PATCH',
+      }),
     onSuccess: (res) => {
       if (res.success) {
         const saved = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
@@ -257,20 +298,25 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
 
         setIsRunning(true)
         setIsPaused(false)
-        localStorage.setItem(`tt_${userId}`, JSON.stringify({
-          ...saved,
-          isPaused: false,
-          pausedAt: null,
-          startTime: startTimeRef.current
-        }))
+        localStorage.setItem(
+          `tt_${userId}`,
+          JSON.stringify({
+            ...saved,
+            isPaused: false,
+            pausedAt: null,
+            startTime: startTimeRef.current,
+          })
+        )
         queryClient.invalidateQueries({ queryKey: ['active-time-entry', activeEntryId] })
       }
-    }
+    },
   })
 
   const stopMutation = useMutation({
     mutationFn: (entryId: string) =>
-      apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/stop`, { method: 'PATCH' }),
+      apiFetchJson<{ success: boolean; data: any }>(`/api/time/${entryId}/stop`, {
+        method: 'PATCH',
+      }),
     onSuccess: () => {
       setIsRunning(false)
       setIsPaused(false) // Clear pause state
@@ -295,10 +341,10 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
           durationMinutes,
           startedAt: new Date(startTimeRef.current).toISOString(),
           endedAt: endedAt.toISOString(),
-          entryType: selectedEntryType
+          entryType: selectedEntryType,
         })
       }
-    }
+    },
   })
 
   const handleStart = useCallback(() => {
@@ -308,7 +354,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
       subtaskId: selectedSubtaskId,
       workspaceSlug,
       entryType: selectedEntryType,
-      description: description
+      description: description,
     })
   }, [selectedTaskId, selectedSubtaskId, selectedEntryType, description, startMutation])
 
@@ -379,17 +425,29 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
   useEffect(() => {
     if (clockType === 'pomodoro') {
       const data = JSON.parse(localStorage.getItem(`tt_${userId}`) || '{}')
-      localStorage.setItem(`tt_${userId}`, JSON.stringify({
-        ...data,
-        clockType,
-        pomodoroMode,
-        workDuration,
-        breakDuration,
-        pomodoroTimeLeft,
-        pomodoroTotalTime
-      }))
+      localStorage.setItem(
+        `tt_${userId}`,
+        JSON.stringify({
+          ...data,
+          clockType,
+          pomodoroMode,
+          workDuration,
+          breakDuration,
+          pomodoroTimeLeft,
+          pomodoroTotalTime,
+        })
+      )
     }
-  }, [pomodoroTimeLeft, isRunning, clockType, userId, pomodoroMode, pomodoroTotalTime, workDuration, breakDuration])
+  }, [
+    pomodoroTimeLeft,
+    isRunning,
+    clockType,
+    userId,
+    pomodoroMode,
+    pomodoroTotalTime,
+    workDuration,
+    breakDuration,
+  ])
 
   const adjustTime = (amount: number, type: 'min' | 'sec') => {
     if (isRunning) return
@@ -436,11 +494,10 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
   const hrDeg = (hr % 12) * 30 + (min / 60) * 30
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
-
+    <div className="animate-in fade-in slide-in-from-bottom-4 mx-auto max-w-4xl space-y-6 pb-12 duration-500">
       {/* SEKCJA 1: Wybór Zadania */}
-      <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm">
-        <label className="block text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 pl-1">
+      <div className="rounded-3xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] p-6 shadow-sm md:p-8">
+        <label className="mb-2 block pl-1 text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
           {t('timeTracker.timer.whatWorkingOn', 'Nad czym teraz pracujesz?')}
         </label>
 
@@ -448,51 +505,63 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
           <button
             disabled={isRunning || tasksLoading}
             onClick={() => setTaskDropdownOpen(!taskDropdownOpen)}
-            className={`w-full flex items-center justify-between px-4 py-3 bg-[var(--app-bg-elevated)] border rounded-xl text-left transition-all outline-none ${taskDropdownOpen
-              ? 'border-[var(--app-accent)] ring-1 ring-[var(--app-accent)]/20 shadow-lg'
-              : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
-              } ${isRunning ? 'opacity-60 cursor-not-allowed grayscale-[0.3]' : ''}`}
+            className={`flex w-full items-center justify-between rounded-xl border bg-[var(--app-bg-elevated)] px-4 py-3 text-left outline-none transition-all ${
+              taskDropdownOpen
+                ? 'ring-[var(--app-accent)]/20 border-[var(--app-accent)] shadow-lg ring-1'
+                : 'border-[var(--app-divider)] hover:border-[var(--app-text-muted)]'
+            } ${isRunning ? 'cursor-not-allowed opacity-60 grayscale-[0.3]' : ''}`}
           >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="p-1.5 rounded-lg bg-[var(--app-bg-card)] border border-[var(--app-divider)] flex-shrink-0">
-                {selectedEntryType === 'meeting' ? <Calendar size={16} className="text-[var(--app-accent)]" /> : <CheckSquare size={16} className="text-[var(--app-text-muted)]" />}
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex-shrink-0 rounded-lg border border-[var(--app-divider)] bg-[var(--app-bg-card)] p-1.5">
+                {selectedEntryType === 'meeting' ? (
+                  <Calendar size={16} className="text-[var(--app-accent)]" />
+                ) : (
+                  <CheckSquare size={16} className="text-[var(--app-text-muted)]" />
+                )}
               </div>
 
               {selectedTaskId ? (
-                <div className="flex flex-col min-w-0">
-                  <span className="font-bold text-[var(--app-text-primary)] truncate">
-                    {myTasks.find(t => t.id === selectedTaskId)?.title}
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate font-bold text-[var(--app-text-primary)]">
+                    {myTasks.find((t) => t.id === selectedTaskId)?.title}
                   </span>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="mt-0.5 flex items-center gap-2">
                     {selectedEntryType === 'meeting' && selectedMeeting && (
-                      <span className="flex items-center gap-1 text-[var(--app-accent)] text-xs font-bold uppercase tracking-tight truncate">
+                      <span className="flex items-center gap-1 truncate text-xs font-bold uppercase tracking-tight text-[var(--app-accent)]">
                         {selectedMeeting.title}
                       </span>
                     )}
                     {selectedEntryType === 'task' && selectedSubtaskId && (
-                      <span className="flex items-center gap-1 text-[var(--app-accent)] text-xs font-bold uppercase tracking-tight truncate">
-                        → {selectedTask?.subtasks.find(s => s.id === selectedSubtaskId)?.title}
+                      <span className="flex items-center gap-1 truncate text-xs font-bold uppercase tracking-tight text-[var(--app-accent)]">
+                        → {selectedTask?.subtasks.find((s) => s.id === selectedSubtaskId)?.title}
                       </span>
                     )}
                     {!selectedMeetingId && !selectedSubtaskId && (
-                      <span className="text-xs font-medium text-[var(--app-text-muted)] truncate">
-                        {myTasks.find(t => t.id === selectedTaskId)?.projectName}
+                      <span className="truncate text-xs font-medium text-[var(--app-text-muted)]">
+                        {myTasks.find((t) => t.id === selectedTaskId)?.projectName}
                       </span>
                     )}
                   </div>
                 </div>
               ) : (
-                <span className="text-[var(--app-text-muted)] font-medium">
-                  {tasksLoading ? t('common.loading', 'Ładowanie zadań...') : t('timeTracker.timer.selectTask', 'Wybierz zadanie z listy...')}
+                <span className="font-medium text-[var(--app-text-muted)]">
+                  {tasksLoading
+                    ? t('common.loading', 'Ładowanie zadań...')
+                    : t('timeTracker.timer.selectTask', 'Wybierz zadanie z listy...')}
                 </span>
               )}
             </div>
-            {!isRunning && <ChevronDown size={20} className={`text-[var(--app-text-muted)] flex-shrink-0 transition-transform duration-200 ${taskDropdownOpen ? 'rotate-180' : ''}`} />}
+            {!isRunning && (
+              <ChevronDown
+                size={20}
+                className={`flex-shrink-0 text-[var(--app-text-muted)] transition-transform duration-200 ${taskDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            )}
           </button>
 
           {/* Task Dropdown Menu */}
           {taskDropdownOpen && !isRunning && (
-            <div className="absolute z-50 w-full mt-2 bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-xl max-h-80 overflow-y-auto custom-scrollbar overflow-hidden backdrop-blur-md">
+            <div className="custom-scrollbar absolute z-50 mt-2 max-h-80 w-full overflow-hidden overflow-y-auto rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] shadow-xl backdrop-blur-md">
               {myTasks.length === 0 ? (
                 <div className="p-6 text-center text-sm font-medium text-[var(--app-text-muted)]">
                   {t('timeTracker.noTasks', 'Brak przypisanych zadań.')}
@@ -500,83 +569,105 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
               ) : (
                 <div className="py-2">
                   {/* ZADANIA */}
-                  {myTasks.filter(t => t.id !== 'standalone-meetings').length > 0 && (
-                    <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50">
+                  {myTasks.filter((t) => t.id !== 'standalone-meetings').length > 0 && (
+                    <div className="bg-[var(--app-bg-elevated)]/50 px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
                       {t('timeTracker.timer.tasksHeader', 'Zadania Projektowe')}
                     </div>
                   )}
 
-                  {myTasks.filter(t => t.id !== 'standalone-meetings').map((task: MyTask) => (
-                    <div key={task.id} className="border-b border-[var(--app-divider)] last:border-0">
-                      <button
-                        onClick={() => {
-                          setSelectedTaskId(task.id)
-                          setSelectedSubtaskId(null)
-                          setSelectedMeetingId(null)
-                          setSelectedEntryType('task')
-                          setTaskDropdownOpen(false)
-                        }}
-                        className="w-full px-4 py-3 text-left hover:bg-[var(--app-bg-elevated)] flex flex-col transition-colors group"
+                  {myTasks
+                    .filter((t) => t.id !== 'standalone-meetings')
+                    .map((task: MyTask) => (
+                      <div
+                        key={task.id}
+                        className="border-b border-[var(--app-divider)] last:border-0"
                       >
-                        <span className="font-semibold text-sm text-[var(--app-text-primary)] group-hover:text-[var(--app-accent)] transition-colors">{task.title}</span>
-                        <span className="text-[11px] font-medium text-[var(--app-text-muted)] mt-0.5">{task.projectName}</span>
-                      </button>
+                        <button
+                          onClick={() => {
+                            setSelectedTaskId(task.id)
+                            setSelectedSubtaskId(null)
+                            setSelectedMeetingId(null)
+                            setSelectedEntryType('task')
+                            setTaskDropdownOpen(false)
+                          }}
+                          className="group flex w-full flex-col px-4 py-3 text-left transition-colors hover:bg-[var(--app-bg-elevated)]"
+                        >
+                          <span className="text-sm font-semibold text-[var(--app-text-primary)] transition-colors group-hover:text-[var(--app-accent)]">
+                            {task.title}
+                          </span>
+                          <span className="mt-0.5 text-[11px] font-medium text-[var(--app-text-muted)]">
+                            {task.projectName}
+                          </span>
+                        </button>
 
-                      {/* Podzadania */}
-                      {task.subtasks.length > 0 && (
-                        <div className="bg-[var(--app-bg-elevated)]/30 pb-2 border-l-2 border-[var(--app-divider)] ml-4 mr-2 mb-2 rounded-r-lg">
-                          {task.subtasks.map(sub => (
-                            <button
-                              key={sub.id}
-                              onClick={() => {
-                                setSelectedTaskId(task.id)
-                                setSelectedSubtaskId(sub.id)
-                                setSelectedMeetingId(null)
-                                setSelectedEntryType('task')
-                                setTaskDropdownOpen(false)
-                              }}
-                              className="w-full px-4 py-2 text-left hover:bg-[var(--app-bg-card)] flex items-center gap-3 text-sm transition-colors group"
-                            >
-                              <div className="w-1.5 h-1.5 rounded-full bg-[var(--app-divider)] group-hover:bg-[var(--app-accent)] transition-colors" />
-                              <span className="text-[var(--app-text-secondary)] font-medium text-[13px] group-hover:text-[var(--app-accent)] transition-colors">{sub.title}</span>
-                              {sub.isCompleted && <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--app-accent)] ml-auto bg-[var(--app-accent)]/10 px-2 py-0.5 rounded-md">Wykonane</span>}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        {/* Podzadania */}
+                        {task.subtasks.length > 0 && (
+                          <div className="bg-[var(--app-bg-elevated)]/30 mb-2 ml-4 mr-2 rounded-r-lg border-l-2 border-[var(--app-divider)] pb-2">
+                            {task.subtasks.map((sub) => (
+                              <button
+                                key={sub.id}
+                                onClick={() => {
+                                  setSelectedTaskId(task.id)
+                                  setSelectedSubtaskId(sub.id)
+                                  setSelectedMeetingId(null)
+                                  setSelectedEntryType('task')
+                                  setTaskDropdownOpen(false)
+                                }}
+                                className="group flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-[var(--app-bg-card)]"
+                              >
+                                <div className="h-1.5 w-1.5 rounded-full bg-[var(--app-divider)] transition-colors group-hover:bg-[var(--app-accent)]" />
+                                <span className="text-[13px] font-medium text-[var(--app-text-secondary)] transition-colors group-hover:text-[var(--app-accent)]">
+                                  {sub.title}
+                                </span>
+                                {sub.isCompleted && (
+                                  <span className="bg-[var(--app-accent)]/10 ml-auto rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--app-accent)]">
+                                    Wykonane
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
 
                   {/* SPOTKANIA */}
-                  {myTasks.find(t => t.id === 'standalone-meetings') && (
+                  {myTasks.find((t) => t.id === 'standalone-meetings') && (
                     <>
-                      <div className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)]/50 border-t border-[var(--app-divider)]">
+                      <div className="bg-[var(--app-bg-elevated)]/50 border-t border-[var(--app-divider)] px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
                         {t('timeTracker.meetingsHeader', 'Spotkania i Wydarzenia')}
                       </div>
                       <div>
-                        {myTasks.find(t => t.id === 'standalone-meetings')?.meetings?.map((m: any) => (
-                          <button
-                            key={m.id}
-                            onClick={() => {
-                              setSelectedTaskId('standalone-meetings')
-                              setSelectedSubtaskId(null)
-                              setSelectedMeetingId(m.id)
-                              setSelectedEntryType('meeting')
-                              setTaskDropdownOpen(false)
-                            }}
-                            className="w-full px-4 py-3 text-left hover:bg-[var(--app-bg-elevated)] flex items-center gap-3 border-b border-[var(--app-divider)] last:border-0 transition-colors group"
-                          >
-                            <div className="p-1.5 rounded-md bg-[var(--app-accent)]/10 text-[var(--app-accent)] group-hover:bg-[var(--app-accent)]/20 transition-colors">
-                              <Calendar size={14} />
-                            </div>
-                            <div className="flex flex-col flex-1 min-w-0">
-                              <span className="font-semibold text-sm text-[var(--app-text-primary)] truncate">{m.title}</span>
-                              <span className="text-[10px] font-medium text-[var(--app-text-muted)] mt-0.5">
-                                {new Date(m.date).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}
-                              </span>
-                            </div>
-                          </button>
-                        ))}
+                        {myTasks
+                          .find((t) => t.id === 'standalone-meetings')
+                          ?.meetings?.map((m: any) => (
+                            <button
+                              key={m.id}
+                              onClick={() => {
+                                setSelectedTaskId('standalone-meetings')
+                                setSelectedSubtaskId(null)
+                                setSelectedMeetingId(m.id)
+                                setSelectedEntryType('meeting')
+                                setTaskDropdownOpen(false)
+                              }}
+                              className="group flex w-full items-center gap-3 border-b border-[var(--app-divider)] px-4 py-3 text-left transition-colors last:border-0 hover:bg-[var(--app-bg-elevated)]"
+                            >
+                              <div className="bg-[var(--app-accent)]/10 group-hover:bg-[var(--app-accent)]/20 rounded-md p-1.5 text-[var(--app-accent)] transition-colors">
+                                <Calendar size={14} />
+                              </div>
+                              <div className="flex min-w-0 flex-1 flex-col">
+                                <span className="truncate text-sm font-semibold text-[var(--app-text-primary)]">
+                                  {m.title}
+                                </span>
+                                <span className="mt-0.5 text-[10px] font-medium text-[var(--app-text-muted)]">
+                                  {new Date(m.date).toLocaleString('pl-PL', {
+                                    dateStyle: 'short',
+                                    timeStyle: 'short',
+                                  })}
+                                </span>
+                              </div>
+                            </button>
+                          ))}
                       </div>
                     </>
                   )}
@@ -587,31 +678,33 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
         </div>
 
         <div className="mt-5">
-          <label className="block text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider mb-2 pl-1 flex items-center gap-2">
+          <label className="mb-2 block flex items-center gap-2 pl-1 text-[11px] font-bold uppercase tracking-wider text-[var(--app-text-muted)]">
             <AlignLeft size={12} />
             {t('timeTracker.description', 'Krótki opis (Opcjonalnie)')}
           </label>
           <input
             type="text"
-            placeholder={t('timeTracker.descriptionPlaceholder', 'Nad czym konkretnie dzisiaj pracujesz?')}
+            placeholder={t(
+              'timeTracker.descriptionPlaceholder',
+              'Nad czym konkretnie dzisiaj pracujesz?'
+            )}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={isRunning}
-            className="w-full bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] rounded-xl px-4 py-3 text-sm text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)] focus:ring-1 focus:ring-[var(--app-accent)]/20 transition-all placeholder:text-[var(--app-text-muted)]/50 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="focus:ring-[var(--app-accent)]/20 placeholder:text-[var(--app-text-muted)]/50 w-full rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] px-4 py-3 text-sm text-[var(--app-text-primary)] outline-none transition-all focus:border-[var(--app-accent)] focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
       </div>
 
       {/* SEKCJA 2: Główny Zegar (Analog/Digital) */}
-      <div className="bg-[var(--app-bg-card)] rounded-3xl p-8 shadow-sm text-center flex flex-col items-center relative border border-[var(--app-divider)]">
-
+      <div className="relative flex flex-col items-center rounded-3xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] p-8 text-center shadow-sm">
         {/* Toggle Switch */}
-        <div className="absolute top-6 left-6">
-          <div className="inline-flex bg-[var(--app-bg-elevated)] p-1 rounded-full border border-[var(--app-divider)] shadow-sm">
+        <div className="absolute left-6 top-6">
+          <div className="inline-flex rounded-full border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] p-1 shadow-sm">
             {[
               { id: 'analog', label: 'Analogowy' },
               { id: 'digital', label: 'Cyfrowy' },
-              { id: 'pomodoro', label: 'Pomodoro' }
+              { id: 'pomodoro', label: 'Pomodoro' },
             ].map((type) => (
               <button
                 key={type.id}
@@ -620,10 +713,11 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
                   setClockType(type.id as any)
                 }}
                 disabled={isRunning && clockType !== type.id}
-                className={`relative px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${clockType === type.id
-                  ? 'bg-[var(--app-accent)] text-[#0a0a0f] shadow-md shadow-[var(--app-accent)]/20'
-                  : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] disabled:opacity-30'
-                  }`}
+                className={`relative rounded-full px-4 py-1.5 text-xs font-bold transition-all duration-300 ${
+                  clockType === type.id
+                    ? 'shadow-[var(--app-accent)]/20 bg-[var(--app-accent)] text-[#0a0a0f] shadow-md'
+                    : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] disabled:opacity-30'
+                }`}
               >
                 {type.label}
               </button>
@@ -635,43 +729,117 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
 
         {/* CLOCK RENDERER */}
         {clockType === 'analog' ? (
-          <div className="mb-4 relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+          <div className="relative mb-4 flex h-64 w-64 items-center justify-center md:h-80 md:w-80">
             {/* Soft Glow behind clock if running */}
-            <div className={`absolute inset-0 rounded-full transition-opacity duration-1000 blur-3xl pointer-events-none ${isRunning ? 'bg-[var(--app-accent)]/10 opacity-100' : 'opacity-0'}`} />
+            <div
+              className={`pointer-events-none absolute inset-0 rounded-full blur-3xl transition-opacity duration-1000 ${isRunning ? 'bg-[var(--app-accent)]/10 opacity-100' : 'opacity-0'}`}
+            />
 
-            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-xl relative z-10">
+            <svg viewBox="0 0 100 100" className="relative z-10 h-full w-full drop-shadow-xl">
               {/* Outer Ring */}
-              <circle cx="50" cy="50" r="48" fill="var(--app-bg-card)" stroke="var(--app-divider)" strokeWidth="1" />
+              <circle
+                cx="50"
+                cy="50"
+                r="48"
+                fill="var(--app-bg-card)"
+                stroke="var(--app-divider)"
+                strokeWidth="1"
+              />
               {/* Progress Ring (Accent Color) */}
               <circle
-                cx="50" cy="50" r="48" fill="transparent"
-                stroke={isRunning ? "var(--app-accent)" : "transparent"}
-                strokeWidth="2" strokeDasharray="301.59"
+                cx="50"
+                cy="50"
+                r="48"
+                fill="transparent"
+                stroke={isRunning ? 'var(--app-accent)' : 'transparent'}
+                strokeWidth="2"
+                strokeDasharray="301.59"
                 strokeDashoffset={301.59 - (301.59 * (elapsed % 3600)) / 3600}
-                strokeLinecap="round" transform="rotate(-90 50 50)"
+                strokeLinecap="round"
+                transform="rotate(-90 50 50)"
                 className="transition-all duration-300 ease-linear"
               />
               {/* Inner Face */}
               <circle cx="50" cy="50" r="42" fill="var(--app-bg-elevated)" />
 
               {/* Digital Time inside Analog */}
-              <text x="50" y="68" textAnchor="middle" fill="var(--app-text-muted)" fontSize="9" fontFamily="monospace" fontWeight="bold" letterSpacing="0.05em">
+              <text
+                x="50"
+                y="68"
+                textAnchor="middle"
+                fill="var(--app-text-muted)"
+                fontSize="9"
+                fontFamily="monospace"
+                fontWeight="bold"
+                letterSpacing="0.05em"
+              >
                 {formatTime(Math.floor(elapsed))}
               </text>
 
               {/* Hour Markers */}
               {Array.from({ length: 12 }).map((_, i) => (
-                <line key={`hr-${i}`} x1="50" y1="12" x2="50" y2="16" stroke="var(--app-text-muted)" strokeWidth={i % 3 === 0 ? "1.5" : "1"} strokeLinecap="round" transform={`rotate(${i * 30} 50 50)`} />
+                <line
+                  key={`hr-${i}`}
+                  x1="50"
+                  y1="12"
+                  x2="50"
+                  y2="16"
+                  stroke="var(--app-text-muted)"
+                  strokeWidth={i % 3 === 0 ? '1.5' : '1'}
+                  strokeLinecap="round"
+                  transform={`rotate(${i * 30} 50 50)`}
+                />
               ))}
               {/* Minute Markers */}
-              {Array.from({ length: 60 }).map((_, i) => i % 5 !== 0 && (
-                <line key={`min-${i}`} x1="50" y1="10" x2="50" y2="12" stroke="var(--app-divider)" strokeWidth="0.5" transform={`rotate(${i * 6} 50 50)`} />
-              ))}
+              {Array.from({ length: 60 }).map(
+                (_, i) =>
+                  i % 5 !== 0 && (
+                    <line
+                      key={`min-${i}`}
+                      x1="50"
+                      y1="10"
+                      x2="50"
+                      y2="12"
+                      stroke="var(--app-divider)"
+                      strokeWidth="0.5"
+                      transform={`rotate(${i * 6} 50 50)`}
+                    />
+                  )
+              )}
 
               {/* Hands */}
-              <line x1="50" y1="50" x2="50" y2="26" stroke="var(--app-text-primary)" strokeWidth="3" strokeLinecap="round" transform={`rotate(${hrDeg} 50 50)`} style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.5))' }} />
-              <line x1="50" y1="50" x2="50" y2="18" stroke="var(--app-text-secondary)" strokeWidth="2.5" strokeLinecap="round" transform={`rotate(${minDeg} 50 50)`} style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.5))' }} />
-              <line x1="50" y1="50" x2="50" y2="12" stroke="var(--app-accent)" strokeWidth="1.5" strokeLinecap="round" transform={`rotate(${secDeg} 50 50)`} />
+              <line
+                x1="50"
+                y1="50"
+                x2="50"
+                y2="26"
+                stroke="var(--app-text-primary)"
+                strokeWidth="3"
+                strokeLinecap="round"
+                transform={`rotate(${hrDeg} 50 50)`}
+                style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.5))' }}
+              />
+              <line
+                x1="50"
+                y1="50"
+                x2="50"
+                y2="18"
+                stroke="var(--app-text-secondary)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                transform={`rotate(${minDeg} 50 50)`}
+                style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.5))' }}
+              />
+              <line
+                x1="50"
+                y1="50"
+                x2="50"
+                y2="12"
+                stroke="var(--app-accent)"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                transform={`rotate(${secDeg} 50 50)`}
+              />
 
               {/* Center Dot */}
               <circle cx="50" cy="50" r="3.5" fill="var(--app-accent)" />
@@ -679,61 +847,93 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
             </svg>
           </div>
         ) : clockType === 'pomodoro' ? (
-          <div className="mb-4 relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+          <div className="relative mb-4 flex h-64 w-64 items-center justify-center md:h-80 md:w-80">
             {/* Glow effect based on mode */}
-            <div className={`absolute inset-0 rounded-full transition-opacity duration-1000 blur-3xl pointer-events-none ${isRunning ? (pomodoroMode === 'work' ? 'bg-[var(--app-accent)]/10' : 'bg-slate-400/10') : 'opacity-0'}`} />
+            <div
+              className={`pointer-events-none absolute inset-0 rounded-full blur-3xl transition-opacity duration-1000 ${isRunning ? (pomodoroMode === 'work' ? 'bg-[var(--app-accent)]/10' : 'bg-slate-400/10') : 'opacity-0'}`}
+            />
 
-            <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl relative z-10 transform -rotate-90">
+            <svg
+              viewBox="0 0 100 100"
+              className="relative z-10 h-full w-full -rotate-90 transform drop-shadow-2xl"
+            >
               {/* Tło okręgu */}
-              <circle cx="50" cy="50" r="45" fill="none" stroke="var(--app-divider)" strokeWidth="3" />
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="var(--app-divider)"
+                strokeWidth="3"
+              />
 
               {/* Pasek postępu (drenujący) */}
               <circle
-                cx="50" cy="50" r="45"
+                cx="50"
+                cy="50"
+                r="45"
                 fill="none"
-                stroke={pomodoroMode === 'work' ? "var(--app-accent)" : "#94a3b8"} // Slate/Blue-gray for break
+                stroke={pomodoroMode === 'work' ? 'var(--app-accent)' : '#94a3b8'} // Slate/Blue-gray for break
                 strokeWidth="5"
                 strokeDasharray={2 * Math.PI * 45}
-                strokeDashoffset={(2 * Math.PI * 45) * (1 - (pomodoroTimeLeft / pomodoroTotalTime))}
+                strokeDashoffset={2 * Math.PI * 45 * (1 - pomodoroTimeLeft / pomodoroTotalTime)}
                 strokeLinecap="round"
                 className="transition-all duration-1000 ease-linear"
               />
             </svg>
 
             {/* Time in center */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-              <div className="flex items-center justify-center gap-1 relative">
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center">
+              <div className="relative flex items-center justify-center gap-1">
                 <div className="flex flex-col items-center">
                   {!isRunning && (
-                    <button onClick={() => adjustTime(1, 'min')} className="p-1 text-[var(--app-text-muted)] hover:text-[var(--app-accent)] transition-colors">
+                    <button
+                      onClick={() => adjustTime(1, 'min')}
+                      className="p-1 text-[var(--app-text-muted)] transition-colors hover:text-[var(--app-accent)]"
+                    >
                       <ChevronUp size={24} />
                     </button>
                   )}
-                  <div className={`font-mono text-5xl md:text-7xl font-black tracking-tighter tabular-nums ${pomodoroMode === 'work' ? 'text-[var(--app-text-primary)]' : 'text-slate-300'}`}>
+                  <div
+                    className={`font-mono text-5xl font-black tabular-nums tracking-tighter md:text-7xl ${pomodoroMode === 'work' ? 'text-[var(--app-text-primary)]' : 'text-slate-300'}`}
+                  >
                     {Math.floor(pomodoroTimeLeft / 60)}
                   </div>
                   {!isRunning && (
-                    <button onClick={() => adjustTime(-1, 'min')} className="p-1 text-[var(--app-text-muted)] hover:text-[var(--app-accent)] transition-colors">
+                    <button
+                      onClick={() => adjustTime(-1, 'min')}
+                      className="p-1 text-[var(--app-text-muted)] transition-colors hover:text-[var(--app-accent)]"
+                    >
                       <ChevronDown size={24} />
                     </button>
                   )}
                 </div>
 
-                <div className={`font-mono text-5xl md:text-7xl font-black tracking-tighter tabular-nums ${pomodoroMode === 'work' ? 'text-[var(--app-text-primary)]' : 'text-slate-300'} mb-1 md:mb-2`}>
+                <div
+                  className={`font-mono text-5xl font-black tabular-nums tracking-tighter md:text-7xl ${pomodoroMode === 'work' ? 'text-[var(--app-text-primary)]' : 'text-slate-300'} mb-1 md:mb-2`}
+                >
                   :
                 </div>
 
                 <div className="flex flex-col items-center">
                   {!isRunning && (
-                    <button onClick={() => adjustTime(1, 'sec')} className="p-1 text-[var(--app-text-muted)] hover:text-[var(--app-accent)] transition-colors">
+                    <button
+                      onClick={() => adjustTime(1, 'sec')}
+                      className="p-1 text-[var(--app-text-muted)] transition-colors hover:text-[var(--app-accent)]"
+                    >
                       <ChevronUp size={24} />
                     </button>
                   )}
-                  <div className={`font-mono text-5xl md:text-7xl font-black tracking-tighter tabular-nums ${pomodoroMode === 'work' ? 'text-[var(--app-text-primary)]' : 'text-slate-300'}`}>
+                  <div
+                    className={`font-mono text-5xl font-black tabular-nums tracking-tighter md:text-7xl ${pomodoroMode === 'work' ? 'text-[var(--app-text-primary)]' : 'text-slate-300'}`}
+                  >
                     {String(pomodoroTimeLeft % 60).padStart(2, '0')}
                   </div>
                   {!isRunning && (
-                    <button onClick={() => adjustTime(-1, 'sec')} className="p-1 text-[var(--app-text-muted)] hover:text-[var(--app-accent)] transition-colors">
+                    <button
+                      onClick={() => adjustTime(-1, 'sec')}
+                      className="p-1 text-[var(--app-text-muted)] transition-colors hover:text-[var(--app-accent)]"
+                    >
                       <ChevronDown size={24} />
                     </button>
                   )}
@@ -743,25 +943,30 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
           </div>
         ) : (
           <div className="mb-10 mt-6">
-            <div className={`font-mono text-[4.5rem] md:text-8xl font-black tracking-tighter transition-colors duration-500 tabular-nums ${isRunning ? 'text-[var(--app-accent)] drop-shadow-[0_0_20px_var(--app-accent)]' : 'text-[var(--app-text-primary)]'}`}>
+            <div
+              className={`font-mono text-[4.5rem] font-black tabular-nums tracking-tighter transition-colors duration-500 md:text-8xl ${isRunning ? 'text-[var(--app-accent)] drop-shadow-[0_0_20px_var(--app-accent)]' : 'text-[var(--app-text-primary)]'}`}
+            >
               {formatTime(Math.floor(elapsed))}
             </div>
             {isRunning && (
-              <div className="flex flex-col items-center gap-2 mt-2">
-                <div className="text-[var(--app-text-muted)] font-bold uppercase tracking-[0.3em] text-xs animate-pulse">
+              <div className="mt-2 flex flex-col items-center gap-2">
+                <div className="animate-pulse text-xs font-bold uppercase tracking-[0.3em] text-[var(--app-text-muted)]">
                   {t('timeTracker.timer.recording', 'Rejestrowanie')}
                 </div>
                 {activeEntryError && (activeEntryError as any).status === 404 && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold uppercase tracking-wider animate-bounce shadow-sm">
+                  <div className="flex animate-bounce items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-500 shadow-sm">
                     <Activity size={12} />
-                    {t('timeTracker.timer.unsynced', 'Wpis usunięty - zostanie przywrócony przy zapisie')}
+                    {t(
+                      'timeTracker.timer.unsynced',
+                      'Wpis usunięty - zostanie przywrócony przy zapisie'
+                    )}
                   </div>
                 )}
               </div>
             )}
             {isPaused && (
-              <div className="flex flex-col items-center gap-2 mt-2">
-                <div className="text-amber-500 font-bold uppercase tracking-[0.3em] text-xs">
+              <div className="mt-2 flex flex-col items-center gap-2">
+                <div className="text-xs font-bold uppercase tracking-[0.3em] text-amber-500">
                   {t('timeTracker.timer.paused', 'Wstrzymano')}
                 </div>
               </div>
@@ -772,34 +977,52 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
         {/* Przycisk Start/Stop i Badge pod zegarem */}
         {clockType === 'pomodoro' && (
           <div className="mb-8 mt-2">
-            <div className={`px-5 py-2 rounded-full flex items-center gap-2.5 border shadow-[0_4px_20px_rgba(0,0,0,0.1)] backdrop-blur-2xl transition-all duration-500 ${pomodoroMode === 'work'
-              ? 'bg-[var(--app-accent)]/10 border-[var(--app-accent)]/30 text-[var(--app-accent)]'
-              : 'bg-slate-400/10 border-slate-400/30 text-slate-400'
-              }`}>
-              <div className={`w-2 h-2 rounded-full animate-pulse ${pomodoroMode === 'work' ? 'bg-[var(--app-accent)]' : 'bg-slate-400'}`} />
-              {pomodoroMode === 'work' ? <Brain size={16} className="opacity-80" /> : <Coffee size={16} className="opacity-80" />}
+            <div
+              className={`flex items-center gap-2.5 rounded-full border px-5 py-2 shadow-[0_4px_20px_rgba(0,0,0,0.1)] backdrop-blur-2xl transition-all duration-500 ${
+                pomodoroMode === 'work'
+                  ? 'bg-[var(--app-accent)]/10 border-[var(--app-accent)]/30 text-[var(--app-accent)]'
+                  : 'border-slate-400/30 bg-slate-400/10 text-slate-400'
+              }`}
+            >
+              <div
+                className={`h-2 w-2 animate-pulse rounded-full ${pomodoroMode === 'work' ? 'bg-[var(--app-accent)]' : 'bg-slate-400'}`}
+              />
+              {pomodoroMode === 'work' ? (
+                <Brain size={16} className="opacity-80" />
+              ) : (
+                <Coffee size={16} className="opacity-80" />
+              )}
               <span className="text-[11px] font-black uppercase tracking-[0.25em]">
-                {t(`timeTracker.timer.pomodoro.${pomodoroMode === 'work' ? 'work' : 'break'}`, pomodoroMode === 'work' ? 'WORK' : 'BREAK')}
+                {t(
+                  `timeTracker.timer.pomodoro.${pomodoroMode === 'work' ? 'work' : 'break'}`,
+                  pomodoroMode === 'work' ? 'WORK' : 'BREAK'
+                )}
               </span>
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-center w-full max-w-xl mt-2 gap-4">
+        <div className="mt-2 flex w-full max-w-xl items-center justify-center gap-4">
           {!isRunning && !isPaused ? (
             <button
               onClick={handleStart}
-              disabled={!selectedTaskId || startMutation.isPending || (clockType === 'pomodoro' && pomodoroMode !== 'work')}
-              className="flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[var(--app-accent)] text-[var(--app-accent-text)] border border-[var(--app-accent)] font-bold text-lg hover:bg-[var(--app-accent-hover)] hover:shadow-[0_10px_30px_rgba(242,206,136,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed group"
+              disabled={
+                !selectedTaskId ||
+                startMutation.isPending ||
+                (clockType === 'pomodoro' && pomodoroMode !== 'work')
+              }
+              className="group flex flex-1 items-center justify-center gap-3 rounded-2xl border border-[var(--app-accent)] bg-[var(--app-accent)] px-8 py-4 text-lg font-bold text-[var(--app-accent-text)] transition-all duration-300 hover:scale-105 hover:bg-[var(--app-accent-hover)] hover:shadow-[0_10px_30px_rgba(242,206,136,0.3)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Play size={24} className="fill-[var(--app-accent-text)] transition-colors" />
-              {clockType === 'pomodoro' ? 'Zacznij Sesję' : t('timeTracker.timer.start', 'Start Pracy')}
+              {clockType === 'pomodoro'
+                ? 'Zacznij Sesję'
+                : t('timeTracker.timer.start', 'Start Pracy')}
             </button>
           ) : isPaused ? (
             <button
               onClick={handleResume}
               disabled={resumeMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[var(--app-accent)] text-[var(--app-accent-text)] border border-[var(--app-accent)] font-bold text-lg hover:bg-[var(--app-accent-hover)] hover:shadow-[0_10px_30px_rgba(242,206,136,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group"
+              className="group flex flex-1 items-center justify-center gap-3 rounded-2xl border border-[var(--app-accent)] bg-[var(--app-accent)] px-8 py-4 text-lg font-bold text-[var(--app-accent-text)] transition-all duration-300 hover:scale-105 hover:bg-[var(--app-accent-hover)] hover:shadow-[0_10px_30px_rgba(242,206,136,0.3)] active:scale-95 disabled:opacity-40"
             >
               <Play size={24} className="fill-[var(--app-accent-text)] transition-colors" />
               {t('timeTracker.timer.resume', 'Wznów Pracę')}
@@ -808,7 +1031,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
             <button
               onClick={handlePause}
               disabled={pauseMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-amber-500 font-bold text-lg hover:bg-amber-500/5 hover:border-amber-500/30 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group shadow-sm"
+              className="group flex flex-1 items-center justify-center gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] px-8 py-4 text-lg font-bold text-amber-500 shadow-sm transition-all duration-300 hover:scale-105 hover:border-amber-500/30 hover:bg-amber-500/5 active:scale-95 disabled:opacity-40"
             >
               <Pause size={24} className="fill-amber-500 transition-colors" />
               {t('timeTracker.timer.pause', 'Pauza')}
@@ -819,7 +1042,7 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
             <button
               onClick={handleStop}
               disabled={stopMutation.isPending}
-              className="flex-[0.7] flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-rose-500 font-bold text-lg hover:bg-rose-500/5 hover:border-rose-500/30 hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-40 group shadow-sm"
+              className="group flex flex-[0.7] items-center justify-center gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] px-6 py-4 text-lg font-bold text-rose-500 shadow-sm transition-all duration-300 hover:scale-105 hover:border-rose-500/30 hover:bg-rose-500/5 active:scale-95 disabled:opacity-40"
             >
               <Square size={24} className="fill-rose-500 transition-colors" />
               {clockType === 'pomodoro' ? 'Zakończ' : t('timeTracker.timer.stop', 'Stop')}
@@ -829,34 +1052,37 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
           {clockType === 'pomodoro' && (
             <button
               onClick={handleSkip}
-              className="p-4 rounded-2xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] transition-all hover:bg-[var(--app-bg-card)] hover:border-[var(--app-text-muted)] group shadow-sm"
+              className="group rounded-2xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] p-4 text-[var(--app-text-primary)] shadow-sm transition-all hover:border-[var(--app-text-muted)] hover:bg-[var(--app-bg-card)]"
               title="Pomiń fazę"
             >
-              <SkipForward size={24} className="group-hover:scale-110 transition-transform" />
+              <SkipForward size={24} className="transition-transform group-hover:scale-110" />
             </button>
           )}
         </div>
       </div>
 
       {/* SEKCJA 3: Ostatnie sesje (Historia) */}
-      <div className="bg-[var(--app-bg-card)] rounded-3xl p-6 md:p-8 border border-[var(--app-divider)] shadow-sm">
-        <div className="flex items-center justify-between mb-6 border-b border-[var(--app-divider)] pb-4">
-          <h2 className="text-sm font-bold text-[var(--app-text-primary)] uppercase tracking-wider flex items-center gap-2">
+      <div className="rounded-3xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] p-6 shadow-sm md:p-8">
+        <div className="mb-6 flex items-center justify-between border-b border-[var(--app-divider)] pb-4">
+          <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-[var(--app-text-primary)]">
             <Activity size={18} className="text-[var(--app-accent)]" />
             {t('timeTracker.recentSessions', 'Ostatnio Zarejestrowane')}
           </h2>
           {myHistory.length > 0 && (
-            <span className="text-xs font-bold text-[var(--app-text-muted)] bg-[var(--app-bg-elevated)] px-2.5 py-1 rounded-md border border-[var(--app-divider)]">
+            <span className="rounded-md border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] px-2.5 py-1 text-xs font-bold text-[var(--app-text-muted)]">
               {myHistory.length} wpisów
             </span>
           )}
         </div>
 
         {myHistory.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 bg-[var(--app-bg-elevated)]/50 rounded-2xl border border-dashed border-[var(--app-divider)]">
+          <div className="bg-[var(--app-bg-elevated)]/50 flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--app-divider)] py-10">
             <Clock size={32} className="text-[var(--app-text-muted)]/40 mb-3" />
             <p className="text-sm font-medium text-[var(--app-text-muted)]">
-              {t('timeTracker.noSessions', 'Nie masz jeszcze żadnych wpisów czasu. Rozpocznij pracę!')}
+              {t(
+                'timeTracker.noSessions',
+                'Nie masz jeszcze żadnych wpisów czasu. Rozpocznij pracę!'
+              )}
             </p>
           </div>
         ) : (
@@ -865,15 +1091,17 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
               {paginatedHistory.map((entry: any) => (
                 <div
                   key={entry.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] hover:border-[var(--app-accent)]/30 hover:bg-[var(--app-bg-card)] transition-all duration-200 group"
+                  className="hover:border-[var(--app-accent)]/30 group flex flex-col justify-between rounded-2xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] p-4 transition-all duration-200 hover:bg-[var(--app-bg-card)] sm:flex-row sm:items-center"
                 >
-                  <div className="flex-1 min-w-0 pr-4">
-                    <div className="text-[14px] font-semibold text-[var(--app-text-primary)] truncate flex items-center gap-2 mb-1 group-hover:text-[var(--app-accent)] transition-colors">
-                      {entry.entryType === 'meeting' && <Calendar size={14} className="text-[var(--app-accent)]" />}
+                  <div className="min-w-0 flex-1 pr-4">
+                    <div className="mb-1 flex items-center gap-2 truncate text-[14px] font-semibold text-[var(--app-text-primary)] transition-colors group-hover:text-[var(--app-accent)]">
+                      {entry.entryType === 'meeting' && (
+                        <Calendar size={14} className="text-[var(--app-accent)]" />
+                      )}
                       <span>{entry.taskTitle || 'Nieznane zadanie'}</span>
                       {entry.subtaskTitle && (
-                        <span className="text-[var(--app-accent)] font-normal">
-                          <span className="text-[var(--app-text-muted)] px-1">/</span>
+                        <span className="font-normal text-[var(--app-accent)]">
+                          <span className="px-1 text-[var(--app-text-muted)]">/</span>
                           {entry.subtaskTitle}
                         </span>
                       )}
@@ -882,33 +1110,49 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] font-medium text-[var(--app-text-muted)]">
                       <span className="flex items-center gap-1">
                         <Clock size={12} />
-                        {new Date(entry.startedAt).toLocaleDateString('pl-PL', { month: 'short', day: 'numeric' })}
+                        {new Date(entry.startedAt).toLocaleDateString('pl-PL', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
                         <span className="mx-0.5">•</span>
-                        {new Date(entry.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {entry.endedAt ? ` - ${new Date(entry.endedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ` - (Trwa)`}
+                        {new Date(entry.startedAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                        {entry.endedAt
+                          ? ` - ${new Date(entry.endedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                          : ` - (Trwa)`}
                       </span>
 
-                      <span className="px-2 py-0.5 rounded border border-[var(--app-divider)] bg-[var(--app-bg-card)]">
-                        {entry.projectRole === 'project_leader' ? 'Lider Projektu' : entry.projectRole === 'area_leader' ? 'Lider Obszaru' : 'Uczestnik'}
+                      <span className="rounded border border-[var(--app-divider)] bg-[var(--app-bg-card)] px-2 py-0.5">
+                        {entry.projectRole === 'project_leader'
+                          ? 'Lider Projektu'
+                          : entry.projectRole === 'area_leader'
+                            ? 'Lider Obszaru'
+                            : 'Uczestnik'}
                       </span>
 
                       {entry.approvalStatus === 'pending' && (
-                        <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase font-bold tracking-wider">Oczekujące</span>
+                        <span className="rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-bold uppercase tracking-wider text-amber-500">
+                          Oczekujące
+                        </span>
                       )}
                       {entry.approvalStatus === 'approved' && (
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase font-bold tracking-wider">Zatwierdzone</span>
+                        <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-bold uppercase tracking-wider text-emerald-500">
+                          Zatwierdzone
+                        </span>
                       )}
                     </div>
 
                     {entry.description && (
-                      <div className="mt-2 text-xs text-[var(--app-text-secondary)] italic border-l-2 border-[var(--app-accent)]/30 pl-2 line-clamp-1">
+                      <div className="border-[var(--app-accent)]/30 mt-2 line-clamp-1 border-l-2 pl-2 text-xs italic text-[var(--app-text-secondary)]">
                         {entry.description}
                       </div>
                     )}
                   </div>
 
-                  <div className="text-right sm:text-right mt-3 sm:mt-0 flex-shrink-0">
-                    <span className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[var(--app-accent)]/10 text-[var(--app-accent)] text-lg font-bold font-mono border border-[var(--app-accent)]/20 shadow-sm">
+                  <div className="mt-3 flex-shrink-0 text-right sm:mt-0 sm:text-right">
+                    <span className="bg-[var(--app-accent)]/10 border-[var(--app-accent)]/20 inline-flex items-center justify-center rounded-xl border px-4 py-2 font-mono text-lg font-bold text-[var(--app-accent)] shadow-sm">
                       {formatMinutes(entry.durationMinutes || 0)}
                     </span>
                   </div>
@@ -917,44 +1161,56 @@ export function MemberTimerView({ workspaceSlug, userId }: { workspaceSlug: stri
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-[var(--app-divider)]">
-                <span className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-widest">
+              <div className="mt-8 flex items-center justify-between border-t border-[var(--app-divider)] pt-6">
+                <span className="text-xs font-bold uppercase tracking-widest text-[var(--app-text-muted)]">
                   {t('common.page', 'Strona')} {historyPage} {t('common.of', 'z')} {totalPages}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                    onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                     disabled={historyPage === 1}
-                    className="p-2 rounded-xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--app-bg-card)] transition-all"
+                    className="rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] p-2 text-[var(--app-text-primary)] transition-all hover:bg-[var(--app-bg-card)] disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <ChevronLeft size={18} />
                   </button>
-                  <div className="flex items-center gap-1 mx-2">
+                  <div className="mx-2 flex items-center gap-1">
                     {Array.from({ length: totalPages }).map((_, i) => {
-                      const page = i + 1;
-                      if (page === 1 || page === totalPages || (page >= historyPage - 1 && page <= historyPage + 1)) {
+                      const page = i + 1
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= historyPage - 1 && page <= historyPage + 1)
+                      ) {
                         return (
                           <button
                             key={page}
                             onClick={() => setHistoryPage(page)}
-                            className={`w-8 h-8 rounded-xl text-xs font-black transition-all ${historyPage === page
-                              ? 'bg-[var(--app-accent)] text-white shadow-lg shadow-blue-500/20'
-                              : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
-                              }`}
+                            className={`h-8 w-8 rounded-xl text-xs font-black transition-all ${
+                              historyPage === page
+                                ? 'bg-[var(--app-accent)] text-white shadow-lg shadow-blue-500/20'
+                                : 'text-[var(--app-text-muted)] hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]'
+                            }`}
                           >
                             {page}
                           </button>
                         )
                       } else if (page === historyPage - 2 || page === historyPage + 2) {
-                        return <span key={page} className="text-[var(--app-text-muted)] px-1 self-center">...</span>
+                        return (
+                          <span
+                            key={page}
+                            className="self-center px-1 text-[var(--app-text-muted)]"
+                          >
+                            ...
+                          </span>
+                        )
                       }
-                      return null;
+                      return null
                     })}
                   </div>
                   <button
-                    onClick={() => setHistoryPage(p => Math.min(totalPages, p + 1))}
+                    onClick={() => setHistoryPage((p) => Math.min(totalPages, p + 1))}
                     disabled={historyPage === totalPages}
-                    className="p-2 rounded-xl bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] text-[var(--app-text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[var(--app-bg-card)] transition-all"
+                    className="rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] p-2 text-[var(--app-text-primary)] transition-all hover:bg-[var(--app-bg-card)] disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <ChevronRight size={18} />
                   </button>

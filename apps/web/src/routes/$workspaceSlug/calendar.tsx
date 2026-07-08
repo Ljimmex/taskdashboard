@@ -7,7 +7,7 @@ export const Route = createFileRoute('/$workspaceSlug/calendar')({
 
 function CalendarPage() {
   return (
-    <div className="flex-1 h-full p-6 overflow-hidden flex flex-col">
+    <div className="flex h-full flex-1 flex-col overflow-hidden p-6">
       <CalendarView />
     </div>
   )

@@ -1,359 +1,450 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import {
-    FilterIcon,
-    SearchIconDefault,
-    SearchIconActive,
-} from '@/components/dashboard/icons'
+import { FilterIcon, SearchIconDefault, SearchIconActive } from '@/components/dashboard/icons'
 import { useTranslation } from 'react-i18next'
 
 // Sort Icon
 const SortIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4" />
-    </svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 18V4" />
+  </svg>
 )
 
 // Custom Checkbox Component
-const Checkbox = ({ checked, onChange, label, color }: { checked: boolean; onChange: () => void; label: string; color?: string }) => (
-    <label className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-[var(--app-bg-input)]/50 cursor-pointer transition-colors group">
-        <div
-            onClick={(e) => { e.preventDefault(); onChange() }}
-            className={`w-4 h-4 rounded flex items-center justify-center transition-all flex-shrink-0 ${checked
-                ? 'bg-amber-500 border-amber-500'
-                : 'bg-transparent border-2 border-[var(--app-border)] group-hover:border-[var(--app-border)]'
-                }`}
+const Checkbox = ({
+  checked,
+  onChange,
+  label,
+  color,
+}: {
+  checked: boolean
+  onChange: () => void
+  label: string
+  color?: string
+}) => (
+  <label className="hover:bg-[var(--app-bg-input)]/50 group flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 transition-colors">
+    <div
+      onClick={(e) => {
+        e.preventDefault()
+        onChange()
+      }}
+      className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded transition-all ${
+        checked
+          ? 'border-amber-500 bg-amber-500'
+          : 'border-2 border-[var(--app-border)] bg-transparent group-hover:border-[var(--app-border)]'
+      }`}
+    >
+      {checked && (
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="black"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-            {checked && (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                </svg>
-            )}
-        </div>
-        <span className={`text-sm ${color || 'text-[var(--app-text-secondary)]'}`}>{label}</span>
-    </label>
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+    </div>
+    <span className={`text-sm ${color || 'text-[var(--app-text-secondary)]'}`}>{label}</span>
+  </label>
 )
 
 export type SortOption = 'name' | 'email' | 'role' | 'dateAdded' | 'lastActive' | 'projectCount'
 export type SortDirection = 'asc' | 'desc'
 export type FilterOption = {
-    roles?: string[]
-    teams?: string[]
-    status?: ('active' | 'inactive' | 'pending')[]
-    availability?: ('available' | 'busy' | 'overloaded')[]
-    projects?: string[]
+  roles?: string[]
+  teams?: string[]
+  status?: ('active' | 'inactive' | 'pending')[]
+  availability?: ('available' | 'busy' | 'overloaded')[]
+  projects?: string[]
 }
 
 interface TeamHeaderProps {
-    teamCount: number
-    memberCount: number
-    onAddTeam: () => void
-    searchQuery: string
-    onSearchChange: (query: string) => void
-    sortBy: SortOption
-    sortDirection: SortDirection
-    onSortChange: (sort: SortOption, direction: SortDirection) => void
-    filters: FilterOption
-    onFiltersChange: (filters: FilterOption) => void
-    availableRoles: string[]
-    availableTeams: string[]
-    availableProjects: string[]
-    userRole?: string | null
+  teamCount: number
+  memberCount: number
+  onAddTeam: () => void
+  searchQuery: string
+  onSearchChange: (query: string) => void
+  sortBy: SortOption
+  sortDirection: SortDirection
+  onSortChange: (sort: SortOption, direction: SortDirection) => void
+  filters: FilterOption
+  onFiltersChange: (filters: FilterOption) => void
+  availableRoles: string[]
+  availableTeams: string[]
+  availableProjects: string[]
+  userRole?: string | null
 }
 
 export function TeamHeader({
-    onAddTeam,
-    searchQuery,
-    onSearchChange,
-    sortBy,
-    sortDirection,
-    onSortChange,
-    filters,
-    onFiltersChange,
-    availableRoles,
-    availableTeams,
-    availableProjects,
-    userRole
+  onAddTeam,
+  searchQuery,
+  onSearchChange,
+  sortBy,
+  sortDirection,
+  onSortChange,
+  filters,
+  onFiltersChange,
+  availableRoles,
+  availableTeams,
+  availableProjects,
+  userRole,
 }: TeamHeaderProps) {
-    const { t } = useTranslation()
-    const [searchFocused, setSearchFocused] = useState(false)
-    const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const [isSortOpen, setIsSortOpen] = useState(false)
+  const { t } = useTranslation()
+  const [searchFocused, setSearchFocused] = useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isSortOpen, setIsSortOpen] = useState(false)
 
-    const filterRef = useRef<HTMLDivElement>(null)
-    const sortRef = useRef<HTMLDivElement>(null)
+  const filterRef = useRef<HTMLDivElement>(null)
+  const sortRef = useRef<HTMLDivElement>(null)
 
-    // Close dropdowns on outside click
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-                setIsFilterOpen(false)
-            }
-            if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
-                setIsSortOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
-
-    const sortOptions: { value: SortOption; label: string; directions: { asc: string; desc: string } }[] = [
-        { value: 'name', label: t('teams.sort.name'), directions: { asc: t('teams.sort.directions.az'), desc: t('teams.sort.directions.za') } },
-        { value: 'lastActive', label: t('teams.sort.last_active'), directions: { asc: t('teams.sort.directions.oldest'), desc: t('teams.sort.directions.newest') } },
-        { value: 'dateAdded', label: t('teams.sort.date_added'), directions: { asc: t('teams.sort.directions.oldest'), desc: t('teams.sort.directions.newest') } },
-        { value: 'projectCount', label: t('teams.sort.project_count'), directions: { asc: t('teams.sort.directions.low_high'), desc: t('teams.sort.directions.high_low') } },
-        { value: 'role', label: t('teams.sort.job_title'), directions: { asc: t('teams.sort.directions.az'), desc: t('teams.sort.directions.za') } },
-    ]
-
-    const statusOptions = [
-        { value: 'active', label: t('teams.filters.status.active'), default: true },
-        { value: 'inactive', label: t('teams.filters.status.inactive') },
-        { value: 'pending', label: t('teams.filters.status.pending') },
-    ]
-
-    const availabilityOptions = [
-        { value: 'available', label: t('teams.filters.availability_status.available'), color: 'text-green-400' },
-        { value: 'busy', label: t('teams.filters.availability_status.busy'), color: 'text-yellow-400' },
-        { value: 'overloaded', label: t('teams.filters.availability_status.overloaded'), color: 'text-red-400' },
-    ]
-
-    const hasActiveFilters = (filters.roles?.length || 0) > 0 ||
-        (filters.teams?.length || 0) > 0 ||
-        (filters.status?.length || 0) > 0 ||
-        (filters.availability?.length || 0) > 0 ||
-        (filters.projects?.length || 0) > 0
-
-    const currentSortLabel = sortOptions.find(s => s.value === sortBy)?.label || t('teams.sort.name')
-    const currentDirectionLabel = sortOptions.find(s => s.value === sortBy)?.directions[sortDirection] || ''
-
-    const toggleArrayFilter = (key: keyof FilterOption, value: string) => {
-        const current = (filters[key] as string[]) || []
-        const updated = current.includes(value)
-            ? current.filter(v => v !== value)
-            : [...current, value]
-        onFiltersChange({ ...filters, [key]: updated.length > 0 ? updated : undefined })
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setIsFilterOpen(false)
+      }
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setIsSortOpen(false)
+      }
     }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
-    const canAddTeam = useMemo(() => {
-        if (!userRole) return false
-        return ['owner', 'admin'].includes(userRole)
-    }, [userRole])
+  const sortOptions: {
+    value: SortOption
+    label: string
+    directions: { asc: string; desc: string }
+  }[] = [
+    {
+      value: 'name',
+      label: t('teams.sort.name'),
+      directions: { asc: t('teams.sort.directions.az'), desc: t('teams.sort.directions.za') },
+    },
+    {
+      value: 'lastActive',
+      label: t('teams.sort.last_active'),
+      directions: {
+        asc: t('teams.sort.directions.oldest'),
+        desc: t('teams.sort.directions.newest'),
+      },
+    },
+    {
+      value: 'dateAdded',
+      label: t('teams.sort.date_added'),
+      directions: {
+        asc: t('teams.sort.directions.oldest'),
+        desc: t('teams.sort.directions.newest'),
+      },
+    },
+    {
+      value: 'projectCount',
+      label: t('teams.sort.project_count'),
+      directions: {
+        asc: t('teams.sort.directions.low_high'),
+        desc: t('teams.sort.directions.high_low'),
+      },
+    },
+    {
+      value: 'role',
+      label: t('teams.sort.job_title'),
+      directions: { asc: t('teams.sort.directions.az'), desc: t('teams.sort.directions.za') },
+    },
+  ]
 
-    return (
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 md:gap-0">
-            <h1 className="text-2xl font-bold text-[var(--app-text-primary)]">{t('teams.title')}</h1>
+  const statusOptions = [
+    { value: 'active', label: t('teams.filters.status.active'), default: true },
+    { value: 'inactive', label: t('teams.filters.status.inactive') },
+    { value: 'pending', label: t('teams.filters.status.pending') },
+  ]
 
-            <div className="flex items-center flex-wrap gap-2 md:gap-3">
-                {/* Search */}
-                <div className="relative group">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                        {searchFocused ? <SearchIconActive /> : <SearchIconDefault />}
-                    </div>
-                    <input
-                        type="text"
-                        placeholder={t('teams.search_placeholder')}
-                        value={searchQuery}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        onFocus={() => setSearchFocused(true)}
-                        onBlur={() => setSearchFocused(false)}
-                        className="w-[150px] md:w-56 pl-10 pr-2 md:pr-4 py-2 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-primary)] placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition-all"
-                    />
-                </div>
+  const availabilityOptions = [
+    {
+      value: 'available',
+      label: t('teams.filters.availability_status.available'),
+      color: 'text-green-400',
+    },
+    { value: 'busy', label: t('teams.filters.availability_status.busy'), color: 'text-yellow-400' },
+    {
+      value: 'overloaded',
+      label: t('teams.filters.availability_status.overloaded'),
+      color: 'text-red-400',
+    },
+  ]
 
-                {/* Filters Dropdown */}
-                <div className="relative" ref={filterRef}>
-                    <button
-                        onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${hasActiveFilters
-                            ? 'bg-amber-500/10 text-amber-400'
-                            : 'bg-[var(--app-bg-sidebar)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)]'
-                            }`}
-                    >
-                        <FilterIcon isHovered={!!hasActiveFilters} />
-                        {t('teams.filters.label')}
-                        {hasActiveFilters && (
-                            <span className="w-2 h-2 rounded-full bg-amber-500" />
-                        )}
-                    </button>
+  const hasActiveFilters =
+    (filters.roles?.length || 0) > 0 ||
+    (filters.teams?.length || 0) > 0 ||
+    (filters.status?.length || 0) > 0 ||
+    (filters.availability?.length || 0) > 0 ||
+    (filters.projects?.length || 0) > 0
 
-                    {isFilterOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-80 bg-[var(--app-bg-sidebar)] rounded-xl shadow-2xl z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
-                            {/* Role & Team Section */}
-                            <div className="p-4">
-                                <span className="text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">{t('teams.filters.role_and_team')}</span>
+  const currentSortLabel =
+    sortOptions.find((s) => s.value === sortBy)?.label || t('teams.sort.name')
+  const currentDirectionLabel =
+    sortOptions.find((s) => s.value === sortBy)?.directions[sortDirection] || ''
 
-                                {/* Job Title */}
-                                <div className="mt-3">
-                                    <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.job_title')}</label>
-                                    <div className="space-y-0.5 max-h-32 overflow-y-auto">
-                                        {availableRoles.map(role => (
-                                            <Checkbox
-                                                key={role}
-                                                checked={filters.roles?.includes(role) || false}
-                                                onChange={() => toggleArrayFilter('roles', role)}
-                                                label={role}
-                                            />
-                                        ))}
-                                        {availableRoles.length === 0 && (
-                                            <span className="text-xs text-[var(--app-text-muted)] italic px-2">{t('teams.filters.no_roles')}</span>
-                                        )}
-                                    </div>
-                                </div>
+  const toggleArrayFilter = (key: keyof FilterOption, value: string) => {
+    const current = (filters[key] as string[]) || []
+    const updated = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value]
+    onFiltersChange({ ...filters, [key]: updated.length > 0 ? updated : undefined })
+  }
 
-                                {/* Teams */}
-                                {availableTeams.length > 1 && (
-                                    <div className="mt-4">
-                                        <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.team')}</label>
-                                        <div className="space-y-0.5 max-h-32 overflow-y-auto">
-                                            {availableTeams.map(team => (
-                                                <Checkbox
-                                                    key={team}
-                                                    checked={filters.teams?.includes(team) || false}
-                                                    onChange={() => toggleArrayFilter('teams', team)}
-                                                    label={team}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+  const canAddTeam = useMemo(() => {
+    if (!userRole) return false
+    return ['owner', 'admin'].includes(userRole)
+  }, [userRole])
 
-                            {/* Status Section */}
-                            <div className="p-4 bg-[var(--app-bg-deepest)]/50">
-                                <span className="text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">{t('teams.filters.status_and_availability')}</span>
+  return (
+    <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center md:gap-0">
+      <h1 className="text-2xl font-bold text-[var(--app-text-primary)]">{t('teams.title')}</h1>
 
-                                {/* Account Status */}
-                                <div className="mt-3">
-                                    <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.account_status')}</label>
-                                    <div className="space-y-0.5">
-                                        {statusOptions.map(opt => (
-                                            <Checkbox
-                                                key={opt.value}
-                                                checked={filters.status?.includes(opt.value as any) || false}
-                                                onChange={() => toggleArrayFilter('status', opt.value)}
-                                                label={opt.label}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Availability */}
-                                <div className="mt-4">
-                                    <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.availability')}</label>
-                                    <div className="space-y-0.5">
-                                        {availabilityOptions.map(opt => (
-                                            <Checkbox
-                                                key={opt.value}
-                                                checked={filters.availability?.includes(opt.value as any) || false}
-                                                onChange={() => toggleArrayFilter('availability', opt.value)}
-                                                label={opt.label}
-                                                color={opt.color}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Projects Section */}
-                            {availableProjects.length > 0 && (
-                                <div className="p-4">
-                                    <span className="text-xs font-semibold text-[var(--app-text-muted)] uppercase tracking-wider">{t('teams.filters.work_context')}</span>
-
-                                    <div className="mt-3">
-                                        <label className="text-xs text-[var(--app-text-secondary)] mb-2 block font-medium">{t('teams.filters.assigned_project')}</label>
-                                        <div className="space-y-0.5 max-h-32 overflow-y-auto">
-                                            {availableProjects.map(proj => (
-                                                <Checkbox
-                                                    key={proj}
-                                                    checked={filters.projects?.includes(proj) || false}
-                                                    onChange={() => toggleArrayFilter('projects', proj)}
-                                                    label={proj}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Clear Filters */}
-                            <div className="p-3 bg-[var(--app-bg-deepest)]">
-                                <button
-                                    onClick={() => {
-                                        onFiltersChange({})
-                                        setIsFilterOpen(false)
-                                    }}
-                                    className="w-full px-3 py-2 text-xs text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-input)] hover:bg-[var(--app-bg-elevated)] rounded-lg transition-all"
-                                >
-                                    {t('teams.filters.clear_all')}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Sort Dropdown */}
-                <div className="relative" ref={sortRef}>
-                    <button
-                        onClick={() => setIsSortOpen(!isSortOpen)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--app-bg-sidebar)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] text-sm font-medium transition-all"
-                    >
-                        <SortIcon />
-                        <span className="text-[var(--app-text-secondary)]">{currentSortLabel}</span>
-                        <span className="text-[var(--app-text-muted)] text-xs">({currentDirectionLabel})</span>
-                    </button>
-
-                    {isSortOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--app-bg-sidebar)] rounded-xl shadow-2xl z-50 overflow-hidden">
-                            <div className="p-2">
-                                {sortOptions.map(opt => (
-                                    <div key={opt.value} className="mb-1">
-                                        <div className="px-3 py-1.5 text-xs text-[var(--app-text-muted)] font-medium">{opt.label}</div>
-                                        <div className="flex gap-1 px-2">
-                                            <button
-                                                onClick={() => {
-                                                    onSortChange(opt.value, 'asc')
-                                                    setIsSortOpen(false)
-                                                }}
-                                                className={`flex-1 px-3 py-1.5 text-xs rounded-lg transition-all ${sortBy === opt.value && sortDirection === 'asc'
-                                                    ? 'bg-amber-500/20 text-amber-400'
-                                                    : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)] hover:text-[var(--app-text-primary)]'
-                                                    }`}
-                                            >
-                                                {opt.directions.asc}
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    onSortChange(opt.value, 'desc')
-                                                    setIsSortOpen(false)
-                                                }}
-                                                className={`flex-1 px-3 py-1.5 text-xs rounded-lg transition-all ${sortBy === opt.value && sortDirection === 'desc'
-                                                    ? 'bg-amber-500/20 text-amber-400'
-                                                    : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)] hover:text-[var(--app-text-primary)]'
-                                                    }`}
-                                            >
-                                                {opt.directions.desc}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Add Team Button */}
-                {canAddTeam && (
-                    <button
-                        onClick={onAddTeam}
-                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-sm font-semibold transition-all shadow-lg shadow-amber-500/20"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        {t('teams.add_team')}
-                    </button>
-                )}
-            </div>
+      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+        {/* Search */}
+        <div className="group relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2">
+            {searchFocused ? <SearchIconActive /> : <SearchIconDefault />}
+          </div>
+          <input
+            type="text"
+            placeholder={t('teams.search_placeholder')}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            className="w-[150px] rounded-xl bg-[var(--app-bg-sidebar)] py-2 pl-10 pr-2 text-sm text-[var(--app-text-primary)] placeholder-gray-500 transition-all focus:outline-none focus:ring-1 focus:ring-amber-500/30 md:w-56 md:pr-4"
+          />
         </div>
-    )
+
+        {/* Filters Dropdown */}
+        <div className="relative" ref={filterRef}>
+          <button
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+              hasActiveFilters
+                ? 'bg-amber-500/10 text-amber-400'
+                : 'bg-[var(--app-bg-sidebar)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)]'
+            }`}
+          >
+            <FilterIcon isHovered={!!hasActiveFilters} />
+            {t('teams.filters.label')}
+            {hasActiveFilters && <span className="h-2 w-2 rounded-full bg-amber-500" />}
+          </button>
+
+          {isFilterOpen && (
+            <div className="absolute right-0 top-full z-50 mt-2 max-h-[70vh] w-80 overflow-hidden overflow-y-auto rounded-xl bg-[var(--app-bg-sidebar)] shadow-2xl">
+              {/* Role & Team Section */}
+              <div className="p-4">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--app-text-muted)]">
+                  {t('teams.filters.role_and_team')}
+                </span>
+
+                {/* Job Title */}
+                <div className="mt-3">
+                  <label className="mb-2 block text-xs font-medium text-[var(--app-text-secondary)]">
+                    {t('teams.filters.job_title')}
+                  </label>
+                  <div className="max-h-32 space-y-0.5 overflow-y-auto">
+                    {availableRoles.map((role) => (
+                      <Checkbox
+                        key={role}
+                        checked={filters.roles?.includes(role) || false}
+                        onChange={() => toggleArrayFilter('roles', role)}
+                        label={role}
+                      />
+                    ))}
+                    {availableRoles.length === 0 && (
+                      <span className="px-2 text-xs italic text-[var(--app-text-muted)]">
+                        {t('teams.filters.no_roles')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Teams */}
+                {availableTeams.length > 1 && (
+                  <div className="mt-4">
+                    <label className="mb-2 block text-xs font-medium text-[var(--app-text-secondary)]">
+                      {t('teams.filters.team')}
+                    </label>
+                    <div className="max-h-32 space-y-0.5 overflow-y-auto">
+                      {availableTeams.map((team) => (
+                        <Checkbox
+                          key={team}
+                          checked={filters.teams?.includes(team) || false}
+                          onChange={() => toggleArrayFilter('teams', team)}
+                          label={team}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Status Section */}
+              <div className="bg-[var(--app-bg-deepest)]/50 p-4">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--app-text-muted)]">
+                  {t('teams.filters.status_and_availability')}
+                </span>
+
+                {/* Account Status */}
+                <div className="mt-3">
+                  <label className="mb-2 block text-xs font-medium text-[var(--app-text-secondary)]">
+                    {t('teams.filters.account_status')}
+                  </label>
+                  <div className="space-y-0.5">
+                    {statusOptions.map((opt) => (
+                      <Checkbox
+                        key={opt.value}
+                        checked={filters.status?.includes(opt.value as any) || false}
+                        onChange={() => toggleArrayFilter('status', opt.value)}
+                        label={opt.label}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Availability */}
+                <div className="mt-4">
+                  <label className="mb-2 block text-xs font-medium text-[var(--app-text-secondary)]">
+                    {t('teams.filters.availability')}
+                  </label>
+                  <div className="space-y-0.5">
+                    {availabilityOptions.map((opt) => (
+                      <Checkbox
+                        key={opt.value}
+                        checked={filters.availability?.includes(opt.value as any) || false}
+                        onChange={() => toggleArrayFilter('availability', opt.value)}
+                        label={opt.label}
+                        color={opt.color}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Projects Section */}
+              {availableProjects.length > 0 && (
+                <div className="p-4">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[var(--app-text-muted)]">
+                    {t('teams.filters.work_context')}
+                  </span>
+
+                  <div className="mt-3">
+                    <label className="mb-2 block text-xs font-medium text-[var(--app-text-secondary)]">
+                      {t('teams.filters.assigned_project')}
+                    </label>
+                    <div className="max-h-32 space-y-0.5 overflow-y-auto">
+                      {availableProjects.map((proj) => (
+                        <Checkbox
+                          key={proj}
+                          checked={filters.projects?.includes(proj) || false}
+                          onChange={() => toggleArrayFilter('projects', proj)}
+                          label={proj}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Clear Filters */}
+              <div className="bg-[var(--app-bg-deepest)] p-3">
+                <button
+                  onClick={() => {
+                    onFiltersChange({})
+                    setIsFilterOpen(false)
+                  }}
+                  className="w-full rounded-lg bg-[var(--app-bg-input)] px-3 py-2 text-xs text-[var(--app-text-secondary)] transition-all hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]"
+                >
+                  {t('teams.filters.clear_all')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sort Dropdown */}
+        <div className="relative" ref={sortRef}>
+          <button
+            onClick={() => setIsSortOpen(!isSortOpen)}
+            className="flex items-center gap-2 rounded-xl bg-[var(--app-bg-sidebar)] px-4 py-2 text-sm font-medium text-[var(--app-text-secondary)] transition-all hover:text-[var(--app-text-primary)]"
+          >
+            <SortIcon />
+            <span className="text-[var(--app-text-secondary)]">{currentSortLabel}</span>
+            <span className="text-xs text-[var(--app-text-muted)]">({currentDirectionLabel})</span>
+          </button>
+
+          {isSortOpen && (
+            <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl bg-[var(--app-bg-sidebar)] shadow-2xl">
+              <div className="p-2">
+                {sortOptions.map((opt) => (
+                  <div key={opt.value} className="mb-1">
+                    <div className="px-3 py-1.5 text-xs font-medium text-[var(--app-text-muted)]">
+                      {opt.label}
+                    </div>
+                    <div className="flex gap-1 px-2">
+                      <button
+                        onClick={() => {
+                          onSortChange(opt.value, 'asc')
+                          setIsSortOpen(false)
+                        }}
+                        className={`flex-1 rounded-lg px-3 py-1.5 text-xs transition-all ${
+                          sortBy === opt.value && sortDirection === 'asc'
+                            ? 'bg-amber-500/20 text-amber-400'
+                            : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)] hover:text-[var(--app-text-primary)]'
+                        }`}
+                      >
+                        {opt.directions.asc}
+                      </button>
+                      <button
+                        onClick={() => {
+                          onSortChange(opt.value, 'desc')
+                          setIsSortOpen(false)
+                        }}
+                        className={`flex-1 rounded-lg px-3 py-1.5 text-xs transition-all ${
+                          sortBy === opt.value && sortDirection === 'desc'
+                            ? 'bg-amber-500/20 text-amber-400'
+                            : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-input)] hover:text-[var(--app-text-primary)]'
+                        }`}
+                      >
+                        {opt.directions.desc}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Add Team Button */}
+        {canAddTeam && (
+          <button
+            onClick={onAddTeam}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-2 text-sm font-semibold text-black shadow-lg shadow-amber-500/20 transition-all hover:from-amber-400 hover:to-amber-500"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            {t('teams.add_team')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
 }

@@ -88,6 +88,9 @@ services:
     staticPublishPath: ./apps/web/dist
     headers:
       - path: /*
+        name: Strict-Transport-Security
+        value: max-age=63072000; includeSubDomains; preload
+      - path: /*
         name: X-Frame-Options
         value: DENY
       - path: /*
@@ -96,6 +99,9 @@ services:
       - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), ambient-light-sensor=(), autoplay=(), encrypted-media=(), picture-in-picture=(), vr=()
       - path: /*
         name: Content-Security-Policy
         value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://taskdashboard-api.onrender.com https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com; worker-src 'self' blob:; frame-ancestors 'none'; object-src 'none'; base-uri 'self';"

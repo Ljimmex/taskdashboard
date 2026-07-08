@@ -73,7 +73,7 @@ function ResetPasswordPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left side - Form */}
-      <div className="flex w-full flex-col justify-center px-8 py-12 lg:w-1/2 lg:px-16 bg-[#0a0a0f]">
+      <div className="flex w-full flex-col justify-center bg-[#0a0a0f] px-8 py-12 lg:w-1/2 lg:px-16">
         <div className="mx-auto w-full max-w-md">
           {/* Logo */}
           <div className="mb-10">
@@ -85,11 +85,11 @@ function ResetPasswordPage() {
 
           {success ? (
             <div className="rounded-lg bg-green-500/10 p-6 text-center">
-              <div className="text-4xl mb-4">🎉</div>
-              <h2 className="text-xl font-semibold text-white mb-2">{t('auth.resetPassword.successResetTitle')}</h2>
-              <p className="text-gray-400">
-                {t('auth.resetPassword.successResetDesc')}
-              </p>
+              <div className="mb-4 text-4xl">🎉</div>
+              <h2 className="mb-2 text-xl font-semibold text-white">
+                {t('auth.resetPassword.successResetTitle')}
+              </h2>
+              <p className="text-gray-400">{t('auth.resetPassword.successResetDesc')}</p>
             </div>
           ) : (
             <>
@@ -101,29 +101,35 @@ function ResetPasswordPage() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-400 text-sm">{t('auth.email')}</Label>
+                  <Label htmlFor="email" className="text-sm text-gray-400">
+                    {t('auth.email')}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
+                      className="w-full rounded-none border-0 border-b-2 border-gray-700 bg-transparent pb-3 text-white placeholder-gray-500 shadow-none outline-none transition-colors focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       placeholder="twoj@email.com"
                       required
                     />
-                    <span className="absolute right-0 top-1/2 -translate-y-1/2 text-amber-500">@</span>
+                    <span className="absolute right-0 top-1/2 -translate-y-1/2 text-amber-500">
+                      @
+                    </span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="otp" className="text-gray-400 text-sm">{t('auth.resetPassword.codeLabel')}</Label>
+                  <Label htmlFor="otp" className="text-sm text-gray-400">
+                    {t('auth.resetPassword.codeLabel')}
+                  </Label>
                   <Input
                     id="otp"
                     type="text"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none text-center text-2xl tracking-widest font-mono"
+                    className="w-full rounded-none border-0 border-b-2 border-gray-700 bg-transparent pb-3 text-center font-mono text-2xl tracking-widest text-white placeholder-gray-500 shadow-none outline-none transition-colors focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     placeholder="000000"
                     maxLength={6}
                     required
@@ -131,45 +137,55 @@ function ResetPasswordPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-400 text-sm">{t('auth.resetPassword.newPasswordLabel')}</Label>
+                  <Label htmlFor="password" className="text-sm text-gray-400">
+                    {t('auth.resetPassword.newPasswordLabel')}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
+                      className="w-full rounded-none border-0 border-b-2 border-gray-700 bg-transparent pb-3 text-white placeholder-gray-500 shadow-none outline-none transition-colors focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       placeholder={t('auth.resetPassword.tip1')}
                       required
                       minLength={8}
                     />
-                    <span className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500">🔐</span>
+                    <span className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500">
+                      🔐
+                    </span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-gray-400 text-sm">{t('auth.resetPassword.confirmPasswordLabel')}</Label>
+                  <Label htmlFor="confirmPassword" className="text-sm text-gray-400">
+                    {t('auth.resetPassword.confirmPasswordLabel')}
+                  </Label>
                   <div className="relative">
                     <Input
                       id="confirmPassword"
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full border-0 border-b-2 border-gray-700 bg-transparent text-white placeholder-gray-500 rounded-none focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 pb-3 transition-colors outline-none shadow-none"
+                      className="w-full rounded-none border-0 border-b-2 border-gray-700 bg-transparent pb-3 text-white placeholder-gray-500 shadow-none outline-none transition-colors focus:border-amber-500 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                       placeholder={t('auth.resetPassword.confirmPasswordLabel')}
                       required
                       minLength={8}
                     />
-                    <span className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500">🔐</span>
+                    <span className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-500">
+                      🔐
+                    </span>
                   </div>
                 </div>
 
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-amber-500 py-6 text-black font-medium hover:bg-amber-400 rounded-full"
+                  className="w-full rounded-full bg-amber-500 py-6 font-medium text-black hover:bg-amber-400"
                 >
-                  {loading ? t('auth.resetPassword.resetting') : t('auth.resetPassword.resetButton')}
+                  {loading
+                    ? t('auth.resetPassword.resetting')
+                    : t('auth.resetPassword.resetButton')}
                 </Button>
 
                 <div className="mt-6 text-center">
@@ -180,7 +196,7 @@ function ResetPasswordPage() {
 
                 <p className="mt-4 text-center text-gray-400">
                   {t('auth.resetPassword.rememberPassword')}{' '}
-                  <Link to="/login" className="text-amber-500 hover:underline font-medium">
+                  <Link to="/login" className="font-medium text-amber-500 hover:underline">
                     {t('auth.resetPassword.backToLogin')}
                   </Link>
                 </p>
@@ -191,20 +207,20 @@ function ResetPasswordPage() {
       </div>
 
       {/* Right side - Marketing */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 bg-[#0d0d12]">
-        <div className="max-w-lg mb-8">
+      <div className="hidden flex-col justify-center bg-[#0d0d12] px-16 lg:flex lg:w-1/2">
+        <div className="mb-8 max-w-lg">
           <div className="max-w-lg">
-            <h2 className="text-5xl font-bold text-white leading-tight">
+            <h2 className="text-5xl font-bold leading-tight text-white">
               {t('auth.resetPassword.newPasswordSubtitle')}
             </h2>
-            <p className="mt-6 text-lg text-gray-400">
-              {t('auth.resetPassword.newPasswordDesc')}
-            </p>
+            <p className="mt-6 text-lg text-gray-400">{t('auth.resetPassword.newPasswordDesc')}</p>
 
             {/* Tips */}
-            <div className="mt-12 rounded-xl bg-gray-800/50 p-6 border border-gray-700">
-              <h3 className="text-white font-semibold mb-4">💡 {t('auth.resetPassword.tipsTitle')}</h3>
-              <ul className="space-y-2 text-gray-400 text-sm">
+            <div className="mt-12 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+              <h3 className="mb-4 font-semibold text-white">
+                💡 {t('auth.resetPassword.tipsTitle')}
+              </h3>
+              <ul className="space-y-2 text-sm text-gray-400">
                 <li>✓ {t('auth.resetPassword.tip1')}</li>
                 <li>✓ {t('auth.resetPassword.tip2')}</li>
                 <li>✓ {t('auth.resetPassword.tip3')}</li>
@@ -214,8 +230,8 @@ function ResetPasswordPage() {
           </div>
 
           {/* App Preview - Mockup */}
-          <div className="mt-12 w-full h-[300px] overflow-hidden">
-            <div className="w-[200%] origin-top-left transform scale-50">
+          <div className="mt-12 h-[300px] w-full overflow-hidden">
+            <div className="w-[200%] origin-top-left scale-50 transform">
               <DashboardMockup />
             </div>
           </div>

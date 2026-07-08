@@ -7,7 +7,10 @@ import { useSession } from '@/lib/auth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { getAssignableMembers } from '@/lib/teamUtils'
 import { KanbanBoard } from '@/components/features/tasks/views/KanbanBoard'
-import { KanbanBoardHeader, type FilterState } from '@/components/features/tasks/views/KanbanBoardHeader'
+import {
+  KanbanBoardHeader,
+  type FilterState,
+} from '@/components/features/tasks/views/KanbanBoardHeader'
 import { TaskListView } from '@/components/features/tasks/views/TaskListView'
 import { ProjectCalendarView } from '@/components/features/projects/ProjectCalendarView'
 import { ProjectTimelineView } from '@/components/features/projects/ProjectTimelineView'
@@ -17,7 +20,6 @@ import { EditTaskPanel } from '@/components/features/tasks/panels/EditTaskPanel'
 import { ConfirmDeleteModal } from '@/components/common/ConfirmDeleteModal'
 import { BulkActions } from '@/components/features/tasks/components/BulkActions'
 import { useTaskPermissions } from '@/hooks/useTaskPermissions'
-
 
 export interface ProjectDetailSearch {
   taskId?: string
@@ -65,7 +67,10 @@ interface Project {
 
 function ProjectDetailPage() {
   const { t } = useTranslation()
-  const { workspaceSlug, projectId } = useParams({ strict: false }) as { workspaceSlug: string; projectId: string }
+  const { workspaceSlug, projectId } = useParams({ strict: false }) as {
+    workspaceSlug: string
+    projectId: string
+  }
   const navigate = useNavigate()
   const search = Route.useSearch()
   const { data: session } = useSession()
@@ -89,7 +94,7 @@ function ProjectDetailPage() {
     statuses: [],
     labels: [],
     assigneeIds: [],
-    dueDateRange: 'all'
+    dueDateRange: 'all',
   })
   // Sorting
   const [sortBy, setSortBy] = useState<string | null>(null)
@@ -107,15 +112,15 @@ function ProjectDetailPage() {
   // Bulk selection handlers
   const handleTaskSelect = (taskId: string, selected: boolean) => {
     if (selected) {
-      setSelectedTasks(prev => [...prev, taskId])
+      setSelectedTasks((prev) => [...prev, taskId])
     } else {
-      setSelectedTasks(prev => prev.filter(id => id !== taskId))
+      setSelectedTasks((prev) => prev.filter((id) => id !== taskId))
     }
   }
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      setSelectedTasks(listViewTasks.map(t => t.id))
+      setSelectedTasks(listViewTasks.map((t) => t.id))
     } else {
       setSelectedTasks([])
     }
@@ -130,7 +135,7 @@ function ProjectDetailPage() {
       await apiFetch('/api/tasks/bulk/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskIds: selectedTasks })
+        body: JSON.stringify({ taskIds: selectedTasks }),
       })
       setSelectedTasks([])
       refetchTasks()
@@ -146,7 +151,7 @@ function ProjectDetailPage() {
       await apiFetch('/api/tasks/bulk/move', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskIds: selectedTasks, status: stageId })
+        body: JSON.stringify({ taskIds: selectedTasks, status: stageId }),
       })
       setSelectedTasks([])
       refetchTasks()
@@ -155,17 +160,16 @@ function ProjectDetailPage() {
     }
   }
 
-
   // Fetch workspaces to get current workspaceId
   const { data: workspaces } = useQuery({
     queryKey: ['workspaces', session?.user?.id],
     queryFn: async () => {
       const json = await apiFetchJson<any>('/api/workspaces', {
-        headers: { 'x-user-id': session?.user?.id || '' }
+        headers: { 'x-user-id': session?.user?.id || '' },
       })
       return json.data
     },
-    enabled: !!session?.user?.id
+    enabled: !!session?.user?.id,
   })
 
   const currentWorkspace = workspaces?.find((w: any) => w.slug === workspaceSlug)
@@ -178,11 +182,11 @@ function ProjectDetailPage() {
     queryKey: ['teams', currentWorkspace?.id],
     queryFn: async () => {
       const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace?.id}`, {
-        headers: { 'x-user-id': session?.user?.id || '' }
+        headers: { 'x-user-id': session?.user?.id || '' },
       })
       return json.data || []
     },
-    enabled: !!currentWorkspace?.id
+    enabled: !!currentWorkspace?.id,
   })
 
   // Fetch workspace labels
@@ -190,19 +194,23 @@ function ProjectDetailPage() {
     queryKey: ['labels', workspaceSlug],
     queryFn: async () => {
       const json = await apiFetchJson<any>(`/api/labels?workspaceSlug=${workspaceSlug}`, {
-        headers: { 'x-user-id': session?.user?.id || '' }
+        headers: { 'x-user-id': session?.user?.id || '' },
       })
       return json.success ? json.data : []
     },
-    enabled: !!workspaceSlug
+    enabled: !!workspaceSlug,
   })
 
   const currentUserId = session?.user?.id
 
-  const teamMembers = useMemo(() => getAssignableMembers(teamsData, currentUserId, {
-    projectTeamId: project?.teamId,
-    fallbackToAll: true
-  }), [teamsData, currentUserId, project?.teamId])
+  const teamMembers = useMemo(
+    () =>
+      getAssignableMembers(teamsData, currentUserId, {
+        projectTeamId: project?.teamId,
+        fallbackToAll: true,
+      }),
+    [teamsData, currentUserId, project?.teamId]
+  )
 
   // Fetch project and tasks
   useEffect(() => {
@@ -222,7 +230,9 @@ function ProjectDetailPage() {
         // If 403 or 404, project stays null → shows "Project not found" gracefully
         if (tasksData.success) {
           // Deduplicate tasks by ID
-          const uniqueTasks = Array.from(new Map((tasksData.data || []).map((t: any) => [t.id, t])).values()) as Task[]
+          const uniqueTasks = Array.from(
+            new Map((tasksData.data || []).map((t: any) => [t.id, t])).values()
+          ) as Task[]
           setTasks(uniqueTasks)
         }
       } catch (error) {
@@ -248,7 +258,9 @@ function ProjectDetailPage() {
     const data = await apiFetchJson<any>(`/api/tasks?projectId=${projectId}`)
     if (data.success) {
       // Deduplicate tasks by ID
-      const uniqueTasks = Array.from(new Map((data.data || []).map((t: any) => [t.id, t])).values()) as Task[]
+      const uniqueTasks = Array.from(
+        new Map((data.data || []).map((t: any) => [t.id, t])).values()
+      ) as Task[]
       setTasks(uniqueTasks)
     }
   }, [projectId])
@@ -273,7 +285,7 @@ function ProjectDetailPage() {
       const res = await apiFetch('/api/tasks', {
         method: 'POST',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ ...taskData, projectId })
+        body: JSON.stringify({ ...taskData, projectId }),
       })
       const data = await res.json()
       if (data.success) {
@@ -293,7 +305,7 @@ function ProjectDetailPage() {
       await apiFetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ status: toColumn })
+        body: JSON.stringify({ status: toColumn }),
       })
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       refetchTasks()
@@ -312,7 +324,16 @@ function ProjectDetailPage() {
     setShowCreateTaskPanel(true)
   }
 
-  const handleKanbanAddTask = (columnId: string, data?: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string }) => {
+  const handleKanbanAddTask = (
+    columnId: string,
+    data?: {
+      title: string
+      priority: string
+      status: string
+      assignees?: string[]
+      dueDate?: string
+    }
+  ) => {
     if (data) {
       handleCreateTask({ ...data, status: columnId })
     } else {
@@ -321,12 +342,20 @@ function ProjectDetailPage() {
     }
   }
 
-  const handleQuickUpdateTask = async (data: { id: string; title?: string; priority?: string; assignees?: string[]; dueDate?: string; isCompleted?: boolean; assigneeId?: string }) => {
+  const handleQuickUpdateTask = async (data: {
+    id: string
+    title?: string
+    priority?: string
+    assignees?: string[]
+    dueDate?: string
+    isCompleted?: boolean
+    assigneeId?: string
+  }) => {
     try {
       const res = await apiFetch(`/api/tasks/${data.id}`, {
         method: 'PATCH',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       })
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: ['tasks'] }) // Added this line
@@ -349,7 +378,7 @@ function ProjectDetailPage() {
     try {
       const res = await apiFetch(`/api/tasks/${taskToDelete}`, {
         method: 'DELETE',
-        headers: { 'x-user-id': session?.user?.id || '' }
+        headers: { 'x-user-id': session?.user?.id || '' },
       })
       if (res.ok) {
         refetchTasks()
@@ -401,42 +430,45 @@ function ProjectDetailPage() {
       const apiPayload: any = { id: data.id }
 
       if (editingTask) {
-        if (data.title !== editingTask.title) apiPayload.title = data.title;
-        if ((data.description || "") !== (editingTask.description || "")) apiPayload.description = data.description;
-        if (data.priority !== editingTask.priority) apiPayload.priority = data.priority;
-        if (data.status !== editingTask.status) apiPayload.status = data.status;
+        if (data.title !== editingTask.title) apiPayload.title = data.title
+        if ((data.description || '') !== (editingTask.description || ''))
+          apiPayload.description = data.description
+        if (data.priority !== editingTask.priority) apiPayload.priority = data.priority
+        if (data.status !== editingTask.status) apiPayload.status = data.status
 
         const isDateEqual = (d1: any, d2: any) => {
-          if (!d1 && !d2) return true;
-          if (!d1 || !d2) return false;
-          return new Date(d1).getTime() === new Date(d2).getTime();
-        };
-        if (!isDateEqual(data.dueDate, editingTask.dueDate)) apiPayload.dueDate = data.dueDate;
+          if (!d1 && !d2) return true
+          if (!d1 || !d2) return false
+          return new Date(d1).getTime() === new Date(d2).getTime()
+        }
+        if (!isDateEqual(data.dueDate, editingTask.dueDate)) apiPayload.dueDate = data.dueDate
 
-        if (data.isCompleted !== editingTask.isCompleted) apiPayload.isCompleted = data.isCompleted;
+        if (data.isCompleted !== editingTask.isCompleted) apiPayload.isCompleted = data.isCompleted
 
-        const newAssignees = data.assigneeIds || [];
-        const oldAssignees = editingTask.assignees?.map((a: any) => typeof a === 'string' ? a : a.id) || [];
+        const newAssignees = data.assigneeIds || []
+        const oldAssignees =
+          editingTask.assignees?.map((a: any) => (typeof a === 'string' ? a : a.id)) || []
         if (JSON.stringify([...newAssignees].sort()) !== JSON.stringify([...oldAssignees].sort())) {
-          apiPayload.assignees = newAssignees;
+          apiPayload.assignees = newAssignees
         }
 
-        const newLabels = data.labelIds || [];
-        const oldLabels = editingTask.labels?.map((l: any) => typeof l === 'string' ? l : l.id) || [];
+        const newLabels = data.labelIds || []
+        const oldLabels =
+          editingTask.labels?.map((l: any) => (typeof l === 'string' ? l : l.id)) || []
         if (JSON.stringify([...newLabels].sort()) !== JSON.stringify([...oldLabels].sort())) {
-          apiPayload.labels = newLabels;
+          apiPayload.labels = newLabels
         }
 
-        const newLinks = data.links || [];
-        const oldLinks = editingTask.links || [];
+        const newLinks = data.links || []
+        const oldLinks = editingTask.links || []
         if (JSON.stringify(newLinks) !== JSON.stringify(oldLinks)) {
-          apiPayload.links = newLinks;
+          apiPayload.links = newLinks
         }
 
-        const newDependsOn = data.dependsOn || [];
-        const oldDependsOn = editingTask.dependsOn || [];
+        const newDependsOn = data.dependsOn || []
+        const oldDependsOn = editingTask.dependsOn || []
         if (JSON.stringify([...newDependsOn].sort()) !== JSON.stringify([...oldDependsOn].sort())) {
-          apiPayload.dependsOn = newDependsOn;
+          apiPayload.dependsOn = newDependsOn
         }
       } else {
         Object.assign(apiPayload, {
@@ -450,13 +482,13 @@ function ProjectDetailPage() {
           links: data.links || [],
           dependsOn: data.dependsOn || [],
           isCompleted: data.isCompleted,
-        });
+        })
       }
 
       const res = await apiFetch(`/api/tasks/${data.id}`, {
         method: 'PATCH',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify(apiPayload)
+        body: JSON.stringify(apiPayload),
       })
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: ['tasks'] })
@@ -478,7 +510,7 @@ function ProjectDetailPage() {
       const res = await apiFetch('/api/labels', {
         method: 'POST',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ name, color, workspaceSlug })
+        body: JSON.stringify({ name, color, workspaceSlug }),
       })
       const data = await res.json()
       if (data.success) {
@@ -499,7 +531,7 @@ function ProjectDetailPage() {
       const res = await apiFetch(`/api/tasks/${editingTask.id}/subtasks`, {
         method: 'POST',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ title, status: 'todo', priority: 'medium' })
+        body: JSON.stringify({ title, status: 'todo', priority: 'medium' }),
       })
       if (res.ok) {
         // Refetch task to get updated subtasks
@@ -516,20 +548,20 @@ function ProjectDetailPage() {
   // Handle toggling subtask in EditTaskPanel
   const handleToggleEditSubtask = async (subtaskId: string) => {
     if (!editingTask?.id) return
-    const subtask = editingTaskSubtasks.find(s => s.id === subtaskId)
+    const subtask = editingTaskSubtasks.find((s) => s.id === subtaskId)
     if (!subtask) return
 
     try {
       const res = await apiFetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
         method: 'PATCH',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ isCompleted: !subtask.isCompleted })
+        body: JSON.stringify({ isCompleted: !subtask.isCompleted }),
       })
       if (res.ok) {
         // Update local state
-        setEditingTaskSubtasks(prev => prev.map(s =>
-          s.id === subtaskId ? { ...s, isCompleted: !s.isCompleted } : s
-        ))
+        setEditingTaskSubtasks((prev) =>
+          prev.map((s) => (s.id === subtaskId ? { ...s, isCompleted: !s.isCompleted } : s))
+        )
       }
     } catch (error) {
       console.error('Error toggling subtask:', error)
@@ -543,13 +575,13 @@ function ProjectDetailPage() {
       const res = await apiFetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
         method: 'PATCH',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify(updates)
+        body: JSON.stringify(updates),
       })
       if (res.ok) {
         // Update local state
-        setEditingTaskSubtasks(prev => prev.map(s =>
-          s.id === subtaskId ? { ...s, ...updates } : s
-        ))
+        setEditingTaskSubtasks((prev) =>
+          prev.map((s) => (s.id === subtaskId ? { ...s, ...updates } : s))
+        )
       }
     } catch (error) {
       console.error('Error updating subtask:', error)
@@ -562,11 +594,11 @@ function ProjectDetailPage() {
     try {
       const res = await apiFetch(`/api/tasks/${editingTask.id}/subtasks/${subtaskId}`, {
         method: 'DELETE',
-        headers: { 'x-user-id': session?.user?.id || '' }
+        headers: { 'x-user-id': session?.user?.id || '' },
       })
       if (res.ok) {
         // Update local state
-        setEditingTaskSubtasks(prev => prev.filter(s => s.id !== subtaskId))
+        setEditingTaskSubtasks((prev) => prev.filter((s) => s.id !== subtaskId))
       }
     } catch (error) {
       console.error('Error deleting subtask:', error)
@@ -580,7 +612,7 @@ function ProjectDetailPage() {
       const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments`, {
         method: 'POST',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ content, parentId })
+        body: JSON.stringify({ content, parentId }),
       })
       if (res.ok) {
         // Refetch task to get updated comments
@@ -597,7 +629,7 @@ function ProjectDetailPage() {
     try {
       const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments/${commentId}/like`, {
         method: 'PATCH',
-        headers: { 'x-user-id': session?.user?.id || '' }
+        headers: { 'x-user-id': session?.user?.id || '' },
       })
       if (res.ok) {
         // Refetch task to get updated comments
@@ -626,7 +658,7 @@ function ProjectDetailPage() {
           projectId: task.projectId,
           dueDate: task.dueDate,
           startDate: task.startDate,
-        })
+        }),
       })
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: ['tasks'] })
@@ -643,7 +675,7 @@ function ProjectDetailPage() {
       const res = await apiFetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ isArchived: true })
+        body: JSON.stringify({ isArchived: true }),
       })
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: ['tasks'] })
@@ -656,22 +688,23 @@ function ProjectDetailPage() {
 
   // Get stage name by ID for status display
   const getStageTitle = (stageId: string) => {
-    const stage = project?.stages?.find(s => s.id === stageId)
+    const stage = project?.stages?.find((s) => s.id === stageId)
     return stage?.name || stageId
   }
 
   // Filter tasks by search query and filters
   const filteredTasks = useMemo(() => {
-    let result = tasks.filter(t => {
+    let result = tasks.filter((t) => {
       // 1. Text Search
-      const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      const matchesSearch =
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()))
       if (!matchesSearch) return false
 
       // 2. Assigned to Me / Specific Assignees
       if (filters.assignedToMe && !t.assignees?.includes(session?.user?.id || '')) return false
       if (filters.assigneeIds.length > 0) {
-        const hasMatchingAssignee = t.assignees?.some(id => filters.assigneeIds.includes(id))
+        const hasMatchingAssignee = t.assignees?.some((id) => filters.assigneeIds.includes(id))
         if (!hasMatchingAssignee) return false
       }
 
@@ -683,8 +716,8 @@ function ProjectDetailPage() {
 
       // 5. Labels
       if (filters.labels.length > 0) {
-        const taskLabelIds = t.labels?.map((l: any) => typeof l === 'string' ? l : l.id) || []
-        const hasMatchingLabel = filters.labels.some(id => taskLabelIds.includes(id))
+        const taskLabelIds = t.labels?.map((l: any) => (typeof l === 'string' ? l : l.id)) || []
+        const hasMatchingLabel = filters.labels.some((id) => taskLabelIds.includes(id))
         if (!hasMatchingLabel) return false
       }
 
@@ -756,45 +789,53 @@ function ProjectDetailPage() {
 
   // Build Kanban columns from stages with FULL task data
   const kanbanColumns = useMemo(() => {
-    return (project?.stages || []).map(stage => ({
+    return (project?.stages || []).map((stage) => ({
       id: stage.id,
       title: stage.name,
       status: 'todo' as const, // Required by KanbanBoard type but overridden by tasks? derived from stage
       color: stage.color,
-      tasks: filteredTasks.filter(t => t.status === stage.id).map(t => ({
-        id: t.id,
-        title: t.title,
-        description: t.description || '',
-        priority: (t.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low',
-        assigneeDetails: (t.assigneeDetails || (Array.isArray(t.assignees) && typeof t.assignees[0] === 'object' ? t.assignees : [])) as any[],
-        type: 'task' as const,
-        status: t.status,
-        dueDate: t.dueDate || undefined,
-        startDate: t.startDate,
-        endDate: t.endDate,
-        subtaskCount: t.subtasksCount || 0,
-        subtaskCompleted: t.subtasksCompleted || 0,
-        commentCount: t.commentsCount || 0,
-        attachmentCount: t.attachmentCount || 0,
-        labels: (t.labels || []).map((lid: any) => {
-          if (typeof lid === 'object' && lid.id) return lid
-          const found = workspaceLabels.find((wl: any) => wl.id === lid)
-          return found || { id: lid, name: lid, color: '#6b7280' }
-        }),
-        dependsOn: t.dependsOn || [],
-        isCompleted: t.isCompleted || false,
-      }))
+      tasks: filteredTasks
+        .filter((t) => t.status === stage.id)
+        .map((t) => ({
+          id: t.id,
+          title: t.title,
+          description: t.description || '',
+          priority: (t.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low',
+          assigneeDetails: (t.assigneeDetails ||
+            (Array.isArray(t.assignees) && typeof t.assignees[0] === 'object'
+              ? t.assignees
+              : [])) as any[],
+          type: 'task' as const,
+          status: t.status,
+          dueDate: t.dueDate || undefined,
+          startDate: t.startDate,
+          endDate: t.endDate,
+          subtaskCount: t.subtasksCount || 0,
+          subtaskCompleted: t.subtasksCompleted || 0,
+          commentCount: t.commentsCount || 0,
+          attachmentCount: t.attachmentCount || 0,
+          labels: (t.labels || []).map((lid: any) => {
+            if (typeof lid === 'object' && lid.id) return lid
+            const found = workspaceLabels.find((wl: any) => wl.id === lid)
+            return found || { id: lid, name: lid, color: '#6b7280' }
+          }),
+          dependsOn: t.dependsOn || [],
+          isCompleted: t.isCompleted || false,
+        })),
     }))
   }, [project?.stages, filteredTasks, workspaceLabels])
 
   // List view tasks with FULL data
   const listViewTasks = useMemo(() => {
-    return filteredTasks.map(t => ({
+    return filteredTasks.map((t) => ({
       id: t.id,
       title: t.title,
       description: t.description || '',
       priority: (t.priority || 'medium') as 'urgent' | 'high' | 'medium' | 'low',
-      assigneeDetails: (t.assigneeDetails || (Array.isArray(t.assignees) && typeof t.assignees[0] === 'object' ? t.assignees : [])) as any[],
+      assigneeDetails: (t.assigneeDetails ||
+        (Array.isArray(t.assignees) && typeof t.assignees[0] === 'object'
+          ? t.assignees
+          : [])) as any[],
       status: t.status,
       statusLabel: getStageTitle(t.status),
       dueDate: t.dueDate || undefined,
@@ -824,7 +865,7 @@ function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex h-64 items-center justify-center text-gray-500">
         {t('board.messages.loading')}
       </div>
     )
@@ -832,7 +873,7 @@ function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex h-64 items-center justify-center text-gray-500">
         {t('board.messages.not_found')}
       </div>
     )
@@ -844,7 +885,7 @@ function ProjectDetailPage() {
       const res = await apiFetch(`/api/projects/${projectId}/stages`, {
         method: 'POST',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ name, color, position: (project?.stages?.length || 0) })
+        body: JSON.stringify({ name, color, position: project?.stages?.length || 0 }),
       })
       if (res.ok) {
         // Refetch project to get updated stages
@@ -862,7 +903,7 @@ function ProjectDetailPage() {
       const res = await apiFetch(`/api/projects/${projectId}/stages/${stageId}`, {
         method: 'PATCH',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name }),
       })
       if (res.ok) {
         // Refetch project to get updated stages
@@ -880,7 +921,7 @@ function ProjectDetailPage() {
       const res = await apiFetch(`/api/projects/${projectId}/stages/${stageId}`, {
         method: 'PATCH',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ color })
+        body: JSON.stringify({ color }),
       })
       if (res.ok) {
         // Refetch project to get updated stages
@@ -898,7 +939,7 @@ function ProjectDetailPage() {
     try {
       const res = await apiFetch(`/api/projects/${projectId}/stages/${stageId}`, {
         method: 'DELETE',
-        headers: { 'x-user-id': session?.user?.id || '' }
+        headers: { 'x-user-id': session?.user?.id || '' },
       })
       if (res.ok) {
         // Refetch project to get updated stages
@@ -921,14 +962,14 @@ function ProjectDetailPage() {
     newStages.splice(newIndex, 0, removed)
 
     // Optimistic update
-    setProject(prev => prev ? { ...prev, stages: newStages } : null)
+    setProject((prev) => (prev ? { ...prev, stages: newStages } : null))
 
     try {
-      const stageIds = newStages.map(s => s.id)
+      const stageIds = newStages.map((s) => s.id)
       await apiFetch(`/api/projects/${projectId}/stages/reorder`, {
         method: 'POST',
         headers: { 'x-user-id': session?.user?.id || '' },
-        body: JSON.stringify({ stageIds })
+        body: JSON.stringify({ stageIds }),
       })
     } catch (error) {
       console.error('Error reordering stages:', error)
@@ -939,37 +980,41 @@ function ProjectDetailPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Header - Project Info and View Switcher */}
-      <div className="flex-none px-4 sm:px-6 pt-4 sm:pt-5 pb-6 sm:pb-8">
+      <div className="flex-none px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-5">
         {/* Top row: Back + Project Name */}
-        <div className="flex items-center justify-center lg:justify-start gap-3 mb-4 relative h-10">
+        <div className="relative mb-4 flex h-10 items-center justify-center gap-3 lg:justify-start">
           <button
             onClick={() => navigate({ to: `/${workspaceSlug}/projects` })}
-            className="absolute left-0 lg:static p-2 rounded-full text-gray-400 hover:text-white hover:bg-[#1a1a24] transition-colors"
+            className="absolute left-0 rounded-full p-2 text-gray-400 transition-colors hover:bg-[#1a1a24] hover:text-white lg:static"
           >
             <ChevronLeft size={18} />
-          </button >
+          </button>
           <div className="flex items-center gap-3">
             <div
-              className="w-3 h-3 rounded-full"
+              className="h-3 w-3 rounded-full"
               style={{ backgroundColor: project.color || '#6366f1' }}
             />
             <h1 className="text-lg font-semibold text-white">{project.name}</h1>
           </div>
-        </div >
+        </div>
 
         {/* View Switcher + KanbanBoardHeader - same row */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-0">
-          <div className="flex bg-[#1a1a24] p-1 rounded-full w-full max-w-full overflow-x-auto min-w-0" style={{ scrollbarWidth: 'none' }}>
-            {VIEW_TABS.map(tab => (
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center lg:gap-0">
+          <div
+            className="flex w-full min-w-0 max-w-full overflow-x-auto rounded-full bg-[#1a1a24] p-1"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {VIEW_TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setViewMode(tab.id)}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === tab.id
-                  ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
-                  : 'text-gray-500 hover:text-white'
-                  }`}
+                className={`flex flex-shrink-0 items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
+                  viewMode === tab.id
+                    ? 'bg-[#F2CE88] text-[#0a0a0f] shadow-lg shadow-amber-500/10'
+                    : 'text-gray-500 hover:text-white'
+                }`}
               >
                 <tab.Icon size={14} />
                 {tab.label}
@@ -978,33 +1023,33 @@ function ProjectDetailPage() {
           </div>
 
           {/* KanbanBoardHeader - only for kanban and list views */}
-          {
-            (viewMode === 'kanban' || viewMode === 'list') && (
-              <KanbanBoardHeader
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                onNewTask={() => setShowCreateTaskPanel(true)}
-                onFilterChange={setFilters}
-                currentFilters={filters}
-                workspaceSlug={workspaceSlug}
-                userId={session?.user?.id}
-                onSort={(field, dir) => {
-                  setSortBy(field)
-                  setSortDirection(dir)
-                }}
-                members={teamMembers}
-                availableLabels={workspaceLabels}
-                availablePriorities={currentWorkspace?.priorities}
-                availableStatuses={project?.stages?.map(s => ({ value: s.id, label: s.name })) || []}
-                canCreateTask={taskPermissions?.tasks.create}
-              />
-            )
-          }
+          {(viewMode === 'kanban' || viewMode === 'list') && (
+            <KanbanBoardHeader
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onNewTask={() => setShowCreateTaskPanel(true)}
+              onFilterChange={setFilters}
+              currentFilters={filters}
+              workspaceSlug={workspaceSlug}
+              userId={session?.user?.id}
+              onSort={(field, dir) => {
+                setSortBy(field)
+                setSortDirection(dir)
+              }}
+              members={teamMembers}
+              availableLabels={workspaceLabels}
+              availablePriorities={currentWorkspace?.priorities}
+              availableStatuses={
+                project?.stages?.map((s) => ({ value: s.id, label: s.name })) || []
+              }
+              canCreateTask={taskPermissions?.tasks.create}
+            />
+          )}
         </div>
       </div>
 
       {/* Content - Full width for Kanban */}
-      < div className="flex-1 min-h-0 overflow-auto" >
+      <div className="min-h-0 flex-1 overflow-auto">
         {viewMode === 'kanban' && (
           <div className="h-full px-6 pb-6">
             <KanbanBoard
@@ -1039,7 +1084,7 @@ function ProjectDetailPage() {
             onTaskDelete={handleDeleteTask}
             onTaskDuplicate={handleDuplicateTask}
             onTaskArchive={handleArchiveTask}
-            columns={kanbanColumns.map(c => ({ id: c.id, title: c.title, color: c.color }))}
+            columns={kanbanColumns.map((c) => ({ id: c.id, title: c.title, color: c.color }))}
             priorities={currentWorkspace?.priorities}
             onSort={(field, dir) => {
               setSortBy(field)
@@ -1073,10 +1118,10 @@ function ProjectDetailPage() {
             timezone={currentWorkspace?.settings?.timezone}
           />
         )}
-      </div >
+      </div>
 
       {/* Create Task Panel */}
-      < CreateTaskPanel
+      <CreateTaskPanel
         isOpen={showCreateTaskPanel}
         onClose={() => {
           setShowCreateTaskPanel(false)
@@ -1087,17 +1132,20 @@ function ProjectDetailPage() {
         defaultProject={projectId}
         defaultDueDate={defaultDueDate}
         defaultStatus={defaultStatus}
-        projects={project ? [project] as any : []}
+        projects={project ? ([project] as any) : []}
         teamMembers={teamMembers}
         workspaceSlug={workspaceSlug}
         userId={session?.user?.id}
       />
 
       {/* Task Details Panel */}
-      < TaskDetailsPanel
+      <TaskDetailsPanel
         task={selectedTask}
         isOpen={showTaskDetails}
-        onClose={() => { setShowTaskDetails(false); setSelectedTask(null) }}
+        onClose={() => {
+          setShowTaskDetails(false)
+          setSelectedTask(null)
+        }}
         subtasks={selectedTask?.subtasks}
         comments={selectedTask?.comments}
         availableLabels={workspaceLabels}
@@ -1108,14 +1156,19 @@ function ProjectDetailPage() {
           await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
             method: 'PATCH',
             headers: { 'x-user-id': session?.user?.id || '' },
-            body: JSON.stringify({ isCompleted: !subtask.isCompleted })
+            body: JSON.stringify({ isCompleted: !subtask.isCompleted }),
           })
           refetchTaskDetails(selectedTask.id)
           refetchTasks()
         }}
         onAddComment={handleAddComment}
         onLikeComment={handleLikeComment}
-        stages={(project?.stages || []).map((s: any, i: number) => ({ id: s.id, name: s.name, color: s.color || '#6366f1', position: s.position ?? i }))}
+        stages={(project?.stages || []).map((s: any, i: number) => ({
+          id: s.id,
+          name: s.name,
+          color: s.color || '#6366f1',
+          position: s.position ?? i,
+        }))}
         teamMembers={teamMembers}
         activities={selectedTask?.activities}
         onTaskClick={(id) => handleTaskClick(id)}
@@ -1129,7 +1182,7 @@ function ProjectDetailPage() {
             const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
               method: 'PATCH',
               headers: { 'x-user-id': session?.user?.id || '' },
-              body: JSON.stringify({ isCompleted: isCompleting })
+              body: JSON.stringify({ isCompleted: isCompleting }),
             })
             if (res.ok) {
               setSelectedTask({ ...selectedTask, isCompleted: isCompleting })
@@ -1142,11 +1195,17 @@ function ProjectDetailPage() {
         }}
         onDeleteTask={async () => {
           if (!selectedTask) return
-          if (window.confirm(t('board.messages.delete_task_confirm', { defaultValue: 'Czy na pewno chcesz usunąć to zadanie?' }))) {
+          if (
+            window.confirm(
+              t('board.messages.delete_task_confirm', {
+                defaultValue: 'Czy na pewno chcesz usunąć to zadanie?',
+              })
+            )
+          ) {
             try {
               const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
                 method: 'DELETE',
-                headers: { 'x-user-id': session?.user?.id || '' }
+                headers: { 'x-user-id': session?.user?.id || '' },
               })
               if (res.ok) {
                 setShowTaskDetails(false)
@@ -1161,9 +1220,13 @@ function ProjectDetailPage() {
       />
 
       {/* Bulk Actions Toolbar - fixed at bottom */}
-      < BulkActions
+      <BulkActions
         selectedCount={selectedTasks.length}
-        columns={(project?.stages || []).map(s => ({ id: s.id, title: s.name, color: s.color || '' }))}
+        columns={(project?.stages || []).map((s) => ({
+          id: s.id,
+          title: s.name,
+          color: s.color || '',
+        }))}
         assignees={teamMembers}
         onDelete={handleBulkDelete}
         onMove={handleBulkMove}
@@ -1174,14 +1237,22 @@ function ProjectDetailPage() {
       <EditTaskPanel
         task={editingTask}
         isOpen={showEditTaskPanel}
-        onClose={() => { setShowEditTaskPanel(false); setEditingTask(null); setEditingTaskSubtasks([]) }}
+        onClose={() => {
+          setShowEditTaskPanel(false)
+          setEditingTask(null)
+          setEditingTaskSubtasks([])
+        }}
         onSave={handleSaveTaskEdit}
         subtasks={editingTaskSubtasks}
         onAddSubtask={handleAddEditSubtask}
         onSubtaskToggle={handleToggleEditSubtask}
         onEditSubtask={handleUpdateEditSubtask}
         onDeleteSubtask={handleDeleteEditSubtask}
-        stages={(project?.stages || []).map(s => ({ id: s.id, name: s.name, color: s.color || '#6366f1' }))}
+        stages={(project?.stages || []).map((s) => ({
+          id: s.id,
+          name: s.name,
+          color: s.color || '#6366f1',
+        }))}
         teamMembers={teamMembers}
         availableLabels={workspaceLabels}
         onCreateLabel={handleCreateLabel}
@@ -1195,6 +1266,6 @@ function ProjectDetailPage() {
         onClose={() => setTaskToDelete(null)}
         onConfirm={confirmDeleteTask}
       />
-    </div >
+    </div>
   )
 }

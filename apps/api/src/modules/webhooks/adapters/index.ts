@@ -3,7 +3,7 @@ import { prepareDiscordRequest } from './discord'
 import { prepareSlackRequest } from './slack'
 
 export const WebhookAdapters = {
-    generic: prepareGenericRequest,
-    discord: prepareDiscordRequest,
-    slack: prepareSlackRequest
+  generic: prepareGenericRequest,
+  discord: prepareDiscordRequest,
+  slack: prepareSlackRequest,
 }

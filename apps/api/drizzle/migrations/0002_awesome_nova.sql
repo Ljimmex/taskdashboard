@@ -1,2 +1,0 @@
-ALTER TABLE "time_entries" ADD COLUMN "subtask_id" uuid;--> statement-breakpoint
-ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_subtask_id_subtasks_id_fk" FOREIGN KEY ("subtask_id") REFERENCES "public"."subtasks"("id") ON DELETE set null ON UPDATE no action;

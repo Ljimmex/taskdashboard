@@ -1,412 +1,471 @@
-import { useState, useRef, useEffect } from "react"
-import { Calendar, ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, List, Plus } from "lucide-react"
+import { useState, useRef, useEffect } from 'react'
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  LayoutGrid,
+  List,
+  Plus,
+} from 'lucide-react'
 import { createPortal } from 'react-dom'
-import { format } from "date-fns"
+import { format } from 'date-fns'
 import { pl, enUS } from 'date-fns/locale'
-import { useTranslation } from "react-i18next"
+import { useTranslation } from 'react-i18next'
 
 interface FilesHeaderProps {
-    // View Mode
-    viewMode: 'grid' | 'list'
-    onViewModeChange: (mode: 'grid' | 'list') => void
-    // File Type Filter
-    fileTypeFilter: string
-    onFileTypeFilterChange: (value: string) => void
-    // Available file type categories (derived from actual workspace files)
-    availableTypes?: string[]
-    // Date Range
-    startDate: Date | null
-    endDate: Date | null
-    onDateRangeChange: (start: Date | null, end: Date | null) => void
-    // Upload
-    onUploadClick: () => void
-    // Sort
-    sortBy: 'name' | 'size' | 'date' | 'type'
-    sortOrder: 'asc' | 'desc'
-    onSortChange: (field: 'name' | 'size' | 'date' | 'type') => void
+  // View Mode
+  viewMode: 'grid' | 'list'
+  onViewModeChange: (mode: 'grid' | 'list') => void
+  // File Type Filter
+  fileTypeFilter: string
+  onFileTypeFilterChange: (value: string) => void
+  // Available file type categories (derived from actual workspace files)
+  availableTypes?: string[]
+  // Date Range
+  startDate: Date | null
+  endDate: Date | null
+  onDateRangeChange: (start: Date | null, end: Date | null) => void
+  // Upload
+  onUploadClick: () => void
+  // Sort
+  sortBy: 'name' | 'size' | 'date' | 'type'
+  sortOrder: 'asc' | 'desc'
+  onSortChange: (field: 'name' | 'size' | 'date' | 'type') => void
 }
 
 const FILE_TYPES = [
-    { value: 'all', labelKey: 'files.types.all' },
-    { value: 'pdf', labelKey: 'files.types.pdf' },
-    { value: 'document', labelKey: 'files.types.document' },
-    { value: 'spreadsheet', labelKey: 'files.types.spreadsheet' },
-    { value: 'image', labelKey: 'files.types.image' },
-    { value: 'video', labelKey: 'files.types.video' },
+  { value: 'all', labelKey: 'files.types.all' },
+  { value: 'pdf', labelKey: 'files.types.pdf' },
+  { value: 'document', labelKey: 'files.types.document' },
+  { value: 'spreadsheet', labelKey: 'files.types.spreadsheet' },
+  { value: 'image', labelKey: 'files.types.image' },
+  { value: 'video', labelKey: 'files.types.video' },
 ]
 
 const SORT_OPTIONS = [
-    { value: 'date', labelKey: 'files.sort.date' },
-    { value: 'name', labelKey: 'files.sort.name' },
-    { value: 'size', labelKey: 'files.sort.size' },
-    { value: 'type', labelKey: 'files.sort.type' },
+  { value: 'date', labelKey: 'files.sort.date' },
+  { value: 'name', labelKey: 'files.sort.name' },
+  { value: 'size', labelKey: 'files.sort.size' },
+  { value: 'type', labelKey: 'files.sort.type' },
 ]
 
 export function FilesHeader({
-    viewMode,
-    onViewModeChange,
-    fileTypeFilter,
-    onFileTypeFilterChange,
-    availableTypes,
-    startDate,
-    endDate,
-    onDateRangeChange,
-    onUploadClick,
-    sortBy,
-    sortOrder,
-    onSortChange,
+  viewMode,
+  onViewModeChange,
+  fileTypeFilter,
+  onFileTypeFilterChange,
+  availableTypes,
+  startDate,
+  endDate,
+  onDateRangeChange,
+  onUploadClick,
+  sortBy,
+  sortOrder,
+  onSortChange,
 }: FilesHeaderProps) {
-    const { t, i18n } = useTranslation()
-    const currentLocale = i18n.language === 'pl' ? pl : enUS
+  const { t, i18n } = useTranslation()
+  const currentLocale = i18n.language === 'pl' ? pl : enUS
 
-    // Date Range Picker state
-    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
-    const [viewDate, setViewDate] = useState(() => new Date())
-    const dateButtonRef = useRef<HTMLButtonElement>(null)
-    const dateDropdownRef = useRef<HTMLDivElement>(null)
-    const [datePosition, setDatePosition] = useState({ top: 0, left: 0 })
+  // Date Range Picker state
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
+  const [viewDate, setViewDate] = useState(() => new Date())
+  const dateButtonRef = useRef<HTMLButtonElement>(null)
+  const dateDropdownRef = useRef<HTMLDivElement>(null)
+  const [datePosition, setDatePosition] = useState({ top: 0, left: 0 })
 
-    // Type Filter dropdown state
-    const [isTypeOpen, setIsTypeOpen] = useState(false)
-    const typeButtonRef = useRef<HTMLButtonElement>(null)
-    const typeDropdownRef = useRef<HTMLDivElement>(null)
-    const [typePosition, setTypePosition] = useState({ top: 0, left: 0 })
+  // Type Filter dropdown state
+  const [isTypeOpen, setIsTypeOpen] = useState(false)
+  const typeButtonRef = useRef<HTMLButtonElement>(null)
+  const typeDropdownRef = useRef<HTMLDivElement>(null)
+  const [typePosition, setTypePosition] = useState({ top: 0, left: 0 })
 
-    // Sort dropdown state
-    const [isSortOpen, setIsSortOpen] = useState(false)
-    const sortButtonRef = useRef<HTMLButtonElement>(null)
-    const sortDropdownRef = useRef<HTMLDivElement>(null)
-    const [sortPosition, setSortPosition] = useState({ top: 0, left: 0 })
+  // Sort dropdown state
+  const [isSortOpen, setIsSortOpen] = useState(false)
+  const sortButtonRef = useRef<HTMLButtonElement>(null)
+  const sortDropdownRef = useRef<HTMLDivElement>(null)
+  const [sortPosition, setSortPosition] = useState({ top: 0, left: 0 })
 
-    const formatDate = (date: Date | null) => {
-        if (!date) return '--.--.--'
-        return format(date, 'dd.MM.yy', { locale: currentLocale })
+  const formatDate = (date: Date | null) => {
+    if (!date) return '--.--.--'
+    return format(date, 'dd.MM.yy', { locale: currentLocale })
+  }
+
+  // Date picker position
+  useEffect(() => {
+    if (isDatePickerOpen && dateButtonRef.current) {
+      const rect = dateButtonRef.current.getBoundingClientRect()
+      setDatePosition({ top: rect.bottom + 8, left: rect.left })
     }
+  }, [isDatePickerOpen])
 
-    // Date picker position
-    useEffect(() => {
-        if (isDatePickerOpen && dateButtonRef.current) {
-            const rect = dateButtonRef.current.getBoundingClientRect()
-            setDatePosition({ top: rect.bottom + 8, left: rect.left })
-        }
-    }, [isDatePickerOpen])
-
-    // Type dropdown position
-    useEffect(() => {
-        if (isTypeOpen && typeButtonRef.current) {
-            const rect = typeButtonRef.current.getBoundingClientRect()
-            setTypePosition({ top: rect.bottom + 8, left: rect.left })
-        }
-    }, [isTypeOpen])
-
-    // Sort dropdown position
-    useEffect(() => {
-        if (isSortOpen && sortButtonRef.current) {
-            const rect = sortButtonRef.current.getBoundingClientRect()
-            setSortPosition({ top: rect.bottom + 8, left: rect.left })
-        }
-    }, [isSortOpen])
-
-    // Close dropdowns on click outside
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            const target = e.target as Node
-            if (dateButtonRef.current && !dateButtonRef.current.contains(target) &&
-                dateDropdownRef.current && !dateDropdownRef.current.contains(target)) {
-                setIsDatePickerOpen(false)
-            }
-            if (typeButtonRef.current && !typeButtonRef.current.contains(target) &&
-                typeDropdownRef.current && !typeDropdownRef.current.contains(target)) {
-                setIsTypeOpen(false)
-            }
-            if (sortButtonRef.current && !sortButtonRef.current.contains(target) &&
-                sortDropdownRef.current && !sortDropdownRef.current.contains(target)) {
-                setIsSortOpen(false)
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
-
-    // Date picker helpers
-    const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate()
-    const getFirstDayOfMonth = (year: number, month: number) => {
-        const day = new Date(year, month, 1).getDay()
-        // Adjust for start of week (Monday = 1, Sunday = 0 for getDay())
-        // If Monday is start: 0(Sun)->6, 1(Mon)->0
-        return day === 0 ? 6 : day - 1
+  // Type dropdown position
+  useEffect(() => {
+    if (isTypeOpen && typeButtonRef.current) {
+      const rect = typeButtonRef.current.getBoundingClientRect()
+      setTypePosition({ top: rect.bottom + 8, left: rect.left })
     }
+  }, [isTypeOpen])
 
-    const generateCalendarDays = (monthOffset: number = 0) => {
-        const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, 1)
-        const year = date.getFullYear()
-        const month = date.getMonth()
-        const daysInMonth = getDaysInMonth(year, month)
-        const firstDay = getFirstDayOfMonth(year, month)
-        const days: (number | null)[] = []
-        for (let i = 0; i < firstDay; i++) days.push(null)
-        for (let i = 1; i <= daysInMonth; i++) days.push(i)
-        return { days, year, month }
+  // Sort dropdown position
+  useEffect(() => {
+    if (isSortOpen && sortButtonRef.current) {
+      const rect = sortButtonRef.current.getBoundingClientRect()
+      setSortPosition({ top: rect.bottom + 8, left: rect.left })
     }
+  }, [isSortOpen])
 
-    const handleSelectDate = (day: number, monthOffset: number) => {
-        const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
-        if (!startDate || (startDate && endDate)) {
-            onDateRangeChange(date, null)
-        } else if (date < startDate) {
-            onDateRangeChange(date, null)
-        } else {
-            onDateRangeChange(startDate, date)
-        }
+  // Close dropdowns on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (
+        dateButtonRef.current &&
+        !dateButtonRef.current.contains(target) &&
+        dateDropdownRef.current &&
+        !dateDropdownRef.current.contains(target)
+      ) {
+        setIsDatePickerOpen(false)
+      }
+      if (
+        typeButtonRef.current &&
+        !typeButtonRef.current.contains(target) &&
+        typeDropdownRef.current &&
+        !typeDropdownRef.current.contains(target)
+      ) {
+        setIsTypeOpen(false)
+      }
+      if (
+        sortButtonRef.current &&
+        !sortButtonRef.current.contains(target) &&
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(target)
+      ) {
+        setIsSortOpen(false)
+      }
     }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
-    const isInRange = (day: number, monthOffset: number) => {
-        if (!startDate || !endDate) return false
-        const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
-        return date >= startDate && date <= endDate
+  // Date picker helpers
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate()
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    const day = new Date(year, month, 1).getDay()
+    // Adjust for start of week (Monday = 1, Sunday = 0 for getDay())
+    // If Monday is start: 0(Sun)->6, 1(Mon)->0
+    return day === 0 ? 6 : day - 1
+  }
+
+  const generateCalendarDays = (monthOffset: number = 0) => {
+    const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, 1)
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const daysInMonth = getDaysInMonth(year, month)
+    const firstDay = getFirstDayOfMonth(year, month)
+    const days: (number | null)[] = []
+    for (let i = 0; i < firstDay; i++) days.push(null)
+    for (let i = 1; i <= daysInMonth; i++) days.push(i)
+    return { days, year, month }
+  }
+
+  const handleSelectDate = (day: number, monthOffset: number) => {
+    const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
+    if (!startDate || (startDate && endDate)) {
+      onDateRangeChange(date, null)
+    } else if (date < startDate) {
+      onDateRangeChange(date, null)
+    } else {
+      onDateRangeChange(startDate, date)
     }
+  }
 
-    const isRangeStart = (day: number, monthOffset: number) => {
-        if (!startDate) return false
-        const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
-        return date.toDateString() === startDate.toDateString()
-    }
+  const isInRange = (day: number, monthOffset: number) => {
+    if (!startDate || !endDate) return false
+    const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
+    return date >= startDate && date <= endDate
+  }
 
-    const isRangeEnd = (day: number, monthOffset: number) => {
-        if (!endDate) return false
-        const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
-        return date.toDateString() === endDate.toDateString()
-    }
+  const isRangeStart = (day: number, monthOffset: number) => {
+    if (!startDate) return false
+    const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
+    return date.toDateString() === startDate.toDateString()
+  }
 
-    const isToday = (day: number, monthOffset: number) => {
-        const today = new Date()
-        const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
-        return date.toDateString() === today.toDateString()
-    }
+  const isRangeEnd = (day: number, monthOffset: number) => {
+    if (!endDate) return false
+    const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
+    return date.toDateString() === endDate.toDateString()
+  }
 
-    // Generate localized day names (Mo, Tu, ...)
-    const weekDays = Array.from({ length: 7 }, (_, i) => {
-        // Start from Monday (arbitrary date known to be Monday, e.g. 2024-01-01)
-        const d = new Date(2024, 0, i + 1)
-        return format(d, 'EEEEEE', { locale: currentLocale })
-    })
+  const isToday = (day: number, monthOffset: number) => {
+    const today = new Date()
+    const date = new Date(viewDate.getFullYear(), viewDate.getMonth() + monthOffset, day)
+    return date.toDateString() === today.toDateString()
+  }
 
-    const renderMonth = (monthOffset: number) => {
-        const { days, year, month } = generateCalendarDays(monthOffset)
-        const monthName = format(new Date(year, month), 'MMMM', { locale: currentLocale })
+  // Generate localized day names (Mo, Tu, ...)
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    // Start from Monday (arbitrary date known to be Monday, e.g. 2024-01-01)
+    const d = new Date(2024, 0, i + 1)
+    return format(d, 'EEEEEE', { locale: currentLocale })
+  })
 
-        return (
-            <div className="flex-1">
-                <div className="text-center text-sm font-medium text-[var(--app-text-primary)] mb-4 capitalize">
-                    {monthName} {year}
-                </div>
-                <div className="grid grid-cols-7 gap-1 mb-2">
-                    {weekDays.map(day => (
-                        <div key={day} className="text-center text-[10px] font-medium text-[var(--app-text-muted)] py-1 capitalize">{day}</div>
-                    ))}
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                    {days.map((day, index) => (
-                        <div key={index} className="aspect-square">
-                            {day && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleSelectDate(day, monthOffset)}
-                                    className={`w-full h-full flex items-center justify-center text-xs font-medium rounded-lg transition-all
-                                        ${isRangeStart(day, monthOffset) || isRangeEnd(day, monthOffset)
-                                            ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)]'
-                                            : isInRange(day, monthOffset)
-                                                ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]'
-                                                : isToday(day, monthOffset)
-                                                    ? 'bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] ring-1 ring-[var(--app-accent)]/50'
-                                                    : 'text-[var(--app-text-muted)] hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]'
-                                        }`}
-                                >
-                                    {day}
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )
-    }
-
-    // Filter FILE_TYPES to only show categories that exist in the workspace
-    const visibleTypes = availableTypes && availableTypes.length > 0
-        ? FILE_TYPES.filter(ft => ft.value === 'all' || availableTypes.includes(ft.value))
-        : FILE_TYPES
-
-    const selectedType = visibleTypes.find(t => t.value === fileTypeFilter)
-    const selectedTypeLabel = selectedType ? t(selectedType.labelKey) : t('files.types.all')
-
-    const selectedSort = SORT_OPTIONS.find(s => s.value === sortBy)
-    const selectedSortLabel = selectedSort ? t(selectedSort.labelKey) : t('files.sort.date')
+  const renderMonth = (monthOffset: number) => {
+    const { days, year, month } = generateCalendarDays(monthOffset)
+    const monthName = format(new Date(year, month), 'MMMM', { locale: currentLocale })
 
     return (
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between px-4 lg:px-6 py-4 gap-4 lg:gap-0">
-            {/* Left side: Date picker and type filter */}
-            <div className="flex items-center gap-2 lg:gap-3 flex-wrap w-full lg:w-auto">
-                {/* Date Range Picker */}
-                <button
-                    ref={dateButtonRef}
-                    onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                    className="flex items-center gap-2 px-3 lg:px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
-                >
-                    <Calendar size={14} />
-                    <span>{formatDate(startDate)} / {formatDate(endDate)}</span>
-                </button>
-
-                {/* Type Filter */}
-                <button
-                    ref={typeButtonRef}
-                    onClick={() => setIsTypeOpen(!isTypeOpen)}
-                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
-                >
-                    <span className="capitalize">{selectedTypeLabel}</span>
-                    <ChevronDown size={12} />
-                </button>
-
-                {/* Sort Dropdown */}
-                <button
-                    ref={sortButtonRef}
-                    onClick={() => setIsSortOpen(!isSortOpen)}
-                    className="flex items-center gap-2 px-3 lg:px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
-                >
-                    <span className="hidden sm:inline">{t('files.header.sort_by', { value: selectedSortLabel })}</span>
-                    <span className="sm:hidden">{selectedSortLabel}</span>
-                    <ChevronDown size={14} className={`transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
-                </button>
-            </div>
-
-            {/* Right side: View switcher and Upload */}
-            <div className="flex items-center gap-2 lg:gap-3 justify-between lg:justify-end w-full lg:w-auto">
-                {/* View Switcher */}
-                <div className="flex bg-[var(--app-bg-elevated)] border border-[var(--app-divider)] p-1 rounded-full">
-                    <button
-                        onClick={() => onViewModeChange('grid')}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === 'grid'
-                            ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-lg shadow-amber-500/10'
-                            : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
-                            }`}
-                        title={t('files.header.view_grid')}
-                    >
-                        <LayoutGrid size={14} />
-                        <span className="hidden sm:inline">{t('files.header.view_grid').split(' ')[0]}</span>
-                    </button>
-                    <button
-                        onClick={() => onViewModeChange('list')}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${viewMode === 'list'
-                            ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-lg shadow-amber-500/10'
-                            : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
-                            }`}
-                        title={t('files.header.view_list')}
-                    >
-                        <List size={14} />
-                        <span className="hidden sm:inline">{t('files.header.view_list').split(' ')[0]}</span>
-                    </button>
-                </div>
-
-                {/* Upload Button */}
-                <button
-                    onClick={onUploadClick}
-                    className="flex items-center gap-2 px-4 h-8 rounded-full text-xs font-medium bg-[var(--app-bg-card)] border border-[var(--app-divider)] text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] transition-colors"
-                >
-                    <Plus size={14} />
-                    <span>{t('files.header.upload')}</span>
-                </button>
-            </div>
-
-            {/* Date Picker Dropdown */}
-            {isDatePickerOpen && createPortal(
-                <div
-                    ref={dateDropdownRef}
-                    className="fixed bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-2xl shadow-xl z-[9999] p-5 animate-in fade-in zoom-in duration-200"
-                    style={{ top: `${datePosition.top}px`, left: `${datePosition.left}px` }}
-                >
-                    <div className="flex items-center justify-between mb-4">
-                        <button
-                            type="button"
-                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
-                            className="p-1.5 hover:bg-[var(--app-bg-elevated)] rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-                        <span className="text-sm font-bold text-[var(--app-text-primary)]">{t('files.header.select_date')}</span>
-                        <button
-                            type="button"
-                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
-                            className="p-1.5 hover:bg-[var(--app-bg-elevated)] rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors"
-                        >
-                            <ChevronRight size={16} />
-                        </button>
-                    </div>
-                    <div className="flex gap-6">
-                        {renderMonth(0)}
-                        {renderMonth(1)}
-                    </div>
-                    <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-[var(--app-divider)]">
-                        <button onClick={() => onDateRangeChange(null, null)} className="px-4 py-2 text-sm text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] transition-colors">{t('common.cancel')}</button>
-                        <button onClick={() => setIsDatePickerOpen(false)} className="px-5 py-2 bg-[var(--app-accent)] text-[var(--app-accent-text)] text-sm font-bold rounded-full hover:bg-[var(--app-accent-hover)] transition-all">{t('common.save')}</button>
-                    </div>
-                </div>,
-                document.body
-            )}
-
-            {/* Type Filter Dropdown */}
-            {isTypeOpen && createPortal(
-                <div
-                    ref={typeDropdownRef}
-                    className="fixed bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-xl z-[9999] py-1 w-40 animate-in fade-in zoom-in duration-200"
-                    style={{ top: `${typePosition.top}px`, left: `${typePosition.left}px` }}
-                >
-                    {visibleTypes.map(type => (
-                        <button
-                            key={type.value}
-                            onClick={() => { onFileTypeFilterChange(type.value); setIsTypeOpen(false) }}
-                            className={`w-full px-3 py-1.5 text-left text-xs transition-colors ${fileTypeFilter === type.value
-                                ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/10'
-                                : 'text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
-                                }`}
-                        >
-                            {t(type.labelKey)}
-                        </button>
-                    ))}
-                </div>,
-                document.body
-            )}
-
-            {/* Sort Dropdown */}
-            {isSortOpen && createPortal(
-                <div
-                    ref={sortDropdownRef}
-                    className="fixed bg-[var(--app-bg-card)] border border-[var(--app-divider)] rounded-xl shadow-xl z-[9999] py-2 min-w-32 animate-in fade-in zoom-in duration-200"
-                    style={{ top: `${sortPosition.top}px`, left: `${sortPosition.left}px` }}
-                >
-                    {SORT_OPTIONS.map(option => (
-                        <button
-                            key={option.value}
-                            onClick={() => {
-                                onSortChange(option.value as any)
-                                setIsSortOpen(false)
-                            }}
-                            className={`w-full px-4 py-2 text-left text-sm transition-colors flex items-center justify-between group ${sortBy === option.value
-                                ? 'text-[var(--app-accent)] bg-[var(--app-accent)]/10'
-                                : 'text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)]'
-                                }`}
-                        >
-                            <span>{t(option.labelKey)}</span>
-                            {sortBy === option.value && (
-                                <ChevronDown
-                                    size={14}
-                                    className={`transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`}
-                                />
-                            )}
-                        </button>
-                    ))}
-                </div>,
-                document.body
-            )}
+      <div className="flex-1">
+        <div className="mb-4 text-center text-sm font-medium capitalize text-[var(--app-text-primary)]">
+          {monthName} {year}
         </div>
+        <div className="mb-2 grid grid-cols-7 gap-1">
+          {weekDays.map((day) => (
+            <div
+              key={day}
+              className="py-1 text-center text-[10px] font-medium capitalize text-[var(--app-text-muted)]"
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((day, index) => (
+            <div key={index} className="aspect-square">
+              {day && (
+                <button
+                  type="button"
+                  onClick={() => handleSelectDate(day, monthOffset)}
+                  className={`flex h-full w-full items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                    isRangeStart(day, monthOffset) || isRangeEnd(day, monthOffset)
+                      ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)]'
+                      : isInRange(day, monthOffset)
+                        ? 'bg-[var(--app-accent)]/20 text-[var(--app-accent)]'
+                        : isToday(day, monthOffset)
+                          ? 'ring-[var(--app-accent)]/50 bg-[var(--app-bg-elevated)] text-[var(--app-text-primary)] ring-1'
+                          : 'text-[var(--app-text-muted)] hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]'
+                  }`}
+                >
+                  {day}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     )
+  }
+
+  // Filter FILE_TYPES to only show categories that exist in the workspace
+  const visibleTypes =
+    availableTypes && availableTypes.length > 0
+      ? FILE_TYPES.filter((ft) => ft.value === 'all' || availableTypes.includes(ft.value))
+      : FILE_TYPES
+
+  const selectedType = visibleTypes.find((t) => t.value === fileTypeFilter)
+  const selectedTypeLabel = selectedType ? t(selectedType.labelKey) : t('files.types.all')
+
+  const selectedSort = SORT_OPTIONS.find((s) => s.value === sortBy)
+  const selectedSortLabel = selectedSort ? t(selectedSort.labelKey) : t('files.sort.date')
+
+  return (
+    <div className="flex flex-col items-start justify-between gap-4 px-4 py-4 lg:flex-row lg:items-center lg:gap-0 lg:px-6">
+      {/* Left side: Date picker and type filter */}
+      <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:gap-3">
+        {/* Date Range Picker */}
+        <button
+          ref={dateButtonRef}
+          onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+          className="flex h-8 items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-bg-card)] px-3 text-xs font-medium text-[var(--app-text-secondary)] transition-colors hover:text-[var(--app-text-primary)] lg:px-4"
+        >
+          <Calendar size={14} />
+          <span>
+            {formatDate(startDate)} / {formatDate(endDate)}
+          </span>
+        </button>
+
+        {/* Type Filter */}
+        <button
+          ref={typeButtonRef}
+          onClick={() => setIsTypeOpen(!isTypeOpen)}
+          className="flex h-8 items-center gap-1.5 rounded-full border border-[var(--app-divider)] bg-[var(--app-bg-card)] px-3 text-xs font-medium text-[var(--app-text-secondary)] transition-colors hover:text-[var(--app-text-primary)]"
+        >
+          <span className="capitalize">{selectedTypeLabel}</span>
+          <ChevronDown size={12} />
+        </button>
+
+        {/* Sort Dropdown */}
+        <button
+          ref={sortButtonRef}
+          onClick={() => setIsSortOpen(!isSortOpen)}
+          className="flex h-8 items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-bg-card)] px-3 text-xs font-medium text-[var(--app-text-secondary)] transition-colors hover:text-[var(--app-text-primary)] lg:px-4"
+        >
+          <span className="hidden sm:inline">
+            {t('files.header.sort_by', { value: selectedSortLabel })}
+          </span>
+          <span className="sm:hidden">{selectedSortLabel}</span>
+          <ChevronDown
+            size={14}
+            className={`transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`}
+          />
+        </button>
+      </div>
+
+      {/* Right side: View switcher and Upload */}
+      <div className="flex w-full items-center justify-between gap-2 lg:w-auto lg:justify-end lg:gap-3">
+        {/* View Switcher */}
+        <div className="flex rounded-full border border-[var(--app-divider)] bg-[var(--app-bg-elevated)] p-1">
+          <button
+            onClick={() => onViewModeChange('grid')}
+            className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
+              viewMode === 'grid'
+                ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-lg shadow-amber-500/10'
+                : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
+            }`}
+            title={t('files.header.view_grid')}
+          >
+            <LayoutGrid size={14} />
+            <span className="hidden sm:inline">{t('files.header.view_grid').split(' ')[0]}</span>
+          </button>
+          <button
+            onClick={() => onViewModeChange('list')}
+            className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
+              viewMode === 'list'
+                ? 'bg-[var(--app-accent)] text-[var(--app-accent-text)] shadow-lg shadow-amber-500/10'
+                : 'text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)]'
+            }`}
+            title={t('files.header.view_list')}
+          >
+            <List size={14} />
+            <span className="hidden sm:inline">{t('files.header.view_list').split(' ')[0]}</span>
+          </button>
+        </div>
+
+        {/* Upload Button */}
+        <button
+          onClick={onUploadClick}
+          className="flex h-8 items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-bg-card)] px-4 text-xs font-medium text-[var(--app-text-secondary)] transition-colors hover:text-[var(--app-text-primary)]"
+        >
+          <Plus size={14} />
+          <span>{t('files.header.upload')}</span>
+        </button>
+      </div>
+
+      {/* Date Picker Dropdown */}
+      {isDatePickerOpen &&
+        createPortal(
+          <div
+            ref={dateDropdownRef}
+            className="animate-in fade-in zoom-in fixed z-[9999] rounded-2xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] p-5 shadow-xl duration-200"
+            style={{ top: `${datePosition.top}px`, left: `${datePosition.left}px` }}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() =>
+                  setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
+                }
+                className="rounded-lg p-1.5 text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="text-sm font-bold text-[var(--app-text-primary)]">
+                {t('files.header.select_date')}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))
+                }
+                className="rounded-lg p-1.5 text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            <div className="flex gap-6">
+              {renderMonth(0)}
+              {renderMonth(1)}
+            </div>
+            <div className="mt-5 flex justify-end gap-2 border-t border-[var(--app-divider)] pt-4">
+              <button
+                onClick={() => onDateRangeChange(null, null)}
+                className="px-4 py-2 text-sm text-[var(--app-text-muted)] transition-colors hover:text-[var(--app-text-primary)]"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={() => setIsDatePickerOpen(false)}
+                className="rounded-full bg-[var(--app-accent)] px-5 py-2 text-sm font-bold text-[var(--app-accent-text)] transition-all hover:bg-[var(--app-accent-hover)]"
+              >
+                {t('common.save')}
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Type Filter Dropdown */}
+      {isTypeOpen &&
+        createPortal(
+          <div
+            ref={typeDropdownRef}
+            className="animate-in fade-in zoom-in fixed z-[9999] w-40 rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] py-1 shadow-xl duration-200"
+            style={{ top: `${typePosition.top}px`, left: `${typePosition.left}px` }}
+          >
+            {visibleTypes.map((type) => (
+              <button
+                key={type.value}
+                onClick={() => {
+                  onFileTypeFilterChange(type.value)
+                  setIsTypeOpen(false)
+                }}
+                className={`w-full px-3 py-1.5 text-left text-xs transition-colors ${
+                  fileTypeFilter === type.value
+                    ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
+                    : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]'
+                }`}
+              >
+                {t(type.labelKey)}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
+
+      {/* Sort Dropdown */}
+      {isSortOpen &&
+        createPortal(
+          <div
+            ref={sortDropdownRef}
+            className="animate-in fade-in zoom-in fixed z-[9999] min-w-32 rounded-xl border border-[var(--app-divider)] bg-[var(--app-bg-card)] py-2 shadow-xl duration-200"
+            style={{ top: `${sortPosition.top}px`, left: `${sortPosition.left}px` }}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  onSortChange(option.value as any)
+                  setIsSortOpen(false)
+                }}
+                className={`group flex w-full items-center justify-between px-4 py-2 text-left text-sm transition-colors ${
+                  sortBy === option.value
+                    ? 'bg-[var(--app-accent)]/10 text-[var(--app-accent)]'
+                    : 'text-[var(--app-text-secondary)] hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]'
+                }`}
+              >
+                <span>{t(option.labelKey)}</span>
+                {sortBy === option.value && (
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`}
+                  />
+                )}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
+    </div>
+  )
 }

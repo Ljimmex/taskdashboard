@@ -4,127 +4,129 @@ import type { Conversation, ConversationMessage } from '@taskdashboard/types'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 
 interface KeyRotationData {
-    oldPrivateKey: string
-    oldPublicKey: string
-    newPublicKey: string
-    newPrivateKey: string
-    expiresAt: Date
+  oldPrivateKey: string
+  oldPublicKey: string
+  newPublicKey: string
+  newPrivateKey: string
+  expiresAt: Date
 }
 
 export function useKeyRotation(workspaceId: string) {
-    // Check if keys are expired
-    const isExpired = useQuery({
-        queryKey: ['keyExpiration', workspaceId],
-        queryFn: async () => {
-            const json = await apiFetchJson<any>(`/api/workspaces/${workspaceId}/keys`)
-            const expiresAt = json.data?.expiresAt
+  // Check if keys are expired
+  const isExpired = useQuery({
+    queryKey: ['keyExpiration', workspaceId],
+    queryFn: async () => {
+      const json = await apiFetchJson<any>(`/api/workspaces/${workspaceId}/keys`)
+      const expiresAt = json.data?.expiresAt
 
-            if (!expiresAt) return false
+      if (!expiresAt) return false
 
-            const expirationDate = new Date(expiresAt)
-            const now = new Date()
+      const expirationDate = new Date(expiresAt)
+      const now = new Date()
 
-            return now > expirationDate
-        },
-        enabled: !!workspaceId,
-        staleTime: 1000 * 60 * 5 // Check every 5 minutes
-    })
+      return now > expirationDate
+    },
+    enabled: !!workspaceId,
+    staleTime: 1000 * 60 * 5, // Check every 5 minutes
+  })
 
-    // Rotate keys mutation
-    const rotateKeysMutation = useMutation({
-        mutationFn: async () => {
-            console.log('🔄 Starting key rotation...')
+  // Rotate keys mutation
+  const rotateKeysMutation = useMutation({
+    mutationFn: async () => {
+      console.log('🔄 Starting key rotation...')
 
-            // 1. Call rotation endpoint
-            const json = await apiFetchJson<any>(`/api/workspaces/${workspaceId}/rotate-keys`, {
-                method: 'POST'
-            })
-            const rotationData: KeyRotationData = json.data
+      // 1. Call rotation endpoint
+      const json = await apiFetchJson<any>(`/api/workspaces/${workspaceId}/rotate-keys`, {
+        method: 'POST',
+      })
+      const rotationData: KeyRotationData = json.data
 
-            // 2. Import old and new keys
-            console.log('🔐 Importing old and new keys...')
-            const oldPrivateKeyCrypto = await importPrivateKey(rotationData.oldPrivateKey)
-            const newPublicKeyCrypto = await importPublicKey(rotationData.newPublicKey)
+      // 2. Import old and new keys
+      console.log('🔐 Importing old and new keys...')
+      const oldPrivateKeyCrypto = await importPrivateKey(rotationData.oldPrivateKey)
+      const newPublicKeyCrypto = await importPublicKey(rotationData.newPublicKey)
 
-            // 3. Fetch ALL conversations in workspace
-            console.log('📨 Fetching all conversations...')
-            const jsonConversations = await apiFetchJson<any>(`/api/conversations?workspaceId=${workspaceId}`)
-            const conversations = jsonConversations.data as Conversation[]
+      // 3. Fetch ALL conversations in workspace
+      console.log('📨 Fetching all conversations...')
+      const jsonConversations = await apiFetchJson<any>(
+        `/api/conversations?workspaceId=${workspaceId}`
+      )
+      const conversations = jsonConversations.data as Conversation[]
 
-            console.log(`📊 Found ${conversations.length} conversations to re-encrypt`)
+      console.log(`📊 Found ${conversations.length} conversations to re-encrypt`)
 
-            // 4. Re-encrypt all messages in each conversation
-            let totalMessagesReEncrypted = 0
+      // 4. Re-encrypt all messages in each conversation
+      let totalMessagesReEncrypted = 0
 
-            for (const conversation of conversations) {
-                if (!conversation.messages || conversation.messages.length === 0) continue
+      for (const conversation of conversations) {
+        if (!conversation.messages || conversation.messages.length === 0) continue
 
-                console.log(`🔄 Re-encrypting conversation ${conversation.id}...`)
+        console.log(`🔄 Re-encrypting conversation ${conversation.id}...`)
 
-                const reEncryptedMessages = await Promise.all(
-                    (conversation.messages as ConversationMessage[]).map(async (msg) => {
-                        try {
-                            // Parse encrypted content
-                            const content = msg.content
-                            if (typeof content !== 'string') {
-                                // TODO: Handle V2 Key Rotation (decrypt DEK and re-encrypt DEK)
-                                return msg
-                            }
+        const reEncryptedMessages = await Promise.all(
+          (conversation.messages as ConversationMessage[]).map(async (msg) => {
+            try {
+              // Parse encrypted content
+              const content = msg.content
+              if (typeof content !== 'string') {
+                // TODO: Handle V2 Key Rotation (decrypt DEK and re-encrypt DEK)
+                return msg
+              }
 
-                            const parsed = JSON.parse(content)
+              const parsed = JSON.parse(content)
 
-                            // Use the old private key from the server
-                            const allAvailableKeys = [oldPrivateKeyCrypto]
+              // Use the old private key from the server
+              const allAvailableKeys = [oldPrivateKeyCrypto]
 
-                            // Decrypt with ALL available keys (Fallback strategy)
-                            const decrypted = await decryptWithFallback(parsed, allAvailableKeys)
+              // Decrypt with ALL available keys (Fallback strategy)
+              const decrypted = await decryptWithFallback(parsed, allAvailableKeys)
 
-                            // Encrypt with NEW key
-                            const reEncrypted = await encryptHybrid(decrypted, newPublicKeyCrypto)
+              // Encrypt with NEW key
+              const reEncrypted = await encryptHybrid(decrypted, newPublicKeyCrypto)
 
-                            return {
-                                ...msg,
-                                content: JSON.stringify(reEncrypted)
-                            }
-                        } catch (err) {
-                            console.error(`Failed to re-encrypt message ${msg.id}`, err)
-                            return msg // Keep old encrypted if fails
-                        }
-                    })
-                )
-
-                // 5. Update conversation with re-encrypted messages
-                const updateResponse = await apiFetch(`/api/conversations/${conversation.id}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({
-                        messages: reEncryptedMessages
-                    })
-                })
-
-                if (!updateResponse.ok) {
-                    console.error(`Failed to update conversation ${conversation.id}`)
-                } else {
-                    totalMessagesReEncrypted += reEncryptedMessages.length
-                }
+              return {
+                ...msg,
+                content: JSON.stringify(reEncrypted),
+              }
+            } catch (err) {
+              console.error(`Failed to re-encrypt message ${msg.id}`, err)
+              return msg // Keep old encrypted if fails
             }
+          })
+        )
 
-            // Keys are now on the server — no local storage needed
-            console.log('✅ Keys updated on server, clients will fetch on next request')
+        // 5. Update conversation with re-encrypted messages
+        const updateResponse = await apiFetch(`/api/conversations/${conversation.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            messages: reEncryptedMessages,
+          }),
+        })
 
-            console.log(`✅ Key rotation complete! Re-encrypted ${totalMessagesReEncrypted} messages`)
-
-            return {
-                messagesReEncrypted: totalMessagesReEncrypted,
-                conversationsUpdated: conversations.length
-            }
+        if (!updateResponse.ok) {
+          console.error(`Failed to update conversation ${conversation.id}`)
+        } else {
+          totalMessagesReEncrypted += reEncryptedMessages.length
         }
-    })
+      }
 
-    return {
-        isExpired: isExpired.data,
-        isCheckingExpiration: isExpired.isLoading,
-        rotateKeys: rotateKeysMutation.mutateAsync,
-        isRotating: rotateKeysMutation.isPending,
-        rotationProgress: rotateKeysMutation.data
-    }
+      // Keys are now on the server — no local storage needed
+      console.log('✅ Keys updated on server, clients will fetch on next request')
+
+      console.log(`✅ Key rotation complete! Re-encrypted ${totalMessagesReEncrypted} messages`)
+
+      return {
+        messagesReEncrypted: totalMessagesReEncrypted,
+        conversationsUpdated: conversations.length,
+      }
+    },
+  })
+
+  return {
+    isExpired: isExpired.data,
+    isCheckingExpiration: isExpired.isLoading,
+    rotateKeys: rotateKeysMutation.mutateAsync,
+    isRotating: rotateKeysMutation.isPending,
+    rotationProgress: rotateKeysMutation.data,
+  }
 }

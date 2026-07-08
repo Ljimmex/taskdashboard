@@ -8,1032 +8,1197 @@ import type { TaskPermissions } from '@/hooks/useTaskPermissions'
 import { AssigneePicker, Assignee } from '../components/AssigneePicker'
 import { DueDatePicker } from '../components/DueDatePicker'
 import {
-    EditIconDefault,
-    ArchiveIconDefault,
-    DeleteIconDefault,
+  EditIconDefault,
+  ArchiveIconDefault,
+  DeleteIconDefault,
 } from '@/components/dashboard/icons'
 
 // Flag icon (from TaskCard - for Priority)
 import {
-    FlagIcon,
-    CloseIcon,
-    CalendarSmallIcon,
-    CheckIcon,
-    SortIcon,
-    BellIcon,
-    ArrowRightSmallIcon,
-    ZapIcon,
-    GripVerticalIcon,
-    PaletteIcon,
-    HashIcon
+  FlagIcon,
+  CloseIcon,
+  CalendarSmallIcon,
+  CheckIcon,
+  SortIcon,
+  BellIcon,
+  ArrowRightSmallIcon,
+  ZapIcon,
+  GripVerticalIcon,
+  PaletteIcon,
+  HashIcon,
 } from '../components/TaskIcons'
 
 const COLUMN_COLORS = [
-    '#6B7280', // Gray
-    '#ef4444', // Red
-    '#f97316', // Orange
-    '#f59e0b', // Amber
-    '#84cc16', // Lime
-    '#10b981', // Emerald
-    '#06b6d4', // Cyan
-    '#3b82f6', // Blue
-    '#6366f1', // Indigo
-    '#8b5cf6', // Violet
-    '#d946ef', // Fuchsia
-    '#ec4899', // Pink
+  '#6B7280', // Gray
+  '#ef4444', // Red
+  '#f97316', // Orange
+  '#f59e0b', // Amber
+  '#84cc16', // Lime
+  '#10b981', // Emerald
+  '#06b6d4', // Cyan
+  '#3b82f6', // Blue
+  '#6366f1', // Indigo
+  '#8b5cf6', // Violet
+  '#d946ef', // Fuchsia
+  '#ec4899', // Pink
 ]
 
 interface TaskColumnProps {
-    id: string
+  id: string
+  title: string
+  status: 'todo' | 'in_progress' | 'review' | 'done'
+  tasks: TaskCardProps[]
+  members?: { id: string; name: string; avatar?: string }[]
+  taskCount?: number
+  color?: string
+  onAddTask?: (taskData: {
     title: string
-    status: 'todo' | 'in_progress' | 'review' | 'done'
-    tasks: TaskCardProps[]
-    members?: { id: string; name: string; avatar?: string }[]
-    taskCount?: number
-    color?: string
-    onAddTask?: (taskData: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string; startDate?: string }) => void
-    onTaskClick?: (taskId: string) => void
-    onTaskEdit?: (taskId: string) => void
-    onTaskDelete?: (taskId: string) => void
-    onTaskDuplicate?: (taskId: string) => void
-    onTaskArchive?: (taskId: string) => void
-    // Column actions
-    onRename?: (newName: string) => void
-    onSetWipLimit?: (limit: number) => void
-    onChangeColor?: (color: string) => void
-    onWatch?: () => void
-    onMoveAllCards?: () => void
-    onArchiveAll?: () => void
-    onExpandAllCards?: () => void
-    onCollapseAllCards?: () => void
-    onToggleCollapse?: () => void
-    isCollapsed?: boolean
-    isCardsCollapsed?: boolean
-    onAddRule?: () => void
-    onDeleteColumn?: () => void
-    dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
-    userRole?: string
-    permissions?: TaskPermissions
+    priority: string
+    status: string
+    assignees?: string[]
+    dueDate?: string
+    startDate?: string
+  }) => void
+  onTaskClick?: (taskId: string) => void
+  onTaskEdit?: (taskId: string) => void
+  onTaskDelete?: (taskId: string) => void
+  onTaskDuplicate?: (taskId: string) => void
+  onTaskArchive?: (taskId: string) => void
+  // Column actions
+  onRename?: (newName: string) => void
+  onSetWipLimit?: (limit: number) => void
+  onChangeColor?: (color: string) => void
+  onWatch?: () => void
+  onMoveAllCards?: () => void
+  onArchiveAll?: () => void
+  onExpandAllCards?: () => void
+  onCollapseAllCards?: () => void
+  onToggleCollapse?: () => void
+  isCollapsed?: boolean
+  isCardsCollapsed?: boolean
+  onAddRule?: () => void
+  onDeleteColumn?: () => void
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>
+  userRole?: string
+  permissions?: TaskPermissions
 }
 
 // Status configuration with colors and icons
 const useStatusConfig = () => {
-    const { t } = useTranslation()
-    return {
-        todo: { label: t('tasks.status.todo'), color: '#6366f1', bgColor: 'bg-indigo-500/10', textColor: 'text-indigo-400' },
-        in_progress: { label: t('tasks.status.in_progress'), color: '#f59e0b', bgColor: 'bg-amber-500/10', textColor: 'text-amber-400' },
-        review: { label: t('tasks.status.review'), color: '#8b5cf6', bgColor: 'bg-purple-500/10', textColor: 'text-purple-400' },
-        done: { label: t('tasks.status.done'), color: '#10b981', bgColor: 'bg-emerald-500/10', textColor: 'text-emerald-400' },
-    }
+  const { t } = useTranslation()
+  return {
+    todo: {
+      label: t('tasks.status.todo'),
+      color: '#6366f1',
+      bgColor: 'bg-indigo-500/10',
+      textColor: 'text-indigo-400',
+    },
+    in_progress: {
+      label: t('tasks.status.in_progress'),
+      color: '#f59e0b',
+      bgColor: 'bg-amber-500/10',
+      textColor: 'text-amber-400',
+    },
+    review: {
+      label: t('tasks.status.review'),
+      color: '#8b5cf6',
+      bgColor: 'bg-purple-500/10',
+      textColor: 'text-purple-400',
+    },
+    done: {
+      label: t('tasks.status.done'),
+      color: '#10b981',
+      bgColor: 'bg-emerald-500/10',
+      textColor: 'text-emerald-400',
+    },
+  }
 }
 
 // Quick Add Task Popup Component
 function QuickAddTask({
-    status,
-    members,
-    onAdd,
-    onClose
+  status,
+  members,
+  onAdd,
+  onClose,
 }: {
+  status: string
+  members?: { id: string; name: string; avatar?: string }[]
+  onAdd: (data: {
+    title: string
+    priority: string
     status: string
-    members?: { id: string; name: string; avatar?: string }[]
-    onAdd: (data: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string; startDate?: string }) => void
-    onClose: () => void
+    assignees?: string[]
+    dueDate?: string
+    startDate?: string
+  }) => void
+  onClose: () => void
 }) {
-    const { t } = useTranslation()
-    const [title, setTitle] = useState('')
-    const [priority, setPriority] = useState('medium')
-    const [showPriority, setShowPriority] = useState(false)
-    const [showDate, setShowDate] = useState(false)
-    const [selectedAssignees, setSelectedAssignees] = useState<Assignee[]>([])
-    const [dueDate, setDueDate] = useState<string | null>(null)
-    const containerRef = useRef<HTMLDivElement>(null)
+  const { t } = useTranslation()
+  const [title, setTitle] = useState('')
+  const [priority, setPriority] = useState('medium')
+  const [showPriority, setShowPriority] = useState(false)
+  const [showDate, setShowDate] = useState(false)
+  const [selectedAssignees, setSelectedAssignees] = useState<Assignee[]>([])
+  const [dueDate, setDueDate] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                onClose()
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [onClose])
-
-    const handleSubmit = () => {
-        if (title.trim()) {
-            const today = new Date().toISOString()
-            onAdd({
-                title: title.trim(),
-                priority,
-                status,
-                assignees: selectedAssignees.map(a => a.id),
-                dueDate: dueDate || undefined,
-                startDate: today
-            })
-            onClose()
-        }
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        onClose()
+      }
     }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [onClose])
 
-    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
-    const { data: workspace } = useQuery({
-        queryKey: ['workspace', workspaceSlug],
-        queryFn: async () => {
-            if (!workspaceSlug) return null
-            const res = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
-            return res
-        },
-        enabled: !!workspaceSlug
-    })
-
-    interface PriorityOption {
-        value: string
-        label: string
-        color: string
+  const handleSubmit = () => {
+    if (title.trim()) {
+      const today = new Date().toISOString()
+      onAdd({
+        title: title.trim(),
+        priority,
+        status,
+        assignees: selectedAssignees.map((a) => a.id),
+        dueDate: dueDate || undefined,
+        startDate: today,
+      })
+      onClose()
     }
+  }
 
-    const priorities: PriorityOption[] = workspace?.priorities?.map((p: any) => ({
-        value: p.id,
-        label: p.name,
-        color: p.color
-    })) || [
-            { value: 'urgent', label: t('tasks.priority.urgent'), color: '#ef4444' },
-            { value: 'high', label: t('tasks.priority.high'), color: '#f59e0b' },
-            { value: 'medium', label: t('tasks.priority.medium'), color: '#3b82f6' },
-            { value: 'low', label: t('tasks.priority.low'), color: '#6b7280' },
-        ]
+  const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
+  const { data: workspace } = useQuery({
+    queryKey: ['workspace', workspaceSlug],
+    queryFn: async () => {
+      if (!workspaceSlug) return null
+      const res = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+      return res
+    },
+    enabled: !!workspaceSlug,
+  })
 
-    return (
-        <div
-            ref={containerRef}
-            className="rounded-2xl bg-[#1a1a24] border border-gray-800 p-4 shadow-2xl mb-3"
-        >
-            {/* Task name input */}
-            <div className="flex items-center gap-3 mb-4">
-                <div className="w-5 h-5 rounded-full border-2 border-gray-600 flex-shrink-0" />
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                    placeholder={t('board.column.quick_add.placeholder')}
-                    autoFocus
-                    className="flex-1 bg-transparent text-white placeholder-gray-500 outline-none text-sm"
-                />
-            </div>
+  interface PriorityOption {
+    value: string
+    label: string
+    color: string
+  }
 
-            {/* Priority dropdown with badge */}
-            <div className="flex items-center gap-2 mb-4">
-                <div className="relative">
-                    <button
-                        onClick={() => setShowPriority(!showPriority)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-800 text-gray-400 text-xs hover:bg-gray-700 transition-colors"
-                    >
-                        <FlagIcon />
-                        {t('board.column.quick_add.priority')}
-                    </button>
-                    {showPriority && (
-                        <div className="absolute top-full left-0 mt-1 w-32 bg-[#1a1a24] rounded-lg shadow-xl border border-gray-800 py-1 z-20">
-                            {priorities.map(p => (
-                                <button
-                                    key={p.value}
-                                    onClick={() => { setPriority(p.value); setShowPriority(false) }}
-                                    className="w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors text-gray-400"
-                                    style={{ color: priority === p.value ? p.color : undefined }}
-                                >
-                                    {p.label}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
+  const priorities: PriorityOption[] = workspace?.priorities?.map((p: any) => ({
+    value: p.id,
+    label: p.name,
+    color: p.color,
+  })) || [
+    { value: 'urgent', label: t('tasks.priority.urgent'), color: '#ef4444' },
+    { value: 'high', label: t('tasks.priority.high'), color: '#f59e0b' },
+    { value: 'medium', label: t('tasks.priority.medium'), color: '#3b82f6' },
+    { value: 'low', label: t('tasks.priority.low'), color: '#6b7280' },
+  ]
 
-                {/* Priority Badge - shown when selected */}
-                {priority && (
-                    <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium`}
-                        style={{
-                            backgroundColor: `${priorities.find((p: any) => p.value === priority)?.color}20`,
-                            color: priorities.find((p: any) => p.value === priority)?.color
-                        }}
-                    >
-                        {priorities.find(p => p.value === priority)?.label}
-                    </span>
-                )}
-            </div>
+  return (
+    <div
+      ref={containerRef}
+      className="mb-3 rounded-2xl border border-gray-800 bg-[#1a1a24] p-4 shadow-2xl"
+    >
+      {/* Task name input */}
+      <div className="mb-4 flex items-center gap-3">
+        <div className="h-5 w-5 flex-shrink-0 rounded-full border-2 border-gray-600" />
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+          placeholder={t('board.column.quick_add.placeholder')}
+          autoFocus
+          className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+        />
+      </div>
 
-            {/* Bottom actions - no attachment button */}
-            <div className="flex items-center justify-between pt-2 border-t border-gray-800">
-                <div className="flex items-center gap-2 relative">
-                    {/* Assignee Picker */}
-                    <div className="mr-2">
-                        <AssigneePicker
-                            selectedAssignees={selectedAssignees}
-                            availableAssignees={(members || []).map(m => ({ id: m.id, name: m.name, avatar: m.avatar }))}
-                            onSelect={setSelectedAssignees}
-                            placeholder=""
-                            maxVisible={1}
-                        />
-                    </div>
-
-                    {/* Date */}
-                    <div>
-                        <button
-                            onClick={() => { setShowDate(!showDate); setShowPriority(false) }}
-                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${dueDate ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500 hover:text-white'}`}
-                        >
-                            <CalendarSmallIcon />
-                        </button>
-                        {showDate && (
-                            <div className="absolute top-full left-0 mt-2 w-48 bg-[#1a1a24] rounded-lg shadow-xl border border-gray-800 py-2 z-30">
-                                <button
-                                    onClick={() => {
-                                        const d = new Date();
-                                        setDueDate(d.toISOString());
-                                        setShowDate(false);
-                                    }}
-                                    className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-amber-400"
-                                >
-                                    {t('board.column.quick_add.today')}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        const d = new Date();
-                                        d.setDate(d.getDate() + 1);
-                                        setDueDate(d.toISOString());
-                                        setShowDate(false);
-                                    }}
-                                    className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-amber-400"
-                                >
-                                    {t('board.column.quick_add.tomorrow')}
-                                </button>
-                                <div className="border-t border-gray-800 my-1"></div>
-                                <div className="px-4 py-1">
-                                    <input
-                                        type="date"
-                                        className="w-full bg-[#12121a] border border-gray-700 rounded px-2 py-1 text-xs text-white outline-none focus:border-amber-500"
-                                        onChange={(e) => {
-                                            if (e.target.value) {
-                                                setDueDate(new Date(e.target.value).toISOString());
-                                                setShowDate(false);
-                                            }
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                {/* Submit */}
+      {/* Priority dropdown with badge */}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative">
+          <button
+            onClick={() => setShowPriority(!showPriority)}
+            className="flex items-center gap-2 rounded-full bg-gray-800 px-3 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-700"
+          >
+            <FlagIcon />
+            {t('board.column.quick_add.priority')}
+          </button>
+          {showPriority && (
+            <div className="absolute left-0 top-full z-20 mt-1 w-32 rounded-lg border border-gray-800 bg-[#1a1a24] py-1 shadow-xl">
+              {priorities.map((p) => (
                 <button
-                    onClick={handleSubmit}
-                    className="w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center text-gray-500 hover:text-amber-400 transition-colors"
+                  key={p.value}
+                  onClick={() => {
+                    setPriority(p.value)
+                    setShowPriority(false)
+                  }}
+                  className="w-full px-3 py-2 text-left text-xs text-gray-400 transition-colors hover:bg-gray-800"
+                  style={{ color: priority === p.value ? p.color : undefined }}
                 >
-                    <CheckIcon />
+                  {p.label}
                 </button>
+              ))}
             </div>
-        </div >
-    )
+          )}
+        </div>
+
+        {/* Priority Badge - shown when selected */}
+        {priority && (
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-medium`}
+            style={{
+              backgroundColor: `${priorities.find((p: any) => p.value === priority)?.color}20`,
+              color: priorities.find((p: any) => p.value === priority)?.color,
+            }}
+          >
+            {priorities.find((p) => p.value === priority)?.label}
+          </span>
+        )}
+      </div>
+
+      {/* Bottom actions - no attachment button */}
+      <div className="flex items-center justify-between border-t border-gray-800 pt-2">
+        <div className="relative flex items-center gap-2">
+          {/* Assignee Picker */}
+          <div className="mr-2">
+            <AssigneePicker
+              selectedAssignees={selectedAssignees}
+              availableAssignees={(members || []).map((m) => ({
+                id: m.id,
+                name: m.name,
+                avatar: m.avatar,
+              }))}
+              onSelect={setSelectedAssignees}
+              placeholder=""
+              maxVisible={1}
+            />
+          </div>
+
+          {/* Date */}
+          <div>
+            <button
+              onClick={() => {
+                setShowDate(!showDate)
+                setShowPriority(false)
+              }}
+              className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${dueDate ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500 hover:text-white'}`}
+            >
+              <CalendarSmallIcon />
+            </button>
+            {showDate && (
+              <div className="absolute left-0 top-full z-30 mt-2 w-48 rounded-lg border border-gray-800 bg-[#1a1a24] py-2 shadow-xl">
+                <button
+                  onClick={() => {
+                    const d = new Date()
+                    setDueDate(d.toISOString())
+                    setShowDate(false)
+                  }}
+                  className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-amber-400"
+                >
+                  {t('board.column.quick_add.today')}
+                </button>
+                <button
+                  onClick={() => {
+                    const d = new Date()
+                    d.setDate(d.getDate() + 1)
+                    setDueDate(d.toISOString())
+                    setShowDate(false)
+                  }}
+                  className="w-full px-4 py-2 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-amber-400"
+                >
+                  {t('board.column.quick_add.tomorrow')}
+                </button>
+                <div className="my-1 border-t border-gray-800"></div>
+                <div className="px-4 py-1">
+                  <input
+                    type="date"
+                    className="w-full rounded border border-gray-700 bg-[#12121a] px-2 py-1 text-xs text-white outline-none focus:border-amber-500"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setDueDate(new Date(e.target.value).toISOString())
+                        setShowDate(false)
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Submit */}
+        <button
+          onClick={handleSubmit}
+          className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-800 text-gray-500 transition-colors hover:text-amber-400"
+        >
+          <CheckIcon />
+        </button>
+      </div>
+    </div>
+  )
 }
 
 // Quick Edit Task Popup Component (for inline editing via pencil icon)
 export function QuickEditTask({
-    task,
-    members,
-    onUpdate,
-    onClose
+  task,
+  members,
+  onUpdate,
+  onClose,
 }: {
-    task: { id: string; title: string; priority: string; dueDate?: string; assignees?: { id: string; name: string; avatar?: string }[] }
-    members?: { id: string; name: string; avatar?: string }[]
-    onUpdate: (data: { id: string; title: string; priority: string; assignees?: string[]; dueDate?: string }) => void
-    onClose: () => void
+  task: {
+    id: string
+    title: string
+    priority: string
+    dueDate?: string
+    assignees?: { id: string; name: string; avatar?: string }[]
+  }
+  members?: { id: string; name: string; avatar?: string }[]
+  onUpdate: (data: {
+    id: string
+    title: string
+    priority: string
+    assignees?: string[]
+    dueDate?: string
+  }) => void
+  onClose: () => void
 }) {
-    const { t } = useTranslation()
-    const [title, setTitle] = useState(task.title)
-    const [priority, setPriority] = useState(task.priority)
-    const [showPriority, setShowPriority] = useState(false)
-    // Deduplicate assignees by ID
-    const rawAssignees = task.assignees?.map(a => ({ id: a.id, name: a.name, avatar: a.avatar })) || []
-    const uniqueAssignees = Array.from(new Map(rawAssignees.map(a => [a.id, a])).values())
-    const [selectedAssignees, setSelectedAssignees] = useState<Assignee[]>(uniqueAssignees)
-    const [dueDate, setDueDate] = useState<string | undefined>(task.dueDate || undefined)
-    const containerRef = useRef<HTMLDivElement>(null)
+  const { t } = useTranslation()
+  const [title, setTitle] = useState(task.title)
+  const [priority, setPriority] = useState(task.priority)
+  const [showPriority, setShowPriority] = useState(false)
+  // Deduplicate assignees by ID
+  const rawAssignees =
+    task.assignees?.map((a) => ({ id: a.id, name: a.name, avatar: a.avatar })) || []
+  const uniqueAssignees = Array.from(new Map(rawAssignees.map((a) => [a.id, a])).values())
+  const [selectedAssignees, setSelectedAssignees] = useState<Assignee[]>(uniqueAssignees)
+  const [dueDate, setDueDate] = useState<string | undefined>(task.dueDate || undefined)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-    // Fetch dynamic priorities
-    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
-    const { data: workspace } = useQuery({
-        queryKey: ['workspace', workspaceSlug],
-        queryFn: async () => {
-            if (!workspaceSlug) return null
-            const res = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
-            return res
-        },
-        enabled: !!workspaceSlug
-    })
+  // Fetch dynamic priorities
+  const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug?: string }
+  const { data: workspace } = useQuery({
+    queryKey: ['workspace', workspaceSlug],
+    queryFn: async () => {
+      if (!workspaceSlug) return null
+      const res = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+      return res
+    },
+    enabled: !!workspaceSlug,
+  })
 
-    interface PriorityOption {
-        value: string
-        label: string
-        color: string
+  interface PriorityOption {
+    value: string
+    label: string
+    color: string
+  }
+
+  const priorities: PriorityOption[] = workspace?.priorities?.map((p: any) => ({
+    value: p.id,
+    label: p.name,
+    color: p.color,
+  })) || [
+    { value: 'urgent', label: t('tasks.priority.urgent'), color: '#ef4444' },
+    { value: 'high', label: t('tasks.priority.high'), color: '#f59e0b' },
+    { value: 'medium', label: t('tasks.priority.medium'), color: '#3b82f6' },
+    { value: 'low', label: t('tasks.priority.low'), color: '#6b7280' },
+  ]
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement
+      // Don't close if clicking on DueDatePicker portal (which is appended to body)
+      if (target.closest('[class*="fixed bg-[#16161f]"]')) {
+        return
+      }
+      // Don't close if clicking on AssigneePicker dropdown
+      if (target.closest('[class*="absolute top-full"]')) {
+        return
+      }
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        onClose()
+      }
     }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [onClose])
 
-    const priorities: PriorityOption[] = workspace?.priorities?.map((p: any) => ({
-        value: p.id,
-        label: p.name,
-        color: p.color
-    })) || [
-            { value: 'urgent', label: t('tasks.priority.urgent'), color: '#ef4444' },
-            { value: 'high', label: t('tasks.priority.high'), color: '#f59e0b' },
-            { value: 'medium', label: t('tasks.priority.medium'), color: '#3b82f6' },
-            { value: 'low', label: t('tasks.priority.low'), color: '#6b7280' },
-        ]
-
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            const target = event.target as HTMLElement
-            // Don't close if clicking on DueDatePicker portal (which is appended to body)
-            if (target.closest('[class*="fixed bg-[#16161f]"]')) {
-                return
-            }
-            // Don't close if clicking on AssigneePicker dropdown
-            if (target.closest('[class*="absolute top-full"]')) {
-                return
-            }
-            if (containerRef.current && !containerRef.current.contains(target)) {
-                onClose()
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [onClose])
-
-    const handleSubmit = () => {
-        if (title.trim()) {
-            onUpdate({
-                id: task.id,
-                title: title.trim(),
-                priority,
-                assignees: selectedAssignees.map(a => a.id),
-                dueDate: dueDate || undefined
-            })
-            onClose()
-        }
+  const handleSubmit = () => {
+    if (title.trim()) {
+      onUpdate({
+        id: task.id,
+        title: title.trim(),
+        priority,
+        assignees: selectedAssignees.map((a) => a.id),
+        dueDate: dueDate || undefined,
+      })
+      onClose()
     }
+  }
 
-
-
-    // Convert members to Assignee format and deduplicate by id
-    const availableAssignees: Assignee[] = members?.reduce((acc, m) => {
-        if (!acc.some(a => a.id === m.id)) {
-            acc.push({ id: m.id, name: m.name, avatar: m.avatar })
-        }
-        return acc
+  // Convert members to Assignee format and deduplicate by id
+  const availableAssignees: Assignee[] =
+    members?.reduce((acc, m) => {
+      if (!acc.some((a) => a.id === m.id)) {
+        acc.push({ id: m.id, name: m.name, avatar: m.avatar })
+      }
+      return acc
     }, [] as Assignee[]) || []
 
-    return (
-        <div
-            ref={containerRef}
-            className="relative z-50 rounded-2xl bg-[#1a1a24] p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-        >
-            {/* Task name input */}
-            <div className="flex items-center gap-3 mb-4">
-                <div className="w-5 h-5 rounded-full border-2 border-amber-500 flex-shrink-0" />
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                        e.stopPropagation()
-                        if (e.key === 'Enter') handleSubmit()
-                    }}
-                    autoFocus
-                    className="flex-1 bg-transparent text-white placeholder-gray-500 outline-none text-sm"
-                />
-            </div>
+  return (
+    <div
+      ref={containerRef}
+      className="relative z-50 rounded-2xl bg-[#1a1a24] p-4 shadow-2xl"
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {/* Task name input */}
+      <div className="mb-4 flex items-center gap-3">
+        <div className="h-5 w-5 flex-shrink-0 rounded-full border-2 border-amber-500" />
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            e.stopPropagation()
+            if (e.key === 'Enter') handleSubmit()
+          }}
+          autoFocus
+          className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+        />
+      </div>
 
-            {/* Priority dropdown with badge */}
-            <div className="flex items-center gap-2 mb-4">
-                <div className="relative">
-                    <button
-                        onClick={() => setShowPriority(!showPriority)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-800 text-gray-400 text-xs hover:bg-gray-700 transition-colors"
-                    >
-                        <FlagIcon />
-                        {t('board.column.quick_add.priority')}
-                    </button>
-                    {showPriority && (
-                        <div className="absolute top-full left-0 mt-1 w-32 bg-[#1a1a24] rounded-lg shadow-xl border border-gray-800 py-1 z-20">
-                            {priorities.map(p => (
-                                <button
-                                    key={p.value}
-                                    onClick={() => { setPriority(p.value); setShowPriority(false) }}
-                                    className="w-full px-3 py-2 text-left text-xs hover:bg-gray-800 transition-colors text-gray-400"
-                                    style={{ color: priority === p.value ? p.color : undefined }}
-                                >
-                                    {p.label}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Priority Badge - shown when selected */}
-                <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium`}
-                    style={{
-                        backgroundColor: `${priorities.find((p: any) => p.value === priority)?.color}20`,
-                        color: priorities.find((p: any) => p.value === priority)?.color
-                    }}
-                >
-                    {priorities.find(p => p.value === priority)?.label}
-                </span>
-            </div>
-
-            {/* Assignee Picker */}
-            <div className="mb-4">
-                <AssigneePicker
-                    selectedAssignees={selectedAssignees}
-                    availableAssignees={availableAssignees}
-                    onSelect={setSelectedAssignees}
-                    placeholder={t('board.column.quick_edit.assignee_placeholder')}
-                />
-            </div>
-
-            {/* Due Date Picker */}
-            <div className="mb-4">
-                <DueDatePicker
-                    value={dueDate}
-                    onChange={(date) => setDueDate(date)}
-                    placeholder={t('board.column.quick_edit.date_placeholder')}
-                />
-            </div>
-
-            {/* Bottom actions */}
-            <div className="flex items-center justify-end pt-2 border-t border-gray-800">
-                {/* Submit */}
+      {/* Priority dropdown with badge */}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative">
+          <button
+            onClick={() => setShowPriority(!showPriority)}
+            className="flex items-center gap-2 rounded-full bg-gray-800 px-3 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-700"
+          >
+            <FlagIcon />
+            {t('board.column.quick_add.priority')}
+          </button>
+          {showPriority && (
+            <div className="absolute left-0 top-full z-20 mt-1 w-32 rounded-lg border border-gray-800 bg-[#1a1a24] py-1 shadow-xl">
+              {priorities.map((p) => (
                 <button
-                    onClick={handleSubmit}
-                    className="px-4 py-2 rounded-full bg-amber-500 flex items-center justify-center gap-2 text-black text-xs font-bold hover:bg-amber-400 transition-colors"
+                  key={p.value}
+                  onClick={() => {
+                    setPriority(p.value)
+                    setShowPriority(false)
+                  }}
+                  className="w-full px-3 py-2 text-left text-xs text-gray-400 transition-colors hover:bg-gray-800"
+                  style={{ color: priority === p.value ? p.color : undefined }}
                 >
-                    <CheckIcon />
-                    {t('board.column.quick_edit.save')}
+                  {p.label}
                 </button>
+              ))}
             </div>
+          )}
         </div>
-    )
+
+        {/* Priority Badge - shown when selected */}
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-medium`}
+          style={{
+            backgroundColor: `${priorities.find((p: any) => p.value === priority)?.color}20`,
+            color: priorities.find((p: any) => p.value === priority)?.color,
+          }}
+        >
+          {priorities.find((p) => p.value === priority)?.label}
+        </span>
+      </div>
+
+      {/* Assignee Picker */}
+      <div className="mb-4">
+        <AssigneePicker
+          selectedAssignees={selectedAssignees}
+          availableAssignees={availableAssignees}
+          onSelect={setSelectedAssignees}
+          placeholder={t('board.column.quick_edit.assignee_placeholder')}
+        />
+      </div>
+
+      {/* Due Date Picker */}
+      <div className="mb-4">
+        <DueDatePicker
+          value={dueDate}
+          onChange={(date) => setDueDate(date)}
+          placeholder={t('board.column.quick_edit.date_placeholder')}
+        />
+      </div>
+
+      {/* Bottom actions */}
+      <div className="flex items-center justify-end border-t border-gray-800 pt-2">
+        {/* Submit */}
+        <button
+          onClick={handleSubmit}
+          className="flex items-center justify-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-xs font-bold text-black transition-colors hover:bg-amber-400"
+        >
+          <CheckIcon />
+          {t('board.column.quick_edit.save')}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 // Column Menu Component with 5 groups
 function ColumnMenu({
-    onClose,
-    onRename,
-    onSetWipLimit,
-    onChangeColor,
-    onWatch,
-    onMoveAllCards,
-    onArchiveAll,
-    onExpandAllCards,
-    onCollapseAllCards,
-    onToggleCollapse,
-    isCollapsed,
-    isCardsCollapsed,
-    onAddRule,
-    onDeleteColumn,
-    userRole,
-    permissions
+  onClose,
+  onRename,
+  onSetWipLimit,
+  onChangeColor,
+  onWatch,
+  onMoveAllCards,
+  onArchiveAll,
+  onExpandAllCards,
+  onCollapseAllCards,
+  onToggleCollapse,
+  isCollapsed,
+  isCardsCollapsed,
+  onAddRule,
+  onDeleteColumn,
+  userRole,
+  permissions,
 }: {
-    onClose: () => void
-    onRename?: () => void
-    onSetWipLimit?: () => void
-    onChangeColor?: (color: string) => void
-    onWatch?: () => void
-    onMoveAllCards?: () => void
-    onArchiveAll?: () => void
-    onExpandAllCards?: () => void
-    onCollapseAllCards?: () => void
-    onToggleCollapse?: () => void
-    isCollapsed?: boolean
-    isCardsCollapsed?: boolean
-    onAddRule?: () => void
-    onDeleteColumn?: () => void
-    userRole?: string
-    permissions?: TaskPermissions
+  onClose: () => void
+  onRename?: () => void
+  onSetWipLimit?: () => void
+  onChangeColor?: (color: string) => void
+  onWatch?: () => void
+  onMoveAllCards?: () => void
+  onArchiveAll?: () => void
+  onExpandAllCards?: () => void
+  onCollapseAllCards?: () => void
+  onToggleCollapse?: () => void
+  isCollapsed?: boolean
+  isCardsCollapsed?: boolean
+  onAddRule?: () => void
+  onDeleteColumn?: () => void
+  userRole?: string
+  permissions?: TaskPermissions
 }) {
-    const { t } = useTranslation()
-    const menuRef = useRef<HTMLDivElement>(null)
-    const [view, setView] = useState<'main' | 'colors'>('main')
+  const { t } = useTranslation()
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [view, setView] = useState<'main' | 'colors'>('main')
 
-    const canEditColumn = permissions
-        ? !!(permissions.stages.update || permissions.stages.delete)
-        : !!(userRole && !['member', 'guest'].includes(userRole))
+  const canEditColumn = permissions
+    ? !!(permissions.stages.update || permissions.stages.delete)
+    : !!(userRole && !['member', 'guest'].includes(userRole))
 
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                onClose()
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [onClose])
-
-    const MenuSection = ({ children, title }: { children: React.ReactNode; title?: string }) => (
-        <div className="py-1">
-            {title && <div className="px-3 py-1 text-[10px] font-medium text-gray-500 uppercase tracking-wider">{title}</div>}
-            {children}
-        </div>
-    )
-
-    const MenuItem = ({ icon, label, onClick, danger = false }: { icon?: React.ReactNode; label: string; onClick?: () => void; danger?: boolean }) => (
-        <button
-            onClick={() => { onClick?.() }}
-            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors ${danger
-                ? 'text-red-400 hover:bg-gray-800 hover:text-[#F2CE88]'
-                : 'text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88]'
-                }`}
-        >
-            {icon}
-            {label}
-        </button>
-    )
-
-    if (view === 'colors') {
-        return (
-            <div
-                ref={menuRef}
-                className="absolute right-0 top-8 z-20 w-52 bg-[#1a1a24] rounded-xl shadow-2xl overflow-hidden border border-gray-800"
-            >
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-800">
-                    <button
-                        onClick={() => setView('main')}
-                        className="text-gray-400 hover:text-white transition-colors"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M19 12H5" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M12 19L5 12L12 5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                    </button>
-                    <span className="text-sm font-medium text-white">{t('board.column.menu.select_color')}</span>
-                </div>
-                <div className="p-3 grid grid-cols-5 gap-2">
-                    {COLUMN_COLORS.map((color) => (
-                        <button
-                            key={color}
-                            onClick={() => { onChangeColor?.(color); onClose() }}
-                            className="w-6 h-6 rounded-full border border-gray-700 hover:scale-110 transition-transform"
-                            style={{ backgroundColor: color }}
-                        />
-                    ))}
-                </div>
-            </div>
-        )
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose()
+      }
     }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [onClose])
 
-    return (
-        <div
-            ref={menuRef}
-            className="absolute right-0 top-8 z-20 w-52 bg-[#1a1a24] rounded-xl shadow-2xl overflow-hidden border border-gray-800"
-        >
-            {/* Group 1: Configuration */}
-            {canEditColumn && (
-                <MenuSection title={t('board.column.menu.config')}>
-                    <MenuItem
-                        icon={<EditIconDefault />}
-                        label={t('board.column.menu.rename')}
-                        onClick={onRename}
-                    />
-                    <MenuItem
-                        icon={<HashIcon />}
-                        label={t('board.column.menu.wip_limit')}
-                        onClick={onSetWipLimit}
-                    />
-                    <MenuItem
-                        icon={<PaletteIcon />}
-                        label={t('board.column.menu.change_color')}
-                        onClick={() => setView('colors')}
-                    />
-                </MenuSection>
-            )}
-
-            {canEditColumn && <div className="border-t border-gray-800" />}
-
-            {/* Group 2: Sort & Filter */}
-            <MenuSection title={t('board.column.menu.sort_title')}>
-                <MenuItem
-                    icon={<SortIcon />}
-                    label={t('board.column.menu.sort_by')}
-                />
-                <MenuItem
-                    icon={<BellIcon />}
-                    label={t('board.column.menu.watch')}
-                    onClick={onWatch}
-                />
-            </MenuSection>
-
-            <div className="border-t border-gray-800" />
-
-            {/* Group 3: Bulk Actions */}
-            <MenuSection title={t('board.column.menu.bulk_title')}>
-                {canEditColumn && (
-                    <>
-                        <MenuItem
-                            icon={<ArrowRightSmallIcon />}
-                            label={t('board.column.menu.move_all')}
-                            onClick={onMoveAllCards}
-                        />
-                        <MenuItem
-                            icon={<ArchiveIconDefault />}
-                            label={t('board.column.menu.archive_all')}
-                            onClick={onArchiveAll}
-                        />
-                    </>
-                )}
-                {isCardsCollapsed ? (
-                    <MenuItem
-                        icon={
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M4 14h16v6H4zm0-10h16v6H4z" />
-                            </svg>
-                        }
-                        label={t('board.column.menu.expand_all', { defaultValue: 'Rozwiń wszystkie karty' })}
-                        onClick={() => { onExpandAllCards?.(); onClose() }}
-                    />
-                ) : (
-                    <MenuItem
-                        icon={
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M4 14h16v2H4zm0-8h16v2H4z" />
-                            </svg>
-                        }
-                        label={t('board.column.menu.collapse_all', { defaultValue: 'Zwiń wszystkie karty' })}
-                        onClick={() => { onCollapseAllCards?.(); onClose() }}
-                    />
-                )}
-                {isCollapsed ? (
-                    <MenuItem
-                        icon={
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M6 9l6 6 6-6" />
-                            </svg>
-                        }
-                        label={t('board.column.menu.expand_column', { defaultValue: 'Rozwiń kolumnę' })}
-                        onClick={() => { onToggleCollapse?.(); onClose() }}
-                    />
-                ) : (
-                    <MenuItem
-                        icon={
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M18 15l-6-6-6 6" />
-                            </svg>
-                        }
-                        label={t('board.column.menu.collapse', { defaultValue: 'Zwiń kolumnę' })}
-                        onClick={() => { onToggleCollapse?.(); onClose() }}
-                    />
-                )}
-            </MenuSection>
-
-            <div className="border-t border-gray-800" />
-
-            {/* Group 4: Automation (Pro) */}
-            {canEditColumn && (
-                <>
-                    <MenuSection title={t('board.column.menu.auto_title')}>
-                        <MenuItem
-                            icon={<ZapIcon />}
-                            label={t('board.column.menu.add_rule')}
-                            onClick={onAddRule}
-                        />
-                    </MenuSection>
-                    <div className="border-t border-gray-800" />
-                </>
-            )}
-
-            {/* Group 5: Danger Zone */}
-            {canEditColumn && (
-                <MenuSection>
-                    <MenuItem
-                        icon={<DeleteIconDefault />}
-                        label={t('board.column.menu.delete_column')}
-                        onClick={onDeleteColumn}
-                        danger
-                    />
-                </MenuSection>
-            )}
+  const MenuSection = ({ children, title }: { children: React.ReactNode; title?: string }) => (
+    <div className="py-1">
+      {title && (
+        <div className="px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-gray-500">
+          {title}
         </div>
+      )}
+      {children}
+    </div>
+  )
+
+  const MenuItem = ({
+    icon,
+    label,
+    onClick,
+    danger = false,
+  }: {
+    icon?: React.ReactNode
+    label: string
+    onClick?: () => void
+    danger?: boolean
+  }) => (
+    <button
+      onClick={() => {
+        onClick?.()
+      }}
+      className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors ${
+        danger
+          ? 'text-red-400 hover:bg-gray-800 hover:text-[#F2CE88]'
+          : 'text-gray-300 hover:bg-gray-800 hover:text-[#F2CE88]'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  )
+
+  if (view === 'colors') {
+    return (
+      <div
+        ref={menuRef}
+        className="absolute right-0 top-8 z-20 w-52 overflow-hidden rounded-xl border border-gray-800 bg-[#1a1a24] shadow-2xl"
+      >
+        <div className="flex items-center gap-2 border-b border-gray-800 px-3 py-2">
+          <button
+            onClick={() => setView('main')}
+            className="text-gray-400 transition-colors hover:text-white"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M19 12H5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 19L5 12L12 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <span className="text-sm font-medium text-white">
+            {t('board.column.menu.select_color')}
+          </span>
+        </div>
+        <div className="grid grid-cols-5 gap-2 p-3">
+          {COLUMN_COLORS.map((color) => (
+            <button
+              key={color}
+              onClick={() => {
+                onChangeColor?.(color)
+                onClose()
+              }}
+              className="h-6 w-6 rounded-full border border-gray-700 transition-transform hover:scale-110"
+              style={{ backgroundColor: color }}
+            />
+          ))}
+        </div>
+      </div>
     )
+  }
+
+  return (
+    <div
+      ref={menuRef}
+      className="absolute right-0 top-8 z-20 w-52 overflow-hidden rounded-xl border border-gray-800 bg-[#1a1a24] shadow-2xl"
+    >
+      {/* Group 1: Configuration */}
+      {canEditColumn && (
+        <MenuSection title={t('board.column.menu.config')}>
+          <MenuItem
+            icon={<EditIconDefault />}
+            label={t('board.column.menu.rename')}
+            onClick={onRename}
+          />
+          <MenuItem
+            icon={<HashIcon />}
+            label={t('board.column.menu.wip_limit')}
+            onClick={onSetWipLimit}
+          />
+          <MenuItem
+            icon={<PaletteIcon />}
+            label={t('board.column.menu.change_color')}
+            onClick={() => setView('colors')}
+          />
+        </MenuSection>
+      )}
+
+      {canEditColumn && <div className="border-t border-gray-800" />}
+
+      {/* Group 2: Sort & Filter */}
+      <MenuSection title={t('board.column.menu.sort_title')}>
+        <MenuItem icon={<SortIcon />} label={t('board.column.menu.sort_by')} />
+        <MenuItem icon={<BellIcon />} label={t('board.column.menu.watch')} onClick={onWatch} />
+      </MenuSection>
+
+      <div className="border-t border-gray-800" />
+
+      {/* Group 3: Bulk Actions */}
+      <MenuSection title={t('board.column.menu.bulk_title')}>
+        {canEditColumn && (
+          <>
+            <MenuItem
+              icon={<ArrowRightSmallIcon />}
+              label={t('board.column.menu.move_all')}
+              onClick={onMoveAllCards}
+            />
+            <MenuItem
+              icon={<ArchiveIconDefault />}
+              label={t('board.column.menu.archive_all')}
+              onClick={onArchiveAll}
+            />
+          </>
+        )}
+        {isCardsCollapsed ? (
+          <MenuItem
+            icon={
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 14h16v6H4zm0-10h16v6H4z" />
+              </svg>
+            }
+            label={t('board.column.menu.expand_all', { defaultValue: 'Rozwiń wszystkie karty' })}
+            onClick={() => {
+              onExpandAllCards?.()
+              onClose()
+            }}
+          />
+        ) : (
+          <MenuItem
+            icon={
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 14h16v2H4zm0-8h16v2H4z" />
+              </svg>
+            }
+            label={t('board.column.menu.collapse_all', { defaultValue: 'Zwiń wszystkie karty' })}
+            onClick={() => {
+              onCollapseAllCards?.()
+              onClose()
+            }}
+          />
+        )}
+        {isCollapsed ? (
+          <MenuItem
+            icon={
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            }
+            label={t('board.column.menu.expand_column', { defaultValue: 'Rozwiń kolumnę' })}
+            onClick={() => {
+              onToggleCollapse?.()
+              onClose()
+            }}
+          />
+        ) : (
+          <MenuItem
+            icon={
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M18 15l-6-6-6 6" />
+              </svg>
+            }
+            label={t('board.column.menu.collapse', { defaultValue: 'Zwiń kolumnę' })}
+            onClick={() => {
+              onToggleCollapse?.()
+              onClose()
+            }}
+          />
+        )}
+      </MenuSection>
+
+      <div className="border-t border-gray-800" />
+
+      {/* Group 4: Automation (Pro) */}
+      {canEditColumn && (
+        <>
+          <MenuSection title={t('board.column.menu.auto_title')}>
+            <MenuItem
+              icon={<ZapIcon />}
+              label={t('board.column.menu.add_rule')}
+              onClick={onAddRule}
+            />
+          </MenuSection>
+          <div className="border-t border-gray-800" />
+        </>
+      )}
+
+      {/* Group 5: Danger Zone */}
+      {canEditColumn && (
+        <MenuSection>
+          <MenuItem
+            icon={<DeleteIconDefault />}
+            label={t('board.column.menu.delete_column')}
+            onClick={onDeleteColumn}
+            danger
+          />
+        </MenuSection>
+      )}
+    </div>
+  )
 }
 
 export function TaskColumn({
-    title,
-    status,
-    tasks,
-    onAddTask,
-    onTaskClick,
-    onTaskEdit,
-    onTaskDelete,
-    onTaskDuplicate,
-    onTaskArchive,
-    onRename,
-    onSetWipLimit,
-    onChangeColor,
-    onWatch,
-    onMoveAllCards,
-    onArchiveAll,
-    onExpandAllCards,
-    onCollapseAllCards,
-    onToggleCollapse,
-    isCollapsed,
-    isCardsCollapsed,
-    onAddRule,
-    onDeleteColumn,
-    color,
-    children,
-    dragHandleProps,
-    members,
-    userRole,
-    permissions
-}: TaskColumnProps & { children?: React.ReactNode; members?: { id: string; name: string; avatar?: string }[]; userRole?: string; permissions?: TaskPermissions; isCollapsed?: boolean; isCardsCollapsed?: boolean }) {
-    const [showQuickAdd, setShowQuickAdd] = useState(false)
-    const [showColumnMenu, setShowColumnMenu] = useState(false)
-    const [isRenaming, setIsRenaming] = useState(false)
-    const [renameTitle, setRenameTitle] = useState('')
+  title,
+  status,
+  tasks,
+  onAddTask,
+  onTaskClick,
+  onTaskEdit,
+  onTaskDelete,
+  onTaskDuplicate,
+  onTaskArchive,
+  onRename,
+  onSetWipLimit,
+  onChangeColor,
+  onWatch,
+  onMoveAllCards,
+  onArchiveAll,
+  onExpandAllCards,
+  onCollapseAllCards,
+  onToggleCollapse,
+  isCollapsed,
+  isCardsCollapsed,
+  onAddRule,
+  onDeleteColumn,
+  color,
+  children,
+  dragHandleProps,
+  members,
+  userRole,
+  permissions,
+}: TaskColumnProps & {
+  children?: React.ReactNode
+  members?: { id: string; name: string; avatar?: string }[]
+  userRole?: string
+  permissions?: TaskPermissions
+  isCollapsed?: boolean
+  isCardsCollapsed?: boolean
+}) {
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [showColumnMenu, setShowColumnMenu] = useState(false)
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameTitle, setRenameTitle] = useState('')
 
-    const canEditColumn = permissions
-        ? !!(permissions.stages.update || permissions.stages.delete)
-        : !!(userRole && !['member', 'guest'].includes(userRole))
-    const canCreateTask = permissions ? permissions.tasks.create : true
+  const canEditColumn = permissions
+    ? !!(permissions.stages.update || permissions.stages.delete)
+    : !!(userRole && !['member', 'guest'].includes(userRole))
+  const canCreateTask = permissions ? permissions.tasks.create : true
 
-    const config = useStatusConfig()[status] || {
-        label: title,
-        color: color || '#6B7280',
-        bgColor: 'bg-gray-800',
-        textColor: 'text-gray-400'
+  const config = useStatusConfig()[status] || {
+    label: title,
+    color: color || '#6B7280',
+    bgColor: 'bg-gray-800',
+    textColor: 'text-gray-400',
+  }
+
+  const handleQuickAdd = (data: {
+    title: string
+    priority: string
+    status: string
+    assignees?: string[]
+    dueDate?: string
+  }) => {
+    onAddTask?.(data)
+  }
+
+  const handleRenameSubmit = () => {
+    if (renameTitle.trim()) {
+      onRename?.(renameTitle)
     }
+    setIsRenaming(false)
+  }
 
-    const handleQuickAdd = (data: { title: string; priority: string; status: string; assignees?: string[]; dueDate?: string }) => {
-        onAddTask?.(data)
-    }
-
-    const handleRenameSubmit = () => {
-        if (renameTitle.trim()) {
-            onRename?.(renameTitle)
-        }
-        setIsRenaming(false)
-    }
-
-    if (isCollapsed) {
-        return (
-            <div className="flex flex-col min-w-[50px] max-w-[50px] h-full min-h-0 bg-[#12121a]/30 hover:bg-[#1a1a24] transition-colors cursor-pointer items-center py-4 rounded-xl group/collapsed" onClick={onToggleCollapse}>
-                {/* Drag Handle */}
-                <div
-                    className="cursor-grab text-gray-700 group-hover/collapsed:text-gray-400 transition-colors mb-4"
-                    {...dragHandleProps}
-                    onClick={e => e.stopPropagation()} // Prevent clicking drag handle from toggling collapse
-                >
-                    <GripVerticalIcon className="w-4 h-4" />
-                </div>
-
-                <div className="w-3 h-3 rounded-full mb-3" style={{ backgroundColor: color || config.color }} />
-
-                <span
-                    className="px-2 py-0.5 rounded-md text-xs font-medium mb-4"
-                    style={{
-                        backgroundColor: `${color || '#6366f1'}20`,
-                        color: color || '#6366f1'
-                    }}
-                >
-                    {tasks.length}
-                </span>
-
-                <div className="flex-1 flex justify-center mt-2 group-hover/collapsed:text-white transition-colors">
-                    <h3 className="font-semibold text-gray-500 text-sm tracking-wider uppercase whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                        {title || config.label}
-                    </h3>
-                </div>
-            </div>
-        )
-    }
-
+  if (isCollapsed) {
     return (
-        <div className="flex flex-col min-w-[320px] max-w-[320px] h-full min-h-0">
-            {/* Column Header */}
-            <div className="flex items-center justify-between mb-4 px-1 relative group/column-header">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {/* Drag Handle */}
-                    <div
-                        className="cursor-grab hover:text-gray-200 text-gray-600 opacity-0 group-hover/column-header:opacity-100 transition-opacity flex-shrink-0"
-                        {...dragHandleProps}
-                    >
-                        <GripVerticalIcon className="w-4 h-4" />
-                    </div>
-
-                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color || config.color }} />
-                    {isRenaming ? (
-                        <input
-                            type="text"
-                            value={renameTitle}
-                            onChange={(e) => setRenameTitle(e.target.value)}
-                            onBlur={handleRenameSubmit}
-                            onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()}
-                            autoFocus
-                            className="bg-[#12121a] border border-gray-700 rounded px-2 py-0.5 text-sm text-white focus:outline-none focus:border-amber-500 w-full mr-2 min-w-0"
-                        />
-                    ) : (
-                        <h3
-                            className={`font-semibold text-white text-sm transition-colors truncate ${canEditColumn ? 'cursor-pointer hover:text-amber-400' : ''}`}
-                            onDoubleClick={() => {
-                                if (canEditColumn) {
-                                    setRenameTitle(title || config.label)
-                                    setIsRenaming(true)
-                                }
-                            }}
-                            title={title || config.label}
-                        >
-                            {title || config.label}
-                        </h3>
-                    )}
-                    {!isRenaming && (
-                        <span
-                            className="px-2 py-0.5 rounded-md text-xs font-medium flex-shrink-0"
-                            style={{
-                                backgroundColor: `${color || '#6366f1'}20`,
-                                color: color || '#6366f1'
-                            }}
-                        >
-                            {tasks.length}
-                        </span>
-                    )}
-                </div>
-
-                {/* Action buttons: Add + Menu */}
-                <div className="flex items-center gap-1 flex-shrink-0">
-                    {canCreateTask && (
-                        <button
-                            onClick={() => setShowQuickAdd(!showQuickAdd)}
-                            className="w-6 h-6 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-amber-400 transition-colors"
-                            title="Add task"
-                        >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                        </button>
-                    )}
-                    <button
-                        onClick={() => setShowColumnMenu(!showColumnMenu)}
-                        className="w-6 h-6 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
-                        title="Column options"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="5" cy="12" r="2" />
-                            <circle cx="12" cy="12" r="2" />
-                            <circle cx="19" cy="12" r="2" />
-                        </svg>
-                    </button>
-                </div>
-
-                {/* Column Menu */}
-                {showColumnMenu && (
-                    <ColumnMenu
-                        onClose={() => setShowColumnMenu(false)}
-                        onRename={() => {
-                            setRenameTitle(title || config.label)
-                            setIsRenaming(true)
-                            setShowColumnMenu(false)
-                        }}
-                        onSetWipLimit={() => onSetWipLimit?.(5)}
-                        onChangeColor={onChangeColor}
-                        onWatch={onWatch}
-                        onMoveAllCards={onMoveAllCards}
-                        onArchiveAll={onArchiveAll}
-                        onExpandAllCards={onExpandAllCards}
-                        onCollapseAllCards={onCollapseAllCards}
-                        onToggleCollapse={onToggleCollapse}
-                        isCollapsed={isCollapsed}
-                        isCardsCollapsed={isCardsCollapsed}
-                        onAddRule={onAddRule}
-                        onDeleteColumn={onDeleteColumn}
-                        userRole={userRole}
-                        permissions={permissions}
-                    />
-                )}
-            </div>
-
-            {/* Quick Add Task Popup */}
-            {showQuickAdd && (
-                <QuickAddTask
-                    status={status}
-                    members={members}
-                    onAdd={handleQuickAdd}
-                    onClose={() => setShowQuickAdd(false)}
-                />
-            )}
-
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-3 pr-1 pb-4">
-                {children ? children : tasks.map(task => (
-                    <TaskCard
-                        key={task.id}
-                        {...task}
-                        permissions={permissions}
-                        onClick={() => onTaskClick?.(task.id)}
-                        onEdit={() => onTaskEdit?.(task.id)}
-                        onDelete={() => onTaskDelete?.(task.id)}
-                        onDuplicate={() => onTaskDuplicate?.(task.id)}
-                        onArchive={() => onTaskArchive?.(task.id)}
-                    />
-                ))}
-            </div>
+      <div
+        className="group/collapsed flex h-full min-h-0 min-w-[50px] max-w-[50px] cursor-pointer flex-col items-center rounded-xl bg-[#12121a]/30 py-4 transition-colors hover:bg-[#1a1a24]"
+        onClick={onToggleCollapse}
+      >
+        {/* Drag Handle */}
+        <div
+          className="mb-4 cursor-grab text-gray-700 transition-colors group-hover/collapsed:text-gray-400"
+          {...dragHandleProps}
+          onClick={(e) => e.stopPropagation()} // Prevent clicking drag handle from toggling collapse
+        >
+          <GripVerticalIcon className="h-4 w-4" />
         </div>
+
+        <div
+          className="mb-3 h-3 w-3 rounded-full"
+          style={{ backgroundColor: color || config.color }}
+        />
+
+        <span
+          className="mb-4 rounded-md px-2 py-0.5 text-xs font-medium"
+          style={{
+            backgroundColor: `${color || '#6366f1'}20`,
+            color: color || '#6366f1',
+          }}
+        >
+          {tasks.length}
+        </span>
+
+        <div className="mt-2 flex flex-1 justify-center transition-colors group-hover/collapsed:text-white">
+          <h3
+            className="whitespace-nowrap text-sm font-semibold uppercase tracking-wider text-gray-500"
+            style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+          >
+            {title || config.label}
+          </h3>
+        </div>
+      </div>
     )
+  }
+
+  return (
+    <div className="flex h-full min-h-0 min-w-[320px] max-w-[320px] flex-col">
+      {/* Column Header */}
+      <div className="group/column-header relative mb-4 flex items-center justify-between px-1">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {/* Drag Handle */}
+          <div
+            className="flex-shrink-0 cursor-grab text-gray-600 opacity-0 transition-opacity hover:text-gray-200 group-hover/column-header:opacity-100"
+            {...dragHandleProps}
+          >
+            <GripVerticalIcon className="h-4 w-4" />
+          </div>
+
+          <div
+            className="h-3 w-3 flex-shrink-0 rounded-full"
+            style={{ backgroundColor: color || config.color }}
+          />
+          {isRenaming ? (
+            <input
+              type="text"
+              value={renameTitle}
+              onChange={(e) => setRenameTitle(e.target.value)}
+              onBlur={handleRenameSubmit}
+              onKeyDown={(e) => e.key === 'Enter' && handleRenameSubmit()}
+              autoFocus
+              className="mr-2 w-full min-w-0 rounded border border-gray-700 bg-[#12121a] px-2 py-0.5 text-sm text-white focus:border-amber-500 focus:outline-none"
+            />
+          ) : (
+            <h3
+              className={`truncate text-sm font-semibold text-white transition-colors ${canEditColumn ? 'cursor-pointer hover:text-amber-400' : ''}`}
+              onDoubleClick={() => {
+                if (canEditColumn) {
+                  setRenameTitle(title || config.label)
+                  setIsRenaming(true)
+                }
+              }}
+              title={title || config.label}
+            >
+              {title || config.label}
+            </h3>
+          )}
+          {!isRenaming && (
+            <span
+              className="flex-shrink-0 rounded-md px-2 py-0.5 text-xs font-medium"
+              style={{
+                backgroundColor: `${color || '#6366f1'}20`,
+                color: color || '#6366f1',
+              }}
+            >
+              {tasks.length}
+            </span>
+          )}
+        </div>
+
+        {/* Action buttons: Add + Menu */}
+        <div className="flex flex-shrink-0 items-center gap-1">
+          {canCreateTask && (
+            <button
+              onClick={() => setShowQuickAdd(!showQuickAdd)}
+              className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-800 text-gray-500 transition-colors hover:bg-gray-700 hover:text-amber-400"
+              title="Add task"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+          )}
+          <button
+            onClick={() => setShowColumnMenu(!showColumnMenu)}
+            className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-800 text-gray-500 transition-colors hover:bg-gray-700 hover:text-white"
+            title="Column options"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="5" cy="12" r="2" />
+              <circle cx="12" cy="12" r="2" />
+              <circle cx="19" cy="12" r="2" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Column Menu */}
+        {showColumnMenu && (
+          <ColumnMenu
+            onClose={() => setShowColumnMenu(false)}
+            onRename={() => {
+              setRenameTitle(title || config.label)
+              setIsRenaming(true)
+              setShowColumnMenu(false)
+            }}
+            onSetWipLimit={() => onSetWipLimit?.(5)}
+            onChangeColor={onChangeColor}
+            onWatch={onWatch}
+            onMoveAllCards={onMoveAllCards}
+            onArchiveAll={onArchiveAll}
+            onExpandAllCards={onExpandAllCards}
+            onCollapseAllCards={onCollapseAllCards}
+            onToggleCollapse={onToggleCollapse}
+            isCollapsed={isCollapsed}
+            isCardsCollapsed={isCardsCollapsed}
+            onAddRule={onAddRule}
+            onDeleteColumn={onDeleteColumn}
+            userRole={userRole}
+            permissions={permissions}
+          />
+        )}
+      </div>
+
+      {/* Quick Add Task Popup */}
+      {showQuickAdd && (
+        <QuickAddTask
+          status={status}
+          members={members}
+          onAdd={handleQuickAdd}
+          onClose={() => setShowQuickAdd(false)}
+        />
+      )}
+
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden pb-4 pr-1">
+        {children
+          ? children
+          : tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                {...task}
+                permissions={permissions}
+                onClick={() => onTaskClick?.(task.id)}
+                onEdit={() => onTaskEdit?.(task.id)}
+                onDelete={() => onTaskDelete?.(task.id)}
+                onDuplicate={() => onTaskDuplicate?.(task.id)}
+                onArchive={() => onTaskArchive?.(task.id)}
+              />
+            ))}
+      </div>
+    </div>
+  )
 }
 
 // Add Column Component
-export function AddColumn({
-    onAdd
-}: {
-    onAdd?: (title: string, color: string) => void
-}) {
-    const { t } = useTranslation()
-    const [isAdding, setIsAdding] = useState(false)
-    const [title, setTitle] = useState('')
-    const [color, setColor] = useState('#6B7280')
+export function AddColumn({ onAdd }: { onAdd?: (title: string, color: string) => void }) {
+  const { t } = useTranslation()
+  const [isAdding, setIsAdding] = useState(false)
+  const [title, setTitle] = useState('')
+  const [color, setColor] = useState('#6B7280')
 
-    const handleAdd = () => {
-        if (!title.trim()) return
-        onAdd?.(title, color)
-        setTitle('')
-        setColor('#6B7280')
-        setIsAdding(false)
-    }
+  const handleAdd = () => {
+    if (!title.trim()) return
+    onAdd?.(title, color)
+    setTitle('')
+    setColor('#6B7280')
+    setIsAdding(false)
+  }
 
-    if (!isAdding) {
-        return (
-            <div className="flex flex-col min-w-[320px] max-w-[320px] h-full">
-                <div className="h-10 mb-4" /> {/* Spacer for header alignment */}
-                <button
-                    onClick={() => setIsAdding(true)}
-                    className="flex-1 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-800 hover:border-gray-700 hover:bg-gray-800/50 transition-all group"
-                >
-                    <div className="w-12 h-12 rounded-full bg-gray-800 group-hover:bg-gray-700 flex items-center justify-center mb-4 transition-colors">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-500 group-hover:text-amber-400 transition-colors">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                    </div>
-                    <p className="text-gray-500 group-hover:text-gray-300 font-medium transition-colors">{t('board.add_column.empty_button')}</p>
-                </button>
-            </div>
-        )
-    }
-
+  if (!isAdding) {
     return (
-        <div className="flex flex-col min-w-[320px] max-w-[320px] h-full">
-            <div className="h-10 mb-4 flex items-center justify-between">
-                <span className="font-semibold text-white text-sm">{t('board.add_column.title')}</span>
-                <button onClick={() => setIsAdding(false)} className="text-gray-500 hover:text-white">
-                    <CloseIcon />
-                </button>
-            </div>
-
-            <div className="p-4 bg-[#1a1a24] rounded-xl border border-gray-800 space-y-4">
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1.5 uppercase tracking-wider font-medium">{t('board.add_column.label')}</label>
-                    <input
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder={t('board.add_column.placeholder')}
-                        autoFocus
-                        onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                        className="w-full bg-[#12121a] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all placeholder-gray-600"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1.5 uppercase tracking-wider font-medium">{t('board.add_column.color_label')}</label>
-                    <div className="grid grid-cols-6 gap-2">
-                        {COLUMN_COLORS.map((c) => (
-                            <button
-                                key={c}
-                                onClick={() => setColor(c)}
-                                className={`w-8 h-8 rounded-full border-2 transition-all ${color === c ? 'border-white scale-110' : 'border-transparent hover:scale-105'}`}
-                                style={{ backgroundColor: c }}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                <div className="pt-2">
-                    <button
-                        onClick={handleAdd}
-                        disabled={!title.trim()}
-                        className="w-full py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                        <CheckIcon />
-                        {t('board.add_column.button')}
-                    </button>
-                </div>
-            </div>
-        </div>
+      <div className="flex h-full min-w-[320px] max-w-[320px] flex-col">
+        <div className="mb-4 h-10" /> {/* Spacer for header alignment */}
+        <button
+          onClick={() => setIsAdding(true)}
+          className="group flex flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-800 transition-all hover:border-gray-700 hover:bg-gray-800/50"
+        >
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-800 transition-colors group-hover:bg-gray-700">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-gray-500 transition-colors group-hover:text-amber-400"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </div>
+          <p className="font-medium text-gray-500 transition-colors group-hover:text-gray-300">
+            {t('board.add_column.empty_button')}
+          </p>
+        </button>
+      </div>
     )
+  }
+
+  return (
+    <div className="flex h-full min-w-[320px] max-w-[320px] flex-col">
+      <div className="mb-4 flex h-10 items-center justify-between">
+        <span className="text-sm font-semibold text-white">{t('board.add_column.title')}</span>
+        <button onClick={() => setIsAdding(false)} className="text-gray-500 hover:text-white">
+          <CloseIcon />
+        </button>
+      </div>
+
+      <div className="space-y-4 rounded-xl border border-gray-800 bg-[#1a1a24] p-4">
+        <div>
+          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-500">
+            {t('board.add_column.label')}
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t('board.add_column.placeholder')}
+            autoFocus
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            className="w-full rounded-lg border border-gray-700 bg-[#12121a] px-3 py-2 text-sm text-white placeholder-gray-600 transition-all focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-500">
+            {t('board.add_column.color_label')}
+          </label>
+          <div className="grid grid-cols-6 gap-2">
+            {COLUMN_COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => setColor(c)}
+                className={`h-8 w-8 rounded-full border-2 transition-all ${color === c ? 'scale-110 border-white' : 'border-transparent hover:scale-105'}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <button
+            onClick={handleAdd}
+            disabled={!title.trim()}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 py-2 font-medium text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <CheckIcon />
+            {t('board.add_column.button')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }

@@ -6,79 +6,77 @@ import { useUnreadCount } from '@/hooks/useUnreadCount'
 import type { Conversation, ConversationMessage } from '@taskdashboard/types'
 
 interface ConversationItemProps {
-    conversation: Conversation
-    isSelected: boolean
-    currentUserId: string
-    workspaceId: string
-    onClick: () => void
+  conversation: Conversation
+  isSelected: boolean
+  currentUserId: string
+  workspaceId: string
+  onClick: () => void
 }
 
 export function ConversationItem({
-    conversation,
-    isSelected,
-    currentUserId,
-    workspaceId,
-    onClick
+  conversation,
+  isSelected,
+  currentUserId,
+  workspaceId,
+  onClick,
 }: ConversationItemProps) {
-    const { isOnline } = usePresence(workspaceId)
-    const messages = (conversation.messages as ConversationMessage[]) || []
-    const { unreadCount } = useUnreadCount(conversation.id, messages)
-    const { t, i18n } = useTranslation()
-    const locale = i18n.language === 'pl' ? pl : enUS
+  const { isOnline } = usePresence(workspaceId)
+  const messages = (conversation.messages as ConversationMessage[]) || []
+  const { unreadCount } = useUnreadCount(conversation.id, messages)
+  const { t, i18n } = useTranslation()
+  const locale = i18n.language === 'pl' ? pl : enUS
 
-    // Get last message
-    const lastMessage = messages[messages.length - 1]
-    const content = lastMessage?.content
-    const lastMessageText = typeof content === 'string'
-        ? (content.substring(0, 50) || t('messages.noMessagesYet'))
-        : (content ? '🔒 Encrypted Message' : t('messages.noMessagesYet'))
+  // Get last message
+  const lastMessage = messages[messages.length - 1]
+  const content = lastMessage?.content
+  const lastMessageText =
+    typeof content === 'string'
+      ? content.substring(0, 50) || t('messages.noMessagesYet')
+      : content
+        ? '🔒 Encrypted Message'
+        : t('messages.noMessagesYet')
 
-    // Get other participant (for direct conversations)
-    const otherParticipantId = conversation.participants?.find((id: string) => id !== currentUserId)
-    const isOtherOnline = otherParticipantId ? isOnline(otherParticipantId) : false
+  // Get other participant (for direct conversations)
+  const otherParticipantId = conversation.participants?.find((id: string) => id !== currentUserId)
+  const isOtherOnline = otherParticipantId ? isOnline(otherParticipantId) : false
 
-    return (
-        <button
-            onClick={onClick}
-            className={`
-                w-full px-4 py-3 flex items-center gap-3 hover:bg-[var(--app-bg-elevated)]/30 transition-colors text-left border-l-4
-                ${isSelected ? 'bg-[var(--app-bg-elevated)]/50 border-amber-500' : 'border-transparent'}
-            `}
-        >
-            {/* Avatar with online indicator */}
-            <div className="relative flex-shrink-0">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                    {conversation.name?.substring(0, 2).toUpperCase() || 'CH'}
-                </div>
-                {isOtherOnline && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--app-bg-sidebar)] rounded-full"></div>
-                )}
-            </div>
+  return (
+    <button
+      onClick={onClick}
+      className={`hover:bg-[var(--app-bg-elevated)]/30 flex w-full items-center gap-3 border-l-4 px-4 py-3 text-left transition-colors ${isSelected ? 'bg-[var(--app-bg-elevated)]/50 border-amber-500' : 'border-transparent'} `}
+    >
+      {/* Avatar with online indicator */}
+      <div className="relative flex-shrink-0">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 font-semibold text-white">
+          {conversation.name?.substring(0, 2).toUpperCase() || 'CH'}
+        </div>
+        {isOtherOnline && (
+          <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[var(--app-bg-sidebar)] bg-green-500"></div>
+        )}
+      </div>
 
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-[var(--app-text-primary)] truncate">
-                        {conversation.name || t('messages.unnamedConversation')}
-                    </h3>
-                    {lastMessage && (
-                        <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
-                            {formatDistanceToNow(new Date(lastMessage.timestamp), { addSuffix: true, locale })}
-                        </span>
-                    )}
-                </div>
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex items-center justify-between">
+          <h3 className="truncate font-semibold text-[var(--app-text-primary)]">
+            {conversation.name || t('messages.unnamedConversation')}
+          </h3>
+          {lastMessage && (
+            <span className="ml-2 flex-shrink-0 text-xs text-gray-500">
+              {formatDistanceToNow(new Date(lastMessage.timestamp), { addSuffix: true, locale })}
+            </span>
+          )}
+        </div>
 
-                <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-400 truncate">
-                        {lastMessageText}
-                    </p>
-                    {unreadCount > 0 && (
-                        <span className="ml-2 bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
-                    )}
-                </div>
-            </div>
-        </button>
-    )
+        <div className="flex items-center justify-between">
+          <p className="truncate text-sm text-gray-400">{lastMessageText}</p>
+          {unreadCount > 0 && (
+            <span className="ml-2 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  )
 }

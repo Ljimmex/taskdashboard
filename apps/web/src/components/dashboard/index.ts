@@ -6,4 +6,3 @@ export { OverallProgress } from './OverallProgress'
 export { ChatSection } from './ChatSection'
 export { TeamActivity } from './TeamActivity'
 export { CalendarSection } from './CalendarSection'
-

@@ -13,26 +13,35 @@ import { hasWorkspacePermission, type WorkspaceRole } from '../../lib/permission
 
 // type Env removed
 
-const app = new Hono<{ Variables: { user: Auth['$Infer']['Session']['user'], session: Auth['$Infer']['Session']['session'] } }>()
+const app = new Hono<{
+  Variables: {
+    user: Auth['$Infer']['Session']['user']
+    session: Auth['$Infer']['Session']['session']
+  }
+}>()
 
 const foldersQuerySchema = z.object({
-    workspaceId: z.string(),
-    parentId: z.string().optional(),
+  workspaceId: z.string(),
+  parentId: z.string().optional(),
 })
 
 // Helper: Get user's workspace role (blocks suspended members)
-async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
-    const [member] = await db.select()
-        .from(workspaceMembers)
-        .where(
-            and(
-                eq(workspaceMembers.userId, userId),
-                eq(workspaceMembers.workspaceId, workspaceId),
-                eq(workspaceMembers.status, 'active')
-            )
-        )
-        .limit(1)
-    return (member?.role as WorkspaceRole) || null
+async function getUserWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<WorkspaceRole | null> {
+  const [member] = await db
+    .select()
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.userId, userId),
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.status, 'active')
+      )
+    )
+    .limit(1)
+  return (member?.role as WorkspaceRole) || null
 }
 
 app.use('*', authMiddleware)
@@ -41,41 +50,41 @@ app.use('*', authMiddleware)
 // GET /folders - List folders
 // -----------------------------------------------------------------------------
 app.get('/', zValidator('query', foldersQuerySchema), async (c) => {
-    const user = c.get('user')
-    const { workspaceId, parentId } = c.req.valid('query')
+  const user = c.get('user')
+  const { workspaceId, parentId } = c.req.valid('query')
 
-    if (!workspaceId) {
-        return c.json({ error: 'Workspace ID is required' }, 400)
+  if (!workspaceId) {
+    return c.json({ error: 'Workspace ID is required' }, 400)
+  }
+
+  if (!user) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  // Check workspace membership status
+  const workspaceRole = await getUserWorkspaceRole(user.id, workspaceId)
+  if (!workspaceRole) {
+    return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+  }
+
+  const conditions = [eq(folders.workspaceId, workspaceId)]
+
+  if (parentId) {
+    if (parentId === 'root') {
+      conditions.push(sql`${folders.parentId} IS NULL`)
+    } else {
+      conditions.push(eq(folders.parentId, parentId))
     }
+  }
 
-    if (!user) {
-        return c.json({ error: 'Unauthorized' }, 401)
-    }
+  const results = await db
+    .select()
+    .from(folders)
+    .where(and(...conditions))
+    .orderBy(desc(folders.createdAt))
 
-    // Check workspace membership status
-    const workspaceRole = await getUserWorkspaceRole(user.id, workspaceId)
-    if (!workspaceRole) {
-        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
-    }
-
-    const conditions = [
-        eq(folders.workspaceId, workspaceId)
-    ]
-
-    if (parentId) {
-        if (parentId === 'root') {
-            conditions.push(sql`${folders.parentId} IS NULL`)
-        } else {
-            conditions.push(eq(folders.parentId, parentId))
-        }
-    }
-
-    const results = await db.select().from(folders)
-        .where(and(...conditions))
-        .orderBy(desc(folders.createdAt))
-
-    // Calculate folder sizes recursively by summing file sizes
-    const sizesQuery = await db.execute(sql`
+  // Calculate folder sizes recursively by summing file sizes
+  const sizesQuery = await db.execute(sql`
         WITH RECURSIVE folder_tree AS (
             SELECT id, id as root_id FROM folders WHERE workspace_id = ${workspaceId}
             UNION ALL
@@ -88,17 +97,17 @@ app.get('/', zValidator('query', foldersQuerySchema), async (c) => {
         GROUP BY ft.root_id
     `)
 
-    const sizeMap = new Map()
-    for (const row of sizesQuery) {
-        sizeMap.set(row.root_id, Number(row.total_size))
-    }
+  const sizeMap = new Map()
+  for (const row of sizesQuery) {
+    sizeMap.set(row.root_id, Number(row.total_size))
+  }
 
-    const foldersWithSizes = results.map(folder => ({
-        ...folder,
-        size: sizeMap.get(folder.id) || 0
-    }))
+  const foldersWithSizes = results.map((folder) => ({
+    ...folder,
+    size: sizeMap.get(folder.id) || 0,
+  }))
 
-    return c.json({ data: foldersWithSizes })
+  return c.json({ data: foldersWithSizes })
 })
 
 // -----------------------------------------------------------------------------
@@ -109,108 +118,112 @@ import { zSanitizedString } from '../../lib/zod-extensions'
 // ...
 
 const createSchema = z.object({
-    name: zSanitizedString(),
-    workspaceId: z.string(),
-    parentId: z.string().optional().nullable(),
+  name: zSanitizedString(),
+  workspaceId: z.string(),
+  parentId: z.string().optional().nullable(),
 })
 
 app.post('/', zValidator('json', createSchema), async (c) => {
-    const body = c.req.valid('json')
-    const user = c.get('user')
+  const body = c.req.valid('json')
+  const user = c.get('user')
 
-    // Check workspace membership status
-    const workspaceRole = await getUserWorkspaceRole(user.id, body.workspaceId)
-    if (!workspaceRole) {
-        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
-    }
+  // Check workspace membership status
+  const workspaceRole = await getUserWorkspaceRole(user.id, body.workspaceId)
+  if (!workspaceRole) {
+    return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+  }
 
-    // Check files.upload permission
-    if (!hasWorkspacePermission(workspaceRole, 'files', 'upload')) {
-        return c.json({ error: 'Forbidden: Insufficient permissions to create folders' }, 403)
-    }
+  // Check files.upload permission
+  if (!hasWorkspacePermission(workspaceRole, 'files', 'upload')) {
+    return c.json({ error: 'Forbidden: Insufficient permissions to create folders' }, 403)
+  }
 
-    const [newFolder] = await db.insert(folders).values({
-        name: body.name,
-        workspaceId: body.workspaceId,
-        parentId: body.parentId || null,
-        createdById: user?.id,
-    }).returning()
+  const [newFolder] = await db
+    .insert(folders)
+    .values({
+      name: body.name,
+      workspaceId: body.workspaceId,
+      parentId: body.parentId || null,
+      createdById: user?.id,
+    })
+    .returning()
 
-    // TRIGGER WEBHOOK
-    if (newFolder) {
-        triggerWebhook('folder.created', newFolder, body.workspaceId)
-    }
+  // TRIGGER WEBHOOK
+  if (newFolder) {
+    triggerWebhook('folder.created', newFolder, body.workspaceId)
+  }
 
-    return c.json(newFolder)
+  return c.json(newFolder)
 })
 
 // -----------------------------------------------------------------------------
 // PATCH /folders/:id - Rename / Move
 // -----------------------------------------------------------------------------
 const updateSchema = z.object({
-    name: zSanitizedString().optional(),
-    parentId: z.string().nullable().optional(),
+  name: zSanitizedString().optional(),
+  parentId: z.string().nullable().optional(),
 })
 
 app.patch('/:id', zValidator('json', updateSchema), async (c) => {
-    const id = c.req.param('id')
-    const user = c.get('user')
-    const body = c.req.valid('json')
+  const id = c.req.param('id')
+  const user = c.get('user')
+  const body = c.req.valid('json')
 
-    const folder = await db.query.folders.findFirst({
-        where: eq(folders.id, id)
+  const folder = await db.query.folders.findFirst({
+    where: eq(folders.id, id),
+  })
+
+  if (!folder) return c.json({ error: 'Folder not found' }, 404)
+
+  // Check workspace membership status
+  const workspaceRole = await getUserWorkspaceRole(user.id, folder.workspaceId)
+  if (!workspaceRole) {
+    return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+  }
+
+  const [updated] = await db
+    .update(folders)
+    .set({
+      ...body,
+      updatedAt: new Date(),
     })
+    .where(eq(folders.id, id))
+    .returning()
 
-    if (!folder) return c.json({ error: 'Folder not found' }, 404)
+  // TRIGGER WEBHOOK
+  if (updated) {
+    triggerWebhook('folder.updated', updated, updated.workspaceId)
+  }
 
-    // Check workspace membership status
-    const workspaceRole = await getUserWorkspaceRole(user.id, folder.workspaceId)
-    if (!workspaceRole) {
-        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
-    }
-
-    const [updated] = await db.update(folders)
-        .set({
-            ...body,
-            updatedAt: new Date()
-        })
-        .where(eq(folders.id, id))
-        .returning()
-
-    // TRIGGER WEBHOOK
-    if (updated) {
-        triggerWebhook('folder.updated', updated, updated.workspaceId)
-    }
-
-    return c.json(updated)
+  return c.json(updated)
 })
 
 // -----------------------------------------------------------------------------
 // DELETE /folders/:id - Delete folder
 // -----------------------------------------------------------------------------
 app.delete('/:id', async (c) => {
-    const id = c.req.param('id')
-    const user = c.get('user')
+  const id = c.req.param('id')
+  const user = c.get('user')
 
-    // Get folder for workspaceId before delete
-    const [folder] = await db.select().from(folders).where(eq(folders.id, id)).limit(1)
+  // Get folder for workspaceId before delete
+  const [folder] = await db.select().from(folders).where(eq(folders.id, id)).limit(1)
 
-    if (!folder) return c.json({ success: true })
+  if (!folder) return c.json({ success: true })
 
-    // Check workspace membership status
-    const workspaceRole = await getUserWorkspaceRole(user.id, folder.workspaceId)
-    if (!workspaceRole) {
-        return c.json({ error: 'Forbidden: No active workspace access' }, 403)
-    }
+  // Check workspace membership status
+  const workspaceRole = await getUserWorkspaceRole(user.id, folder.workspaceId)
+  if (!workspaceRole) {
+    return c.json({ error: 'Forbidden: No active workspace access' }, 403)
+  }
 
-    await db.delete(folders).where(eq(folders.id, id))
+  await db.delete(folders).where(eq(folders.id, id))
 
-    // TRIGGER WEBHOOK
-    if (folder) {
-        triggerWebhook('folder.deleted', folder, folder.workspaceId)
-    }
+  // TRIGGER WEBHOOK
+  if (folder) {
+    triggerWebhook('folder.deleted', folder, folder.workspaceId)
+  }
 
-    return c.json({ success: true })
+  return c.json({ success: true })
 })
 
 export default app

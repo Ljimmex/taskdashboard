@@ -5,11 +5,12 @@ import { z } from 'zod'
  * Trims whitespace.
  */
 export const zSanitizedString = () =>
-    z.string()
-        .trim()
-        .refine((val) => !/<[^>]*>/g.test(val), {
-            message: "String must not contain HTML tags (XSS protection)."
-        })
+  z
+    .string()
+    .trim()
+    .refine((val) => !/<[^>]*>/g.test(val), {
+      message: 'String must not contain HTML tags (XSS protection).',
+    })
 
 /**
  * Same as zSanitizedString but optional/nullable

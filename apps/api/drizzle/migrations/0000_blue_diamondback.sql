@@ -2,7 +2,7 @@ CREATE TYPE "public"."user_role" AS ENUM('admin', 'manager', 'member');--> state
 CREATE TYPE "public"."user_status" AS ENUM('active', 'inactive', 'pending');--> statement-breakpoint
 CREATE TYPE "public"."invite_status" AS ENUM('pending', 'accepted', 'revoked', 'expired');--> statement-breakpoint
 CREATE TYPE "public"."member_status" AS ENUM('active', 'invited', 'suspended');--> statement-breakpoint
-CREATE TYPE "public"."subscription_plan" AS ENUM('free', 'starter', 'professional', 'enterprise');--> statement-breakpoint
+CREATE TYPE "public"."subscription_plan" AS ENUM('free', 'plus', 'pro', 'enterprise');--> statement-breakpoint
 CREATE TYPE "public"."subscription_status" AS ENUM('active', 'trial', 'expired', 'cancelled', 'past_due');--> statement-breakpoint
 CREATE TYPE "public"."workspace_role" AS ENUM('owner', 'admin', 'project_manager', 'hr_manager', 'member', 'guest');--> statement-breakpoint
 CREATE TYPE "public"."team_level" AS ENUM('team_lead', 'senior', 'mid', 'junior', 'intern');--> statement-breakpoint
@@ -15,6 +15,8 @@ CREATE TYPE "public"."conversation_type" AS ENUM('direct', 'group', 'channel');-
 CREATE TYPE "public"."calendar_event_type" AS ENUM('event', 'task', 'meeting', 'reminder');--> statement-breakpoint
 CREATE TYPE "public"."webhook_queue_status" AS ENUM('pending', 'processing', 'failed', 'completed');--> statement-breakpoint
 CREATE TYPE "public"."webhook_type" AS ENUM('generic', 'discord', 'slack');--> statement-breakpoint
+CREATE TYPE "public"."invoice_status" AS ENUM('pending', 'paid', 'failed', 'refunded', 'void');--> statement-breakpoint
+CREATE TYPE "public"."subscription_event_type" AS ENUM('seat_added', 'seat_removed', 'plan_changed', 'subscription_activated', 'subscription_cancelled', 'subscription_past_due', 'payment_succeeded', 'payment_failed');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
@@ -102,6 +104,7 @@ CREATE TABLE "users" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"last_active_at" timestamp,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"internal_flags" jsonb DEFAULT '{}'::jsonb,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
@@ -144,12 +147,24 @@ CREATE TABLE "workspaces" (
 	"owner_id" text NOT NULL,
 	"subscription_plan" "subscription_plan" DEFAULT 'free' NOT NULL,
 	"subscription_status" "subscription_status" DEFAULT 'trial' NOT NULL,
+	"cancel_at_period_end" boolean DEFAULT false NOT NULL,
 	"trial_ends_at" timestamp,
 	"billing_email" varchar(255),
-	"max_members" integer DEFAULT 5 NOT NULL,
-	"max_projects" integer DEFAULT 3 NOT NULL,
-	"max_storage_gb" integer DEFAULT 1 NOT NULL,
-	"features" jsonb DEFAULT '{"customBranding":false,"advancedReporting":false,"apiAccess":false,"ssoEnabled":false,"prioritySupport":false}'::jsonb,
+	"billing_day" integer,
+	"polar_customer_id" text,
+	"polar_subscription_id" text,
+	"is_owner_override" boolean DEFAULT false NOT NULL,
+	"override_plan" varchar(50),
+	"current_seat_count" integer DEFAULT 1 NOT NULL,
+	"used_storage_bytes" bigint DEFAULT 0 NOT NULL,
+	"max_members" integer DEFAULT 5,
+	"max_projects" integer DEFAULT 5,
+	"max_storage_gb" integer DEFAULT 0,
+	"max_teams" integer DEFAULT 2,
+	"max_docs" integer DEFAULT 10,
+	"max_whiteboards" integer DEFAULT 1,
+	"max_file_size_mb" integer DEFAULT 10,
+	"features" jsonb DEFAULT '{"customBranding":false,"advancedReporting":false,"apiAccess":"none","ssoEnabled":false,"prioritySupport":false,"hrApproval":false,"revShare":false}'::jsonb,
 	"settings" jsonb DEFAULT '{"defaultLanguage":"pl","timezone":"Europe/Warsaw","dateFormat":"DD/MM/YYYY","timeFormat":"24h","weekStartsOn":"monday","currency":"PLN","notifications":{"email":true,"inApp":true}}'::jsonb,
 	"labels" jsonb DEFAULT '[{"id":"bug","name":"Bug","color":"#ef4444"},{"id":"feature","name":"Feature","color":"#10b981"},{"id":"frontend","name":"Frontend","color":"#3b82f6"},{"id":"backend","name":"Backend","color":"#8b5cf6"},{"id":"urgent","name":"Pilne","color":"#f97316"},{"id":"docs","name":"Dokumentacja","color":"#6b7280"}]'::jsonb,
 	"priorities" jsonb DEFAULT '[{"id":"low","name":"Low","color":"#6b7280","position":0},{"id":"medium","name":"Medium","color":"#3b82f6","position":1},{"id":"high","name":"High","color":"#f59e0b","position":2},{"id":"urgent","name":"Urgent","color":"#ef4444","position":3}]'::jsonb,
@@ -312,12 +327,25 @@ CREATE TABLE "tasks" (
 ALTER TABLE "tasks" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE TABLE "time_entries" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"task_id" uuid NOT NULL,
+	"task_id" uuid,
+	"subtask_id" uuid,
 	"user_id" text NOT NULL,
-	"description" varchar(255),
-	"duration_minutes" integer NOT NULL,
+	"workspace_id" text,
+	"description" text,
+	"duration_minutes" integer DEFAULT 0 NOT NULL,
 	"started_at" timestamp NOT NULL,
 	"ended_at" timestamp,
+	"entry_type" varchar(20) DEFAULT 'task' NOT NULL,
+	"project_role" varchar(30) DEFAULT 'participant' NOT NULL,
+	"difficulty_level" varchar(20) DEFAULT 'standard' NOT NULL,
+	"approval_status" varchar(20) DEFAULT 'pending' NOT NULL,
+	"approved_by" text,
+	"approved_at" timestamp,
+	"rejection_reason" varchar(500),
+	"bonus_points" integer,
+	"is_paused" boolean DEFAULT false NOT NULL,
+	"paused_at" timestamp,
+	"total_paused_minutes" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -509,8 +537,6 @@ CREATE TABLE "documents" (
 	"title" varchar(255) NOT NULL,
 	"content" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"created_by" text NOT NULL,
-	"project_id" uuid,
-	"folder_id" text,
 	"is_archived" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -523,14 +549,90 @@ CREATE TABLE "whiteboards" (
 	"name" varchar(255) NOT NULL,
 	"data" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"created_by" text NOT NULL,
-	"project_id" uuid,
-	"folder_id" text,
 	"is_archived" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "whiteboards" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "invoices" (
+	"id" text PRIMARY KEY NOT NULL,
+	"workspace_id" text NOT NULL,
+	"subscription_id" text,
+	"polar_invoice_id" text,
+	"polar_order_id" text,
+	"status" "invoice_status" DEFAULT 'pending' NOT NULL,
+	"amount_cents" integer NOT NULL,
+	"currency" varchar(3) DEFAULT 'USD' NOT NULL,
+	"period_start" timestamp,
+	"period_end" timestamp,
+	"description" text,
+	"metadata" jsonb DEFAULT '{}'::jsonb,
+	"paid_at" timestamp,
+	"failed_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "invoices_polar_invoice_id_unique" UNIQUE("polar_invoice_id")
+);
+--> statement-breakpoint
+ALTER TABLE "invoices" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "subscription_events" (
+	"id" text PRIMARY KEY NOT NULL,
+	"subscription_id" text NOT NULL,
+	"workspace_id" text NOT NULL,
+	"type" "subscription_event_type" NOT NULL,
+	"seats_delta" integer DEFAULT 0 NOT NULL,
+	"seats_after" integer NOT NULL,
+	"amount_cents" integer,
+	"currency" varchar(3),
+	"description" text,
+	"metadata" jsonb DEFAULT '{}'::jsonb,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "subscription_events" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "subscriptions" (
+	"id" text PRIMARY KEY NOT NULL,
+	"workspace_id" text NOT NULL,
+	"polar_subscription_id" text NOT NULL,
+	"polar_customer_id" text NOT NULL,
+	"polar_product_id" text,
+	"polar_price_id" text,
+	"plan" varchar(50) NOT NULL,
+	"status" varchar(50) NOT NULL,
+	"billing_day" integer NOT NULL,
+	"billing_period" varchar(20),
+	"current_seats" integer DEFAULT 1 NOT NULL,
+	"seat_price_cents" integer NOT NULL,
+	"currency" varchar(3) DEFAULT 'USD' NOT NULL,
+	"current_period_start" timestamp NOT NULL,
+	"current_period_end" timestamp NOT NULL,
+	"cancel_at_period_end" boolean DEFAULT false NOT NULL,
+	"metadata" jsonb DEFAULT '{}'::jsonb,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "subscriptions_polar_subscription_id_unique" UNIQUE("polar_subscription_id")
+);
+--> statement-breakpoint
+ALTER TABLE "subscriptions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "webhook_logs" (
+	"id" text PRIMARY KEY NOT NULL,
+	"source" varchar(50) NOT NULL,
+	"event_type" varchar(100) NOT NULL,
+	"payload" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"signature_valid" boolean DEFAULT false NOT NULL,
+	"processing_error" text,
+	"workspace_id" text,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "webhook_logs" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "notification_inboxes" (
+	"user_id" text PRIMARY KEY NOT NULL,
+	"unread" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"last_updated" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "notification_inboxes" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "workspace_invites" ADD CONSTRAINT "workspace_invites_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workspace_invites" ADD CONSTRAINT "workspace_invites_invited_by_users_id_fk" FOREIGN KEY ("invited_by") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "workspace_members" ADD CONSTRAINT "workspace_members_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -557,7 +659,10 @@ ALTER TABLE "task_comments" ADD CONSTRAINT "task_comments_user_id_users_id_fk" F
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_reporter_id_users_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_subtask_id_subtasks_id_fk" FOREIGN KEY ("subtask_id") REFERENCES "public"."subtasks"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_approved_by_users_id_fk" FOREIGN KEY ("approved_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "file_annotations" ADD CONSTRAINT "file_annotations_file_id_files_id_fk" FOREIGN KEY ("file_id") REFERENCES "public"."files"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "file_annotations" ADD CONSTRAINT "file_annotations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "files" ADD CONSTRAINT "files_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -585,12 +690,14 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_workspace_id_workspaces_id_f
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "documents" ADD CONSTRAINT "documents_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "documents" ADD CONSTRAINT "documents_folder_id_folders_id_fk" FOREIGN KEY ("folder_id") REFERENCES "public"."folders"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "whiteboards" ADD CONSTRAINT "whiteboards_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "whiteboards" ADD CONSTRAINT "whiteboards_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "whiteboards" ADD CONSTRAINT "whiteboards_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "whiteboards" ADD CONSTRAINT "whiteboards_folder_id_folders_id_fk" FOREIGN KEY ("folder_id") REFERENCES "public"."folders"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invoices" ADD CONSTRAINT "invoices_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invoices" ADD CONSTRAINT "invoices_subscription_id_subscriptions_id_fk" FOREIGN KEY ("subscription_id") REFERENCES "public"."subscriptions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subscription_events" ADD CONSTRAINT "subscription_events_subscription_id_subscriptions_id_fk" FOREIGN KEY ("subscription_id") REFERENCES "public"."subscriptions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subscription_events" ADD CONSTRAINT "subscription_events_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_inboxes" ADD CONSTRAINT "notification_inboxes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "audit_logs_workspace_idx" ON "audit_logs" USING btree ("workspace_id");--> statement-breakpoint
 CREATE INDEX "audit_logs_entity_idx" ON "audit_logs" USING btree ("entity_type","entity_id");--> statement-breakpoint
 CREATE INDEX "audit_logs_actor_idx" ON "audit_logs" USING btree ("actor_id");--> statement-breakpoint
@@ -765,4 +872,34 @@ CREATE POLICY "Workspace members can update whiteboards" ON "whiteboards" AS PER
 CREATE POLICY "Creator or admin can delete whiteboards" ON "whiteboards" AS PERMISSIVE FOR DELETE TO public USING (created_by = auth.uid()::text OR workspace_id IN (
             SELECT workspace_id FROM workspace_members 
             WHERE user_id = auth.uid()::text AND role IN ('owner', 'admin')
-        ));
+        ));--> statement-breakpoint
+CREATE POLICY "invoices_select_policy" ON "invoices" AS PERMISSIVE FOR SELECT TO "authenticated" USING (
+        workspace_id IN (
+          SELECT workspace_id FROM workspace_members
+          WHERE user_id = auth.uid()::text AND status = 'active'
+        )
+      );--> statement-breakpoint
+CREATE POLICY "subscription_events_select_policy" ON "subscription_events" AS PERMISSIVE FOR SELECT TO "authenticated" USING (
+        workspace_id IN (
+          SELECT workspace_id FROM workspace_members
+          WHERE user_id = auth.uid()::text AND status = 'active'
+        )
+      );--> statement-breakpoint
+CREATE POLICY "subscriptions_select_policy" ON "subscriptions" AS PERMISSIVE FOR SELECT TO "authenticated" USING (
+        workspace_id IN (
+          SELECT workspace_id FROM workspace_members
+          WHERE user_id = auth.uid()::text AND status = 'active'
+        )
+      );--> statement-breakpoint
+CREATE POLICY "webhook_logs_select_policy" ON "webhook_logs" AS PERMISSIVE FOR SELECT TO "authenticated" USING (
+        workspace_id IN (
+          SELECT workspace_id FROM workspace_members
+          WHERE user_id = auth.uid()::text
+            AND status = 'active'
+            AND role IN ('owner', 'admin')
+        )
+      );--> statement-breakpoint
+CREATE POLICY "notification_inboxes_select_policy" ON "notification_inboxes" AS PERMISSIVE FOR SELECT TO "authenticated" USING (auth.uid()::text = "notification_inboxes"."user_id");--> statement-breakpoint
+CREATE POLICY "notification_inboxes_insert_policy" ON "notification_inboxes" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (auth.uid()::text = "notification_inboxes"."user_id");--> statement-breakpoint
+CREATE POLICY "notification_inboxes_update_policy" ON "notification_inboxes" AS PERMISSIVE FOR UPDATE TO "authenticated" USING (auth.uid()::text = "notification_inboxes"."user_id");--> statement-breakpoint
+CREATE POLICY "notification_inboxes_delete_policy" ON "notification_inboxes" AS PERMISSIVE FOR DELETE TO "authenticated" USING (auth.uid()::text = "notification_inboxes"."user_id");

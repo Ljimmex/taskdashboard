@@ -11,10 +11,10 @@ import { documents } from '../../db/schema/documents'
 import { whiteboards } from '../../db/schema/whiteboards'
 import { auth, type Auth } from '../../lib/auth'
 import {
-    canManageWorkspaceSettings,
-    canManageWorkspaceMembers,
-    canDeleteWorkspace,
-    type WorkspaceRole
+  canManageWorkspaceSettings,
+  canManageWorkspaceMembers,
+  canDeleteWorkspace,
+  type WorkspaceRole,
 } from '../../lib/permissions'
 import { encryptionKeys } from '../../db/schema/encryption'
 import { decryptPrivateKey, encryptPrivateKey } from '../../lib/server-encryption'
@@ -26,10 +26,10 @@ import { isPlatformOwner } from '../../lib/platformOwner'
 import { getWorkspaceDefaultsForPlan, type SubscriptionPlan } from '../../lib/plans'
 
 type Env = {
-    Variables: {
-        user: Auth['$Infer']['Session']['user']
-        session: Auth['$Infer']['Session']['session']
-    }
+  Variables: {
+    user: Auth['$Infer']['Session']['user']
+    session: Auth['$Infer']['Session']['session']
+  }
 }
 
 import { z } from 'zod'
@@ -37,36 +37,36 @@ import { zValidator } from '@hono/zod-validator'
 import { zSanitizedString, zSanitizedStringOptional } from '../../lib/zod-extensions'
 
 const createWorkspaceSchema = z.object({
-    name: zSanitizedString(),
-    slug: zSanitizedString(),
-    teamSize: zSanitizedStringOptional(),
-    industry: zSanitizedStringOptional(),
+  name: zSanitizedString(),
+  slug: zSanitizedString(),
+  teamSize: zSanitizedStringOptional(),
+  industry: zSanitizedStringOptional(),
 })
 
 const updateWorkspaceSchema = z.object({
-    name: zSanitizedStringOptional(),
-    slug: zSanitizedStringOptional(),
-    description: zSanitizedStringOptional(),
-    logo: zSanitizedStringOptional(),
-    settings: z.any().optional(),
-    subscriptionPlan: z.enum(['free', 'plus', 'pro', 'enterprise']).optional(),
-    subscriptionStatus: z.enum(['active', 'trial', 'expired', 'cancelled', 'past_due']).optional(),
-    isOwnerOverride: z.boolean().optional(),
-    overridePlan: z.enum(['free', 'plus', 'pro', 'enterprise']).optional(),
+  name: zSanitizedStringOptional(),
+  slug: zSanitizedStringOptional(),
+  description: zSanitizedStringOptional(),
+  logo: zSanitizedStringOptional(),
+  settings: z.any().optional(),
+  subscriptionPlan: z.enum(['free', 'plus', 'pro', 'enterprise']).optional(),
+  subscriptionStatus: z.enum(['active', 'trial', 'expired', 'cancelled', 'past_due']).optional(),
+  isOwnerOverride: z.boolean().optional(),
+  overridePlan: z.enum(['free', 'plus', 'pro', 'enterprise']).optional(),
 })
 
 const addMemberSchema = z.object({
-    userId: z.string(),
-    role: z.enum(['owner', 'admin', 'member', 'guest', 'project_manager']).optional()
+  userId: z.string(),
+  role: z.enum(['owner', 'admin', 'member', 'guest', 'project_manager']).optional(),
 })
 
 const workspaceMembersQuerySchema = z.object({
-    q: z.string().optional(),
+  q: z.string().optional(),
 })
 
 const updateWorkspaceMemberSchema = z.object({
-    role: z.enum(['owner', 'admin', 'member', 'guest', 'project_manager']).optional(),
-    status: z.enum(['active', 'suspended', 'invited']).optional(),
+  role: z.enum(['owner', 'admin', 'member', 'guest', 'project_manager']).optional(),
+  status: z.enum(['active', 'suspended', 'invited']).optional(),
 })
 
 export const workspacesRoutes = new Hono<Env>()
@@ -76,447 +76,476 @@ workspacesRoutes.route('/', workspaceInvitesRoutes)
 workspacesRoutes.route('/', workspaceDefaultsRoutes)
 
 // Helper: Get user's workspace role (blocks suspended members)
-export async function getUserWorkspaceRole(userId: string, workspaceId: string): Promise<WorkspaceRole | null> {
-    // First try with 'active' status
-    const [member] = await db.select({
-        role: workspaceMembers.role,
-        status: workspaceMembers.status
+export async function getUserWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<WorkspaceRole | null> {
+  // First try with 'active' status
+  const [member] = await db
+    .select({
+      role: workspaceMembers.role,
+      status: workspaceMembers.status,
     })
-        .from(workspaceMembers)
-        .where(
-            and(
-                eq(workspaceMembers.userId, userId),
-                eq(workspaceMembers.workspaceId, workspaceId)
-            )
-        )
-        .limit(1)
+    .from(workspaceMembers)
+    .where(and(eq(workspaceMembers.userId, userId), eq(workspaceMembers.workspaceId, workspaceId)))
+    .limit(1)
 
-    if (!member) {
-        console.log(`[getUserWorkspaceRole] No membership found for user=${userId} workspace=${workspaceId}`)
-        return null
-    }
+  if (!member) {
+    console.log(
+      `[getUserWorkspaceRole] No membership found for user=${userId} workspace=${workspaceId}`
+    )
+    return null
+  }
 
-    // Only block suspended members
-    if (member.status === 'suspended') {
-        console.log(`[getUserWorkspaceRole] User ${userId} is suspended in workspace ${workspaceId}`)
-        return null
-    }
+  // Only block suspended members
+  if (member.status === 'suspended') {
+    console.log(`[getUserWorkspaceRole] User ${userId} is suspended in workspace ${workspaceId}`)
+    return null
+  }
 
-    console.log(`[getUserWorkspaceRole] Found role=${member.role} status=${member.status} for user=${userId}`)
-    return (member.role as WorkspaceRole) || null
+  console.log(
+    `[getUserWorkspaceRole] Found role=${member.role} status=${member.status} for user=${userId}`
+  )
+  return (member.role as WorkspaceRole) || null
 }
 
 // Helper: Compute real workspace usage counters
 async function getWorkspaceUsage(workspaceId: string) {
-    const [membersRes] = await db
-        .select({ value: count() })
-        .from(workspaceMembers)
-        .where(and(eq(workspaceMembers.workspaceId, workspaceId), sql`${workspaceMembers.status} IS DISTINCT FROM 'suspended'`))
+  const [membersRes] = await db
+    .select({ value: count() })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, workspaceId),
+        sql`${workspaceMembers.status} IS DISTINCT FROM 'suspended'`
+      )
+    )
 
-    const [storageRes] = await db
-        .select({ value: sum(files.size) })
-        .from(files)
-        .where(eq(files.workspaceId, workspaceId))
+  const [storageRes] = await db
+    .select({ value: sum(files.size) })
+    .from(files)
+    .where(eq(files.workspaceId, workspaceId))
 
-    const [teamsRes] = await db
-        .select({ value: count() })
-        .from(teams)
-        .where(eq(teams.workspaceId, workspaceId))
+  const [teamsRes] = await db
+    .select({ value: count() })
+    .from(teams)
+    .where(eq(teams.workspaceId, workspaceId))
 
-    const [projectsRes] = await db
-        .select({ value: count() })
-        .from(projects)
-        .innerJoin(teams, eq(projects.teamId, teams.id))
-        .where(eq(teams.workspaceId, workspaceId))
+  const [projectsRes] = await db
+    .select({ value: count() })
+    .from(projects)
+    .innerJoin(teams, eq(projects.teamId, teams.id))
+    .where(eq(teams.workspaceId, workspaceId))
 
-    const [docsRes] = await db
-        .select({ value: count() })
-        .from(documents)
-        .where(eq(documents.workspaceId, workspaceId))
+  const [docsRes] = await db
+    .select({ value: count() })
+    .from(documents)
+    .where(eq(documents.workspaceId, workspaceId))
 
-    const [whiteboardsRes] = await db
-        .select({ value: count() })
-        .from(whiteboards)
-        .where(eq(whiteboards.workspaceId, workspaceId))
+  const [whiteboardsRes] = await db
+    .select({ value: count() })
+    .from(whiteboards)
+    .where(eq(whiteboards.workspaceId, workspaceId))
 
-    return {
-        members: membersRes.value || 0,
-        usedStorageBytes: Number(storageRes.value || 0),
-        projects: projectsRes.value || 0,
-        teams: teamsRes.value || 0,
-        docs: docsRes.value || 0,
-        whiteboards: whiteboardsRes.value || 0,
-    }
+  return {
+    members: membersRes.value || 0,
+    usedStorageBytes: Number(storageRes.value || 0),
+    projects: projectsRes.value || 0,
+    teams: teamsRes.value || 0,
+    docs: docsRes.value || 0,
+    whiteboards: whiteboardsRes.value || 0,
+  }
 }
 
 // GET /api/workspaces - Get user's workspaces
 workspacesRoutes.get('/', async (c) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
-    if (!session?.user) {
-        return c.json({ error: 'Unauthorized' }, 401)
-    }
+  if (!session?.user) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
 
-    const userId = session.user.id
+  const userId = session.user.id
 
-    try {
-        const userWorkspaces = await db
-            .select({
-                workspace: workspaces,
-                role: workspaceMembers.role,
-            })
-            .from(workspaceMembers)
-            .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
-            .where(
-                and(
-                    eq(workspaceMembers.userId, userId),
-                    sql`${workspaceMembers.status} IS DISTINCT FROM 'suspended'`
-                )
-            )
+  try {
+    const userWorkspaces = await db
+      .select({
+        workspace: workspaces,
+        role: workspaceMembers.role,
+      })
+      .from(workspaceMembers)
+      .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+      .where(
+        and(
+          eq(workspaceMembers.userId, userId),
+          sql`${workspaceMembers.status} IS DISTINCT FROM 'suspended'`
+        )
+      )
 
-        const platformOwner = await isPlatformOwner(userId)
+    const platformOwner = await isPlatformOwner(userId)
 
-        return c.json({
-            data: userWorkspaces.map(w => ({
-                ...w.workspace,
-                userRole: w.role,
-                isPlatformOwner: platformOwner,
-                ...(platformOwner ? {} : { isOwnerOverride: undefined, overridePlan: undefined }),
-            }))
-        })
-    } catch (error) {
-        return c.json({ error: 'Failed to fetch workspaces', details: String(error) }, 500)
-    }
+    return c.json({
+      data: userWorkspaces.map((w) => ({
+        ...w.workspace,
+        userRole: w.role,
+        isPlatformOwner: platformOwner,
+        ...(platformOwner ? {} : { isOwnerOverride: undefined, overridePlan: undefined }),
+      })),
+    })
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch workspaces', details: String(error) }, 500)
+  }
 })
 
 // GET /api/workspaces/slug/:slug - Get workspace by slug
 workspacesRoutes.get('/slug/:slug', async (c) => {
-    const slug = c.req.param('slug')
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const slug = c.req.param('slug')
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
-    if (!session?.user) {
-        return c.json({ error: 'Unauthorized' }, 401)
+  if (!session?.user) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const workspace = await db.query.workspaces.findFirst({
+      where: (ws, { eq }) => eq(ws.slug, slug),
+    })
+
+    if (!workspace) {
+      return c.json({ error: 'Workspace not found' }, 404)
     }
 
-    try {
-        const workspace = await db.query.workspaces.findFirst({
-            where: (ws, { eq }) => eq(ws.slug, slug)
-        })
+    // Check if user is a member
+    const member = await db.query.workspaceMembers.findFirst({
+      where: (wm, { eq, and }) =>
+        and(eq(wm.userId, session.user.id), eq(wm.workspaceId, workspace.id)),
+    })
 
-        if (!workspace) {
-            return c.json({ error: 'Workspace not found' }, 404)
-        }
-
-        // Check if user is a member
-        const member = await db.query.workspaceMembers.findFirst({
-            where: (wm, { eq, and }) => and(
-                eq(wm.userId, session.user.id),
-                eq(wm.workspaceId, workspace.id)
-            )
-        })
-
-        if (!member) {
-            return c.json({ error: 'Access denied' }, 403)
-        }
-
-        const platformOwner = await isPlatformOwner(session.user.id)
-        const sanitizedWorkspace = platformOwner ? workspace : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
-        const usage = await getWorkspaceUsage(workspace.id)
-        const limits = getWorkspaceDefaultsForPlan(workspace.subscriptionPlan as SubscriptionPlan)
-
-        return c.json({
-            ...sanitizedWorkspace,
-            userRole: member.role,
-            isPlatformOwner: platformOwner,
-            usage,
-            limits,
-        })
-    } catch (error) {
-        return c.json({ error: 'Failed to fetch workspace', details: String(error) }, 500)
+    if (!member) {
+      return c.json({ error: 'Access denied' }, 403)
     }
+
+    const platformOwner = await isPlatformOwner(session.user.id)
+    const sanitizedWorkspace = platformOwner
+      ? workspace
+      : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
+    const usage = await getWorkspaceUsage(workspace.id)
+    const limits = getWorkspaceDefaultsForPlan(workspace.subscriptionPlan as SubscriptionPlan)
+
+    return c.json({
+      ...sanitizedWorkspace,
+      userRole: member.role,
+      isPlatformOwner: platformOwner,
+      usage,
+      limits,
+    })
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch workspace', details: String(error) }, 500)
+  }
 })
 
 // POST /api/workspaces - Create new workspace
 workspacesRoutes.post('/', zValidator('json', createWorkspaceSchema), async (c) => {
-    // Get Session using Better Auth
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  // Get Session using Better Auth
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
-    if (!session?.user) {
-        return c.json({ error: 'Unauthorized' }, 401)
-    }
+  if (!session?.user) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
 
-    const userId = session.user.id
+  const userId = session.user.id
 
-    const body = c.req.valid('json')
-    const { name, slug, teamSize, industry } = body
+  const body = c.req.valid('json')
+  const { name, slug, teamSize, industry } = body
 
-    // if (!name || !slug) { ... } -> schema handles this
+  // if (!name || !slug) { ... } -> schema handles this
 
-    try {
-        // Transaction: Create workspace AND add user as owner
-        const result = await db.transaction(async (tx) => {
-            const [newWorkspace] = await tx.insert(workspaces).values({
-                name,
-                slug,
-                teamSize,
-                industry,
-                ownerId: userId,
-                // Default settings applied by DB
-            }).returning()
-
-            await tx.insert(workspaceMembers).values({
-                workspaceId: newWorkspace.id,
-                userId: userId,
-                role: 'owner',
-            })
-
-            // TRIGGER WEBHOOK for owner joining
-            triggerWebhook('member.joined', { userId, role: 'owner', workspaceId: newWorkspace.id }, newWorkspace.id)
-
-            return newWorkspace
+  try {
+    // Transaction: Create workspace AND add user as owner
+    const result = await db.transaction(async (tx) => {
+      const [newWorkspace] = await tx
+        .insert(workspaces)
+        .values({
+          name,
+          slug,
+          teamSize,
+          industry,
+          ownerId: userId,
+          // Default settings applied by DB
         })
+        .returning()
 
-        return c.json({ data: result }, 201)
-    } catch (error) {
-        return c.json({ error: 'Failed to create workspace', details: String(error) }, 500)
-    }
+      await tx.insert(workspaceMembers).values({
+        workspaceId: newWorkspace.id,
+        userId: userId,
+        role: 'owner',
+      })
+
+      // TRIGGER WEBHOOK for owner joining
+      triggerWebhook(
+        'member.joined',
+        { userId, role: 'owner', workspaceId: newWorkspace.id },
+        newWorkspace.id
+      )
+
+      return newWorkspace
+    })
+
+    return c.json({ data: result }, 201)
+  } catch (error) {
+    return c.json({ error: 'Failed to create workspace', details: String(error) }, 500)
+  }
 })
 
 // GET /api/workspaces/:id - Get workspace details (member access)
 workspacesRoutes.get('/:id', async (c) => {
-    const id = c.req.param('id')
-    const user = c.get('user') as any
-    const userId = user.id
+  const id = c.req.param('id')
+  const user = c.get('user') as any
+  const userId = user.id
 
-    try {
-        // Check membership
-        const workspaceRole = await getUserWorkspaceRole(userId, id)
+  try {
+    // Check membership
+    const workspaceRole = await getUserWorkspaceRole(userId, id)
 
-        if (!workspaceRole) {
-            return c.json({ error: 'Workspace not found or access denied' }, 404)
-        }
-
-        const workspace = await db.query.workspaces.findFirst({
-            where: (ws, { eq }) => eq(ws.id, id)
-        })
-
-        const platformOwner = await isPlatformOwner(userId)
-        const sanitizedWorkspace = platformOwner ? workspace : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
-
-        return c.json({ data: { ...sanitizedWorkspace, isPlatformOwner: platformOwner } })
-    } catch (error) {
-        return c.json({ error: 'Failed to fetch workspace', details: String(error) }, 500)
+    if (!workspaceRole) {
+      return c.json({ error: 'Workspace not found or access denied' }, 404)
     }
+
+    const workspace = await db.query.workspaces.findFirst({
+      where: (ws, { eq }) => eq(ws.id, id),
+    })
+
+    const platformOwner = await isPlatformOwner(userId)
+    const sanitizedWorkspace = platformOwner
+      ? workspace
+      : { ...workspace, isOwnerOverride: undefined, overridePlan: undefined }
+
+    return c.json({ data: { ...sanitizedWorkspace, isPlatformOwner: platformOwner } })
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch workspace', details: String(error) }, 500)
+  }
 })
 
 // GET /api/workspaces/:id/usage - Real workspace usage counters
 workspacesRoutes.get('/:id/usage', async (c) => {
-    const id = c.req.param('id')
-    const user = c.get('user') as any
-    const userId = user.id
+  const id = c.req.param('id')
+  const user = c.get('user') as any
+  const userId = user.id
 
-    try {
-        const workspaceRole = await getUserWorkspaceRole(userId, id)
-        if (!workspaceRole) {
-            return c.json({ error: 'Workspace not found or access denied' }, 404)
-        }
-
-        const usage = await getWorkspaceUsage(id)
-        return c.json({ data: usage })
-    } catch (error) {
-        return c.json({ error: 'Failed to fetch usage', details: String(error) }, 500)
+  try {
+    const workspaceRole = await getUserWorkspaceRole(userId, id)
+    if (!workspaceRole) {
+      return c.json({ error: 'Workspace not found or access denied' }, 404)
     }
+
+    const usage = await getWorkspaceUsage(id)
+    return c.json({ data: usage })
+  } catch (error) {
+    return c.json({ error: 'Failed to fetch usage', details: String(error) }, 500)
+  }
 })
 
 // PATCH /api/workspaces/:id - Update workspace (requires workspace.manageSettings)
 workspacesRoutes.patch('/:id', zValidator('json', updateWorkspaceSchema), async (c) => {
-    const id = c.req.param('id')
-    const user = c.get('user') as any
-    const userId = user.id
-    const body = c.req.valid('json')
+  const id = c.req.param('id')
+  const user = c.get('user') as any
+  const userId = user.id
+  const body = c.req.valid('json')
 
-    try {
-        // Get user's workspace role
-        const workspaceRole = await getUserWorkspaceRole(userId, id)
+  try {
+    // Get user's workspace role
+    const workspaceRole = await getUserWorkspaceRole(userId, id)
 
-        if (!canManageWorkspaceSettings(workspaceRole)) {
-            return c.json({ error: 'Unauthorized to update workspace' }, 403)
-        }
-
-        // Fetch current workspace to merge settings
-        const currentWorkspace = await db.query.workspaces.findFirst({
-            where: (ws, { eq }) => eq(ws.id, id)
-        })
-
-        if (!currentWorkspace) {
-            return c.json({ error: 'Workspace not found' }, 404)
-        }
-
-        const platformOwner = await isPlatformOwner(userId)
-
-        // Prepare update data
-        const updateData: any = {
-            updatedAt: new Date()
-        }
-
-        if (body.name) updateData.name = body.name
-        if (body.slug) updateData.slug = body.slug
-        if (body.description) updateData.description = body.description
-        if (body.logo) updateData.logo = body.logo
-        if (body.settings) {
-            updateData.settings = {
-                ...currentWorkspace.settings,
-                ...body.settings
-            }
-        }
-
-        // Platform owner backdoor: change plan without payment
-        const wantsPlanChange = body.subscriptionPlan !== undefined || body.subscriptionStatus !== undefined
-        if (wantsPlanChange) {
-            if (!platformOwner) {
-                return c.json({ error: 'Unauthorized to change subscription plan' }, 403)
-            }
-
-            if (body.subscriptionPlan) {
-                updateData.subscriptionPlan = body.subscriptionPlan
-                const defaults = getWorkspaceDefaultsForPlan(body.subscriptionPlan)
-                Object.assign(updateData, defaults)
-            }
-            if (body.subscriptionStatus) {
-                updateData.subscriptionStatus = body.subscriptionStatus
-            }
-        }
-
-        // Platform owner override: change plan without payment (invisible to others)
-        const wantsOwnerOverride = body.isOwnerOverride !== undefined || body.overridePlan !== undefined
-        if (wantsOwnerOverride) {
-            if (!platformOwner) {
-                return c.json({ error: 'Only platform owner can set owner override' }, 403)
-            }
-
-            if (body.isOwnerOverride !== undefined) {
-                updateData.isOwnerOverride = body.isOwnerOverride
-            }
-            if (body.overridePlan !== undefined) {
-                updateData.overridePlan = body.overridePlan
-            }
-
-            const isOverrideActive = body.isOwnerOverride !== undefined ? body.isOwnerOverride : currentWorkspace.isOwnerOverride
-            const effectiveOverridePlan = body.overridePlan !== undefined ? body.overridePlan : currentWorkspace.overridePlan
-
-            if (isOverrideActive && effectiveOverridePlan) {
-                updateData.subscriptionPlan = effectiveOverridePlan
-                const defaults = getWorkspaceDefaultsForPlan(effectiveOverridePlan as SubscriptionPlan)
-                Object.assign(updateData, defaults)
-                updateData.subscriptionStatus = 'active'
-            } else if (body.isOwnerOverride === false) {
-                // Override disabled: fall back to free unless there's an active Polar subscription
-                const activeSubscription = await db.query.subscriptions.findFirst({
-                    where: (s, { eq, and }) => and(eq(s.workspaceId, id), eq(s.status, 'active')),
-                    orderBy: (s, { desc }) => [desc(s.createdAt)]
-                })
-                if (activeSubscription) {
-                    updateData.subscriptionPlan = activeSubscription.plan as SubscriptionPlan
-                    const defaults = getWorkspaceDefaultsForPlan(updateData.subscriptionPlan)
-                    Object.assign(updateData, defaults)
-                    updateData.subscriptionStatus = 'active'
-                } else {
-                    updateData.subscriptionPlan = 'free'
-                    const defaults = getWorkspaceDefaultsForPlan('free')
-                    Object.assign(updateData, defaults)
-                    updateData.subscriptionStatus = 'trial'
-                }
-                updateData.overridePlan = null
-            }
-        }
-
-        const [updated] = await db.update(workspaces)
-            .set(updateData)
-            .where(eq(workspaces.id, id))
-            .returning()
-
-        // TRIGGER WEBHOOK
-        if (updated) {
-            triggerWebhook('workspace.updated', updated, updated.id)
-        }
-
-        const sanitizedUpdated = platformOwner ? updated : { ...updated, isOwnerOverride: undefined, overridePlan: undefined }
-
-        return c.json({ data: sanitizedUpdated })
-    } catch (error) {
-        return c.json({ error: 'Failed to update workspace', details: String(error) }, 500)
+    if (!canManageWorkspaceSettings(workspaceRole)) {
+      return c.json({ error: 'Unauthorized to update workspace' }, 403)
     }
+
+    // Fetch current workspace to merge settings
+    const currentWorkspace = await db.query.workspaces.findFirst({
+      where: (ws, { eq }) => eq(ws.id, id),
+    })
+
+    if (!currentWorkspace) {
+      return c.json({ error: 'Workspace not found' }, 404)
+    }
+
+    const platformOwner = await isPlatformOwner(userId)
+
+    // Prepare update data
+    const updateData: any = {
+      updatedAt: new Date(),
+    }
+
+    if (body.name) updateData.name = body.name
+    if (body.slug) updateData.slug = body.slug
+    if (body.description) updateData.description = body.description
+    if (body.logo) updateData.logo = body.logo
+    if (body.settings) {
+      updateData.settings = {
+        ...currentWorkspace.settings,
+        ...body.settings,
+      }
+    }
+
+    // Platform owner backdoor: change plan without payment
+    const wantsPlanChange =
+      body.subscriptionPlan !== undefined || body.subscriptionStatus !== undefined
+    if (wantsPlanChange) {
+      if (!platformOwner) {
+        return c.json({ error: 'Unauthorized to change subscription plan' }, 403)
+      }
+
+      if (body.subscriptionPlan) {
+        updateData.subscriptionPlan = body.subscriptionPlan
+        const defaults = getWorkspaceDefaultsForPlan(body.subscriptionPlan)
+        Object.assign(updateData, defaults)
+      }
+      if (body.subscriptionStatus) {
+        updateData.subscriptionStatus = body.subscriptionStatus
+      }
+    }
+
+    // Platform owner override: change plan without payment (invisible to others)
+    const wantsOwnerOverride = body.isOwnerOverride !== undefined || body.overridePlan !== undefined
+    if (wantsOwnerOverride) {
+      if (!platformOwner) {
+        return c.json({ error: 'Only platform owner can set owner override' }, 403)
+      }
+
+      if (body.isOwnerOverride !== undefined) {
+        updateData.isOwnerOverride = body.isOwnerOverride
+      }
+      if (body.overridePlan !== undefined) {
+        updateData.overridePlan = body.overridePlan
+      }
+
+      const isOverrideActive =
+        body.isOwnerOverride !== undefined ? body.isOwnerOverride : currentWorkspace.isOwnerOverride
+      const effectiveOverridePlan =
+        body.overridePlan !== undefined ? body.overridePlan : currentWorkspace.overridePlan
+
+      if (isOverrideActive && effectiveOverridePlan) {
+        updateData.subscriptionPlan = effectiveOverridePlan
+        const defaults = getWorkspaceDefaultsForPlan(effectiveOverridePlan as SubscriptionPlan)
+        Object.assign(updateData, defaults)
+        updateData.subscriptionStatus = 'active'
+      } else if (body.isOwnerOverride === false) {
+        // Override disabled: fall back to free unless there's an active Polar subscription
+        const activeSubscription = await db.query.subscriptions.findFirst({
+          where: (s, { eq, and }) => and(eq(s.workspaceId, id), eq(s.status, 'active')),
+          orderBy: (s, { desc }) => [desc(s.createdAt)],
+        })
+        if (activeSubscription) {
+          updateData.subscriptionPlan = activeSubscription.plan as SubscriptionPlan
+          const defaults = getWorkspaceDefaultsForPlan(updateData.subscriptionPlan)
+          Object.assign(updateData, defaults)
+          updateData.subscriptionStatus = 'active'
+        } else {
+          updateData.subscriptionPlan = 'free'
+          const defaults = getWorkspaceDefaultsForPlan('free')
+          Object.assign(updateData, defaults)
+          updateData.subscriptionStatus = 'trial'
+        }
+        updateData.overridePlan = null
+      }
+    }
+
+    const [updated] = await db
+      .update(workspaces)
+      .set(updateData)
+      .where(eq(workspaces.id, id))
+      .returning()
+
+    // TRIGGER WEBHOOK
+    if (updated) {
+      triggerWebhook('workspace.updated', updated, updated.id)
+    }
+
+    const sanitizedUpdated = platformOwner
+      ? updated
+      : { ...updated, isOwnerOverride: undefined, overridePlan: undefined }
+
+    return c.json({ data: sanitizedUpdated })
+  } catch (error) {
+    return c.json({ error: 'Failed to update workspace', details: String(error) }, 500)
+  }
 })
 
 // DELETE /api/workspaces/:id - Delete workspace (requires workspace.deleteWorkspace - only owner)
 workspacesRoutes.delete('/:id', async (c) => {
-    const id = c.req.param('id')
-    const user = c.get('user') as any
-    const userId = user.id
+  const id = c.req.param('id')
+  const user = c.get('user') as any
+  const userId = user.id
 
-    try {
-        // Get user's workspace role
-        const workspaceRole = await getUserWorkspaceRole(userId, id)
+  try {
+    // Get user's workspace role
+    const workspaceRole = await getUserWorkspaceRole(userId, id)
 
-        if (!canDeleteWorkspace(workspaceRole)) {
-            return c.json({ error: 'Only owner can delete workspace' }, 403)
-        }
-
-        await db.delete(workspaces).where(eq(workspaces.id, id))
-
-        return c.json({ message: 'Workspace deleted successfully' })
-    } catch (error) {
-        return c.json({ error: 'Failed to delete workspace', details: String(error) }, 500)
+    if (!canDeleteWorkspace(workspaceRole)) {
+      return c.json({ error: 'Only owner can delete workspace' }, 403)
     }
+
+    await db.delete(workspaces).where(eq(workspaces.id, id))
+
+    return c.json({ message: 'Workspace deleted successfully' })
+  } catch (error) {
+    return c.json({ error: 'Failed to delete workspace', details: String(error) }, 500)
+  }
 })
 
 // POST /api/workspaces/:id/members - Add member to workspace (requires workspace.manageMembers)
 workspacesRoutes.post('/:id/members', zValidator('json', addMemberSchema), async (c) => {
-    const workspaceId = c.req.param('id')
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const workspaceId = c.req.param('id')
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
-    if (!session?.user) {
-        return c.json({ error: 'Unauthorized' }, 401)
+  if (!session?.user) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  const userId = session.user.id
+  const body = c.req.valid('json')
+  const { userId: newMemberId, role = 'member' } = body
+
+  try {
+    // Get user's workspace role
+    const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+
+    if (!canManageWorkspaceMembers(workspaceRole)) {
+      return c.json({ error: 'Unauthorized to manage workspace members' }, 403)
     }
 
-    const userId = session.user.id
-    const body = c.req.valid('json')
-    const { userId: newMemberId, role = 'member' } = body
-
-    try {
-        // Get user's workspace role
-        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
-
-        if (!canManageWorkspaceMembers(workspaceRole)) {
-            return c.json({ error: 'Unauthorized to manage workspace members' }, 403)
-        }
-
-        // Enforce workspace member limit
-        const limitCheck = await checkWorkspaceMemberLimit(workspaceId)
-        if (!limitCheck.allowed) {
-            return c.json({ error: limitCheck.error!.message, code: limitCheck.error!.code }, 402)
-        }
-
-        const [member] = await db.insert(workspaceMembers).values({
-            workspaceId,
-            userId: newMemberId,
-            role,
-            invitedBy: userId,
-        }).returning()
-
-        // TRIGGER WEBHOOK
-        if (member) {
-            triggerWebhook('member.joined', member, workspaceId)
-        }
-
-        return c.json({ data: member }, 201)
-    } catch (error) {
-        return c.json({ error: 'Failed to add member', details: String(error) }, 500)
+    // Enforce workspace member limit
+    const limitCheck = await checkWorkspaceMemberLimit(workspaceId)
+    if (!limitCheck.allowed) {
+      return c.json({ error: limitCheck.error!.message, code: limitCheck.error!.code }, 402)
     }
+
+    const [member] = await db
+      .insert(workspaceMembers)
+      .values({
+        workspaceId,
+        userId: newMemberId,
+        role,
+        invitedBy: userId,
+      })
+      .returning()
+
+    // TRIGGER WEBHOOK
+    if (member) {
+      triggerWebhook('member.joined', member, workspaceId)
+    }
+
+    return c.json({ data: member }, 201)
+  } catch (error) {
+    return c.json({ error: 'Failed to add member', details: String(error) }, 500)
+  }
 })
 
 // GET /api/workspaces/:id/members - List members of workspace (with search)
-workspacesRoutes.get('/:id/members', zValidator('query', workspaceMembersQuerySchema), async (c) => {
+workspacesRoutes.get(
+  '/:id/members',
+  zValidator('query', workspaceMembersQuerySchema),
+  async (c) => {
     let workspaceId = c.req.param('id')
     console.log(`[DEBUG] GET /api/workspaces/${workspaceId}/members called`)
     const { q } = c.req.valid('query')
@@ -524,82 +553,86 @@ workspacesRoutes.get('/:id/members', zValidator('query', workspaceMembersQuerySc
     const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
     if (!session?.user) {
-        return c.json({ error: 'Unauthorized' }, 401)
+      return c.json({ error: 'Unauthorized' }, 401)
     }
 
     try {
-        // Resolve slug to ID if needed (slugs don't look like UUIDs)
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(workspaceId)
-        if (!isUUID) {
-            const ws = await db.query.workspaces.findFirst({
-                where: (w, { eq }) => eq(w.slug, workspaceId)
-            })
-            if (!ws) return c.json({ error: 'Workspace not found' }, 404)
-            workspaceId = ws.id
-        }
-
-        // 1. Verify membership
-        const workspaceRole = await getUserWorkspaceRole(session.user.id, workspaceId)
-        if (!workspaceRole) {
-            return c.json({ error: 'Access denied' }, 403)
-        }
-
-        // 2. Fetch members - Use explicit column selection
-        const rows = await db.select({
-            userId: users.id,
-            userName: users.name,
-            userEmail: users.email,
-            userImage: users.image,
-            userPosition: users.position,
-            memberRole: workspaceMembers.role,
-            memberStatus: workspaceMembers.status,
-            memberJoinedAt: workspaceMembers.joinedAt,
+      // Resolve slug to ID if needed (slugs don't look like UUIDs)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        workspaceId
+      )
+      if (!isUUID) {
+        const ws = await db.query.workspaces.findFirst({
+          where: (w, { eq }) => eq(w.slug, workspaceId),
         })
-            .from(workspaceMembers)
-            .innerJoin(users, eq(users.id, workspaceMembers.userId))
-            .where(
-                and(
-                    eq(workspaceMembers.workspaceId, workspaceId),
-                    query ? or(
-                        like(users.name, `%${query}%`),
-                        like(users.email, `%${query}%`)
-                    ) : undefined
-                )
-            )
+        if (!ws) return c.json({ error: 'Workspace not found' }, 404)
+        workspaceId = ws.id
+      }
 
-        // Debug first row structure
-        if (rows.length > 0) {
-            console.log('=== MEMBER QUERY DEBUG ===')
-            console.log('Row Keys:', Object.keys(rows[0]))
-            console.log('First Row:', rows[0])
-            console.log('Member Role:', rows[0].memberRole)
-            console.log('Joined At:', rows[0].memberJoinedAt)
-        }
+      // 1. Verify membership
+      const workspaceRole = await getUserWorkspaceRole(session.user.id, workspaceId)
+      if (!workspaceRole) {
+        return c.json({ error: 'Access denied' }, 403)
+      }
 
-        const members = rows.map(row => ({
-            user: {
-                id: row.userId,
-                name: row.userName,
-                email: row.userEmail,
-                image: row.userImage,
-                position: row.userPosition,
-            },
-            role: row.memberRole,
-            status: row.memberStatus,
-            joinedAt: row.memberJoinedAt,
-        }))
+      // 2. Fetch members - Use explicit column selection
+      const rows = await db
+        .select({
+          userId: users.id,
+          userName: users.name,
+          userEmail: users.email,
+          userImage: users.image,
+          userPosition: users.position,
+          memberRole: workspaceMembers.role,
+          memberStatus: workspaceMembers.status,
+          memberJoinedAt: workspaceMembers.joinedAt,
+        })
+        .from(workspaceMembers)
+        .innerJoin(users, eq(users.id, workspaceMembers.userId))
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            query ? or(like(users.name, `%${query}%`), like(users.email, `%${query}%`)) : undefined
+          )
+        )
 
-        console.log('Final Members:', JSON.stringify(members, null, 2))
+      // Debug first row structure
+      if (rows.length > 0) {
+        console.log('=== MEMBER QUERY DEBUG ===')
+        console.log('Row Keys:', Object.keys(rows[0]))
+        console.log('First Row:', rows[0])
+        console.log('Member Role:', rows[0].memberRole)
+        console.log('Joined At:', rows[0].memberJoinedAt)
+      }
 
-        return c.json({ data: members })
+      const members = rows.map((row) => ({
+        user: {
+          id: row.userId,
+          name: row.userName,
+          email: row.userEmail,
+          image: row.userImage,
+          position: row.userPosition,
+        },
+        role: row.memberRole,
+        status: row.memberStatus,
+        joinedAt: row.memberJoinedAt,
+      }))
+
+      console.log('Final Members:', JSON.stringify(members, null, 2))
+
+      return c.json({ data: members })
     } catch (error) {
-        console.error('Fetch members error:', error)
-        return c.json({ error: 'Failed to fetch members', details: String(error) }, 500)
+      console.error('Fetch members error:', error)
+      return c.json({ error: 'Failed to fetch members', details: String(error) }, 500)
     }
-})
+  }
+)
 
 // PATCH /api/workspaces/:id/members/:memberId - Update member role (requires workspace.manageMembers)
-workspacesRoutes.patch('/:id/members/:memberId', zValidator('json', updateWorkspaceMemberSchema), async (c) => {
+workspacesRoutes.patch(
+  '/:id/members/:memberId',
+  zValidator('json', updateWorkspaceMemberSchema),
+  async (c) => {
     const workspaceId = c.req.param('id')
     const memberId = c.req.param('memberId')
     const user = c.get('user') as any
@@ -607,143 +640,152 @@ workspacesRoutes.patch('/:id/members/:memberId', zValidator('json', updateWorksp
     const { role, status } = c.req.valid('json')
 
     if (!role && !status) {
-        return c.json({ error: 'Role or status is required' }, 400)
+      return c.json({ error: 'Role or status is required' }, 400)
     }
 
     try {
-        // Get user's workspace role
-        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+      // Get user's workspace role
+      const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
 
-        if (!canManageWorkspaceMembers(workspaceRole)) {
-            return c.json({ error: 'Unauthorized to manage workspace members' }, 403)
-        }
+      if (!canManageWorkspaceMembers(workspaceRole)) {
+        return c.json({ error: 'Unauthorized to manage workspace members' }, 403)
+      }
 
-        // Update the membership record
-        const [updated] = await db.update(workspaceMembers)
-            .set({
-                ...(role && { role }),
-                ...(status && { status })
-            })
-            .where(
-                and(
-                    eq(workspaceMembers.workspaceId, workspaceId),
-                    eq(workspaceMembers.userId, memberId)
-                )
-            )
-            .returning()
+      // Update the membership record
+      const [updated] = await db
+        .update(workspaceMembers)
+        .set({
+          ...(role && { role }),
+          ...(status && { status }),
+        })
+        .where(
+          and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, memberId))
+        )
+        .returning()
 
-        if (!updated) {
-            return c.json({ error: 'Member not found in workspace' }, 404)
-        }
+      if (!updated) {
+        return c.json({ error: 'Member not found in workspace' }, 404)
+      }
 
-        // TRIGGER WEBHOOK
-        triggerWebhook('member.updated', updated, workspaceId)
+      // TRIGGER WEBHOOK
+      triggerWebhook('member.updated', updated, workspaceId)
 
-        return c.json({ data: updated })
+      return c.json({ data: updated })
     } catch (error) {
-        return c.json({ error: 'Failed to update member role', details: String(error) }, 500)
+      return c.json({ error: 'Failed to update member role', details: String(error) }, 500)
     }
-})
+  }
+)
 
 // DELETE /api/workspaces/:id/members/:memberId - Remove member from workspace (Comprehensive cleanup)
 workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
-    const workspaceId = c.req.param('id')
-    const memberId = c.req.param('memberId')
-    const user = c.get('user') as any
-    const userId = user.id
+  const workspaceId = c.req.param('id')
+  const memberId = c.req.param('memberId')
+  const user = c.get('user') as any
+  const userId = user.id
 
-    try {
-        // Get user's workspace role
-        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+  try {
+    // Get user's workspace role
+    const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
 
-        // Can remove if: is the member themselves OR has manageMembers permission
-        const isSelf = memberId === userId
-        if (!isSelf && !canManageWorkspaceMembers(workspaceRole)) {
-            return c.json({ error: 'Unauthorized to remove workspace members' }, 403)
-        }
+    // Can remove if: is the member themselves OR has manageMembers permission
+    const isSelf = memberId === userId
+    if (!isSelf && !canManageWorkspaceMembers(workspaceRole)) {
+      return c.json({ error: 'Unauthorized to remove workspace members' }, 403)
+    }
 
-        // 1. Fetch member details BEFORE deletion to get the name for the webhook
-        const memberUser = await db.query.users.findFirst({
-            where: (u, { eq }) => eq(u.id, memberId),
-            columns: { name: true, email: true }
-        })
+    // 1. Fetch member details BEFORE deletion to get the name for the webhook
+    const memberUser = await db.query.users.findFirst({
+      where: (u, { eq }) => eq(u.id, memberId),
+      columns: { name: true, email: true },
+    })
 
-        // 2. Perform comprehensive cleanup in a transaction
-        await db.transaction(async (tx) => {
-            // A. Remove from Team Memberships
-            const workspaceTeams = await tx.select({ id: teams.id }).from(teams).where(eq(teams.workspaceId, workspaceId))
-            const teamIds = workspaceTeams.map(t => t.id)
+    // 2. Perform comprehensive cleanup in a transaction
+    await db.transaction(async (tx) => {
+      // A. Remove from Team Memberships
+      const workspaceTeams = await tx
+        .select({ id: teams.id })
+        .from(teams)
+        .where(eq(teams.workspaceId, workspaceId))
+      const teamIds = workspaceTeams.map((t) => t.id)
 
-            if (teamIds.length > 0) {
-                await tx.delete(teamMembers)
-                    .where(and(
-                        eq(teamMembers.userId, memberId),
-                        inArray(teamMembers.teamId, teamIds)
-                    ))
-            }
+      if (teamIds.length > 0) {
+        await tx
+          .delete(teamMembers)
+          .where(and(eq(teamMembers.userId, memberId), inArray(teamMembers.teamId, teamIds)))
+      }
 
-            // B. Unassign from Tasks
-            let projectIds: string[] = []
-            if (teamIds.length > 0) {
-                const teamProjects = await tx.select({ id: projects.id })
-                    .from(projects)
-                    .where(inArray(projects.teamId, teamIds))
-                projectIds = teamProjects.map(p => p.id)
-            }
+      // B. Unassign from Tasks
+      let projectIds: string[] = []
+      if (teamIds.length > 0) {
+        const teamProjects = await tx
+          .select({ id: projects.id })
+          .from(projects)
+          .where(inArray(projects.teamId, teamIds))
+        projectIds = teamProjects.map((p) => p.id)
+      }
 
-            if (projectIds.length > 0) {
-                await tx.update(tasks)
-                    .set({
-                        assignees: sql`array_remove(${tasks.assignees}, ${memberId})`
-                    })
-                    .where(and(
-                        sql`${memberId} = ANY(${tasks.assignees})`,
-                        inArray(tasks.projectId, projectIds)
-                    ))
-            }
+      if (projectIds.length > 0) {
+        await tx
+          .update(tasks)
+          .set({
+            assignees: sql`array_remove(${tasks.assignees}, ${memberId})`,
+          })
+          .where(
+            and(sql`${memberId} = ANY(${tasks.assignees})`, inArray(tasks.projectId, projectIds))
+          )
+      }
 
-            // B2. Remove time entries and project memberships for the removed member
-            let allWorkspaceTaskIds: string[] = []
-            if (projectIds.length > 0) {
-                const taskRows = await tx.select({ id: tasks.id })
-                    .from(tasks)
-                    .where(inArray(tasks.projectId, projectIds))
-                allWorkspaceTaskIds = taskRows.map(t => t.id)
-            }
+      // B2. Remove time entries and project memberships for the removed member
+      let allWorkspaceTaskIds: string[] = []
+      if (projectIds.length > 0) {
+        const taskRows = await tx
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(inArray(tasks.projectId, projectIds))
+        allWorkspaceTaskIds = taskRows.map((t) => t.id)
+      }
 
-            const hasTasks = allWorkspaceTaskIds.length > 0
-            if (hasTasks || projectIds.length > 0) {
-                await tx.delete(timeEntries)
-                    .where(and(
-                        eq(timeEntries.userId, memberId),
-                        or(
-                            hasTasks ? inArray(timeEntries.taskId, allWorkspaceTaskIds) : sql`false`,
-                            and(
-                                eq(timeEntries.workspaceId, workspaceId),
-                                eq(timeEntries.entryType, 'meeting'),
-                                sql`${timeEntries.taskId} IS NULL`
-                            )
-                        )
-                    ))
-            }
+      const hasTasks = allWorkspaceTaskIds.length > 0
+      if (hasTasks || projectIds.length > 0) {
+        await tx
+          .delete(timeEntries)
+          .where(
+            and(
+              eq(timeEntries.userId, memberId),
+              or(
+                hasTasks ? inArray(timeEntries.taskId, allWorkspaceTaskIds) : sql`false`,
+                and(
+                  eq(timeEntries.workspaceId, workspaceId),
+                  eq(timeEntries.entryType, 'meeting'),
+                  sql`${timeEntries.taskId} IS NULL`
+                )
+              )
+            )
+          )
+      }
 
-            if (projectIds.length > 0) {
-                await tx.delete(projectMembers)
-                    .where(and(
-                        eq(projectMembers.userId, memberId),
-                        inArray(projectMembers.projectId, projectIds)
-                    ))
-            }
+      if (projectIds.length > 0) {
+        await tx
+          .delete(projectMembers)
+          .where(
+            and(eq(projectMembers.userId, memberId), inArray(projectMembers.projectId, projectIds))
+          )
+      }
 
-            // C. Remove from Conversations (update JSONB)
-            // JSONB operations still best done with raw SQL
-            const scopeCondition = teamIds.length > 0
-                ? sql`(workspace_id = ${workspaceId} OR team_id IN (${sql.join(teamIds.map(id => sql`${id}`), sql`, `)}))`
-                : sql`workspace_id = ${workspaceId}`
+      // C. Remove from Conversations (update JSONB)
+      // JSONB operations still best done with raw SQL
+      const scopeCondition =
+        teamIds.length > 0
+          ? sql`(workspace_id = ${workspaceId} OR team_id IN (${sql.join(
+              teamIds.map((id) => sql`${id}`),
+              sql`, `
+            )}))`
+          : sql`workspace_id = ${workspaceId}`
 
-            // Postgres array removal: participants - 'userId'
-            // We use standard SQL interpolation for values
-            await tx.execute(sql`
+      // Postgres array removal: participants - 'userId'
+      // We use standard SQL interpolation for values
+      await tx.execute(sql`
                UPDATE conversations
                SET 
                    participants = participants - ${memberId},
@@ -752,277 +794,288 @@ workspacesRoutes.delete('/:id/members/:memberId', async (c) => {
                AND participants @> ${JSON.stringify([memberId])}::jsonb
            `)
 
-            // D. Remove from Workspace Members (The main action)
-            await tx.delete(workspaceMembers)
-                .where(
-                    and(
-                        eq(workspaceMembers.workspaceId, workspaceId),
-                        eq(workspaceMembers.userId, memberId)
-                    )
-                )
-        })
+      // D. Remove from Workspace Members (The main action)
+      await tx
+        .delete(workspaceMembers)
+        .where(
+          and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, memberId))
+        )
+    })
 
-        // 3. Trigger Webhook with user name
-        triggerWebhook('member.removed', {
-            userId: memberId,
-            workspaceId,
-            userName: memberUser?.name || 'Unknown',
-            userEmail: memberUser?.email || '',
-            removedAt: new Date().toISOString()
-        }, workspaceId)
+    // 3. Trigger Webhook with user name
+    triggerWebhook(
+      'member.removed',
+      {
+        userId: memberId,
+        workspaceId,
+        userName: memberUser?.name || 'Unknown',
+        userEmail: memberUser?.email || '',
+        removedAt: new Date().toISOString(),
+      },
+      workspaceId
+    )
 
-        return c.json({ message: 'Member removed from workspace and all related entities' })
-    } catch (error) {
-        console.error('Remove member error:', error)
-        return c.json({ error: 'Failed to remove member', details: String(error) }, 500)
-    }
+    return c.json({ message: 'Member removed from workspace and all related entities' })
+  } catch (error) {
+    console.error('Remove member error:', error)
+    return c.json({ error: 'Failed to remove member', details: String(error) }, 500)
+  }
 })
 
 // GET /api/workspaces/:id/keys - Get encryption keys (member access)
 workspacesRoutes.get('/:id/keys', async (c) => {
-    const workspaceId = c.req.param('id')
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const workspaceId = c.req.param('id')
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
-    if (!session?.user) {
-        return c.json({ error: 'Unauthorized' }, 401)
+  if (!session?.user) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+  const userId = session.user.id
+
+  try {
+    // Check if user is a member
+    const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
+    if (!workspaceRole) {
+      return c.json({ error: 'Access denied' }, 403)
     }
-    const userId = session.user.id
+
+    // Fetch keys from DB
+    const keys = await db
+      .select()
+      .from(encryptionKeys)
+      .where(eq(encryptionKeys.workspaceId, workspaceId))
+      .limit(1)
+
+    // If no keys exist yet, generate them (first time only)
+    if (keys.length === 0) {
+      console.log(`Keys missing for workspace ${workspaceId}, generating new ones...`)
+      const { generateKeyPairSync } = await import('node:crypto')
+      const { publicKey, privateKey } = generateKeyPairSync('rsa', {
+        modulusLength: 2048,
+        publicKeyEncoding: { type: 'spki', format: 'pem' },
+        privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+      })
+
+      const encrypted = encryptPrivateKey(privateKey)
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 365) // 1 year expiry
+
+      await db.insert(encryptionKeys).values({
+        workspaceId,
+        publicKey,
+        encryptedPrivateKey: encrypted,
+        expiresAt,
+      })
+
+      return c.json({
+        data: {
+          workspaceId,
+          publicKey,
+          privateKey,
+          expiresAt,
+          history: [],
+        },
+      })
+    }
+
+    // Keys exist — try to decrypt the private key
+    const keyRecord = keys[0]
+    let decryptedPrivateKey: string
 
     try {
-        // Check if user is a member
-        const workspaceRole = await getUserWorkspaceRole(userId, workspaceId)
-        if (!workspaceRole) {
-            return c.json({ error: 'Access denied' }, 403)
-        }
+      decryptedPrivateKey = decryptPrivateKey(keyRecord.encryptedPrivateKey)
+    } catch (decError) {
+      // Keys are corrupted (BETTER_AUTH_SECRET likely changed).
+      // This is safe to auto-regenerate now because IndexedDB was removed,
+      // so all clients get the same fresh key from the server. No key churn loop.
+      console.warn('⚠️ Keys corrupted for workspace', workspaceId, '- regenerating fresh keys')
 
-        // Fetch keys from DB
-        const keys = await db.select()
-            .from(encryptionKeys)
-            .where(eq(encryptionKeys.workspaceId, workspaceId))
-            .limit(1)
+      const { generateKeyPairSync } = await import('node:crypto')
+      const { publicKey: newPub, privateKey: newPriv } = generateKeyPairSync('rsa', {
+        modulusLength: 2048,
+        publicKeyEncoding: { type: 'spki', format: 'pem' },
+        privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+      })
 
-        // If no keys exist yet, generate them (first time only)
-        if (keys.length === 0) {
-            console.log(`Keys missing for workspace ${workspaceId}, generating new ones...`)
-            const { generateKeyPairSync } = await import('node:crypto')
-            const { publicKey, privateKey } = generateKeyPairSync('rsa', {
-                modulusLength: 2048,
-                publicKeyEncoding: { type: 'spki', format: 'pem' },
-                privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-            })
+      const encrypted = encryptPrivateKey(newPriv)
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 365)
 
-            const encrypted = encryptPrivateKey(privateKey)
-            const expiresAt = new Date()
-            expiresAt.setDate(expiresAt.getDate() + 365) // 1 year expiry
-
-            await db.insert(encryptionKeys).values({
-                workspaceId,
-                publicKey,
-                encryptedPrivateKey: encrypted,
-                expiresAt
-            })
-
-            return c.json({
-                data: {
-                    workspaceId,
-                    publicKey,
-                    privateKey,
-                    expiresAt,
-                    history: []
-                }
-            })
-        }
-
-        // Keys exist — try to decrypt the private key
-        const keyRecord = keys[0]
-        let decryptedPrivateKey: string
-
-        try {
-            decryptedPrivateKey = decryptPrivateKey(keyRecord.encryptedPrivateKey)
-        } catch (decError) {
-            // Keys are corrupted (BETTER_AUTH_SECRET likely changed).
-            // This is safe to auto-regenerate now because IndexedDB was removed,
-            // so all clients get the same fresh key from the server. No key churn loop.
-            console.warn('⚠️ Keys corrupted for workspace', workspaceId, '- regenerating fresh keys')
-
-            const { generateKeyPairSync } = await import('node:crypto')
-            const { publicKey: newPub, privateKey: newPriv } = generateKeyPairSync('rsa', {
-                modulusLength: 2048,
-                publicKeyEncoding: { type: 'spki', format: 'pem' },
-                privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-            })
-
-            const encrypted = encryptPrivateKey(newPriv)
-            const expiresAt = new Date()
-            expiresAt.setDate(expiresAt.getDate() + 365)
-
-            await db.update(encryptionKeys)
-                .set({
-                    publicKey: newPub,
-                    encryptedPrivateKey: encrypted,
-                    expiresAt,
-                    rotatedAt: new Date(),
-                    history: [] // Old keys were unrecoverable anyway
-                })
-                .where(eq(encryptionKeys.id, keyRecord.id))
-
-            return c.json({
-                data: {
-                    workspaceId,
-                    publicKey: newPub,
-                    privateKey: newPriv,
-                    expiresAt,
-                    history: []
-                }
-            })
-        }
-
-        // Decrypt history keys (for fallback decryption of old messages)
-        const decryptedHistory = (keyRecord.history || []).map(h => {
-            try {
-                return {
-                    publicKey: h.publicKey,
-                    privateKey: decryptPrivateKey(h.encryptedPrivateKey),
-                    rotatedAt: h.rotatedAt
-                }
-            } catch (e) {
-                console.warn('Skipping undecryptable historical key')
-                return null
-            }
-        }).filter(Boolean)
-
-        return c.json({
-            data: {
-                workspaceId,
-                publicKey: keyRecord.publicKey,
-                privateKey: decryptedPrivateKey,
-                expiresAt: keyRecord.expiresAt,
-                history: decryptedHistory
-            }
+      await db
+        .update(encryptionKeys)
+        .set({
+          publicKey: newPub,
+          encryptedPrivateKey: encrypted,
+          expiresAt,
+          rotatedAt: new Date(),
+          history: [], // Old keys were unrecoverable anyway
         })
-    } catch (error) {
-        console.error('Error fetching/generating keys:', error)
-        return c.json({ error: 'Failed to fetch encryption keys', details: String(error) }, 500)
+        .where(eq(encryptionKeys.id, keyRecord.id))
+
+      return c.json({
+        data: {
+          workspaceId,
+          publicKey: newPub,
+          privateKey: newPriv,
+          expiresAt,
+          history: [],
+        },
+      })
     }
+
+    // Decrypt history keys (for fallback decryption of old messages)
+    const decryptedHistory = (keyRecord.history || [])
+      .map((h) => {
+        try {
+          return {
+            publicKey: h.publicKey,
+            privateKey: decryptPrivateKey(h.encryptedPrivateKey),
+            rotatedAt: h.rotatedAt,
+          }
+        } catch (e) {
+          console.warn('Skipping undecryptable historical key')
+          return null
+        }
+      })
+      .filter(Boolean)
+
+    return c.json({
+      data: {
+        workspaceId,
+        publicKey: keyRecord.publicKey,
+        privateKey: decryptedPrivateKey,
+        expiresAt: keyRecord.expiresAt,
+        history: decryptedHistory,
+      },
+    })
+  } catch (error) {
+    console.error('Error fetching/generating keys:', error)
+    return c.json({ error: 'Failed to fetch encryption keys', details: String(error) }, 500)
+  }
 })
 
 // DELETE /api/workspaces/:id/keys/reset - Delete corrupted keys so fresh ones generate (owner only)
 workspacesRoutes.delete('/:id/keys/reset', async (c) => {
-    const workspaceId = c.req.param('id')
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const workspaceId = c.req.param('id')
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
-    if (!session?.user) {
-        return c.json({ error: 'Unauthorized' }, 401)
+  if (!session?.user) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    const workspace = await db.query.workspaces.findFirst({
+      where: (ws, { eq }) => eq(ws.id, workspaceId),
+    })
+
+    if (!workspace || workspace.ownerId !== session.user.id) {
+      return c.json({ error: 'Only workspace owner can reset keys' }, 403)
     }
 
-    try {
-        const workspace = await db.query.workspaces.findFirst({
-            where: (ws, { eq }) => eq(ws.id, workspaceId)
-        })
+    await db.delete(encryptionKeys).where(eq(encryptionKeys.workspaceId, workspaceId))
 
-        if (!workspace || workspace.ownerId !== session.user.id) {
-            return c.json({ error: 'Only workspace owner can reset keys' }, 403)
-        }
-
-        await db.delete(encryptionKeys)
-            .where(eq(encryptionKeys.workspaceId, workspaceId))
-
-        console.log(`🗑️ Encryption keys deleted for workspace ${workspaceId} — fresh keys will generate on next request`)
-        return c.json({ message: 'Keys deleted. Fresh keys will be generated on next access.' })
-    } catch (error) {
-        console.error('Error resetting keys:', error)
-        return c.json({ error: 'Failed to reset keys', details: String(error) }, 500)
-    }
+    console.log(
+      `🗑️ Encryption keys deleted for workspace ${workspaceId} — fresh keys will generate on next request`
+    )
+    return c.json({ message: 'Keys deleted. Fresh keys will be generated on next access.' })
+  } catch (error) {
+    console.error('Error resetting keys:', error)
+    return c.json({ error: 'Failed to reset keys', details: String(error) }, 500)
+  }
 })
 
 // POST /api/workspaces/:id/rotate-keys - Rotate workspace encryption keys (owner only)
 workspacesRoutes.post('/:id/rotate-keys', async (c) => {
-    const workspaceId = c.req.param('id')
-    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  const workspaceId = c.req.param('id')
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
 
-    if (!session?.user) {
-        return c.json({ error: 'Unauthorized' }, 401)
+  if (!session?.user) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+  const userId = session.user.id
+
+  try {
+    // Only workspace owner can rotate keys
+    const workspace = await db.query.workspaces.findFirst({
+      where: (ws, { eq }) => eq(ws.id, workspaceId),
+    })
+
+    if (!workspace || workspace.ownerId !== userId) {
+      return c.json({ error: 'Only workspace owner can rotate keys' }, 403)
     }
-    const userId = session.user.id
 
+    // Get old keys
+    const oldKeys = await db
+      .select()
+      .from(encryptionKeys)
+      .where(eq(encryptionKeys.workspaceId, workspaceId))
+      .limit(1)
+
+    if (oldKeys.length === 0) {
+      return c.json({ error: 'No existing keys to rotate' }, 404)
+    }
+
+    const oldKeyRecord = oldKeys[0]
+    let oldPrivateKey: string | null = null
     try {
-        // Only workspace owner can rotate keys
-        const workspace = await db.query.workspaces.findFirst({
-            where: (ws, { eq }) => eq(ws.id, workspaceId)
-        })
-
-        if (!workspace || workspace.ownerId !== userId) {
-            return c.json({ error: 'Only workspace owner can rotate keys' }, 403)
-        }
-
-        // Get old keys
-        const oldKeys = await db.select()
-            .from(encryptionKeys)
-            .where(eq(encryptionKeys.workspaceId, workspaceId))
-            .limit(1)
-
-        if (oldKeys.length === 0) {
-            return c.json({ error: 'No existing keys to rotate' }, 404)
-        }
-
-        const oldKeyRecord = oldKeys[0]
-        let oldPrivateKey: string | null = null
-        try {
-            oldPrivateKey = decryptPrivateKey(oldKeyRecord.encryptedPrivateKey)
-        } catch (e) {
-            console.warn('⚠️ Cannot decrypt old private key during rotation — old messages will remain encrypted')
-        }
-
-        // Generate new RSA key pair
-        const { generateKeyPairSync } = await import('node:crypto')
-
-        const { publicKey: newPublicKey, privateKey: newPrivateKey } = generateKeyPairSync('rsa', {
-            modulusLength: 2048,
-            publicKeyEncoding: { type: 'spki', format: 'pem' },
-            privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
-        })
-
-        // Encrypt new private key
-        const encryptedNewPrivateKey = encryptPrivateKey(newPrivateKey)
-
-        // Calculate new expiration (90 days from now)
-        const newExpiresAt = new Date()
-        newExpiresAt.setDate(newExpiresAt.getDate() + 90)
-
-        // Update encryption_keys table: Push current to history and set new
-        const updatedHistory = [
-            ...(oldKeyRecord.history || []),
-            {
-                publicKey: oldKeyRecord.publicKey,
-                encryptedPrivateKey: oldKeyRecord.encryptedPrivateKey,
-                rotatedAt: new Date().toISOString()
-            }
-        ]
-
-        await db.update(encryptionKeys)
-            .set({
-                publicKey: newPublicKey,
-                encryptedPrivateKey: encryptedNewPrivateKey,
-                history: updatedHistory,
-                rotatedAt: new Date(),
-                expiresAt: newExpiresAt
-            })
-            .where(eq(encryptionKeys.id, oldKeyRecord.id))
-
-        console.log(`✅ Keys rotated for workspace ${workspaceId}`)
-
-        // Return old private key (for re-encryption) + new keys
-        return c.json({
-            data: {
-                oldPrivateKey: oldPrivateKey, // null if old key was unrecoverable
-                oldPublicKey: oldKeyRecord.publicKey,
-                newPublicKey: newPublicKey,
-                newPrivateKey: newPrivateKey, // Frontend needs this to save to IndexedDB
-                expiresAt: newExpiresAt
-            }
-        })
-    } catch (error) {
-        console.error('Key rotation error:', error)
-        return c.json({ error: 'Failed to rotate keys', details: String(error) }, 500)
+      oldPrivateKey = decryptPrivateKey(oldKeyRecord.encryptedPrivateKey)
+    } catch (e) {
+      console.warn(
+        '⚠️ Cannot decrypt old private key during rotation — old messages will remain encrypted'
+      )
     }
+
+    // Generate new RSA key pair
+    const { generateKeyPairSync } = await import('node:crypto')
+
+    const { publicKey: newPublicKey, privateKey: newPrivateKey } = generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    })
+
+    // Encrypt new private key
+    const encryptedNewPrivateKey = encryptPrivateKey(newPrivateKey)
+
+    // Calculate new expiration (90 days from now)
+    const newExpiresAt = new Date()
+    newExpiresAt.setDate(newExpiresAt.getDate() + 90)
+
+    // Update encryption_keys table: Push current to history and set new
+    const updatedHistory = [
+      ...(oldKeyRecord.history || []),
+      {
+        publicKey: oldKeyRecord.publicKey,
+        encryptedPrivateKey: oldKeyRecord.encryptedPrivateKey,
+        rotatedAt: new Date().toISOString(),
+      },
+    ]
+
+    await db
+      .update(encryptionKeys)
+      .set({
+        publicKey: newPublicKey,
+        encryptedPrivateKey: encryptedNewPrivateKey,
+        history: updatedHistory,
+        rotatedAt: new Date(),
+        expiresAt: newExpiresAt,
+      })
+      .where(eq(encryptionKeys.id, oldKeyRecord.id))
+
+    console.log(`✅ Keys rotated for workspace ${workspaceId}`)
+
+    // Return old private key (for re-encryption) + new keys
+    return c.json({
+      data: {
+        oldPrivateKey: oldPrivateKey, // null if old key was unrecoverable
+        oldPublicKey: oldKeyRecord.publicKey,
+        newPublicKey: newPublicKey,
+        newPrivateKey: newPrivateKey, // Frontend needs this to save to IndexedDB
+        expiresAt: newExpiresAt,
+      },
+    })
+  } catch (error) {
+    console.error('Key rotation error:', error)
+    return c.json({ error: 'Failed to rotate keys', details: String(error) }, 500)
+  }
 })

@@ -1,34 +1,21 @@
 {
-    "extends": "../../tsconfig.json",
-    "compilerOptions": {
-        "target": "ES2022",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "strict": true,
-        "skipLibCheck": true,
-        "noEmit": true,
-        "outDir": "./dist",
-        "rootDir": "../../",
-        "baseUrl": ".",
-        "paths": {
-            "@/*": [
-                "./src/*"
-            ],
-            "@taskdashboard/types": [
-                "../../packages/types/src"
-            ],
-            "@taskdashboard/utils": [
-                "../../packages/utils/src"
-            ]
-        }
-    },
-    "include": [
-        "src/**/*",
-        "../../packages/types/src/**/*",
-        "../../packages/utils/src/**/*"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist"
-    ]
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "outDir": "./dist",
+    "rootDir": "../../",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@taskdashboard/types": ["../../packages/types/src"],
+      "@taskdashboard/utils": ["../../packages/utils/src"]
+    }
+  },
+  "include": ["src/**/*", "../../packages/types/src/**/*", "../../packages/utils/src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

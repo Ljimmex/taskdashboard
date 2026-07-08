@@ -1,227 +1,265 @@
 export async function prepareDiscordRequest(job: any, config: any) {
-    const { event, payload } = job
+  const { event, payload } = job
 
-    // Brand color - amber/gold to match TaskDashboard theme
-    const BRAND_COLOR = 0xF59E0B
+  // Brand color - amber/gold to match TaskDashboard theme
+  const BRAND_COLOR = 0xf59e0b
 
-    // Helper to format file size
-    const formatFileSize = (bytes: number): string => {
-        if (bytes < 1024) return `${bytes} B`
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-        if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-        return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+  // Helper to format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+  }
+
+  // Event emoji mapping
+  const EVENT_EMOJIS: Record<string, string> = {
+    'task.created': '📝',
+    'task.updated': '✏️',
+    'task.deleted': '🗑️',
+    'task.status_changed': '🔄',
+    'task.priority_changed': '⚡',
+    'task.assigned': '👤',
+    'task.due_date_changed': '📅',
+    'subtask.created': '🔨',
+    'subtask.updated': '🛠️',
+    'subtask.completed': '✅',
+    'comment.added': '💬',
+    'file.uploaded': '📎',
+    'file.deleted': '🗑️',
+    'calendar.created': '📅',
+    'calendar.updated': '✏️',
+    'calendar.deleted': '🗑️',
+    'member.added': '👋',
+    'member.removed': '👋',
+    'webhook.test': '🧪',
+  }
+
+  const emoji = EVENT_EMOJIS[event] || '📢'
+
+  let embed: any = {
+    color: BRAND_COLOR,
+    timestamp: new Date().toISOString(),
+    footer: {
+      text: '📊 TaskDashboard',
+    },
+  }
+
+  // Helper to safely parse color
+  const parseColor = (colorStr?: string): number | undefined => {
+    if (!colorStr) return undefined
+    try {
+      const parsed = parseInt(colorStr.replace('#', ''), 16)
+      return isNaN(parsed) ? undefined : parsed
+    } catch {
+      return undefined
     }
+  }
 
-    // Event emoji mapping
-    const EVENT_EMOJIS: Record<string, string> = {
-        'task.created': '📝',
-        'task.updated': '✏️',
-        'task.deleted': '🗑️',
-        'task.status_changed': '🔄',
-        'task.priority_changed': '⚡',
-        'task.assigned': '👤',
-        'task.due_date_changed': '📅',
-        'subtask.created': '🔨',
-        'subtask.updated': '🛠️',
-        'subtask.completed': '✅',
-        'comment.added': '💬',
-        'file.uploaded': '📎',
-        'file.deleted': '🗑️',
-        'calendar.created': '📅',
-        'calendar.updated': '✏️',
-        'calendar.deleted': '🗑️',
-        'member.added': '👋',
-        'member.removed': '👋',
-        'webhook.test': '🧪'
+  // Format based on event type
+  if (event === 'webhook.test') {
+    embed.title = `${emoji} Test Webhook`
+    embed.description = payload.message || 'This is a test notification from TaskDashboard.'
+    embed.color = 0x8b5cf6 // Purple for test
+    embed.fields = [
+      { name: '📍 Status', value: '✅ Connection successful', inline: true },
+      { name: '⏰ Timestamp', value: new Date().toLocaleString('pl-PL'), inline: true },
+    ]
+  } else if (event === 'task.created') {
+    embed.title = `${emoji} Task Created`
+    embed.description = `**${payload.title}**`
+    embed.description = `**${payload.title}**`
+
+    const priorityColor = parseColor(payload.priorityColor)
+    if (priorityColor) embed.color = priorityColor
+
+    embed.fields = [
+      { name: 'Status', value: payload.statusName || payload.status || 'Unknown', inline: true },
+      { name: 'Priority', value: payload.priorityName || payload.priority || 'None', inline: true },
+    ]
+
+    if (payload.assigneeId) {
+      embed.fields.push({
+        name: 'Assignee',
+        value: payload.assigneeName || 'Unassigned',
+        inline: true,
+      })
     }
+  } else if (event === 'task.priority_changed') {
+    embed.title = `${emoji} Priority Changed`
+    embed.description = `Priority for **${payload.title}** was updated.`
 
-    const emoji = EVENT_EMOJIS[event] || '📢'
+    const newPriorityColor = parseColor(payload.newPriorityColor)
+    if (newPriorityColor) embed.color = newPriorityColor
 
-    let embed: any = {
-        color: BRAND_COLOR,
-        timestamp: new Date().toISOString(),
-        footer: {
-            text: '📊 TaskDashboard'
-        }
+    embed.fields = [
+      {
+        name: 'Old Priority',
+        value: payload.oldPriorityName || payload.oldPriority || 'None',
+        inline: true,
+      },
+      {
+        name: 'New Priority',
+        value: payload.newPriorityName || payload.newPriority || 'None',
+        inline: true,
+      },
+    ]
+  } else if (event === 'task.status_changed') {
+    embed.title = `${emoji} Status Changed`
+    embed.description = `Status for **${payload.title}** was updated.`
+
+    embed.fields = [
+      { name: 'From', value: payload.oldStatus, inline: true },
+      { name: 'To', value: payload.newStatus, inline: true },
+    ]
+  } else if (event === 'task.updated') {
+    embed.title = `${emoji} Task Updated`
+    embed.description = `**${payload.title}** was updated.`
+
+    const changes = []
+    if (payload.updatedFields?.includes('title')) changes.push('Title')
+    if (payload.updatedFields?.includes('description')) changes.push('Description')
+    if (payload.updatedFields?.includes('status')) changes.push('Status')
+
+    embed.fields = [
+      { name: 'Changed Fields', value: changes.join(', ') || 'Details updated', inline: true },
+    ]
+    if (payload.statusName) {
+      embed.fields.push({ name: 'Current Status', value: payload.statusName, inline: true })
     }
-
-    // Helper to safely parse color
-    const parseColor = (colorStr?: string): number | undefined => {
-        if (!colorStr) return undefined
-        try {
-            const parsed = parseInt(colorStr.replace('#', ''), 16)
-            return isNaN(parsed) ? undefined : parsed
-        } catch {
-            return undefined
-        }
-    }
-
-    // Format based on event type
-    if (event === 'webhook.test') {
-        embed.title = `${emoji} Test Webhook`
-        embed.description = payload.message || 'This is a test notification from TaskDashboard.'
-        embed.color = 0x8B5CF6 // Purple for test
-        embed.fields = [
-            { name: '📍 Status', value: '✅ Connection successful', inline: true },
-            { name: '⏰ Timestamp', value: new Date().toLocaleString('pl-PL'), inline: true }
-        ]
-    } else if (event === 'task.created') {
-        embed.title = `${emoji} Task Created`
-        embed.description = `**${payload.title}**`
-        embed.description = `**${payload.title}**`
-
-        const priorityColor = parseColor(payload.priorityColor)
-        if (priorityColor) embed.color = priorityColor
-
-        embed.fields = [
-            { name: 'Status', value: payload.statusName || payload.status || 'Unknown', inline: true },
-            { name: 'Priority', value: payload.priorityName || payload.priority || 'None', inline: true }
-        ]
-
-        if (payload.assigneeId) {
-            embed.fields.push({ name: 'Assignee', value: payload.assigneeName || 'Unassigned', inline: true })
-        }
-    } else if (event === 'task.priority_changed') {
-        embed.title = `${emoji} Priority Changed`
-        embed.description = `Priority for **${payload.title}** was updated.`
-
-        const newPriorityColor = parseColor(payload.newPriorityColor)
-        if (newPriorityColor) embed.color = newPriorityColor
-
-        embed.fields = [
-            { name: 'Old Priority', value: payload.oldPriorityName || payload.oldPriority || 'None', inline: true },
-            { name: 'New Priority', value: payload.newPriorityName || payload.newPriority || 'None', inline: true }
-        ]
-    } else if (event === 'task.status_changed') {
-        embed.title = `${emoji} Status Changed`
-        embed.description = `Status for **${payload.title}** was updated.`
-
-        embed.fields = [
-            { name: 'From', value: payload.oldStatus, inline: true },
-            { name: 'To', value: payload.newStatus, inline: true }
-        ]
-    } else if (event === 'task.updated') {
-        embed.title = `${emoji} Task Updated`
-        embed.description = `**${payload.title}** was updated.`
-
-        const changes = []
-        if (payload.updatedFields?.includes('title')) changes.push('Title')
-        if (payload.updatedFields?.includes('description')) changes.push('Description')
-        if (payload.updatedFields?.includes('status')) changes.push('Status')
-
-        embed.fields = [{ name: 'Changed Fields', value: changes.join(', ') || 'Details updated', inline: true }]
-        if (payload.statusName) {
-            embed.fields.push({ name: 'Current Status', value: payload.statusName, inline: true })
-        }
-    } else if (event === 'task.assigned') {
-        embed.title = `${emoji} Assignee Changed`
-        embed.description = `Assignee for **${payload.title}** was updated.`
-        embed.fields = [{ name: 'Change', value: `${payload.oldAssignees || 'Unassigned'} ➡️ ${payload.newAssignees || 'Unassigned'}`, inline: true }]
-    } else if (event === 'task.due_date_changed') {
-        embed.title = `${emoji} Due Date Changed`
-        embed.description = `Due date for **${payload.title}** was updated.`
-        const oldDate = payload.oldDueDate ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL') : 'None'
-        const newDate = payload.newDueDate ? new Date(payload.newDueDate).toLocaleDateString('pl-PL') : 'None'
-        embed.fields = [{ name: 'Change', value: `${oldDate} ➡️ ${newDate}`, inline: true }]
-    } else if (event === 'subtask.created') {
-        embed.title = `${emoji} Subtask Created`
-        embed.description = `**${payload.title}** added to **${payload.taskTitle}**`
-    } else if (event === 'subtask.updated') {
-        embed.title = `${emoji} Subtask Updated`
-        embed.description = `Subtask **${payload.title}** in **${payload.taskTitle}** was updated.`
-        if (payload.changes?.from && payload.changes?.to) {
-            embed.fields = [{ name: 'Change', value: `${payload.changes.from} ➡️ ${payload.changes.to}`, inline: false }]
-        } else {
-            // Fallback if no specific change text (should prevent empty fields error if fields were added without value)
-            embed.description = `Subtask **${payload.title}** in **${payload.taskTitle}** details updated.`
-        }
-    } else if (event === 'subtask.completed') {
-        embed.title = `${emoji} Subtask Completed`
-        embed.description = `✅ **${payload.title}** in **${payload.taskTitle}** was completed.`
-        embed.color = 0x22C55E
-    } else if (event === 'comment.added') {
-        embed.title = `${emoji} New Comment`
-        embed.description = payload.content ? `> ${payload.content.substring(0, 300)}` : 'A new comment was added.'
-        embed.color = 0x8B5CF6 // Purple for comments
-
-        if (payload.taskTitle) {
-            embed.fields = [{ name: '📝 On Task', value: payload.taskTitle, inline: true }]
-        }
-    } else if (event === 'file.uploaded') {
-        const fileName = payload.name || payload.fileName || 'Unknown file'
-        embed.title = `${emoji} File Uploaded`
-        embed.description = `**${fileName}**`
-        embed.color = 0x10B981 // Green for files
-        if (payload.size) {
-            embed.fields = [{ name: '📦 Size', value: formatFileSize(payload.size), inline: true }]
-        }
-    } else if (event === 'file.deleted') {
-        const fileName = payload.name || payload.fileName || 'Unknown file'
-        embed.title = `${emoji} File Deleted`
-        embed.description = `**${fileName}** was deleted.`
-        embed.color = 0xEF4444 // Red for delete
-    } else if (event.startsWith('member.')) {
-        const action = event.split('.')[1]
-        embed.title = `${emoji} Member ${action === 'added' ? 'Joined' : 'Left'}`
-        embed.description = payload.userName ? `**${payload.userName}** has ${action === 'added' ? 'joined' : 'left'} the workspace.` : `A member has ${action === 'added' ? 'joined' : 'left'}.`
-        embed.color = action === 'added' ? 0x22C55E : 0xEF4444
-    } else if (event === 'member.removed') {
-        // ... (previous block end - member.removed logic is inside member.* block, checking if I need to split or insert after)
-        // I will target insert after member.* or specific block.
-        // Let's replace the member logic + add calendar logic.
-
-        // Actually, easier to insert before "else { // Generic"
-    } else if (event.startsWith('calendar.')) {
-        const action = event.split('.')[1]
-        // Emoji map for calendar is handled by EVENT_EMOJIS or generic fallbacks
-        embed.title = `${emoji} Event ${action === 'created' ? 'Created' : action === 'updated' ? 'Updated' : 'Deleted'}`
-        embed.description = `**${payload.title}**`
-        embed.description = `**${payload.title}**`
-        embed.color = action === 'deleted' ? 0xEF4444 : 0x3B82F6 // Blue for calendar
-
-        const formatTime = (iso: string) => {
-            if (!iso) return '?'
-            return new Date(iso).toLocaleString('pl-PL', {
-                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-            })
-        }
-
-        embed.fields = [
-            { name: 'Start', value: formatTime(payload.startAt), inline: true },
-            { name: 'End', value: formatTime(payload.endAt), inline: true }
-        ]
-
-        if (payload.location) {
-            embed.fields.push({ name: '📍 Location', value: payload.location, inline: false })
-        }
-        if (payload.description) {
-            // Truncate description
-            const desc = payload.description.length > 200 ? payload.description.substring(0, 200) + '...' : payload.description
-            embed.fields.push({ name: '📝 Description', value: desc, inline: false })
-        }
-
-    } else {
-        // Generic event
-        embed.title = `${emoji} ${event.replace(/\./g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}`
-        embed.description = 'New activity on TaskDashboard'
-    }
-
-    // Debug: Log silentMode value
-    console.log(`[Discord Adapter] Event: ${event}, silentMode: ${config.silentMode}`)
-
-    // Build the body - only add flags if silentMode is explicitly true
-    const body: any = { embeds: [embed] }
-    if (config.silentMode === true) {
-        body.flags = 4096 // SUPPRESS_NOTIFICATIONS flag
-    }
-
-    return {
-        url: config.url,
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'TaskDashboard-Webhook-Worker/1.0'
+  } else if (event === 'task.assigned') {
+    embed.title = `${emoji} Assignee Changed`
+    embed.description = `Assignee for **${payload.title}** was updated.`
+    embed.fields = [
+      {
+        name: 'Change',
+        value: `${payload.oldAssignees || 'Unassigned'} ➡️ ${payload.newAssignees || 'Unassigned'}`,
+        inline: true,
+      },
+    ]
+  } else if (event === 'task.due_date_changed') {
+    embed.title = `${emoji} Due Date Changed`
+    embed.description = `Due date for **${payload.title}** was updated.`
+    const oldDate = payload.oldDueDate
+      ? new Date(payload.oldDueDate).toLocaleDateString('pl-PL')
+      : 'None'
+    const newDate = payload.newDueDate
+      ? new Date(payload.newDueDate).toLocaleDateString('pl-PL')
+      : 'None'
+    embed.fields = [{ name: 'Change', value: `${oldDate} ➡️ ${newDate}`, inline: true }]
+  } else if (event === 'subtask.created') {
+    embed.title = `${emoji} Subtask Created`
+    embed.description = `**${payload.title}** added to **${payload.taskTitle}**`
+  } else if (event === 'subtask.updated') {
+    embed.title = `${emoji} Subtask Updated`
+    embed.description = `Subtask **${payload.title}** in **${payload.taskTitle}** was updated.`
+    if (payload.changes?.from && payload.changes?.to) {
+      embed.fields = [
+        {
+          name: 'Change',
+          value: `${payload.changes.from} ➡️ ${payload.changes.to}`,
+          inline: false,
         },
-        body: JSON.stringify(body)
+      ]
+    } else {
+      // Fallback if no specific change text (should prevent empty fields error if fields were added without value)
+      embed.description = `Subtask **${payload.title}** in **${payload.taskTitle}** details updated.`
     }
+  } else if (event === 'subtask.completed') {
+    embed.title = `${emoji} Subtask Completed`
+    embed.description = `✅ **${payload.title}** in **${payload.taskTitle}** was completed.`
+    embed.color = 0x22c55e
+  } else if (event === 'comment.added') {
+    embed.title = `${emoji} New Comment`
+    embed.description = payload.content
+      ? `> ${payload.content.substring(0, 300)}`
+      : 'A new comment was added.'
+    embed.color = 0x8b5cf6 // Purple for comments
+
+    if (payload.taskTitle) {
+      embed.fields = [{ name: '📝 On Task', value: payload.taskTitle, inline: true }]
+    }
+  } else if (event === 'file.uploaded') {
+    const fileName = payload.name || payload.fileName || 'Unknown file'
+    embed.title = `${emoji} File Uploaded`
+    embed.description = `**${fileName}**`
+    embed.color = 0x10b981 // Green for files
+    if (payload.size) {
+      embed.fields = [{ name: '📦 Size', value: formatFileSize(payload.size), inline: true }]
+    }
+  } else if (event === 'file.deleted') {
+    const fileName = payload.name || payload.fileName || 'Unknown file'
+    embed.title = `${emoji} File Deleted`
+    embed.description = `**${fileName}** was deleted.`
+    embed.color = 0xef4444 // Red for delete
+  } else if (event.startsWith('member.')) {
+    const action = event.split('.')[1]
+    embed.title = `${emoji} Member ${action === 'added' ? 'Joined' : 'Left'}`
+    embed.description = payload.userName
+      ? `**${payload.userName}** has ${action === 'added' ? 'joined' : 'left'} the workspace.`
+      : `A member has ${action === 'added' ? 'joined' : 'left'}.`
+    embed.color = action === 'added' ? 0x22c55e : 0xef4444
+  } else if (event === 'member.removed') {
+    // ... (previous block end - member.removed logic is inside member.* block, checking if I need to split or insert after)
+    // I will target insert after member.* or specific block.
+    // Let's replace the member logic + add calendar logic.
+    // Actually, easier to insert before "else { // Generic"
+  } else if (event.startsWith('calendar.')) {
+    const action = event.split('.')[1]
+    // Emoji map for calendar is handled by EVENT_EMOJIS or generic fallbacks
+    embed.title = `${emoji} Event ${action === 'created' ? 'Created' : action === 'updated' ? 'Updated' : 'Deleted'}`
+    embed.description = `**${payload.title}**`
+    embed.description = `**${payload.title}**`
+    embed.color = action === 'deleted' ? 0xef4444 : 0x3b82f6 // Blue for calendar
+
+    const formatTime = (iso: string) => {
+      if (!iso) return '?'
+      return new Date(iso).toLocaleString('pl-PL', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    }
+
+    embed.fields = [
+      { name: 'Start', value: formatTime(payload.startAt), inline: true },
+      { name: 'End', value: formatTime(payload.endAt), inline: true },
+    ]
+
+    if (payload.location) {
+      embed.fields.push({ name: '📍 Location', value: payload.location, inline: false })
+    }
+    if (payload.description) {
+      // Truncate description
+      const desc =
+        payload.description.length > 200
+          ? payload.description.substring(0, 200) + '...'
+          : payload.description
+      embed.fields.push({ name: '📝 Description', value: desc, inline: false })
+    }
+  } else {
+    // Generic event
+    embed.title = `${emoji} ${event.replace(/\./g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}`
+    embed.description = 'New activity on TaskDashboard'
+  }
+
+  // Debug: Log silentMode value
+  console.log(`[Discord Adapter] Event: ${event}, silentMode: ${config.silentMode}`)
+
+  // Build the body - only add flags if silentMode is explicitly true
+  const body: any = { embeds: [embed] }
+  if (config.silentMode === true) {
+    body.flags = 4096 // SUPPRESS_NOTIFICATIONS flag
+  }
+
+  return {
+    url: config.url,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'TaskDashboard-Webhook-Worker/1.0',
+    },
+    body: JSON.stringify(body),
+  }
 }

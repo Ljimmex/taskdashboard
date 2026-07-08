@@ -1,7 +1,10 @@
 import { createFileRoute, useParams, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ProjectsHeader, type ProjectFilterState } from '@/components/features/projects/ProjectsHeader'
+import {
+  ProjectsHeader,
+  type ProjectFilterState,
+} from '@/components/features/projects/ProjectsHeader'
 import { ProjectSection } from '@/components/features/projects/ProjectSection'
 import { CreateProjectPanel } from '@/components/features/projects/CreateProjectPanel'
 import { EditProjectPanel } from '@/components/features/projects/EditProjectPanel'
@@ -16,673 +19,732 @@ import { useMemo } from 'react'
 import { getAssignableMembers } from '@/lib/teamUtils'
 
 export const Route = createFileRoute('/$workspaceSlug/projects/')({
-    component: ProjectsPage,
+  component: ProjectsPage,
 })
 
 interface Project {
-    id: string
-    name: string
-    color?: string
-    teamId: string
-    industryTemplateId?: string | null
-    stages?: any[]
+  id: string
+  name: string
+  color?: string
+  teamId: string
+  industryTemplateId?: string | null
+  stages?: any[]
 }
 
 interface Task {
-    id: string
-    title: string
-    description?: string
-    projectId: string
-    startDate: string | null
-    endDate: string | null
-    dueDate: string | null
-    assigneeId: string | null
-    assignees?: string[]
-    assigneeDetails?: { id: string; name: string; avatar?: string; image?: string }[]
-    priority: 'low' | 'medium' | 'high' | 'urgent'
-    subtasksCount?: number
-    subtasksCompleted?: number
-    commentsCount?: number
-    status: string
+  id: string
+  title: string
+  description?: string
+  projectId: string
+  startDate: string | null
+  endDate: string | null
+  dueDate: string | null
+  assigneeId: string | null
+  assignees?: string[]
+  assigneeDetails?: { id: string; name: string; avatar?: string; image?: string }[]
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  subtasksCount?: number
+  subtasksCompleted?: number
+  commentsCount?: number
+  status: string
 }
 
 function ProjectsPage() {
-    const { t } = useTranslation()
-    const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
-    const navigate = useNavigate()
-    const { data: session } = useSession()
-    const [viewMode, setViewMode] = useState<'gantt' | 'timeline'>('gantt')
-    const [searchQuery, setSearchQuery] = useState('')
-    const [currentMonth, setCurrentMonth] = useState(new Date())
-    const [projects, setProjects] = useState<Project[]>([])
-    const [tasks, setTasks] = useState<Task[]>([])
-    const [loading, setLoading] = useState(true)
-    const [showCreatePanel, setShowCreatePanel] = useState(false)
-    const [showCreateTaskPanel, setShowCreateTaskPanel] = useState(false)
-    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
-    const [selectedTask, setSelectedTask] = useState<any | null>(null)
-    const [showTaskDetails, setShowTaskDetails] = useState(false)
-    const [defaultDueDate, setDefaultDueDate] = useState<string | undefined>(undefined)
-    const [editingProjectSession, setEditingProjectSession] = useState<Project | null>(null)
+  const { t } = useTranslation()
+  const { workspaceSlug } = useParams({ strict: false }) as { workspaceSlug: string }
+  const navigate = useNavigate()
+  const { data: session } = useSession()
+  const [viewMode, setViewMode] = useState<'gantt' | 'timeline'>('gantt')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [projects, setProjects] = useState<Project[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showCreatePanel, setShowCreatePanel] = useState(false)
+  const [showCreateTaskPanel, setShowCreateTaskPanel] = useState(false)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  const [selectedTask, setSelectedTask] = useState<any | null>(null)
+  const [showTaskDetails, setShowTaskDetails] = useState(false)
+  const [defaultDueDate, setDefaultDueDate] = useState<string | undefined>(undefined)
+  const [editingProjectSession, setEditingProjectSession] = useState<Project | null>(null)
 
-    // Day List Panel State
-    const [selectedDayTasks, setSelectedDayTasks] = useState<Task[]>([])
-    const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null)
-    const [showDayListPanel, setShowDayListPanel] = useState(false)
+  // Day List Panel State
+  const [selectedDayTasks, setSelectedDayTasks] = useState<Task[]>([])
+  const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null)
+  const [showDayListPanel, setShowDayListPanel] = useState(false)
 
-    // Filter & Sort state
-    const [projectFilters, setProjectFilters] = useState<ProjectFilterState>({ priorities: [], statuses: [], assigneeIds: [] })
-    const [sortBy, setSortBy] = useState<string | null>(null)
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  // Filter & Sort state
+  const [projectFilters, setProjectFilters] = useState<ProjectFilterState>({
+    priorities: [],
+    statuses: [],
+    assigneeIds: [],
+  })
+  const [sortBy, setSortBy] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
-    // Fetch workspaces to get current workspaceId
-    const { data: workspaces } = useQuery({
-        queryKey: ['workspaces', session?.user?.id],
-        queryFn: async () => {
-            const json = await apiFetchJson<any>('/api/workspaces', {
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
-            return json.data
-        },
-        enabled: !!session?.user?.id
-    })
+  // Fetch workspaces to get current workspaceId
+  const { data: workspaces } = useQuery({
+    queryKey: ['workspaces', session?.user?.id],
+    queryFn: async () => {
+      const json = await apiFetchJson<any>('/api/workspaces', {
+        headers: { 'x-user-id': session?.user?.id || '' },
+      })
+      return json.data
+    },
+    enabled: !!session?.user?.id,
+  })
 
-    const currentWorkspace = workspaces?.find((w: any) => w.slug === workspaceSlug)
+  const currentWorkspace = workspaces?.find((w: any) => w.slug === workspaceSlug)
 
-    // Fetch teams to get members for assignment
-    const { data: teamsData } = useQuery({
-        queryKey: ['teams', currentWorkspace?.id],
-        queryFn: async () => {
-            const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace?.id}`, {
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
-            return json.data || []
-        },
-        enabled: !!currentWorkspace?.id
-    })
+  // Fetch teams to get members for assignment
+  const { data: teamsData } = useQuery({
+    queryKey: ['teams', currentWorkspace?.id],
+    queryFn: async () => {
+      const json = await apiFetchJson<any>(`/api/teams?workspaceId=${currentWorkspace?.id}`, {
+        headers: { 'x-user-id': session?.user?.id || '' },
+      })
+      return json.data || []
+    },
+    enabled: !!currentWorkspace?.id,
+  })
 
-    // Fetch projects and tasks
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                setLoading(true)
-                const [projectsData, tasksData] = await Promise.all([
-                    apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`),
-                    apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}`),
-                ])
+  // Fetch projects and tasks
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const [projectsData, tasksData] = await Promise.all([
+          apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`),
+          apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}`),
+        ])
 
-                if (projectsData.success) setProjects(projectsData.data || [])
-                if (tasksData.success) {
-                    // Map dueDate to endDate for display in ProjectSection
-                    const mappedTasks = (tasksData.data || []).map((t: any) => ({
-                        ...t,
-                        isCompleted: t.status === 'done' || t.status === 'completed',
-                        startDate: t.startDate || null,
-                        endDate: t.dueDate || null,
-                        subtaskCount: t.subtasksCount,
-                        subtaskCompleted: t.subtasksCompleted,
-                        assigneeDetails: t.assigneeDetails || (t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.image || t.assignee.avatar }] : []),
-                        assignees: t.assignees || (t.assignee ? [t.assignee.id] : [])
-                    }))
-                    setTasks(mappedTasks)
+        if (projectsData.success) setProjects(projectsData.data || [])
+        if (tasksData.success) {
+          // Map dueDate to endDate for display in ProjectSection
+          const mappedTasks = (tasksData.data || []).map((t: any) => ({
+            ...t,
+            isCompleted: t.status === 'done' || t.status === 'completed',
+            startDate: t.startDate || null,
+            endDate: t.dueDate || null,
+            subtaskCount: t.subtasksCount,
+            subtaskCompleted: t.subtasksCompleted,
+            assigneeDetails:
+              t.assigneeDetails ||
+              (t.assignee
+                ? [
+                    {
+                      id: t.assignee.id,
+                      name: t.assignee.name,
+                      avatar: t.assignee.image || t.assignee.avatar,
+                    },
+                  ]
+                : []),
+            assignees: t.assignees || (t.assignee ? [t.assignee.id] : []),
+          }))
+          setTasks(mappedTasks)
 
-                    // Check URL for taskId to open automatically
-                    const urlParams = new URLSearchParams(window.location.search)
-                    const taskIdStr = urlParams.get('taskId')
-                    if (taskIdStr) {
-                        const taskToOpen = mappedTasks.find((t: any) => t.id === taskIdStr)
-                        if (taskToOpen) {
-                            setSelectedTask(taskToOpen)
-                            setShowTaskDetails(true)
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error)
-            } finally {
-                setLoading(false)
+          // Check URL for taskId to open automatically
+          const urlParams = new URLSearchParams(window.location.search)
+          const taskIdStr = urlParams.get('taskId')
+          if (taskIdStr) {
+            const taskToOpen = mappedTasks.find((t: any) => t.id === taskIdStr)
+            if (taskToOpen) {
+              setSelectedTask(taskToOpen)
+              setShowTaskDetails(true)
             }
+          }
         }
-        fetchData()
-    }, [])
-
-
-
-    // Filter tasks by active filters
-    const filteredTasks = useMemo(() => {
-        let result = tasks
-        if (projectFilters.priorities.length > 0) {
-            result = result.filter(t => projectFilters.priorities.includes(t.priority))
-        }
-        if (projectFilters.statuses.length > 0) {
-            result = result.filter(t => projectFilters.statuses.includes(t.status))
-        }
-        if (projectFilters.assigneeIds.length > 0) {
-            result = result.filter(t => {
-                const ids = t.assignees || (t.assigneeId ? [t.assigneeId] : [])
-                return ids.some((id: string) => projectFilters.assigneeIds.includes(id))
-            })
-        }
-        // Sort
-        if (sortBy) {
-            result = [...result].sort((a, b) => {
-                let cmp = 0
-                if (sortBy === 'priority') {
-                    const order: Record<string, number> = { urgent: 3, high: 2, medium: 1, low: 0 }
-                    cmp = (order[a.priority] ?? 0) - (order[b.priority] ?? 0)
-                } else if (sortBy === 'dueDate') {
-                    cmp = (a.dueDate || '').localeCompare(b.dueDate || '')
-                } else if (sortBy === 'title') {
-                    cmp = (a.title || '').localeCompare(b.title || '')
-                } else if (sortBy === 'createdAt') {
-                    cmp = ((a as any).createdAt || '').localeCompare((b as any).createdAt || '')
-                }
-                return sortDirection === 'asc' ? cmp : -cmp
-            })
-        }
-        return result
-    }, [tasks, projectFilters, sortBy, sortDirection])
-
-    // Group filtered+sorted tasks by project
-    const tasksByProject = new Map<string, Task[]>()
-    filteredTasks.forEach((task) => {
-        if (!tasksByProject.has(task.projectId)) {
-            tasksByProject.set(task.projectId, [])
-        }
-        tasksByProject.get(task.projectId)!.push(task)
-    })
-
-    // Filter projects by search
-    const filteredProjects = searchQuery
-        ? projects.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        : projects
-
-    const handleNewProject = () => {
-        setShowCreatePanel(true)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
     }
+    fetchData()
+  }, [])
 
-    const refetchProjects = useCallback(async () => {
-        const data = await apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`)
-        if (data.success) setProjects(data.data || [])
-    }, [workspaceSlug])
-
-    const handleDeleteProject = async (project: Project) => {
-        if (!confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) return
-        try {
-            await apiFetch(`/api/projects/${project.id}`, {
-                method: 'DELETE',
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
-            refetchProjects()
-            refetchTasks()
-        } catch (error) {
-            console.error('Error deleting project:', error)
-        }
+  // Filter tasks by active filters
+  const filteredTasks = useMemo(() => {
+    let result = tasks
+    if (projectFilters.priorities.length > 0) {
+      result = result.filter((t) => projectFilters.priorities.includes(t.priority))
     }
-
-    const refetchTasks = useCallback(async () => {
-        const data = await apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}`)
-        if (data.success) {
-            const mappedTasks = (data.data || []).map((t: any) => ({
-                ...t,
-                startDate: t.startDate || null,
-                endDate: t.dueDate || null,
-                assigneeDetails: t.assigneeDetails || (t.assignee ? [{ id: t.assignee.id, name: t.assignee.name, avatar: t.assignee.image || t.assignee.avatar }] : []),
-                assignees: t.assignees || (t.assignee ? [t.assignee.id] : [])
-            }))
-            setTasks(mappedTasks)
-        }
-    }, [workspaceSlug])
-
-    const handleCreateTask = async (taskData: any): Promise<{ id: string } | null> => {
-        try {
-            const res = await apiFetch('/api/tasks', {
-                method: 'POST',
-                headers: {
-                    'x-user-id': session?.user?.id || ''
-                },
-                body: JSON.stringify({
-                    ...taskData,
-                    projectId: selectedProjectId || taskData.projectId
-                })
-            })
-            const data = await res.json()
-            if (data.success) {
-                refetchTasks()
-                return { id: data.data.id }
-            }
-            return null
-        } catch (error) {
-            console.error('Error creating task:', error)
-            return null
-        }
+    if (projectFilters.statuses.length > 0) {
+      result = result.filter((t) => projectFilters.statuses.includes(t.status))
     }
-
-    const refetchTaskDetails = async (taskId: string) => {
-        const data = await apiFetchJson<any>(`/api/tasks/${taskId}`)
-        if (data.success) {
-            setSelectedTask(data.data)
-        }
+    if (projectFilters.assigneeIds.length > 0) {
+      result = result.filter((t) => {
+        const ids = t.assignees || (t.assigneeId ? [t.assigneeId] : [])
+        return ids.some((id: string) => projectFilters.assigneeIds.includes(id))
+      })
     }
-
-    const handleSubtaskToggle = async (subtaskId: string) => {
-        if (!selectedTask) return
-        const subtask = selectedTask.subtasks?.find((s: any) => s.id === subtaskId)
-        if (!subtask) return
-
-        try {
-            await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
-                method: 'PATCH',
-                headers: { 'x-user-id': session?.user?.id || '' },
-                body: JSON.stringify({ isCompleted: !subtask.isCompleted })
-            })
-            refetchTaskDetails(selectedTask.id)
-            refetchTasks()
-        } catch (error) {
-            console.error('Error toggling subtask:', error)
+    // Sort
+    if (sortBy) {
+      result = [...result].sort((a, b) => {
+        let cmp = 0
+        if (sortBy === 'priority') {
+          const order: Record<string, number> = { urgent: 3, high: 2, medium: 1, low: 0 }
+          cmp = (order[a.priority] ?? 0) - (order[b.priority] ?? 0)
+        } else if (sortBy === 'dueDate') {
+          cmp = (a.dueDate || '').localeCompare(b.dueDate || '')
+        } else if (sortBy === 'title') {
+          cmp = (a.title || '').localeCompare(b.title || '')
+        } else if (sortBy === 'createdAt') {
+          cmp = ((a as any).createdAt || '').localeCompare((b as any).createdAt || '')
         }
+        return sortDirection === 'asc' ? cmp : -cmp
+      })
     }
+    return result
+  }, [tasks, projectFilters, sortBy, sortDirection])
 
-    const handleSubtaskEdit = async (subtaskId: string, updates: any) => {
-        if (!selectedTask) return
-        try {
-            await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
-                method: 'PATCH',
-                headers: { 'x-user-id': session?.user?.id || '' },
-                body: JSON.stringify(updates)
-            })
-            refetchTaskDetails(selectedTask.id)
-            refetchTasks()
-        } catch (error) {
-            console.error('Error editing subtask:', error)
-        }
+  // Group filtered+sorted tasks by project
+  const tasksByProject = new Map<string, Task[]>()
+  filteredTasks.forEach((task) => {
+    if (!tasksByProject.has(task.projectId)) {
+      tasksByProject.set(task.projectId, [])
     }
+    tasksByProject.get(task.projectId)!.push(task)
+  })
 
-    const handleSubtaskDelete = async (subtaskId: string) => {
-        if (!selectedTask) return
-        try {
-            await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
-                method: 'DELETE',
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
-            refetchTaskDetails(selectedTask.id)
-            refetchTasks()
-        } catch (error) {
-            console.error('Error deleting subtask:', error)
-        }
-    }
+  // Filter projects by search
+  const filteredProjects = searchQuery
+    ? projects.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : projects
 
-    const handleSubtaskAdd = async (title: string) => {
-        if (!selectedTask) return
-        try {
-            await apiFetch(`/api/tasks/${selectedTask.id}/subtasks`, {
-                method: 'POST',
-                headers: { 'x-user-id': session?.user?.id || '' },
-                body: JSON.stringify({ title, status: 'todo', priority: 'medium' })
-            })
-            refetchTaskDetails(selectedTask.id)
-            refetchTasks()
-        } catch (error) {
-            console.error('Error adding subtask:', error)
-        }
-    }
+  const handleNewProject = () => {
+    setShowCreatePanel(true)
+  }
 
-    const handleAssigneesChange = async (assignees: any[]) => {
-        if (!selectedTask) return
-        try {
-            // Frontend supports multiple, backend singular for now
-            const assigneeId = assignees[0]?.id || null
-            const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
-                method: 'PATCH',
-                headers: { 'x-user-id': session?.user?.id || '' },
-                body: JSON.stringify({ assigneeId })
-            })
-            const data = await res.json()
-            if (data.success) {
-                refetchTaskDetails(selectedTask.id)
-                refetchTasks()
-            }
-        } catch (error) {
-            console.error('Error updating assignees:', error)
-        }
-    }
+  const refetchProjects = useCallback(async () => {
+    const data = await apiFetchJson<any>(`/api/projects?workspaceSlug=${workspaceSlug}`)
+    if (data.success) setProjects(data.data || [])
+  }, [workspaceSlug])
 
-    const handleLabelsChange = async (labels: any[]) => {
-        if (!selectedTask) return
-        try {
-            const labelIds = labels.map(l => l.id)
-            const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
-                method: 'PATCH',
-                headers: { 'x-user-id': session?.user?.id || '' },
-                body: JSON.stringify({ labels: labelIds })
-            })
-            const data = await res.json()
-            if (data.success) {
-                refetchTaskDetails(selectedTask.id)
-                refetchTasks()
-            }
-        } catch (error) {
-            console.error('Error updating labels:', error)
-        }
-    }
-
-    const handleAddComment = async (content: string, parentId?: string | null) => {
-        if (!selectedTask) return
-        try {
-            const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments`, {
-                method: 'POST',
-                headers: { 'x-user-id': session?.user?.id || '' },
-                body: JSON.stringify({ content, parentId })
-            })
-            const data = await res.json()
-            if (data.success) {
-                refetchTaskDetails(selectedTask.id)
-            }
-        } catch (error) {
-            console.error('Error adding comment:', error)
-        }
-    }
-
-    const handleLikeComment = async (commentId: string) => {
-        if (!selectedTask) return
-        try {
-            const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments/${commentId}/like`, {
-                method: 'PATCH',
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
-            const data = await res.json()
-            if (data.success) {
-                // We could refetch or update locally, refetching is safer for simple demo
-                refetchTaskDetails(selectedTask.id)
-            }
-        } catch (error) {
-            console.error('Error liking comment:', error)
-        }
-    }
-
-    const handleTaskClick = async (task: any) => {
-        try {
-            const data = await apiFetchJson<any>(`/api/tasks/${task.id}`)
-            if (data.success) {
-                setSelectedTask(data.data)
-                setShowTaskDetails(true)
-            }
-        } catch (error) {
-            console.error('Error fetching task details:', error)
-        }
-    }
-
-    const currentUserId = session?.user?.id
-    const effectiveProjectId = selectedTask?.projectId || selectedProjectId
-    const selectedProjectTeamId = projects.find(p => p.id === effectiveProjectId)?.teamId
-
-    // Get members for the selected project's team plus members of any team the current user leads
-    const teamMembers = useMemo(() => getAssignableMembers(teamsData, currentUserId, {
-        projectTeamId: selectedProjectTeamId
-    }), [teamsData, currentUserId, selectedProjectTeamId])
-
-    const [availableLabels, setAvailableLabels] = useState<any[]>([])
-
-    // Fetch labels
-    const refetchLabels = useCallback(async () => {
-        if (!workspaceSlug) return
-        try {
-            const data = await apiFetchJson<any>(`/api/labels?workspaceSlug=${workspaceSlug}`)
-            if (data.success) {
-                setAvailableLabels(data.data)
-            }
-        } catch (error) {
-            console.error('Error fetching labels:', error)
-        }
-    }, [workspaceSlug])
-
-    useEffect(() => {
-        refetchLabels()
-    }, [refetchLabels])
-
-    const handleCreateNewLabel = async (name: string, color: string) => {
-        if (!workspaceSlug) return undefined
-        try {
-            const res = await apiFetch('/api/labels', {
-                method: 'POST',
-                body: JSON.stringify({ workspaceSlug, name, color })
-            })
-            const data = await res.json()
-            if (data.success) {
-                await refetchLabels()
-                // Return the new label object
-                return data.data as { id: string; name: string; color: string }
-            }
-        } catch (error) {
-            console.error('Error creating label:', error)
-        }
-    }
-
-    return (
-        <>
-            {/* Header - Only show if we have projects */}
-            {projects.length > 0 && (
-                <ProjectsHeader
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                    searchQuery={searchQuery}
-                    onSearchChange={setSearchQuery}
-                    onNewProject={handleNewProject}
-                    userRole={currentWorkspace?.userRole}
-                    onFilterChange={setProjectFilters}
-                    onSort={(field, dir) => { setSortBy(field); setSortDirection(dir) }}
-                    availablePriorities={currentWorkspace?.priorities}
-                    availableStatuses={[
-                        ...new Set(projects.flatMap(p => (p.stages || []).map((s: any) => JSON.stringify({ value: s.id, label: s.name }))))
-                    ].map(s => JSON.parse(s))}
-                    members={(() => {
-                        const all = teamsData?.flatMap((t: any) => t.members?.map((m: any) => ({
-                            id: m.userId,
-                            name: m.user.name,
-                            avatar: m.user.image,
-                        })) || []) || []
-                        const seen = new Set<string>()
-                        return all.filter((m: any) => {
-                            if (seen.has(m.id)) return false
-                            seen.add(m.id)
-                            return true
-                        })
-                    })()}
-                />
-            )}
-
-            {/* Loading State */}
-            {loading && (
-                <div className="flex items-center justify-center h-64 text-gray-500">
-                    Loading projects...
-                </div>
-            )}
-
-            {/* No Projects State (Global) */}
-            {!loading && projects.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
-                    <div className="w-16 h-16 mb-6 rounded-2xl bg-[#1a1a24] flex items-center justify-center">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600">
-                            <path d="M3 3h18v18H3z" />
-                            <path d="M12 8v8" />
-                            <path d="M8 12h8" />
-                        </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-white mb-2">{t('projects.noProjectsFound')}</h3>
-                    <p className="text-gray-500 max-w-sm text-center mb-8">
-                        {currentWorkspace?.userRole && !['member', 'guest'].includes(currentWorkspace.userRole)
-                            ? "Create your first project to get started with task management."
-                            : "You don't have access to any projects in this workspace yet."}
-                    </p>
-
-                    {currentWorkspace?.userRole && !['member', 'guest'].includes(currentWorkspace.userRole) && (
-                        <button
-                            onClick={handleNewProject}
-                            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 text-black font-semibold hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/20"
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                            {t('projects.createFirstProject')}
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {/* No Matches State (Search) */}
-            {!loading && projects.length > 0 && filteredProjects.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                    <p className="mb-4">No projects match your search.</p>
-                    <button
-                        onClick={() => setSearchQuery('')}
-                        className="text-amber-500 hover:text-amber-400"
-                    >
-                        Clear search
-                    </button>
-                </div>
-            )}
-
-            {/* Projects List */}
-            {!loading &&
-                filteredProjects.map((project) => (
-                    <ProjectSection
-                        key={project.id}
-                        project={project}
-                        tasks={tasksByProject.get(project.id) || []}
-                        viewMode={viewMode}
-                        currentMonth={currentMonth}
-                        onMonthChange={setCurrentMonth}
-                        onTaskClick={handleTaskClick}
-                        onAddTask={(date?: Date) => {
-                            setSelectedProjectId(project.id)
-                            if (date) {
-                                setDefaultDueDate(date.toISOString())
-                            } else {
-                                setDefaultDueDate(undefined)
-                            }
-                            setShowCreateTaskPanel(true)
-                        }}
-                        onDayClick={(date, dayTasks) => {
-                            setSelectedDayDate(date)
-                            setSelectedDayTasks(dayTasks as any[])
-                            setShowDayListPanel(true)
-                        }}
-                        onProjectClick={(projectId) => {
-                            navigate({ to: `/${workspaceSlug}/projects/${projectId}` })
-                        }}
-                        onEditProject={(project) => setEditingProjectSession(project)}
-                        onDeleteProject={handleDeleteProject}
-                        userRole={currentWorkspace?.userRole}
-                    />
-                ))}
-
-            {/* Create Project Panel */}
-            <CreateProjectPanel
-                isOpen={showCreatePanel}
-                onClose={() => setShowCreatePanel(false)}
-                onSuccess={refetchProjects}
-                workspaceId={currentWorkspace?.id}
-            />
-
-            {/* Edit Project Panel */}
-            <EditProjectPanel
-                isOpen={!!editingProjectSession}
-                onClose={() => setEditingProjectSession(null)}
-                onSuccess={refetchProjects}
-                project={editingProjectSession}
-                workspaceId={currentWorkspace?.id}
-            />
-
-            {/* Create Task Panel */}
-            <CreateTaskPanel
-                isOpen={showCreateTaskPanel}
-                onClose={() => {
-                    setShowCreateTaskPanel(false)
-                    setDefaultDueDate(undefined)
-                }}
-                onCreate={handleCreateTask}
-                defaultProject={selectedProjectId || undefined}
-                defaultDueDate={defaultDueDate}
-                projects={projects}
-                teamMembers={teamMembers}
-                workspaceSlug={workspaceSlug}
-            />
-
-            {/* Day Task List Panel */}
-            <DayTaskListPanel
-                date={selectedDayDate}
-                tasks={selectedDayTasks}
-                isOpen={showDayListPanel}
-                onClose={() => setShowDayListPanel(false)}
-                onTaskClick={(task) => {
-                    // Close day panel and open detail panel
-                    setShowDayListPanel(false)
-                    handleTaskClick(task)
-                }}
-            />
-
-            {/* Task Details Panel */}
-            <TaskDetailsPanel
-                task={selectedTask}
-                isOpen={showTaskDetails}
-                onClose={() => { setShowTaskDetails(false); setSelectedTask(null) }}
-                subtasks={selectedTask?.subtasks}
-                comments={selectedTask?.comments}
-                onSubtaskToggle={handleSubtaskToggle}
-                onEdit={handleSubtaskEdit}
-                onDelete={handleSubtaskDelete}
-                onAddSubtask={handleSubtaskAdd}
-                onAddComment={handleAddComment}
-                onLikeComment={handleLikeComment}
-                onAssigneesChange={handleAssigneesChange}
-                onLabelsChange={handleLabelsChange}
-                availableLabels={availableLabels}
-                onCreateLabel={handleCreateNewLabel}
-                stages={projects.find(p => p.id === selectedTask?.projectId)?.stages || []}
-                teamMembers={teamMembers}
-                activities={selectedTask?.activities}
-                onEditTask={() => {
-                    // Placeholder to display the 3-dots menu
-                    console.log('Edit clicked for', selectedTask)
-                }}
-                onToggleStatus={async () => {
-                    if (!selectedTask) return
-                    const isCompleting = !selectedTask.isCompleted
-                    try {
-                        const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
-                            method: 'PATCH',
-                            headers: { 'x-user-id': session?.user?.id || '' },
-                            body: JSON.stringify({ isCompleted: isCompleting })
-                        })
-                        if (res.ok) {
-                            setSelectedTask({ ...selectedTask, isCompleted: isCompleting })
-                            refetchTaskDetails(selectedTask.id)
-                            refetchTasks()
-                        }
-                    } catch (error) {
-                        console.error('Error toggling status:', error)
-                    }
-                }}
-                onDeleteTask={async () => {
-                    if (!selectedTask) return
-                    if (window.confirm('Are you sure you want to delete this task?')) {
-                        try {
-                            const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
-                                method: 'DELETE',
-                                headers: { 'x-user-id': session?.user?.id || '' }
-                            })
-                            if (res.ok) {
-                                setShowTaskDetails(false)
-                                setSelectedTask(null)
-                                refetchTasks()
-                            }
-                        } catch (error) {
-                            console.error('Error deleting task:', error)
-                        }
-                    }
-                }}
-            />
-        </>
+  const handleDeleteProject = async (project: Project) => {
+    if (
+      !confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)
     )
+      return
+    try {
+      await apiFetch(`/api/projects/${project.id}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': session?.user?.id || '' },
+      })
+      refetchProjects()
+      refetchTasks()
+    } catch (error) {
+      console.error('Error deleting project:', error)
+    }
+  }
+
+  const refetchTasks = useCallback(async () => {
+    const data = await apiFetchJson<any>(`/api/tasks?workspaceSlug=${workspaceSlug}`)
+    if (data.success) {
+      const mappedTasks = (data.data || []).map((t: any) => ({
+        ...t,
+        startDate: t.startDate || null,
+        endDate: t.dueDate || null,
+        assigneeDetails:
+          t.assigneeDetails ||
+          (t.assignee
+            ? [
+                {
+                  id: t.assignee.id,
+                  name: t.assignee.name,
+                  avatar: t.assignee.image || t.assignee.avatar,
+                },
+              ]
+            : []),
+        assignees: t.assignees || (t.assignee ? [t.assignee.id] : []),
+      }))
+      setTasks(mappedTasks)
+    }
+  }, [workspaceSlug])
+
+  const handleCreateTask = async (taskData: any): Promise<{ id: string } | null> => {
+    try {
+      const res = await apiFetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'x-user-id': session?.user?.id || '',
+        },
+        body: JSON.stringify({
+          ...taskData,
+          projectId: selectedProjectId || taskData.projectId,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        refetchTasks()
+        return { id: data.data.id }
+      }
+      return null
+    } catch (error) {
+      console.error('Error creating task:', error)
+      return null
+    }
+  }
+
+  const refetchTaskDetails = async (taskId: string) => {
+    const data = await apiFetchJson<any>(`/api/tasks/${taskId}`)
+    if (data.success) {
+      setSelectedTask(data.data)
+    }
+  }
+
+  const handleSubtaskToggle = async (subtaskId: string) => {
+    if (!selectedTask) return
+    const subtask = selectedTask.subtasks?.find((s: any) => s.id === subtaskId)
+    if (!subtask) return
+
+    try {
+      await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
+        method: 'PATCH',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ isCompleted: !subtask.isCompleted }),
+      })
+      refetchTaskDetails(selectedTask.id)
+      refetchTasks()
+    } catch (error) {
+      console.error('Error toggling subtask:', error)
+    }
+  }
+
+  const handleSubtaskEdit = async (subtaskId: string, updates: any) => {
+    if (!selectedTask) return
+    try {
+      await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
+        method: 'PATCH',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify(updates),
+      })
+      refetchTaskDetails(selectedTask.id)
+      refetchTasks()
+    } catch (error) {
+      console.error('Error editing subtask:', error)
+    }
+  }
+
+  const handleSubtaskDelete = async (subtaskId: string) => {
+    if (!selectedTask) return
+    try {
+      await apiFetch(`/api/tasks/${selectedTask.id}/subtasks/${subtaskId}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': session?.user?.id || '' },
+      })
+      refetchTaskDetails(selectedTask.id)
+      refetchTasks()
+    } catch (error) {
+      console.error('Error deleting subtask:', error)
+    }
+  }
+
+  const handleSubtaskAdd = async (title: string) => {
+    if (!selectedTask) return
+    try {
+      await apiFetch(`/api/tasks/${selectedTask.id}/subtasks`, {
+        method: 'POST',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ title, status: 'todo', priority: 'medium' }),
+      })
+      refetchTaskDetails(selectedTask.id)
+      refetchTasks()
+    } catch (error) {
+      console.error('Error adding subtask:', error)
+    }
+  }
+
+  const handleAssigneesChange = async (assignees: any[]) => {
+    if (!selectedTask) return
+    try {
+      // Frontend supports multiple, backend singular for now
+      const assigneeId = assignees[0]?.id || null
+      const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+        method: 'PATCH',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ assigneeId }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        refetchTaskDetails(selectedTask.id)
+        refetchTasks()
+      }
+    } catch (error) {
+      console.error('Error updating assignees:', error)
+    }
+  }
+
+  const handleLabelsChange = async (labels: any[]) => {
+    if (!selectedTask) return
+    try {
+      const labelIds = labels.map((l) => l.id)
+      const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+        method: 'PATCH',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ labels: labelIds }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        refetchTaskDetails(selectedTask.id)
+        refetchTasks()
+      }
+    } catch (error) {
+      console.error('Error updating labels:', error)
+    }
+  }
+
+  const handleAddComment = async (content: string, parentId?: string | null) => {
+    if (!selectedTask) return
+    try {
+      const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments`, {
+        method: 'POST',
+        headers: { 'x-user-id': session?.user?.id || '' },
+        body: JSON.stringify({ content, parentId }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        refetchTaskDetails(selectedTask.id)
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error)
+    }
+  }
+
+  const handleLikeComment = async (commentId: string) => {
+    if (!selectedTask) return
+    try {
+      const res = await apiFetch(`/api/tasks/${selectedTask.id}/comments/${commentId}/like`, {
+        method: 'PATCH',
+        headers: { 'x-user-id': session?.user?.id || '' },
+      })
+      const data = await res.json()
+      if (data.success) {
+        // We could refetch or update locally, refetching is safer for simple demo
+        refetchTaskDetails(selectedTask.id)
+      }
+    } catch (error) {
+      console.error('Error liking comment:', error)
+    }
+  }
+
+  const handleTaskClick = async (task: any) => {
+    try {
+      const data = await apiFetchJson<any>(`/api/tasks/${task.id}`)
+      if (data.success) {
+        setSelectedTask(data.data)
+        setShowTaskDetails(true)
+      }
+    } catch (error) {
+      console.error('Error fetching task details:', error)
+    }
+  }
+
+  const currentUserId = session?.user?.id
+  const effectiveProjectId = selectedTask?.projectId || selectedProjectId
+  const selectedProjectTeamId = projects.find((p) => p.id === effectiveProjectId)?.teamId
+
+  // Get members for the selected project's team plus members of any team the current user leads
+  const teamMembers = useMemo(
+    () =>
+      getAssignableMembers(teamsData, currentUserId, {
+        projectTeamId: selectedProjectTeamId,
+      }),
+    [teamsData, currentUserId, selectedProjectTeamId]
+  )
+
+  const [availableLabels, setAvailableLabels] = useState<any[]>([])
+
+  // Fetch labels
+  const refetchLabels = useCallback(async () => {
+    if (!workspaceSlug) return
+    try {
+      const data = await apiFetchJson<any>(`/api/labels?workspaceSlug=${workspaceSlug}`)
+      if (data.success) {
+        setAvailableLabels(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching labels:', error)
+    }
+  }, [workspaceSlug])
+
+  useEffect(() => {
+    refetchLabels()
+  }, [refetchLabels])
+
+  const handleCreateNewLabel = async (name: string, color: string) => {
+    if (!workspaceSlug) return undefined
+    try {
+      const res = await apiFetch('/api/labels', {
+        method: 'POST',
+        body: JSON.stringify({ workspaceSlug, name, color }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        await refetchLabels()
+        // Return the new label object
+        return data.data as { id: string; name: string; color: string }
+      }
+    } catch (error) {
+      console.error('Error creating label:', error)
+    }
+  }
+
+  return (
+    <>
+      {/* Header - Only show if we have projects */}
+      {projects.length > 0 && (
+        <ProjectsHeader
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onNewProject={handleNewProject}
+          userRole={currentWorkspace?.userRole}
+          onFilterChange={setProjectFilters}
+          onSort={(field, dir) => {
+            setSortBy(field)
+            setSortDirection(dir)
+          }}
+          availablePriorities={currentWorkspace?.priorities}
+          availableStatuses={[
+            ...new Set(
+              projects.flatMap((p) =>
+                (p.stages || []).map((s: any) => JSON.stringify({ value: s.id, label: s.name }))
+              )
+            ),
+          ].map((s) => JSON.parse(s))}
+          members={(() => {
+            const all =
+              teamsData?.flatMap(
+                (t: any) =>
+                  t.members?.map((m: any) => ({
+                    id: m.userId,
+                    name: m.user.name,
+                    avatar: m.user.image,
+                  })) || []
+              ) || []
+            const seen = new Set<string>()
+            return all.filter((m: any) => {
+              if (seen.has(m.id)) return false
+              seen.add(m.id)
+              return true
+            })
+          })()}
+        />
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex h-64 items-center justify-center text-gray-500">
+          Loading projects...
+        </div>
+      )}
+
+      {/* No Projects State (Global) */}
+      {!loading && projects.length === 0 && (
+        <div className="flex h-[60vh] flex-col items-center justify-center text-gray-400">
+          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#1a1a24]">
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-gray-600"
+            >
+              <path d="M3 3h18v18H3z" />
+              <path d="M12 8v8" />
+              <path d="M8 12h8" />
+            </svg>
+          </div>
+          <h3 className="mb-2 text-xl font-semibold text-white">{t('projects.noProjectsFound')}</h3>
+          <p className="mb-8 max-w-sm text-center text-gray-500">
+            {currentWorkspace?.userRole && !['member', 'guest'].includes(currentWorkspace.userRole)
+              ? 'Create your first project to get started with task management.'
+              : "You don't have access to any projects in this workspace yet."}
+          </p>
+
+          {currentWorkspace?.userRole &&
+            !['member', 'guest'].includes(currentWorkspace.userRole) && (
+              <button
+                onClick={handleNewProject}
+                className="flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 font-semibold text-black shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                {t('projects.createFirstProject')}
+              </button>
+            )}
+        </div>
+      )}
+
+      {/* No Matches State (Search) */}
+      {!loading && projects.length > 0 && filteredProjects.length === 0 && (
+        <div className="flex h-64 flex-col items-center justify-center text-gray-500">
+          <p className="mb-4">No projects match your search.</p>
+          <button
+            onClick={() => setSearchQuery('')}
+            className="text-amber-500 hover:text-amber-400"
+          >
+            Clear search
+          </button>
+        </div>
+      )}
+
+      {/* Projects List */}
+      {!loading &&
+        filteredProjects.map((project) => (
+          <ProjectSection
+            key={project.id}
+            project={project}
+            tasks={tasksByProject.get(project.id) || []}
+            viewMode={viewMode}
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+            onTaskClick={handleTaskClick}
+            onAddTask={(date?: Date) => {
+              setSelectedProjectId(project.id)
+              if (date) {
+                setDefaultDueDate(date.toISOString())
+              } else {
+                setDefaultDueDate(undefined)
+              }
+              setShowCreateTaskPanel(true)
+            }}
+            onDayClick={(date, dayTasks) => {
+              setSelectedDayDate(date)
+              setSelectedDayTasks(dayTasks as any[])
+              setShowDayListPanel(true)
+            }}
+            onProjectClick={(projectId) => {
+              navigate({ to: `/${workspaceSlug}/projects/${projectId}` })
+            }}
+            onEditProject={(project) => setEditingProjectSession(project)}
+            onDeleteProject={handleDeleteProject}
+            userRole={currentWorkspace?.userRole}
+          />
+        ))}
+
+      {/* Create Project Panel */}
+      <CreateProjectPanel
+        isOpen={showCreatePanel}
+        onClose={() => setShowCreatePanel(false)}
+        onSuccess={refetchProjects}
+        workspaceId={currentWorkspace?.id}
+      />
+
+      {/* Edit Project Panel */}
+      <EditProjectPanel
+        isOpen={!!editingProjectSession}
+        onClose={() => setEditingProjectSession(null)}
+        onSuccess={refetchProjects}
+        project={editingProjectSession}
+        workspaceId={currentWorkspace?.id}
+      />
+
+      {/* Create Task Panel */}
+      <CreateTaskPanel
+        isOpen={showCreateTaskPanel}
+        onClose={() => {
+          setShowCreateTaskPanel(false)
+          setDefaultDueDate(undefined)
+        }}
+        onCreate={handleCreateTask}
+        defaultProject={selectedProjectId || undefined}
+        defaultDueDate={defaultDueDate}
+        projects={projects}
+        teamMembers={teamMembers}
+        workspaceSlug={workspaceSlug}
+      />
+
+      {/* Day Task List Panel */}
+      <DayTaskListPanel
+        date={selectedDayDate}
+        tasks={selectedDayTasks}
+        isOpen={showDayListPanel}
+        onClose={() => setShowDayListPanel(false)}
+        onTaskClick={(task) => {
+          // Close day panel and open detail panel
+          setShowDayListPanel(false)
+          handleTaskClick(task)
+        }}
+      />
+
+      {/* Task Details Panel */}
+      <TaskDetailsPanel
+        task={selectedTask}
+        isOpen={showTaskDetails}
+        onClose={() => {
+          setShowTaskDetails(false)
+          setSelectedTask(null)
+        }}
+        subtasks={selectedTask?.subtasks}
+        comments={selectedTask?.comments}
+        onSubtaskToggle={handleSubtaskToggle}
+        onEdit={handleSubtaskEdit}
+        onDelete={handleSubtaskDelete}
+        onAddSubtask={handleSubtaskAdd}
+        onAddComment={handleAddComment}
+        onLikeComment={handleLikeComment}
+        onAssigneesChange={handleAssigneesChange}
+        onLabelsChange={handleLabelsChange}
+        availableLabels={availableLabels}
+        onCreateLabel={handleCreateNewLabel}
+        stages={projects.find((p) => p.id === selectedTask?.projectId)?.stages || []}
+        teamMembers={teamMembers}
+        activities={selectedTask?.activities}
+        onEditTask={() => {
+          // Placeholder to display the 3-dots menu
+          console.log('Edit clicked for', selectedTask)
+        }}
+        onToggleStatus={async () => {
+          if (!selectedTask) return
+          const isCompleting = !selectedTask.isCompleted
+          try {
+            const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+              method: 'PATCH',
+              headers: { 'x-user-id': session?.user?.id || '' },
+              body: JSON.stringify({ isCompleted: isCompleting }),
+            })
+            if (res.ok) {
+              setSelectedTask({ ...selectedTask, isCompleted: isCompleting })
+              refetchTaskDetails(selectedTask.id)
+              refetchTasks()
+            }
+          } catch (error) {
+            console.error('Error toggling status:', error)
+          }
+        }}
+        onDeleteTask={async () => {
+          if (!selectedTask) return
+          if (window.confirm('Are you sure you want to delete this task?')) {
+            try {
+              const res = await apiFetch(`/api/tasks/${selectedTask.id}`, {
+                method: 'DELETE',
+                headers: { 'x-user-id': session?.user?.id || '' },
+              })
+              if (res.ok) {
+                setShowTaskDetails(false)
+                setSelectedTask(null)
+                refetchTasks()
+              }
+            } catch (error) {
+              console.error('Error deleting task:', error)
+            }
+          }
+        }}
+      />
+    </>
+  )
 }

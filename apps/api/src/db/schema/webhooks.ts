@@ -1,4 +1,14 @@
-import { pgTable, uuid, text, timestamp, boolean, jsonb, integer, pgEnum, pgPolicy } from 'drizzle-orm/pg-core'
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  boolean,
+  jsonb,
+  integer,
+  pgEnum,
+  pgPolicy,
+} from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { workspaces } from './workspaces'
 import { users } from './users'
@@ -8,27 +18,25 @@ import { users } from './users'
 // =============================================================================
 
 export const webhookStatusEnum = pgEnum('webhook_queue_status', [
-    'pending',
-    'processing',
-    'failed',
-    'completed'
+  'pending',
+  'processing',
+  'failed',
+  'completed',
 ])
 
-export const webhookTypeEnum = pgEnum('webhook_type', [
-    'generic',
-    'discord',
-    'slack'
-])
+export const webhookTypeEnum = pgEnum('webhook_type', ['generic', 'discord', 'slack'])
 
 // =============================================================================
 // WEBHOOKS CONFIGURATION TABLE
 // =============================================================================
 
-export const webhooks = pgTable('webhooks', {
+export const webhooks = pgTable(
+  'webhooks',
+  {
     id: uuid('id').primaryKey().defaultRandom(),
     workspaceId: text('workspace_id')
-        .notNull()
-        .references(() => workspaces.id, { onDelete: 'cascade' }),
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
     url: text('url').notNull(),
     type: webhookTypeEnum('type').default('generic').notNull(),
     secret: text('secret').notNull(), // Shared secret for HMAC signing
@@ -38,30 +46,34 @@ export const webhooks = pgTable('webhooks', {
     description: text('description'),
     failureCount: integer('failure_count').default(0).notNull(), // For circuit breaking
     createdBy: text('created_by')
-        .notNull()
-        .references(() => users.id),
+      .notNull()
+      .references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Workspace members can view webhooks", {
-        for: "select",
-        using: sql`workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text)`,
+  },
+  (_table) => [
+    pgPolicy('Workspace members can view webhooks', {
+      for: 'select',
+      using: sql`workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text)`,
     }),
-    pgPolicy("Workspace admins can manage webhooks", {
-        for: "all",
-        using: sql`workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text AND role IN ('owner', 'admin'))`,
+    pgPolicy('Workspace admins can manage webhooks', {
+      for: 'all',
+      using: sql`workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text AND role IN ('owner', 'admin'))`,
     }),
-])
+  ]
+)
 
 // =============================================================================
 // WEBHOOK QUEUE TABLE (Persistent Job Queue)
 // =============================================================================
 
-export const webhookQueue = pgTable('webhook_queue', {
+export const webhookQueue = pgTable(
+  'webhook_queue',
+  {
     id: uuid('id').primaryKey().defaultRandom(),
     webhookId: uuid('webhook_id')
-        .notNull()
-        .references(() => webhooks.id, { onDelete: 'cascade' }),
+      .notNull()
+      .references(() => webhooks.id, { onDelete: 'cascade' }),
     event: text('event').notNull(),
     payload: jsonb('payload').notNull(),
     status: webhookStatusEnum('status').default('pending').notNull(),
@@ -70,24 +82,28 @@ export const webhookQueue = pgTable('webhook_queue', {
     lastError: text('last_error'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (_table) => [
+  },
+  (_table) => [
     // Internal queue - usually no RLS or restricted to service role
     // Adding workspace-based RLS for visibility in logs/debugging if needed
-    pgPolicy("Workspace members can view their webhook jobs", {
-        for: "select",
-        using: sql`webhook_id IN (SELECT id FROM webhooks WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text))`,
+    pgPolicy('Workspace members can view their webhook jobs', {
+      for: 'select',
+      using: sql`webhook_id IN (SELECT id FROM webhooks WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text))`,
     }),
-])
+  ]
+)
 
 // =============================================================================
 // WEBHOOK DELIVERIES TABLE (Logs)
 // =============================================================================
 
-export const webhookDeliveries = pgTable('webhook_deliveries', {
+export const webhookDeliveries = pgTable(
+  'webhook_deliveries',
+  {
     id: uuid('id').primaryKey().defaultRandom(),
     webhookId: uuid('webhook_id')
-        .notNull()
-        .references(() => webhooks.id, { onDelete: 'cascade' }),
+      .notNull()
+      .references(() => webhooks.id, { onDelete: 'cascade' }),
     event: text('event').notNull(),
     payload: jsonb('payload').notNull(),
     requestHeaders: jsonb('request_headers'),
@@ -96,12 +112,14 @@ export const webhookDeliveries = pgTable('webhook_deliveries', {
     durationMs: integer('duration_ms'),
     attemptIndex: integer('attempt_index').default(0).notNull(), // Which attempt was this
     createdAt: timestamp('created_at').defaultNow().notNull(),
-}, (_table) => [
-    pgPolicy("Workspace members can view delivery logs", {
-        for: "select",
-        using: sql`webhook_id IN (SELECT id FROM webhooks WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text))`,
+  },
+  (_table) => [
+    pgPolicy('Workspace members can view delivery logs', {
+      for: 'select',
+      using: sql`webhook_id IN (SELECT id FROM webhooks WHERE workspace_id IN (SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()::text))`,
     }),
-])
+  ]
+)
 
 // =============================================================================
 // TYPES

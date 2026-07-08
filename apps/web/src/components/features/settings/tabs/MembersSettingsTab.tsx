@@ -6,348 +6,432 @@ import { useSession } from '@/lib/auth'
 import { InviteWorkspaceMemberPanel } from '../panels/InviteWorkspaceMemberPanel'
 
 interface MembersSettingsTabProps {
-    workspace: any
+  workspace: any
 }
 
 interface Member {
-    id: string
-    name: string
-    email: string
-    image?: string
-    position?: string
-    role?: string
-    workspaceRole?: string // Added alias from backend
-    status?: 'active' | 'invited' | 'suspended'
-    joinedAt?: string
+  id: string
+  name: string
+  email: string
+  image?: string
+  position?: string
+  role?: string
+  workspaceRole?: string // Added alias from backend
+  status?: 'active' | 'invited' | 'suspended'
+  joinedAt?: string
 }
 
 export function MembersSettingsTab({ workspace }: MembersSettingsTabProps) {
-    const { t } = useTranslation()
-    const { data: session } = useSession()
-    const queryClient = useQueryClient()
-    const [searchQuery, setSearchQuery] = useState('')
-    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
-    const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const { t } = useTranslation()
+  const { data: session } = useSession()
+  const queryClient = useQueryClient()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
-    // Fetch members
-    const { data: members = [], isLoading } = useQuery({
-        queryKey: ['workspace-members', workspace.id],
-        queryFn: async () => {
-            const res = await apiFetchJson<any>(`/api/workspaces/${workspace.id}/members`)
-            const rawData = res.data || []
+  // Fetch members
+  const { data: members = [], isLoading } = useQuery({
+    queryKey: ['workspace-members', workspace.id],
+    queryFn: async () => {
+      const res = await apiFetchJson<any>(`/api/workspaces/${workspace.id}/members`)
+      const rawData = res.data || []
 
-            // Map API response (nested user object) to flat structure expected by UI
-            return rawData.map((item: any) => ({
-                id: item.user.id,
-                name: item.user.name,
-                email: item.user.email,
-                image: item.user.image,
-                position: item.user.position,
-                role: item.role,
-                workspaceRole: item.role,
-                status: item.status,
-                joinedAt: item.joinedAt
-            }))
+      // Map API response (nested user object) to flat structure expected by UI
+      return rawData.map((item: any) => ({
+        id: item.user.id,
+        name: item.user.name,
+        email: item.user.email,
+        image: item.user.image,
+        position: item.user.position,
+        role: item.role,
+        workspaceRole: item.role,
+        status: item.status,
+        joinedAt: item.joinedAt,
+      }))
+    },
+    enabled: !!workspace?.id,
+  })
+
+  // Debug log to check what API is returning
+  useEffect(() => {
+    if (members.length > 0) {
+      console.log('Members API Response V2:', members)
+    }
+  }, [members])
+
+  // Remove member mutation
+  const { mutate: removeMember, isPending: isRemoving } = useMutation({
+    mutationFn: async (memberId: string) => {
+      return apiFetchJson(`/api/workspaces/${workspace.id}/members/${memberId}`, {
+        method: 'DELETE',
+        headers: { 'x-user-id': session?.user?.id || '' },
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspace-members', workspace.id] })
+    },
+    onError: (error) => {
+      console.error('Failed to remove member', error)
+      alert(t('settings.organization.members.remove_error'))
+    },
+  })
+
+  // Update role mutation
+  const { mutate: updateRole, isPending: isUpdatingRole } = useMutation({
+    mutationFn: async ({ memberId, role }: { memberId: string; role: string }) => {
+      return apiFetchJson(`/api/workspaces/${workspace.id}/members/${memberId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': session?.user?.id || '',
         },
-        enabled: !!workspace?.id
-    })
+        body: JSON.stringify({ role }),
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspace-members', workspace.id] })
+    },
+    onError: (error) => {
+      console.error('Failed to update role', error)
+      alert(t('settings.organization.members.update_role_error'))
+    },
+  })
 
-    // Debug log to check what API is returning
-    useEffect(() => {
-        if (members.length > 0) {
-            console.log('Members API Response V2:', members)
-        }
-    }, [members])
+  const filteredMembers = members.filter((m: Member) => {
+    const name = m.name || ''
+    const email = m.email || ''
+    const query = searchQuery.toLowerCase()
+    return name.toLowerCase().includes(query) || email.toLowerCase().includes(query)
+  })
 
-    // Remove member mutation
-    const { mutate: removeMember, isPending: isRemoving } = useMutation({
-        mutationFn: async (memberId: string) => {
-            return apiFetchJson(`/api/workspaces/${workspace.id}/members/${memberId}`, {
-                method: 'DELETE',
-                headers: { 'x-user-id': session?.user?.id || '' }
-            })
+  const handleRemove = (memberId: string) => {
+    if (confirm(t('settings.organization.members.remove_confirm'))) {
+      removeMember(memberId)
+    }
+    setOpenMenuId(null)
+  }
+
+  const handleRoleChange = (memberId: string, newRole: string) => {
+    updateRole({ memberId, role: newRole })
+  }
+
+  const handleSetOwner = (memberId: string) => {
+    if (confirm(t('settings.organization.members.set_owner_confirm'))) {
+      updateRole({ memberId, role: 'owner' })
+    }
+    setOpenMenuId(null)
+  }
+
+  // Update status mutation
+  const { mutate: updateStatus, isPending: isUpdatingStatus } = useMutation({
+    mutationFn: async ({ memberId, status }: { memberId: string; status: string }) => {
+      return apiFetchJson(`/api/workspaces/${workspace.id}/members/${memberId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': session?.user?.id || '',
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['workspace-members', workspace.id] })
-        },
-        onError: (error) => {
-            console.error('Failed to remove member', error)
-            alert(t('settings.organization.members.remove_error'))
-        }
-    })
+        body: JSON.stringify({ status }),
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspace-members', workspace.id] })
+    },
+    onError: (error) => {
+      console.error('Failed to update status', error)
+      alert(t('settings.organization.members.update_status_error'))
+    },
+  })
 
-    // Update role mutation
-    const { mutate: updateRole, isPending: isUpdatingRole } = useMutation({
-        mutationFn: async ({ memberId, role }: { memberId: string; role: string }) => {
-            return apiFetchJson(`/api/workspaces/${workspace.id}/members/${memberId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': session?.user?.id || ''
-                },
-                body: JSON.stringify({ role })
-            })
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['workspace-members', workspace.id] })
-        },
-        onError: (error) => {
-            console.error('Failed to update role', error)
-            alert(t('settings.organization.members.update_role_error'))
-        }
-    })
+  const handleToggleStatus = (memberId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended'
+    const translateKey = newStatus === 'suspended' ? 'suspend_confirm' : 'activate_confirm'
+    if (confirm(t(`settings.organization.members.${translateKey}`))) {
+      updateStatus({ memberId, status: newStatus })
+    }
+    setOpenMenuId(null)
+  }
 
-    const filteredMembers = members.filter((m: Member) => {
-        const name = m.name || ''
-        const email = m.email || ''
-        const query = searchQuery.toLowerCase()
-        return name.toLowerCase().includes(query) || email.toLowerCase().includes(query)
-    })
-
-    const handleRemove = (memberId: string) => {
-        if (confirm(t('settings.organization.members.remove_confirm'))) {
-            removeMember(memberId)
-        }
+  // Close menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openMenuId && !(event.target as Element).closest('.member-actions-menu')) {
         setOpenMenuId(null)
+      }
     }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [openMenuId])
 
-    const handleRoleChange = (memberId: string, newRole: string) => {
-        updateRole({ memberId, role: newRole })
-    }
-
-    const handleSetOwner = (memberId: string) => {
-        if (confirm(t('settings.organization.members.set_owner_confirm'))) {
-            updateRole({ memberId, role: 'owner' })
-        }
-        setOpenMenuId(null)
-    }
-
-    // Update status mutation
-    const { mutate: updateStatus, isPending: isUpdatingStatus } = useMutation({
-        mutationFn: async ({ memberId, status }: { memberId: string; status: string }) => {
-            return apiFetchJson(`/api/workspaces/${workspace.id}/members/${memberId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': session?.user?.id || ''
-                },
-                body: JSON.stringify({ status })
-            })
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['workspace-members', workspace.id] })
-        },
-        onError: (error) => {
-            console.error('Failed to update status', error)
-            alert(t('settings.organization.members.update_status_error'))
-        }
-    })
-
-    const handleToggleStatus = (memberId: string, currentStatus: string) => {
-        const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended'
-        const translateKey = newStatus === 'suspended' ? 'suspend_confirm' : 'activate_confirm'
-        if (confirm(t(`settings.organization.members.${translateKey}`))) {
-            updateStatus({ memberId, status: newStatus })
-        }
-        setOpenMenuId(null)
-    }
-
-
-    // Close menu on click outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (openMenuId && !(event.target as Element).closest('.member-actions-menu')) {
-                setOpenMenuId(null)
-            }
-        }
-        document.addEventListener('click', handleClickOutside)
-        return () => document.removeEventListener('click', handleClickOutside)
-    }, [openMenuId])
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">{t('settings.organization.members.title')}</h3>
-                    <p className="text-sm text-[var(--app-text-secondary)]">{t('settings.organization.members.subtitle')}</p>
-                </div>
-                <button
-                    onClick={() => setIsInviteModalOpen(true)}
-                    className="px-4 py-2 bg-[var(--app-accent)] hover:bg-[var(--app-accent-hover)] text-[var(--app-accent-text)] font-medium rounded-lg text-sm transition-colors"
-                >
-                    {t('settings.organization.members.invite_button')}
-                </button>
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-                <input
-                    type="text"
-                    placeholder={t('settings.organization.members.search_placeholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg pl-10 pr-4 py-2 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
-                />
-                <svg className="w-5 h-5 text-[var(--app-text-muted)] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-            </div>
-
-            {/* List */}
-            {/* Removed overflow-hidden from container to fix dropdown clipping */}
-            <div className="bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-xl ">
-                {isLoading ? (
-                    <div className="p-8 text-center text-[var(--app-text-muted)]">{t('common.loading')}</div>
-                ) : filteredMembers.length > 0 ? (
-                    <div className="divide-y divide-[var(--app-border)]">
-                        {/* Header */}
-                        <div className="grid grid-cols-12 gap-4 p-4 text-xs font-semibold text-[var(--app-text-secondary)] uppercase tracking-wider bg-[var(--app-bg-elevated)] rounded-t-xl">
-                            <div className="col-span-4">{t('settings.organization.members.table.user')}</div>
-                            <div className="col-span-3">{t('settings.organization.members.table.role')}</div>
-                            <div className="col-span-3">{t('settings.organization.members.table.joined')}</div>
-                            <div className="col-span-2 text-right">{t('settings.organization.members.table.actions')}</div>
-                        </div>
-
-                        {filteredMembers.map((member: Member) => {
-                            const isSelf = member.id === session?.user?.id;
-                            // Prefer workspaceRole, fallback to role (though role might be undefined now)
-                            const displayRole = member.workspaceRole || member.role || 'member';
-                            const isOwner = displayRole === 'owner';
-
-                            return (
-                                <div key={member.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-white/5 transition-colors group">
-                                    {/* User Info */}
-                                    <div className="col-span-4 flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-full bg-[var(--app-bg-elevated)] border border-[var(--app-border)] overflow-hidden flex-shrink-0">
-                                            {member.image ? (
-                                                <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-[var(--app-text-primary)] font-medium text-xs">
-                                                    {(member.name || member.email || '?').substring(0, 2).toUpperCase()}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="text-sm font-medium text-[var(--app-text-primary)] truncate">{member.name || member.email || 'Unknown'}</h4>
-                                                {member.status === 'suspended' && (
-                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20 uppercase tracking-tight">
-                                                        {t('settings.organization.members.status.suspended')}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-[var(--app-text-muted)] truncate">{member.email}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Role Selector */}
-                                    <div className="col-span-3">
-                                        {isOwner ? (
-                                            <div className="w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium bg-[var(--app-bg-page)] text-[var(--app-text-muted)] cursor-default">
-                                                {t('settings.organization.members.roles.owner')}
-                                            </div>
-                                        ) : (
-                                            <select
-                                                value={displayRole}
-                                                onChange={(e) => handleRoleChange(member.id, e.target.value)}
-                                                disabled={isUpdatingRole || isSelf} // Owner can't demote self easily via this select
-                                                className={`w-full max-w-[140px] px-2 py-1.5 rounded-lg text-xs font-medium border border-[var(--app-border)] outline-none transition-colors appearance-none cursor-pointer ${isSelf
-                                                    ? 'bg-[var(--app-bg-page)] text-[var(--app-text-muted)] cursor-not-allowed opacity-50'
-                                                    : 'bg-[var(--app-bg-card)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-page)]'
-                                                    }`}
-                                            >
-                                                <option value="admin">{t('settings.organization.members.roles.admin')}</option>
-                                                <option value="project_manager">{t('settings.organization.members.roles.project_manager')}</option>
-                                                <option value="hr_manager">{t('settings.organization.members.roles.hr_manager')}</option>
-                                                <option value="member">{t('settings.organization.members.roles.member')}</option>
-                                                <option value="guest">{t('settings.organization.members.roles.guest')}</option>
-                                            </select>
-                                        )}
-                                    </div>
-
-                                    {/* Joined At */}
-                                    <div className="col-span-3 text-sm text-[var(--app-text-secondary)]">
-                                        {member.joinedAt ? new Date(member.joinedAt).toLocaleDateString() : '-'}
-                                    </div>
-
-                                    {/* Actions */}
-
-                                    <div className="col-span-2 flex justify-end relative member-actions-menu">
-                                        {!isSelf && (
-                                            <>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setOpenMenuId(openMenuId === member.id ? null : member.id);
-                                                    }}
-                                                    className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                                    </svg>
-                                                </button>
-
-                                                {/* Dropdown Menu - z-index high, no border, ensure visible */}
-                                                {openMenuId === member.id && (
-                                                    <div className="absolute right-0 top-full mt-1 w-48 bg-[var(--app-bg-card)] border border-[var(--app-border)] rounded-lg shadow-xl z-[100] py-1 overflow-visible animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black ring-opacity-5">
-                                                        {!isOwner && (
-                                                            <button
-                                                                onClick={() => handleSetOwner(member.id)}
-                                                                className="w-full text-left px-4 py-2.5 text-xs text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors flex items-center gap-2"
-                                                            >
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                                </svg>
-                                                                {t('settings.organization.members.actions.set_owner')}
-                                                            </button>
-                                                        )}
-
-                                                        <button
-                                                            onClick={() => handleToggleStatus(member.id, member.status || 'active')}
-                                                            disabled={isUpdatingStatus}
-                                                            className={`w-full text-left px-4 py-2.5 text-xs text-[var(--app-text-primary)] hover:bg-[var(--app-bg-elevated)] transition-colors flex items-center gap-2 ${isUpdatingStatus ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                                            </svg>
-                                                            {member.status === 'suspended' ? t('settings.organization.members.actions.activate') : t('settings.organization.members.actions.suspend')}
-                                                        </button>
-
-                                                        <div className="h-px bg-[var(--app-border)] my-1" />
-
-                                                        <button
-                                                            onClick={() => handleRemove(member.id)}
-                                                            disabled={isRemoving || isSelf} // Cannot delete self here easily without confirmation of leaving
-                                                            className={`w-full text-left px-4 py-2.5 text-xs transition-colors flex items-center gap-2 ${isSelf ? 'text-[var(--app-text-muted)] cursor-not-allowed' : 'text-red-500 hover:bg-red-500/10'
-                                                                }`}
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                            </svg>
-                                                            {t('settings.organization.members.actions.remove')}
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <div className="p-8 text-center text-gray-500">
-                        {t('settings.organization.members.no_members')}
-                    </div>
-                )}
-            </div>
-
-            {/* Invite Panel */}
-            <InviteWorkspaceMemberPanel
-                isOpen={isInviteModalOpen}
-                onClose={() => setIsInviteModalOpen(false)}
-                workspace={workspace}
-            />
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-[var(--app-text-primary)]">
+            {t('settings.organization.members.title')}
+          </h3>
+          <p className="text-sm text-[var(--app-text-secondary)]">
+            {t('settings.organization.members.subtitle')}
+          </p>
         </div>
-    )
+        <button
+          onClick={() => setIsInviteModalOpen(true)}
+          className="rounded-lg bg-[var(--app-accent)] px-4 py-2 text-sm font-medium text-[var(--app-accent-text)] transition-colors hover:bg-[var(--app-accent-hover)]"
+        >
+          {t('settings.organization.members.invite_button')}
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <input
+          type="text"
+          placeholder={t('settings.organization.members.search_placeholder')}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-bg-card)] py-2 pl-10 pr-4 text-[var(--app-text-primary)] outline-none focus:border-[var(--app-accent)]"
+        />
+        <svg
+          className="absolute left-3 top-2.5 h-5 w-5 text-[var(--app-text-muted)]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
+      </div>
+
+      {/* List */}
+      {/* Removed overflow-hidden from container to fix dropdown clipping */}
+      <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-bg-card)]">
+        {isLoading ? (
+          <div className="p-8 text-center text-[var(--app-text-muted)]">{t('common.loading')}</div>
+        ) : filteredMembers.length > 0 ? (
+          <div className="divide-y divide-[var(--app-border)]">
+            {/* Header */}
+            <div className="grid grid-cols-12 gap-4 rounded-t-xl bg-[var(--app-bg-elevated)] p-4 text-xs font-semibold uppercase tracking-wider text-[var(--app-text-secondary)]">
+              <div className="col-span-4">{t('settings.organization.members.table.user')}</div>
+              <div className="col-span-3">{t('settings.organization.members.table.role')}</div>
+              <div className="col-span-3">{t('settings.organization.members.table.joined')}</div>
+              <div className="col-span-2 text-right">
+                {t('settings.organization.members.table.actions')}
+              </div>
+            </div>
+
+            {filteredMembers.map((member: Member) => {
+              const isSelf = member.id === session?.user?.id
+              // Prefer workspaceRole, fallback to role (though role might be undefined now)
+              const displayRole = member.workspaceRole || member.role || 'member'
+              const isOwner = displayRole === 'owner'
+
+              return (
+                <div
+                  key={member.id}
+                  className="group grid grid-cols-12 items-center gap-4 p-4 transition-colors hover:bg-white/5"
+                >
+                  {/* User Info */}
+                  <div className="col-span-4 flex items-center gap-3">
+                    <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full border border-[var(--app-border)] bg-[var(--app-bg-elevated)]">
+                      {member.image ? (
+                        <img
+                          src={member.image}
+                          alt={member.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs font-medium text-[var(--app-text-primary)]">
+                          {(member.name || member.email || '?').substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="truncate text-sm font-medium text-[var(--app-text-primary)]">
+                          {member.name || member.email || 'Unknown'}
+                        </h4>
+                        {member.status === 'suspended' && (
+                          <span className="rounded border border-red-500/20 bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-tight text-red-500">
+                            {t('settings.organization.members.status.suspended')}
+                          </span>
+                        )}
+                      </div>
+                      <p className="truncate text-xs text-[var(--app-text-muted)]">
+                        {member.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Role Selector */}
+                  <div className="col-span-3">
+                    {isOwner ? (
+                      <div className="w-full max-w-[140px] cursor-default rounded-lg bg-[var(--app-bg-page)] px-2 py-1.5 text-xs font-medium text-[var(--app-text-muted)]">
+                        {t('settings.organization.members.roles.owner')}
+                      </div>
+                    ) : (
+                      <select
+                        value={displayRole}
+                        onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                        disabled={isUpdatingRole || isSelf} // Owner can't demote self easily via this select
+                        className={`w-full max-w-[140px] cursor-pointer appearance-none rounded-lg border border-[var(--app-border)] px-2 py-1.5 text-xs font-medium outline-none transition-colors ${
+                          isSelf
+                            ? 'cursor-not-allowed bg-[var(--app-bg-page)] text-[var(--app-text-muted)] opacity-50'
+                            : 'bg-[var(--app-bg-card)] text-[var(--app-text-primary)] hover:bg-[var(--app-bg-page)]'
+                        }`}
+                      >
+                        <option value="admin">
+                          {t('settings.organization.members.roles.admin')}
+                        </option>
+                        <option value="project_manager">
+                          {t('settings.organization.members.roles.project_manager')}
+                        </option>
+                        <option value="hr_manager">
+                          {t('settings.organization.members.roles.hr_manager')}
+                        </option>
+                        <option value="member">
+                          {t('settings.organization.members.roles.member')}
+                        </option>
+                        <option value="guest">
+                          {t('settings.organization.members.roles.guest')}
+                        </option>
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Joined At */}
+                  <div className="col-span-3 text-sm text-[var(--app-text-secondary)]">
+                    {member.joinedAt ? new Date(member.joinedAt).toLocaleDateString() : '-'}
+                  </div>
+
+                  {/* Actions */}
+
+                  <div className="member-actions-menu relative col-span-2 flex justify-end">
+                    {!isSelf && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setOpenMenuId(openMenuId === member.id ? null : member.id)
+                          }}
+                          className="rounded-lg p-1.5 text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]"
+                        >
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                            />
+                          </svg>
+                        </button>
+
+                        {/* Dropdown Menu - z-index high, no border, ensure visible */}
+                        {openMenuId === member.id && (
+                          <div className="animate-in fade-in zoom-in-95 absolute right-0 top-full z-[100] mt-1 w-48 overflow-visible rounded-lg border border-[var(--app-border)] bg-[var(--app-bg-card)] py-1 shadow-xl ring-1 ring-black ring-opacity-5 duration-100">
+                            {!isOwner && (
+                              <button
+                                onClick={() => handleSetOwner(member.id)}
+                                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs text-[var(--app-text-primary)] transition-colors hover:bg-[var(--app-bg-elevated)]"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                  />
+                                </svg>
+                                {t('settings.organization.members.actions.set_owner')}
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() =>
+                                handleToggleStatus(member.id, member.status || 'active')
+                              }
+                              disabled={isUpdatingStatus}
+                              className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs text-[var(--app-text-primary)] transition-colors hover:bg-[var(--app-bg-elevated)] ${isUpdatingStatus ? 'cursor-not-allowed opacity-50' : ''}`}
+                            >
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                                />
+                              </svg>
+                              {member.status === 'suspended'
+                                ? t('settings.organization.members.actions.activate')
+                                : t('settings.organization.members.actions.suspend')}
+                            </button>
+
+                            <div className="my-1 h-px bg-[var(--app-border)]" />
+
+                            <button
+                              onClick={() => handleRemove(member.id)}
+                              disabled={isRemoving || isSelf} // Cannot delete self here easily without confirmation of leaving
+                              className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs transition-colors ${
+                                isSelf
+                                  ? 'cursor-not-allowed text-[var(--app-text-muted)]'
+                                  : 'text-red-500 hover:bg-red-500/10'
+                              }`}
+                            >
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                              {t('settings.organization.members.actions.remove')}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="p-8 text-center text-gray-500">
+            {t('settings.organization.members.no_members')}
+          </div>
+        )}
+      </div>
+
+      {/* Invite Panel */}
+      <InviteWorkspaceMemberPanel
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        workspace={workspace}
+      />
+    </div>
+  )
 }

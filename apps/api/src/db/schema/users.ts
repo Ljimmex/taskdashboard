@@ -1,4 +1,13 @@
-import { pgTable, varchar, text, timestamp, boolean, pgEnum, pgPolicy, jsonb } from 'drizzle-orm/pg-core'
+import {
+  pgTable,
+  varchar,
+  text,
+  timestamp,
+  boolean,
+  pgEnum,
+  pgPolicy,
+  jsonb,
+} from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 // =============================================================================
@@ -12,7 +21,9 @@ export const userStatusEnum = pgEnum('user_status', ['active', 'inactive', 'pend
 // USERS TABLE (Compatible with Better Auth)
 // =============================================================================
 
-export const users = pgTable('users', {
+export const users = pgTable(
+  'users',
+  {
     id: text('id').primaryKey(), // Better Auth generates string IDs
     email: varchar('email', { length: 255 }).notNull().unique(),
     emailVerified: boolean('email_verified').default(false).notNull(),
@@ -22,7 +33,7 @@ export const users = pgTable('users', {
     phoneNumber: varchar('phone_number', { length: 20 }),
     phoneNumberVerified: boolean('phone_number_verified').default(false).notNull(),
     twoFactorEnabled: boolean('two_factor_enabled').default(false).notNull(),
-    
+
     // E2E Encryption Keys
     publicKey: text('public_key'), // PEM format
     encryptedPrivateKey: text('encrypted_private_key'), // Encrypted with user password (client-side)
@@ -45,20 +56,24 @@ export const users = pgTable('users', {
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
 
     // Internal flags used by platform operations
-    internalFlags: jsonb('internal_flags').$type<{
+    internalFlags: jsonb('internal_flags')
+      .$type<{
         platformOwner?: boolean
         [key: string]: any
-    }>().default({}),
-}, (_table) => [
-    pgPolicy("Users can view own profile", {
-        for: "select",
-        using: sql`auth.uid()::text = id`,
+      }>()
+      .default({}),
+  },
+  (_table) => [
+    pgPolicy('Users can view own profile', {
+      for: 'select',
+      using: sql`auth.uid()::text = id`,
     }),
-    pgPolicy("Users can update own profile", {
-        for: "update",
-        using: sql`auth.uid()::text = id`,
+    pgPolicy('Users can update own profile', {
+      for: 'update',
+      using: sql`auth.uid()::text = id`,
     }),
-])
+  ]
+)
 
 // =============================================================================
 // TYPES

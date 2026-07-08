@@ -4,85 +4,99 @@ import { useEffect, useState } from 'react'
 import { apiFetchJson } from '@/lib/api'
 
 export const Route = createFileRoute('/dashboard')({
-    beforeLoad: async () => {
-        const session = await getSession()
+  beforeLoad: async () => {
+    const session = await getSession()
 
-        if (!session?.data?.session) {
-            // On cross-origin setups, cookies may be blocked.
-            // Check if we have a bearer token as fallback — if so, retry once
-            const token = localStorage.getItem('bearer_token')
-            if (token) {
-                // Small delay to allow any pending token writes to complete
-                await new Promise(r => setTimeout(r, 100))
-                const retrySession = await getSession()
-                if (!retrySession?.data?.session) {
-                    throw redirect({ to: '/login' })
-                }
-            } else {
-                throw redirect({ to: '/login' })
-            }
+    if (!session?.data?.session) {
+      // On cross-origin setups, cookies may be blocked.
+      // Check if we have a bearer token as fallback — if so, retry once
+      const token = localStorage.getItem('bearer_token')
+      if (token) {
+        // Small delay to allow any pending token writes to complete
+        await new Promise((r) => setTimeout(r, 100))
+        const retrySession = await getSession()
+        if (!retrySession?.data?.session) {
+          throw redirect({ to: '/login' })
         }
-    },
-    component: DashboardRedirector
+      } else {
+        throw redirect({ to: '/login' })
+      }
+    }
+  },
+  component: DashboardRedirector,
 })
 
 function DashboardRedirector() {
-    // Client-side redirector
-    // Fetch workspaces and redirect to the first one
-    return <DashboardRedirectLogic />
+  // Client-side redirector
+  // Fetch workspaces and redirect to the first one
+  return <DashboardRedirectLogic />
 }
 
 function DashboardRedirectLogic() {
-    const navigate = useNavigate()
-    const [noWorkspace, setNoWorkspace] = useState(false)
+  const navigate = useNavigate()
+  const [noWorkspace, setNoWorkspace] = useState(false)
 
-    useEffect(() => {
-        let mounted = true
+  useEffect(() => {
+    let mounted = true
 
-        async function resolveWorkspace() {
-            try {
-                const json = await apiFetchJson<any>('/api/workspaces')
-                const workspaces = json.data
+    async function resolveWorkspace() {
+      try {
+        const json = await apiFetchJson<any>('/api/workspaces')
+        const workspaces = json.data
 
-                if (!mounted) return
+        if (!mounted) return
 
-                if (workspaces && workspaces.length > 0) {
-                    // Redirect to the first workspace
-                    navigate({ to: `/${workspaces[0].slug}/` })
-                } else {
-                    setNoWorkspace(true)
-                }
-            } catch (error) {
-                console.error('Error resolving workspace:', error)
-                if (mounted) setNoWorkspace(true)
-            }
+        if (workspaces && workspaces.length > 0) {
+          // Redirect to the first workspace
+          navigate({ to: `/${workspaces[0].slug}/` })
+        } else {
+          setNoWorkspace(true)
         }
-        resolveWorkspace()
-
-        return () => { mounted = false }
-    }, [navigate])
-
-    if (noWorkspace) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-[#0a0a0f] text-white">
-                <div className="text-center space-y-4">
-                    <h2 className="text-xl font-semibold">Nie znaleziono Workspace'a</h2>
-                    <p className="text-gray-400">Wygląda na to, że nie masz dostępu do żadnego workspace'a.</p>
-                    <div className="flex gap-4 justify-center">
-                        <a href="/register" className="px-4 py-2 bg-amber-500 rounded text-black font-medium">Utwórz nowy</a>
-                        <button onClick={async () => { await signOut(); window.location.href = '/' }} className="px-4 py-2 bg-gray-800 rounded text-gray-300">Wyloguj</button>
-                    </div>
-                </div>
-            </div>
-        )
+      } catch (error) {
+        console.error('Error resolving workspace:', error)
+        if (mounted) setNoWorkspace(true)
+      }
     }
+    resolveWorkspace()
 
+    return () => {
+      mounted = false
+    }
+  }, [navigate])
+
+  if (noWorkspace) {
     return (
-        <div className="flex items-center justify-center min-h-screen bg-[#0a0a0f] text-white">
-            <div className="flex flex-col items-center gap-4">
-                <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-gray-400">Ładowanie Twojego workspace'a...</p>
-            </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f] text-white">
+        <div className="space-y-4 text-center">
+          <h2 className="text-xl font-semibold">Nie znaleziono Workspace'a</h2>
+          <p className="text-gray-400">
+            Wygląda na to, że nie masz dostępu do żadnego workspace'a.
+          </p>
+          <div className="flex justify-center gap-4">
+            <a href="/register" className="rounded bg-amber-500 px-4 py-2 font-medium text-black">
+              Utwórz nowy
+            </a>
+            <button
+              onClick={async () => {
+                await signOut()
+                window.location.href = '/'
+              }}
+              className="rounded bg-gray-800 px-4 py-2 text-gray-300"
+            >
+              Wyloguj
+            </button>
+          </div>
         </div>
+      </div>
     )
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f] text-white">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+        <p className="text-gray-400">Ładowanie Twojego workspace'a...</p>
+      </div>
+    </div>
+  )
 }

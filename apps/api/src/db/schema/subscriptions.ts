@@ -1,5 +1,15 @@
-import { pgTable, text, varchar, timestamp, integer, jsonb, pgEnum, boolean } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
+import {
+  pgTable,
+  text,
+  varchar,
+  timestamp,
+  integer,
+  jsonb,
+  pgEnum,
+  boolean,
+  pgPolicy,
+} from 'drizzle-orm/pg-core'
+import { relations, sql } from 'drizzle-orm'
 import { workspaces } from './workspaces'
 
 // =============================================================================
@@ -7,33 +17,37 @@ import { workspaces } from './workspaces'
 // =============================================================================
 
 export const subscriptionEventTypeEnum = pgEnum('subscription_event_type', [
-    'seat_added',
-    'seat_removed',
-    'plan_changed',
-    'subscription_activated',
-    'subscription_cancelled',
-    'subscription_past_due',
-    'payment_succeeded',
-    'payment_failed',
+  'seat_added',
+  'seat_removed',
+  'plan_changed',
+  'subscription_activated',
+  'subscription_cancelled',
+  'subscription_past_due',
+  'payment_succeeded',
+  'payment_failed',
 ])
 
 export const invoiceStatusEnum = pgEnum('invoice_status', [
-    'pending',
-    'paid',
-    'failed',
-    'refunded',
-    'void',
+  'pending',
+  'paid',
+  'failed',
+  'refunded',
+  'void',
 ])
 
 // =============================================================================
 // SUBSCRIPTIONS TABLE
 // =============================================================================
 
-export const subscriptions = pgTable('subscriptions', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     workspaceId: text('workspace_id')
-        .notNull()
-        .references(() => workspaces.id, { onDelete: 'cascade' }),
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
 
     // Polar.sh identifiers
     polarSubscriptionId: text('polar_subscription_id').notNull().unique(),
@@ -63,20 +77,37 @@ export const subscriptions = pgTable('subscriptions', {
     // Timestamps
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+  },
+  () => [
+    pgPolicy('subscriptions_select_policy', {
+      for: 'select',
+      to: 'authenticated',
+      using: sql`
+        workspace_id IN (
+          SELECT workspace_id FROM workspace_members
+          WHERE user_id = auth.uid()::text AND status = 'active'
+        )
+      `,
+    }),
+  ]
+)
 
 // =============================================================================
 // SUBSCRIPTION EVENTS TABLE
 // =============================================================================
 
-export const subscriptionEvents = pgTable('subscription_events', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const subscriptionEvents = pgTable(
+  'subscription_events',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     subscriptionId: text('subscription_id')
-        .notNull()
-        .references(() => subscriptions.id, { onDelete: 'cascade' }),
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: 'cascade' }),
     workspaceId: text('workspace_id')
-        .notNull()
-        .references(() => workspaces.id, { onDelete: 'cascade' }),
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
 
     type: subscriptionEventTypeEnum('type').notNull(),
     seatsDelta: integer('seats_delta').default(0).notNull(), // +1 when added, -1 when removed
@@ -90,19 +121,37 @@ export const subscriptionEvents = pgTable('subscription_events', {
     metadata: jsonb('metadata').$type<Record<string, any>>().default({}),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+  },
+  () => [
+    pgPolicy('subscription_events_select_policy', {
+      for: 'select',
+      to: 'authenticated',
+      using: sql`
+        workspace_id IN (
+          SELECT workspace_id FROM workspace_members
+          WHERE user_id = auth.uid()::text AND status = 'active'
+        )
+      `,
+    }),
+  ]
+)
 
 // =============================================================================
 // INVOICES TABLE
 // =============================================================================
 
-export const invoices = pgTable('invoices', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const invoices = pgTable(
+  'invoices',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     workspaceId: text('workspace_id')
-        .notNull()
-        .references(() => workspaces.id, { onDelete: 'cascade' }),
-    subscriptionId: text('subscription_id')
-        .references(() => subscriptions.id, { onDelete: 'set null' }),
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    subscriptionId: text('subscription_id').references(() => subscriptions.id, {
+      onDelete: 'set null',
+    }),
 
     polarInvoiceId: text('polar_invoice_id').unique(),
     polarOrderId: text('polar_order_id'),
@@ -120,14 +169,31 @@ export const invoices = pgTable('invoices', {
     paidAt: timestamp('paid_at'),
     failedAt: timestamp('failed_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+  },
+  () => [
+    pgPolicy('invoices_select_policy', {
+      for: 'select',
+      to: 'authenticated',
+      using: sql`
+        workspace_id IN (
+          SELECT workspace_id FROM workspace_members
+          WHERE user_id = auth.uid()::text AND status = 'active'
+        )
+      `,
+    }),
+  ]
+)
 
 // =============================================================================
 // WEBHOOK LOGS
 // =============================================================================
 
-export const webhookLogs = pgTable('webhook_logs', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const webhookLogs = pgTable(
+  'webhook_logs',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     source: varchar('source', { length: 50 }).notNull(), // e.g. 'polar'
     eventType: varchar('event_type', { length: 100 }).notNull(),
     payload: jsonb('payload').$type<Record<string, any>>().default({}).notNull(),
@@ -135,30 +201,54 @@ export const webhookLogs = pgTable('webhook_logs', {
     processingError: text('processing_error'),
     workspaceId: text('workspace_id'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+  },
+  () => [
+    pgPolicy('webhook_logs_select_policy', {
+      for: 'select',
+      to: 'authenticated',
+      using: sql`
+        workspace_id IN (
+          SELECT workspace_id FROM workspace_members
+          WHERE user_id = auth.uid()::text
+            AND status = 'active'
+            AND role IN ('owner', 'admin')
+        )
+      `,
+    }),
+  ]
+)
 
 // =============================================================================
 // RELATIONS
 // =============================================================================
 
 export const subscriptionsRelations = relations(subscriptions, ({ one, many }) => ({
-    workspace: one(workspaces, { fields: [subscriptions.workspaceId], references: [workspaces.id] }),
-    events: many(subscriptionEvents),
-    invoices: many(invoices),
+  workspace: one(workspaces, { fields: [subscriptions.workspaceId], references: [workspaces.id] }),
+  events: many(subscriptionEvents),
+  invoices: many(invoices),
 }))
 
 export const subscriptionEventsRelations = relations(subscriptionEvents, ({ one }) => ({
-    subscription: one(subscriptions, { fields: [subscriptionEvents.subscriptionId], references: [subscriptions.id] }),
-    workspace: one(workspaces, { fields: [subscriptionEvents.workspaceId], references: [workspaces.id] }),
+  subscription: one(subscriptions, {
+    fields: [subscriptionEvents.subscriptionId],
+    references: [subscriptions.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [subscriptionEvents.workspaceId],
+    references: [workspaces.id],
+  }),
 }))
 
 export const invoicesRelations = relations(invoices, ({ one }) => ({
-    subscription: one(subscriptions, { fields: [invoices.subscriptionId], references: [subscriptions.id] }),
-    workspace: one(workspaces, { fields: [invoices.workspaceId], references: [workspaces.id] }),
+  subscription: one(subscriptions, {
+    fields: [invoices.subscriptionId],
+    references: [subscriptions.id],
+  }),
+  workspace: one(workspaces, { fields: [invoices.workspaceId], references: [workspaces.id] }),
 }))
 
 export const webhookLogsRelations = relations(webhookLogs, ({ one }) => ({
-    workspace: one(workspaces, { fields: [webhookLogs.workspaceId], references: [workspaces.id] }),
+  workspace: one(workspaces, { fields: [webhookLogs.workspaceId], references: [workspaces.id] }),
 }))
 
 // =============================================================================

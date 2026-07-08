@@ -1,4 +1,15 @@
-import { pgTable, text, varchar, timestamp, jsonb, pgEnum, integer, boolean, pgPolicy, bigint } from 'drizzle-orm/pg-core'
+import {
+  pgTable,
+  text,
+  varchar,
+  timestamp,
+  jsonb,
+  pgEnum,
+  integer,
+  boolean,
+  pgPolicy,
+  bigint,
+} from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { users } from './users'
 
@@ -7,25 +18,25 @@ import { users } from './users'
 // =============================================================================
 
 export const subscriptionPlanEnum = pgEnum('subscription_plan', [
-    'free',
-    'plus',
-    'pro',
-    'enterprise'
+  'free',
+  'plus',
+  'pro',
+  'enterprise',
 ])
 
 export const inviteStatusEnum = pgEnum('invite_status', [
-    'pending',
-    'accepted',
-    'revoked',
-    'expired'
+  'pending',
+  'accepted',
+  'revoked',
+  'expired',
 ])
 
 export const subscriptionStatusEnum = pgEnum('subscription_status', [
-    'active',
-    'trial',
-    'expired',
-    'cancelled',
-    'past_due'
+  'active',
+  'trial',
+  'expired',
+  'cancelled',
+  'past_due',
 ])
 
 // =============================================================================
@@ -33,141 +44,155 @@ export const subscriptionStatusEnum = pgEnum('subscription_status', [
 // =============================================================================
 
 export const workspaces = pgTable('workspaces', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
 
-    // Basic Info
-    name: varchar('name', { length: 255 }).notNull(),
-    slug: varchar('slug', { length: 255 }).notNull().unique(),
-    description: text('description'),
-    logo: text('logo'), // URL to logo image
-    website: varchar('website', { length: 500 }),
-    industry: varchar('industry', { length: 100 }), // e.g. "IT", "Marketing"
-    teamSize: varchar('team_size', { length: 50 }), // e.g. "1-10", "11-50"
+  // Basic Info
+  name: varchar('name', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 255 }).notNull().unique(),
+  description: text('description'),
+  logo: text('logo'), // URL to logo image
+  website: varchar('website', { length: 500 }),
+  industry: varchar('industry', { length: 100 }), // e.g. "IT", "Marketing"
+  teamSize: varchar('team_size', { length: 50 }), // e.g. "1-10", "11-50"
 
-    // Ownership
-    ownerId: text('owner_id')
-        .notNull()
-        .references(() => users.id, { onDelete: 'cascade' }),
+  // Ownership
+  ownerId: text('owner_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
 
-    // Subscription & Billing
-    subscriptionPlan: subscriptionPlanEnum('subscription_plan').default('free').notNull(),
-    subscriptionStatus: subscriptionStatusEnum('subscription_status').default('trial').notNull(),
-    cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false).notNull(),
-    trialEndsAt: timestamp('trial_ends_at'),
-    billingEmail: varchar('billing_email', { length: 255 }),
-    billingDay: integer('billing_day'), // day of month when the workspace is billed
+  // Subscription & Billing
+  subscriptionPlan: subscriptionPlanEnum('subscription_plan').default('free').notNull(),
+  subscriptionStatus: subscriptionStatusEnum('subscription_status').default('trial').notNull(),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false).notNull(),
+  trialEndsAt: timestamp('trial_ends_at'),
+  billingEmail: varchar('billing_email', { length: 255 }),
+  billingDay: integer('billing_day'), // day of month when the workspace is billed
 
-    // Polar.sh identifiers
-    polarCustomerId: text('polar_customer_id'),
-    polarSubscriptionId: text('polar_subscription_id'),
+  // Polar.sh identifiers
+  polarCustomerId: text('polar_customer_id'),
+  polarSubscriptionId: text('polar_subscription_id'),
 
-    // Owner override: change plan without payment (invisible to other members)
-    isOwnerOverride: boolean('is_owner_override').default(false).notNull(),
-    overridePlan: varchar('override_plan', { length: 50 }),
+  // Owner override: change plan without payment (invisible to other members)
+  isOwnerOverride: boolean('is_owner_override').default(false).notNull(),
+  overridePlan: varchar('override_plan', { length: 50 }),
 
-    // Current usage counters (updated by app logic)
-    currentSeatCount: integer('current_seat_count').default(1).notNull(),
-    usedStorageBytes: bigint('used_storage_bytes', { mode: 'number' }).default(0).notNull(),
+  // Current usage counters (updated by app logic)
+  currentSeatCount: integer('current_seat_count').default(1).notNull(),
+  usedStorageBytes: bigint('used_storage_bytes', { mode: 'number' }).default(0).notNull(),
 
-    // Limits (enforced by plan; null means unlimited)
-    maxMembers: integer('max_members').default(5), // Free: 5; Plus/Pro/Enterprise: null (unlimited)
-    maxProjects: integer('max_projects').default(5), // Free: 5; paid: null
-    maxStorageGB: integer('max_storage_gb').default(0), // base storage; Free: 0.5 GB
-    maxTeams: integer('max_teams').default(2), // Free: 2; paid: null
-    maxDocs: integer('max_docs').default(10), // Free: 10; paid: null
-    maxWhiteboards: integer('max_whiteboards').default(1), // Free: 1; paid: null
-    maxFileSizeMB: integer('max_file_size_mb').default(10), // Free: 10; Plus: 100; Pro: 2048
+  // Limits (enforced by plan; null means unlimited)
+  maxMembers: integer('max_members').default(5), // Free: 5; Plus/Pro/Enterprise: null (unlimited)
+  maxProjects: integer('max_projects').default(5), // Free: 5; paid: null
+  maxStorageGB: integer('max_storage_gb').default(0), // base storage; Free: 0.5 GB
+  maxTeams: integer('max_teams').default(2), // Free: 2; paid: null
+  maxDocs: integer('max_docs').default(10), // Free: 10; paid: null
+  maxWhiteboards: integer('max_whiteboards').default(1), // Free: 1; paid: null
+  maxFileSizeMB: integer('max_file_size_mb').default(10), // Free: 10; Plus: 100; Pro: 2048
 
-    // Features (JSON flags)
-    features: jsonb('features').$type<{
-        customBranding?: boolean
-        advancedReporting?: boolean
-        apiAccess?: 'none' | 'read_only' | 'full'
-        ssoEnabled?: boolean
-        prioritySupport?: boolean
-        hrApproval?: boolean
-        revShare?: boolean
-        [key: string]: any
-    }>().default({
-        customBranding: false,
-        advancedReporting: false,
-        apiAccess: 'none',
-        ssoEnabled: false,
-        prioritySupport: false,
-        hrApproval: false,
-        revShare: false,
+  // Features (JSON flags)
+  features: jsonb('features')
+    .$type<{
+      customBranding?: boolean
+      advancedReporting?: boolean
+      apiAccess?: 'none' | 'read_only' | 'full'
+      ssoEnabled?: boolean
+      prioritySupport?: boolean
+      hrApproval?: boolean
+      revShare?: boolean
+      [key: string]: any
+    }>()
+    .default({
+      customBranding: false,
+      advancedReporting: false,
+      apiAccess: 'none',
+      ssoEnabled: false,
+      prioritySupport: false,
+      hrApproval: false,
+      revShare: false,
     }),
 
-    // Settings
-    settings: jsonb('settings').$type<{
-        defaultLanguage?: string
-        timezone?: string
-        dateFormat?: string
-        timeFormat?: '12h' | '24h'
-        weekStartsOn?: 'monday' | 'sunday'
-        currency?: string
-        workingHours?: {
-            start: string // e.g., "09:00"
-            end: string   // e.g., "17:00"
-        }
-        notifications?: {
-            email?: boolean
-            inApp?: boolean
-        }
-        revshareMultipliers?: Record<string, number>
-        revshareTaskWeight?: number    // default 1.0
-        revshareSubtaskWeight?: number // default 0.8
-        [key: string]: any
-    }>().default({
-        defaultLanguage: 'pl',
-        timezone: 'Europe/Warsaw',
-        dateFormat: 'DD/MM/YYYY',
-        timeFormat: '24h',
-        weekStartsOn: 'monday',
-        currency: 'PLN',
-        notifications: {
-            email: true,
-            inApp: true
-        }
+  // Settings
+  settings: jsonb('settings')
+    .$type<{
+      defaultLanguage?: string
+      timezone?: string
+      dateFormat?: string
+      timeFormat?: '12h' | '24h'
+      weekStartsOn?: 'monday' | 'sunday'
+      currency?: string
+      workingHours?: {
+        start: string // e.g., "09:00"
+        end: string // e.g., "17:00"
+      }
+      notifications?: {
+        email?: boolean
+        inApp?: boolean
+      }
+      revshareMultipliers?: Record<string, number>
+      revshareTaskWeight?: number // default 1.0
+      revshareSubtaskWeight?: number // default 0.8
+      [key: string]: any
+    }>()
+    .default({
+      defaultLanguage: 'pl',
+      timezone: 'Europe/Warsaw',
+      dateFormat: 'DD/MM/YYYY',
+      timeFormat: '24h',
+      weekStartsOn: 'monday',
+      currency: 'PLN',
+      notifications: {
+        email: true,
+        inApp: true,
+      },
     }),
 
-    // Labels (workspace-level, stored as JSONB array)
-    labels: jsonb('labels').$type<{
+  // Labels (workspace-level, stored as JSONB array)
+  labels: jsonb('labels')
+    .$type<
+      {
         id: string
         name: string
         color: string
-    }[]>().default([
-        { id: 'bug', name: 'Bug', color: '#ef4444' },
-        { id: 'feature', name: 'Feature', color: '#10b981' },
-        { id: 'frontend', name: 'Frontend', color: '#3b82f6' },
-        { id: 'backend', name: 'Backend', color: '#8b5cf6' },
-        { id: 'urgent', name: 'Pilne', color: '#f97316' },
-        { id: 'docs', name: 'Dokumentacja', color: '#6b7280' },
+      }[]
+    >()
+    .default([
+      { id: 'bug', name: 'Bug', color: '#ef4444' },
+      { id: 'feature', name: 'Feature', color: '#10b981' },
+      { id: 'frontend', name: 'Frontend', color: '#3b82f6' },
+      { id: 'backend', name: 'Backend', color: '#8b5cf6' },
+      { id: 'urgent', name: 'Pilne', color: '#f97316' },
+      { id: 'docs', name: 'Dokumentacja', color: '#6b7280' },
     ]),
 
-    // Priorities (workspace-level, stored as JSONB array)
-    priorities: jsonb('priorities').$type<{
+  // Priorities (workspace-level, stored as JSONB array)
+  priorities: jsonb('priorities')
+    .$type<
+      {
         id: string
         name: string
         color: string
         icon?: string
         position: number
-    }[]>().default([
-        { id: 'low', name: 'Low', color: '#6b7280', position: 0 },
-        { id: 'medium', name: 'Medium', color: '#3b82f6', position: 1 },
-        { id: 'high', name: 'High', color: '#f59e0b', position: 2 },
-        { id: 'urgent', name: 'Urgent', color: '#ef4444', position: 3 },
+      }[]
+    >()
+    .default([
+      { id: 'low', name: 'Low', color: '#6b7280', position: 0 },
+      { id: 'medium', name: 'Medium', color: '#3b82f6', position: 1 },
+      { id: 'high', name: 'High', color: '#f59e0b', position: 2 },
+      { id: 'urgent', name: 'Urgent', color: '#ef4444', position: 3 },
     ]),
 
-    // Default industry template for new projects
-    defaultIndustryTemplateId: text('default_industry_template_id'),
+  // Default industry template for new projects
+  defaultIndustryTemplateId: text('default_industry_template_id'),
 
-    // Metadata
-    isActive: boolean('is_active').default(true).notNull(),
+  // Metadata
+  isActive: boolean('is_active').default(true).notNull(),
 
-    // Timestamps
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  // Timestamps
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
 // =============================================================================
@@ -175,64 +200,67 @@ export const workspaces = pgTable('workspaces', {
 // =============================================================================
 
 export const workspaceRoleEnum = pgEnum('workspace_role', [
-    'owner',           // Właściciel - pełna kontrola, może usunąć workspace
-    'admin',           // Administrator - zarządzanie bez billing
-    'project_manager', // Manager projektów - focus na projekty
-    'hr_manager',      // HR Manager - zarządzanie ludźmi
-    'member',          // Zwykły członek
-    'guest'            // Gość - ograniczony dostęp
+  'owner', // Właściciel - pełna kontrola, może usunąć workspace
+  'admin', // Administrator - zarządzanie bez billing
+  'project_manager', // Manager projektów - focus na projekty
+  'hr_manager', // HR Manager - zarządzanie ludźmi
+  'member', // Zwykły członek
+  'guest', // Gość - ograniczony dostęp
 ])
 
-export const memberStatusEnum = pgEnum('member_status', [
-    'active',
-    'invited',
-    'suspended'
-])
+export const memberStatusEnum = pgEnum('member_status', ['active', 'invited', 'suspended'])
 
 export const workspaceMembers = pgTable('workspace_members', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-    workspaceId: text('workspace_id')
-        .notNull()
-        .references(() => workspaces.id, { onDelete: 'cascade' }),
-    userId: text('user_id')
-        .notNull()
-        .references(() => users.id, { onDelete: 'cascade' }),
-    role: workspaceRoleEnum('role').default('member').notNull(),
-    status: memberStatusEnum('status').default('active').notNull(),
-    invitedBy: text('invited_by').references(() => users.id),
-    joinedAt: timestamp('joined_at').defaultNow().notNull(),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  role: workspaceRoleEnum('role').default('member').notNull(),
+  status: memberStatusEnum('status').default('active').notNull(),
+  invitedBy: text('invited_by').references(() => users.id),
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
 })
 
 // =============================================================================
 // WORKSPACE INVITES
 // =============================================================================
 
-export const workspaceInvites = pgTable('workspace_invites', {
-    id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+export const workspaceInvites = pgTable(
+  'workspace_invites',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     workspaceId: text('workspace_id')
-        .notNull()
-        .references(() => workspaces.id, { onDelete: 'cascade' }),
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
     email: varchar('email', { length: 255 }), // Nullable for general link invites
     token: varchar('token', { length: 255 }).notNull().unique(),
     role: workspaceRoleEnum('role').default('member').notNull(),
     invitedBy: text('invited_by')
-        .notNull()
-        .references(() => users.id, { onDelete: 'cascade' }),
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
     expiresAt: timestamp('expires_at').notNull(),
     allowedDomains: jsonb('allowed_domains').$type<string[]>().default([]),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     acceptedAt: timestamp('accepted_at'),
     status: inviteStatusEnum('status').default('pending').notNull(),
-}, () => [
-    pgPolicy("workspace_invites_select_policy", {
-        for: "select",
-        to: "public",
-        using: sql`true`, // Public can view by token, backend filters
+  },
+  () => [
+    pgPolicy('workspace_invites_select_policy', {
+      for: 'select',
+      to: 'public',
+      using: sql`true`, // Public can view by token, backend filters
     }),
-    pgPolicy("workspace_invites_insert_policy", {
-        for: "insert",
-        to: "authenticated",
-        withCheck: sql`
+    pgPolicy('workspace_invites_insert_policy', {
+      for: 'insert',
+      to: 'authenticated',
+      withCheck: sql`
             workspace_id IN (
                 SELECT workspace_id FROM workspace_members 
                 WHERE user_id = auth.uid()::text 
@@ -241,10 +269,10 @@ export const workspaceInvites = pgTable('workspace_invites', {
             )
         `,
     }),
-    pgPolicy("workspace_invites_update_policy", {
-        for: "update",
-        to: "authenticated",
-        using: sql`
+    pgPolicy('workspace_invites_update_policy', {
+      for: 'update',
+      to: 'authenticated',
+      using: sql`
             workspace_id IN (
                 SELECT workspace_id FROM workspace_members 
                 WHERE user_id = auth.uid()::text 
@@ -253,10 +281,10 @@ export const workspaceInvites = pgTable('workspace_invites', {
             )
         `,
     }),
-    pgPolicy("workspace_invites_delete_policy", {
-        for: "delete",
-        to: "authenticated",
-        using: sql`
+    pgPolicy('workspace_invites_delete_policy', {
+      for: 'delete',
+      to: 'authenticated',
+      using: sql`
             workspace_id IN (
                 SELECT workspace_id FROM workspace_members 
                 WHERE user_id = auth.uid()::text 
@@ -265,7 +293,8 @@ export const workspaceInvites = pgTable('workspace_invites', {
             )
         `,
     }),
-])
+  ]
+)
 
 // =============================================================================
 // TYPES

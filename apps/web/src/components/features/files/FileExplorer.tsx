@@ -17,488 +17,526 @@ import { useTranslation } from 'react-i18next'
 import { FolderBreadcrumb, BreadcrumbItem } from './FolderBreadcrumb'
 
 interface FileExplorerProps {
-    folderId?: string | null
-    viewMode: 'grid' | 'list'
-    searchQuery?: string
-    fileTypeFilter?: string
-    startDate?: Date | null
-    endDate?: Date | null
-    sortBy: 'name' | 'size' | 'date' | 'type'
-    sortOrder: 'asc' | 'desc'
-    onSort: (field: 'name' | 'size' | 'date' | 'type') => void
-    userRole?: string | null
-    highlightFileId?: string
-    onFolderChange?: (folderId: string | null) => void
+  folderId?: string | null
+  viewMode: 'grid' | 'list'
+  searchQuery?: string
+  fileTypeFilter?: string
+  startDate?: Date | null
+  endDate?: Date | null
+  sortBy: 'name' | 'size' | 'date' | 'type'
+  sortOrder: 'asc' | 'desc'
+  onSort: (field: 'name' | 'size' | 'date' | 'type') => void
+  userRole?: string | null
+  highlightFileId?: string
+  onFolderChange?: (folderId: string | null) => void
 }
 
 export function FileExplorer({
-    folderId: initialFolderId,
-    viewMode = 'grid',
-    searchQuery = '',
-    fileTypeFilter = 'all',
-    startDate,
-    endDate,
-    sortBy,
-    sortOrder,
-    onSort,
-    userRole,
-    highlightFileId,
-    onFolderChange
+  folderId: initialFolderId,
+  viewMode = 'grid',
+  searchQuery = '',
+  fileTypeFilter = 'all',
+  startDate,
+  endDate,
+  sortBy,
+  sortOrder,
+  onSort,
+  userRole,
+  highlightFileId,
+  onFolderChange,
 }: FileExplorerProps) {
-    const { t } = useTranslation()
-    const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
-    const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId || null)
-    const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([{ id: null, name: 'Files' }])
+  const { t } = useTranslation()
+  const { workspaceSlug } = useParams({ from: '/$workspaceSlug' })
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(initialFolderId || null)
+  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([{ id: null, name: 'Files' }])
 
-    // Fetch and sync folder changes
-    React.useEffect(() => {
-        if (onFolderChange) {
-            onFolderChange(currentFolderId)
-        }
-    }, [currentFolderId, onFolderChange])
-
-    // Modal states
-    const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
-    const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false)
-    const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
-    const [renameItem, setRenameItem] = useState<{ id: string; name: string; type: 'file' | 'folder' } | null>(null)
-    const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
-    const [isMoveModalOpen, setIsMoveModalOpen] = useState(false)
-    const [moveFileItem, setMoveFileItem] = useState<{ id: string; name: string } | null>(null)
-    const [openFileId, setOpenFileId] = useState<string | null>(null)
-
-    const { data: files, isLoading: isLoadingFiles, refetch: refetchFiles } = useFiles(workspaceSlug, currentFolderId)
-    const { data: folders, isLoading: isLoadingFolders, refetch: refetchFolders } = useFolders(workspaceSlug, currentFolderId)
-    const deleteFile = useDeleteFile()
-    const deleteFolder = useDeleteFolder()
-    const moveFile = useMoveFile()
-
-    // Auto-open highlighted file
-    React.useEffect(() => {
-        if (highlightFileId && files) {
-            const file = files.find(f => f.id === highlightFileId)
-            if (file) {
-                // If found in current folder/view
-                setSelectedFile(file)
-                setIsInfoPanelOpen(true)
-            } else {
-                // If not found in current folder, we might need to search recursively or just show info if we can fetch it individually.
-                // For now, simple implementation assuming it's visible or flat list.
-                // NOTE: Since useFiles is currentFolderId scoped, checking "files" only checks current folder.
-                // If LastResources links to a file in a subfolder, this won't find it unless we are in that folder.
-                // Ideally we'd fetch the specific file or know its folder.
-                // But let's start with simple interaction.
-            }
-        }
-    }, [highlightFileId, files])
-
-    // Handle drag-drop file to folder
-    const handleFileDrop = async (fileId: string, folderId: string | null) => {
-        if (userRole === 'member') return
-        try {
-            await moveFile.mutateAsync({
-                fileId,
-                folderId,
-                workspaceSlug
-            })
-            refetchFiles()
-        } catch (error) {
-            console.error('Failed to move file:', error)
-            // You might want to add a toast here using t('files.messages.move_failed')
-        }
+  // Fetch and sync folder changes
+  React.useEffect(() => {
+    if (onFolderChange) {
+      onFolderChange(currentFolderId)
     }
+  }, [currentFolderId, onFolderChange])
 
-    const sortItems = <T extends { name: string, createdAt: Date | string, size?: number | null, mimeType?: string | null }>(items: T[]): T[] => {
-        return [...items].sort((a, b) => {
-            let comparison = 0
-            switch (sortBy) {
-                case 'name':
-                    comparison = a.name.localeCompare(b.name)
-                    break
-                case 'size':
-                    comparison = (a.size || 0) - (b.size || 0)
-                    break
-                case 'date':
-                    comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-                    break
-                case 'type':
-                    comparison = (a.mimeType || '').localeCompare(b.mimeType || '')
-                    break
-            }
-            return sortOrder === 'asc' ? comparison : -comparison
-        })
+  // Modal states
+  const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false)
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
+  const [renameItem, setRenameItem] = useState<{
+    id: string
+    name: string
+    type: 'file' | 'folder'
+  } | null>(null)
+  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false)
+  const [moveFileItem, setMoveFileItem] = useState<{ id: string; name: string } | null>(null)
+  const [openFileId, setOpenFileId] = useState<string | null>(null)
+
+  const {
+    data: files,
+    isLoading: isLoadingFiles,
+    refetch: refetchFiles,
+  } = useFiles(workspaceSlug, currentFolderId)
+  const {
+    data: folders,
+    isLoading: isLoadingFolders,
+    refetch: refetchFolders,
+  } = useFolders(workspaceSlug, currentFolderId)
+  const deleteFile = useDeleteFile()
+  const deleteFolder = useDeleteFolder()
+  const moveFile = useMoveFile()
+
+  // Auto-open highlighted file
+  React.useEffect(() => {
+    if (highlightFileId && files) {
+      const file = files.find((f) => f.id === highlightFileId)
+      if (file) {
+        // If found in current folder/view
+        setSelectedFile(file)
+        setIsInfoPanelOpen(true)
+      } else {
+        // If not found in current folder, we might need to search recursively or just show info if we can fetch it individually.
+        // For now, simple implementation assuming it's visible or flat list.
+        // NOTE: Since useFiles is currentFolderId scoped, checking "files" only checks current folder.
+        // If LastResources links to a file in a subfolder, this won't find it unless we are in that folder.
+        // Ideally we'd fetch the specific file or know its folder.
+        // But let's start with simple interaction.
+      }
     }
+  }, [highlightFileId, files])
 
-    // Filter files based on search, type, and date
-    const filteredFiles = React.useMemo(() => {
-        if (!files) return []
-        const filtered = files.filter(file => {
-            const matchesSearch = !searchQuery || file.name.toLowerCase().includes(searchQuery.toLowerCase())
-            const matchesType = fileTypeFilter === 'all' ||
-                (fileTypeFilter === 'image' && file.mimeType?.startsWith('image/')) ||
-                (fileTypeFilter === 'document' && (file.mimeType?.includes('document') || file.mimeType?.includes('word'))) ||
-                (fileTypeFilter === 'pdf' && file.mimeType?.includes('pdf')) ||
-                (fileTypeFilter === 'spreadsheet' && (file.mimeType?.includes('spreadsheet') || file.mimeType?.includes('excel'))) ||
-                (fileTypeFilter === 'video' && file.mimeType?.startsWith('video/')) ||
-                (fileTypeFilter === 'audio' && file.mimeType?.startsWith('audio/'))
-
-            let matchesDate = true
-            if (startDate || endDate) {
-                const fileDate = new Date(file.createdAt)
-                if (startDate && fileDate < startDate) matchesDate = false
-                if (endDate && fileDate > endDate) matchesDate = false
-            }
-
-            return matchesSearch && matchesType && matchesDate
-        })
-        return sortItems(filtered)
-    }, [files, searchQuery, fileTypeFilter, startDate, endDate, sortBy, sortOrder])
-
-    const filteredFolders = React.useMemo(() => {
-        if (!folders) return []
-        const filtered = folders.filter(folder =>
-            !searchQuery || folder.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        return sortItems(filtered)
-    }, [folders, searchQuery, sortBy, sortOrder])
-
-    // Actions
-    const handleRename = (id: string) => {
-        const file = files?.find(f => f.id === id)
-        const folder = folders?.find(f => f.id === id)
-        if (file) {
-            setRenameItem({ id, name: file.name, type: 'file' })
-        } else if (folder) {
-            setRenameItem({ id, name: folder.name, type: 'folder' })
-        }
-        setIsRenameModalOpen(true)
+  // Handle drag-drop file to folder
+  const handleFileDrop = async (fileId: string, folderId: string | null) => {
+    if (userRole === 'member') return
+    try {
+      await moveFile.mutateAsync({
+        fileId,
+        folderId,
+        workspaceSlug,
+      })
+      refetchFiles()
+    } catch (error) {
+      console.error('Failed to move file:', error)
+      // You might want to add a toast here using t('files.messages.move_failed')
     }
+  }
 
-    const handleDelete = async (id: string) => {
-        const file = files?.find(f => f.id === id)
-        const folder = folders?.find(f => f.id === id)
+  const sortItems = <
+    T extends {
+      name: string
+      createdAt: Date | string
+      size?: number | null
+      mimeType?: string | null
+    },
+  >(
+    items: T[]
+  ): T[] => {
+    return [...items].sort((a, b) => {
+      let comparison = 0
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name)
+          break
+        case 'size':
+          comparison = (a.size || 0) - (b.size || 0)
+          break
+        case 'date':
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          break
+        case 'type':
+          comparison = (a.mimeType || '').localeCompare(b.mimeType || '')
+          break
+      }
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+  }
 
-        if (file) {
-            if (confirm(t('files.messages.delete_file_confirm', { name: file.name }))) {
-                await deleteFile.mutateAsync({ fileId: id, workspaceSlug })
-                refetchFiles()
-            }
-        } else if (folder) {
-            if (confirm(t('files.messages.delete_folder_confirm', { name: folder.name }))) {
-                await deleteFolder.mutateAsync({ folderId: id, workspaceSlug })
-                refetchFolders()
-            }
-        }
-    }
+  // Filter files based on search, type, and date
+  const filteredFiles = React.useMemo(() => {
+    if (!files) return []
+    const filtered = files.filter((file) => {
+      const matchesSearch =
+        !searchQuery || file.name.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesType =
+        fileTypeFilter === 'all' ||
+        (fileTypeFilter === 'image' && file.mimeType?.startsWith('image/')) ||
+        (fileTypeFilter === 'document' &&
+          (file.mimeType?.includes('document') || file.mimeType?.includes('word'))) ||
+        (fileTypeFilter === 'pdf' && file.mimeType?.includes('pdf')) ||
+        (fileTypeFilter === 'spreadsheet' &&
+          (file.mimeType?.includes('spreadsheet') || file.mimeType?.includes('excel'))) ||
+        (fileTypeFilter === 'video' && file.mimeType?.startsWith('video/')) ||
+        (fileTypeFilter === 'audio' && file.mimeType?.startsWith('audio/'))
 
-    const handleMove = (id: string) => {
-        const file = files?.find(f => f.id === id)
-        if (file) {
-            setMoveFileItem({ id, name: file.name })
-            setIsMoveModalOpen(true)
-        }
-    }
+      let matchesDate = true
+      if (startDate || endDate) {
+        const fileDate = new Date(file.createdAt)
+        if (startDate && fileDate < startDate) matchesDate = false
+        if (endDate && fileDate > endDate) matchesDate = false
+      }
 
-    const downloadFolderAsZip = async (folder: Folder) => {
-        try {
-            const zip = new JSZip()
+      return matchesSearch && matchesType && matchesDate
+    })
+    return sortItems(filtered)
+  }, [files, searchQuery, fileTypeFilter, startDate, endDate, sortBy, sortOrder])
 
-            const addFolderToZip = async (currentFolderId: string, currentZipFolder: JSZip) => {
-                const { id: workspaceId } = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
-
-                // Get subfolders
-                const parentParam = currentFolderId ? `&parentId=${currentFolderId}` : '&parentId=root'
-                const foldersData = await apiFetchJson<any>(`/api/folders?workspaceId=${workspaceId}${parentParam}`)
-                const subFolders = foldersData.data || []
-
-                // Get files
-                const filesData = await apiFetchJson<any>(`/api/files?workspaceId=${workspaceId}&folderId=${currentFolderId}`)
-                const subFiles = filesData.data || []
-
-                // Fetch each file
-                for (const f of subFiles) {
-                    try {
-                        const json = await apiFetchJson<any>(`/api/files/${f.id}/download`)
-                        if (json.downloadUrl) {
-                            const res = await fetch(json.downloadUrl)
-                            const blob = await res.blob()
-                            currentZipFolder.file(f.name, blob)
-                        }
-                    } catch (e) {
-                        console.error('Failed to download file for zip', f.name, e)
-                    }
-                }
-
-                // Recursively add subfolders
-                for (const sub of subFolders) {
-                    const newZipFolder = currentZipFolder.folder(sub.name)
-                    if (newZipFolder) {
-                        await addFolderToZip(sub.id, newZipFolder)
-                    }
-                }
-            }
-
-            await addFolderToZip(folder.id, zip)
-            const content = await zip.generateAsync({ type: 'blob' })
-            saveAs(content, `${folder.name}.zip`)
-        } catch (error) {
-            console.error('Failed to zip folder:', error)
-            alert(t('files.messages.download_failed') + ' ' + (error as Error).message)
-        }
-    }
-
-    const handleDownload = async (id: string) => {
-        const file = files?.find(f => f.id === id)
-        const folder = folders?.find(f => f.id === id)
-
-        if (folder) {
-            await downloadFolderAsZip(folder)
-            return
-        }
-
-        if (file) {
-            try {
-                const json = await apiFetchJson<any>(`/api/files/${id}/download`)
-                const { downloadUrl } = json
-                window.open(downloadUrl, '_blank')
-            } catch (error) {
-                console.error('Download failed:', error)
-                alert(t('files.messages.download_failed') + ' ' + (error as Error).message)
-            }
-        }
-    }
-
-    const handleArchive = async (id: string) => {
-        try {
-            const res = await apiFetch(`/api/files/${id}/archive`, { method: 'PATCH' })
-            if (!res.ok) throw new Error('Failed to archive file')
-            refetchFiles()
-        } catch (error) {
-            console.error('Archive failed:', error)
-        }
-    }
-
-    const handleDuplicate = async (id: string) => {
-        try {
-            const res = await apiFetch(`/api/files/${id}/duplicate`, { method: 'POST' })
-            if (!res.ok) {
-                const errorData = await res.json()
-                if (res.status === 501) {
-                    alert(t('toasts.duplicate_not_implemented'))
-                    // Fallback since I added duplicate_not_implemented to 'common' or 'files'? 
-                    // I checked diffs, it was added to the end of previous block which was ... 'duplicate_not_implemented' 
-                    // Wait, let me check the diff again.
-                    // It was added to 'common' (implied by indentation/context) or root?
-                    // It was added after "failed_update_event".
-                    // I will use `t('duplicate_not_implemented')` if it's top level or `t('common.duplicate_not_implemented')`.
-                    // The keys looked like top level properties in the fragment I saw.
-                    return
-                }
-                throw new Error(errorData.error || 'Failed to duplicate file')
-            }
-            refetchFiles()
-        } catch (error) {
-            console.error('Duplicate failed:', error)
-        }
-    }
-
-    const handleInfo = (id: string) => {
-        const file = files?.find(f => f.id === id)
-        if (file) {
-            setSelectedFile(file)
-            setIsInfoPanelOpen(true)
-        }
-    }
-
-    const handleNavigate = (folderId: string) => {
-        const folder = folders?.find(f => f.id === folderId)
-        if (folder) {
-            setBreadcrumbs(prev => [...prev, { id: folderId, name: folder.name }])
-        }
-        setCurrentFolderId(folderId)
-    }
-
-    const handleBreadcrumbClick = (index: number) => {
-        const item = breadcrumbs[index]
-        setCurrentFolderId(item.id)
-        setBreadcrumbs(breadcrumbs.slice(0, index + 1))
-    }
-
-    const handleOpen = (id: string) => {
-        setOpenFileId(id)
-    }
-
-    // Translate root breadcrumb if applicable
-    const displayedBreadcrumbs = breadcrumbs.map((crumb, index) =>
-        index === 0 && crumb.id === null ? { ...crumb, name: t('files.header.title') } : crumb
+  const filteredFolders = React.useMemo(() => {
+    if (!folders) return []
+    const filtered = folders.filter(
+      (folder) => !searchQuery || folder.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
+    return sortItems(filtered)
+  }, [folders, searchQuery, sortBy, sortOrder])
 
-    if (isLoadingFiles || isLoadingFolders) {
-        return (
-            <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-            </div>
+  // Actions
+  const handleRename = (id: string) => {
+    const file = files?.find((f) => f.id === id)
+    const folder = folders?.find((f) => f.id === id)
+    if (file) {
+      setRenameItem({ id, name: file.name, type: 'file' })
+    } else if (folder) {
+      setRenameItem({ id, name: folder.name, type: 'folder' })
+    }
+    setIsRenameModalOpen(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    const file = files?.find((f) => f.id === id)
+    const folder = folders?.find((f) => f.id === id)
+
+    if (file) {
+      if (confirm(t('files.messages.delete_file_confirm', { name: file.name }))) {
+        await deleteFile.mutateAsync({ fileId: id, workspaceSlug })
+        refetchFiles()
+      }
+    } else if (folder) {
+      if (confirm(t('files.messages.delete_folder_confirm', { name: folder.name }))) {
+        await deleteFolder.mutateAsync({ folderId: id, workspaceSlug })
+        refetchFolders()
+      }
+    }
+  }
+
+  const handleMove = (id: string) => {
+    const file = files?.find((f) => f.id === id)
+    if (file) {
+      setMoveFileItem({ id, name: file.name })
+      setIsMoveModalOpen(true)
+    }
+  }
+
+  const downloadFolderAsZip = async (folder: Folder) => {
+    try {
+      const zip = new JSZip()
+
+      const addFolderToZip = async (currentFolderId: string, currentZipFolder: JSZip) => {
+        const { id: workspaceId } = await apiFetchJson<any>(`/api/workspaces/slug/${workspaceSlug}`)
+
+        // Get subfolders
+        const parentParam = currentFolderId ? `&parentId=${currentFolderId}` : '&parentId=root'
+        const foldersData = await apiFetchJson<any>(
+          `/api/folders?workspaceId=${workspaceId}${parentParam}`
         )
+        const subFolders = foldersData.data || []
+
+        // Get files
+        const filesData = await apiFetchJson<any>(
+          `/api/files?workspaceId=${workspaceId}&folderId=${currentFolderId}`
+        )
+        const subFiles = filesData.data || []
+
+        // Fetch each file
+        for (const f of subFiles) {
+          try {
+            const json = await apiFetchJson<any>(`/api/files/${f.id}/download`)
+            if (json.downloadUrl) {
+              const res = await fetch(json.downloadUrl)
+              const blob = await res.blob()
+              currentZipFolder.file(f.name, blob)
+            }
+          } catch (e) {
+            console.error('Failed to download file for zip', f.name, e)
+          }
+        }
+
+        // Recursively add subfolders
+        for (const sub of subFolders) {
+          const newZipFolder = currentZipFolder.folder(sub.name)
+          if (newZipFolder) {
+            await addFolderToZip(sub.id, newZipFolder)
+          }
+        }
+      }
+
+      await addFolderToZip(folder.id, zip)
+      const content = await zip.generateAsync({ type: 'blob' })
+      saveAs(content, `${folder.name}.zip`)
+    } catch (error) {
+      console.error('Failed to zip folder:', error)
+      alert(t('files.messages.download_failed') + ' ' + (error as Error).message)
+    }
+  }
+
+  const handleDownload = async (id: string) => {
+    const file = files?.find((f) => f.id === id)
+    const folder = folders?.find((f) => f.id === id)
+
+    if (folder) {
+      await downloadFolderAsZip(folder)
+      return
     }
 
+    if (file) {
+      try {
+        const json = await apiFetchJson<any>(`/api/files/${id}/download`)
+        const { downloadUrl } = json
+        window.open(downloadUrl, '_blank')
+      } catch (error) {
+        console.error('Download failed:', error)
+        alert(t('files.messages.download_failed') + ' ' + (error as Error).message)
+      }
+    }
+  }
+
+  const handleArchive = async (id: string) => {
+    try {
+      const res = await apiFetch(`/api/files/${id}/archive`, { method: 'PATCH' })
+      if (!res.ok) throw new Error('Failed to archive file')
+      refetchFiles()
+    } catch (error) {
+      console.error('Archive failed:', error)
+    }
+  }
+
+  const handleDuplicate = async (id: string) => {
+    try {
+      const res = await apiFetch(`/api/files/${id}/duplicate`, { method: 'POST' })
+      if (!res.ok) {
+        const errorData = await res.json()
+        if (res.status === 501) {
+          alert(t('toasts.duplicate_not_implemented'))
+          // Fallback since I added duplicate_not_implemented to 'common' or 'files'?
+          // I checked diffs, it was added to the end of previous block which was ... 'duplicate_not_implemented'
+          // Wait, let me check the diff again.
+          // It was added to 'common' (implied by indentation/context) or root?
+          // It was added after "failed_update_event".
+          // I will use `t('duplicate_not_implemented')` if it's top level or `t('common.duplicate_not_implemented')`.
+          // The keys looked like top level properties in the fragment I saw.
+          return
+        }
+        throw new Error(errorData.error || 'Failed to duplicate file')
+      }
+      refetchFiles()
+    } catch (error) {
+      console.error('Duplicate failed:', error)
+    }
+  }
+
+  const handleInfo = (id: string) => {
+    const file = files?.find((f) => f.id === id)
+    if (file) {
+      setSelectedFile(file)
+      setIsInfoPanelOpen(true)
+    }
+  }
+
+  const handleNavigate = (folderId: string) => {
+    const folder = folders?.find((f) => f.id === folderId)
+    if (folder) {
+      setBreadcrumbs((prev) => [...prev, { id: folderId, name: folder.name }])
+    }
+    setCurrentFolderId(folderId)
+  }
+
+  const handleBreadcrumbClick = (index: number) => {
+    const item = breadcrumbs[index]
+    setCurrentFolderId(item.id)
+    setBreadcrumbs(breadcrumbs.slice(0, index + 1))
+  }
+
+  const handleOpen = (id: string) => {
+    setOpenFileId(id)
+  }
+
+  // Translate root breadcrumb if applicable
+  const displayedBreadcrumbs = breadcrumbs.map((crumb, index) =>
+    index === 0 && crumb.id === null ? { ...crumb, name: t('files.header.title') } : crumb
+  )
+
+  if (isLoadingFiles || isLoadingFolders) {
     return (
-        <>
-            <div className="space-y-6">
-                {/* Breadcrumbs + Create Folder */}
-                <div className="flex items-center justify-between">
-                    <FolderBreadcrumb
-                        breadcrumbs={displayedBreadcrumbs}
-                        onNavigate={handleBreadcrumbClick}
-                        onFileDrop={handleFileDrop}
-                        userRole={userRole}
-                    />
-                    <button
-                        onClick={() => setIsCreateFolderOpen(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--app-text-secondary)] hover:text-[var(--app-text-primary)] bg-[var(--app-bg-card)] hover:bg-[var(--app-bg-elevated)] border border-[var(--app-border)] rounded-lg transition-colors"
-                    >
-                        <FolderPlus size={16} />
-                        {t('files.actions.new_folder')}
-                    </button>
-                </div>
-
-                {viewMode === 'list' ? (
-                    <FileList
-                        files={filteredFiles}
-                        folders={filteredFolders}
-                        onNavigate={handleNavigate}
-                        onRename={handleRename}
-                        onDelete={handleDelete}
-                        onMove={handleMove}
-                        onDownload={handleDownload}
-                        onInfo={handleInfo}
-                        onArchive={handleArchive}
-                        onDuplicate={handleDuplicate}
-                        onOpen={handleOpen}
-                        sortBy={sortBy}
-                        sortOrder={sortOrder}
-                        onSort={onSort}
-                        userRole={userRole}
-                    />
-                ) : (
-                    <div className="space-y-8">
-                        {/* Folders Section */}
-                        {filteredFolders && filteredFolders.length > 0 && (
-                            <div>
-                                <h3 className="text-xs font-medium text-[var(--app-accent)] uppercase tracking-wider mb-4">{t('files.header.folders')}</h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                                    {filteredFolders.map((folder: Folder) => (
-                                        <FolderGridItem
-                                            key={folder.id}
-                                            folder={folder}
-                                            onNavigate={handleNavigate}
-                                            onRename={handleRename}
-                                            onDelete={handleDelete}
-                                            onDownload={handleDownload}
-                                            onFileDrop={handleFileDrop}
-                                            userRole={userRole}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Files Section */}
-                        {filteredFiles && filteredFiles.length > 0 && (
-                            <div>
-                                <h3 className="text-xs font-medium text-[var(--app-accent)] uppercase tracking-wider mb-4">{t('files.header.files')}</h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                                    {filteredFiles.map((file: FileRecord) => (
-                                        <FileGridItem
-                                            key={file.id}
-                                            file={file}
-                                            onClick={handleInfo}
-                                            onRename={handleRename}
-                                            onDelete={handleDelete}
-                                            onMove={handleMove}
-                                            onDownload={handleDownload}
-                                            onInfo={handleInfo}
-                                            onArchive={handleArchive}
-                                            onDuplicate={handleDuplicate}
-                                            onOpen={handleOpen}
-                                            userRole={userRole}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Empty State */}
-                        {(!filteredFiles?.length && !filteredFolders?.length) && (
-                            <div className="flex flex-col items-center justify-center py-20 text-center">
-                                <div className="w-16 h-16 rounded-full bg-[#1a1a24] flex items-center justify-center mb-4">
-                                    <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-medium text-white mb-1">{t('files.messages.no_files')}</h3>
-                                <p className="text-sm text-gray-500">
-                                    {t('files.messages.drag_drop_desc')}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-
-            {/* Modals */}
-            <FileInfoPanel
-                file={selectedFile}
-                isOpen={isInfoPanelOpen}
-                onClose={() => {
-                    setIsInfoPanelOpen(false)
-                    setSelectedFile(null)
-                }}
-                onDownload={handleDownload}
-                onDelete={handleDelete}
-                onRename={handleRename}
-            />
-
-            <RenameModal
-                isOpen={isRenameModalOpen}
-                onClose={() => {
-                    setIsRenameModalOpen(false)
-                    setRenameItem(null)
-                }}
-                itemId={renameItem?.id || null}
-                itemName={renameItem?.name || ''}
-                itemType={renameItem?.type || 'file'}
-                onSuccess={() => {
-                    refetchFiles()
-                    refetchFolders()
-                }}
-            />
-
-            <CreateFolderModal
-                isOpen={isCreateFolderOpen}
-                onClose={() => setIsCreateFolderOpen(false)}
-                parentId={currentFolderId}
-                onSuccess={() => refetchFolders()}
-            />
-
-            <MoveToFolderModal
-                isOpen={isMoveModalOpen}
-                onClose={() => {
-                    setIsMoveModalOpen(false)
-                    setMoveFileItem(null)
-                }}
-                fileId={moveFileItem?.id || null}
-                fileName={moveFileItem?.name || ''}
-                currentFolderId={currentFolderId}
-                onSuccess={() => refetchFiles()}
-            />
-
-            {/* Full-screen File Viewer */}
-            {openFileId && (
-                <FileViewerPage
-                    fileId={openFileId}
-                    onClose={() => setOpenFileId(null)}
-                />
-            )}
-        </>
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+      </div>
     )
+  }
+
+  return (
+    <>
+      <div className="space-y-6">
+        {/* Breadcrumbs + Create Folder */}
+        <div className="flex items-center justify-between">
+          <FolderBreadcrumb
+            breadcrumbs={displayedBreadcrumbs}
+            onNavigate={handleBreadcrumbClick}
+            onFileDrop={handleFileDrop}
+            userRole={userRole}
+          />
+          <button
+            onClick={() => setIsCreateFolderOpen(true)}
+            className="flex items-center gap-2 rounded-lg border border-[var(--app-border)] bg-[var(--app-bg-card)] px-3 py-1.5 text-sm text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-[var(--app-text-primary)]"
+          >
+            <FolderPlus size={16} />
+            {t('files.actions.new_folder')}
+          </button>
+        </div>
+
+        {viewMode === 'list' ? (
+          <FileList
+            files={filteredFiles}
+            folders={filteredFolders}
+            onNavigate={handleNavigate}
+            onRename={handleRename}
+            onDelete={handleDelete}
+            onMove={handleMove}
+            onDownload={handleDownload}
+            onInfo={handleInfo}
+            onArchive={handleArchive}
+            onDuplicate={handleDuplicate}
+            onOpen={handleOpen}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={onSort}
+            userRole={userRole}
+          />
+        ) : (
+          <div className="space-y-8">
+            {/* Folders Section */}
+            {filteredFolders && filteredFolders.length > 0 && (
+              <div>
+                <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-[var(--app-accent)]">
+                  {t('files.header.folders')}
+                </h3>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                  {filteredFolders.map((folder: Folder) => (
+                    <FolderGridItem
+                      key={folder.id}
+                      folder={folder}
+                      onNavigate={handleNavigate}
+                      onRename={handleRename}
+                      onDelete={handleDelete}
+                      onDownload={handleDownload}
+                      onFileDrop={handleFileDrop}
+                      userRole={userRole}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Files Section */}
+            {filteredFiles && filteredFiles.length > 0 && (
+              <div>
+                <h3 className="mb-4 text-xs font-medium uppercase tracking-wider text-[var(--app-accent)]">
+                  {t('files.header.files')}
+                </h3>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                  {filteredFiles.map((file: FileRecord) => (
+                    <FileGridItem
+                      key={file.id}
+                      file={file}
+                      onClick={handleInfo}
+                      onRename={handleRename}
+                      onDelete={handleDelete}
+                      onMove={handleMove}
+                      onDownload={handleDownload}
+                      onInfo={handleInfo}
+                      onArchive={handleArchive}
+                      onDuplicate={handleDuplicate}
+                      onOpen={handleOpen}
+                      userRole={userRole}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!filteredFiles?.length && !filteredFolders?.length && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#1a1a24]">
+                  <svg
+                    className="h-8 w-8 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="mb-1 text-lg font-medium text-white">
+                  {t('files.messages.no_files')}
+                </h3>
+                <p className="text-sm text-gray-500">{t('files.messages.drag_drop_desc')}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
+      <FileInfoPanel
+        file={selectedFile}
+        isOpen={isInfoPanelOpen}
+        onClose={() => {
+          setIsInfoPanelOpen(false)
+          setSelectedFile(null)
+        }}
+        onDownload={handleDownload}
+        onDelete={handleDelete}
+        onRename={handleRename}
+      />
+
+      <RenameModal
+        isOpen={isRenameModalOpen}
+        onClose={() => {
+          setIsRenameModalOpen(false)
+          setRenameItem(null)
+        }}
+        itemId={renameItem?.id || null}
+        itemName={renameItem?.name || ''}
+        itemType={renameItem?.type || 'file'}
+        onSuccess={() => {
+          refetchFiles()
+          refetchFolders()
+        }}
+      />
+
+      <CreateFolderModal
+        isOpen={isCreateFolderOpen}
+        onClose={() => setIsCreateFolderOpen(false)}
+        parentId={currentFolderId}
+        onSuccess={() => refetchFolders()}
+      />
+
+      <MoveToFolderModal
+        isOpen={isMoveModalOpen}
+        onClose={() => {
+          setIsMoveModalOpen(false)
+          setMoveFileItem(null)
+        }}
+        fileId={moveFileItem?.id || null}
+        fileName={moveFileItem?.name || ''}
+        currentFolderId={currentFolderId}
+        onSuccess={() => refetchFiles()}
+      />
+
+      {/* Full-screen File Viewer */}
+      {openFileId && <FileViewerPage fileId={openFileId} onClose={() => setOpenFileId(null)} />}
+    </>
+  )
 }
