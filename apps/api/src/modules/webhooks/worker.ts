@@ -288,8 +288,6 @@ export function startWebhookWorker(intervalMs = 60000) {
     return
   }
 
-  console.log('🚀 Webhook worker started (interval: ' + intervalMs / 1000 + 's)')
-
   // Delay first run to allow DB pool to initialize
   setTimeout(() => {
     processWebhookQueue()

@@ -5,8 +5,6 @@ import * as schema from './schema'
 // Get database URL from environment
 const connectionString = process.env.DATABASE_URL
 
-console.log('📍 Database URL loaded:', connectionString ? 'YES' : 'NO')
-
 if (!connectionString) {
   console.warn('⚠️ DATABASE_URL not set. Database operations will fail.')
 }

@@ -79,35 +79,31 @@ const WorkspaceSlugCalendarRoute = WorkspaceSlugCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => WorkspaceSlugRoute,
 } as any)
-const WorkspaceSlugTimeTrackerIndexRoute =
-  WorkspaceSlugTimeTrackerIndexRouteImport.update({
-    id: '/time-tracker/',
-    path: '/time-tracker/',
-    getParentRoute: () => WorkspaceSlugRoute,
-  } as any)
+const WorkspaceSlugTimeTrackerIndexRoute = WorkspaceSlugTimeTrackerIndexRouteImport.update({
+  id: '/time-tracker/',
+  path: '/time-tracker/',
+  getParentRoute: () => WorkspaceSlugRoute,
+} as any)
 const WorkspaceSlugTeamIndexRoute = WorkspaceSlugTeamIndexRouteImport.update({
   id: '/team/',
   path: '/team/',
   getParentRoute: () => WorkspaceSlugRoute,
 } as any)
-const WorkspaceSlugProjectsIndexRoute =
-  WorkspaceSlugProjectsIndexRouteImport.update({
-    id: '/projects/',
-    path: '/projects/',
-    getParentRoute: () => WorkspaceSlugRoute,
-  } as any)
-const WorkspaceSlugMyTasksIndexRoute =
-  WorkspaceSlugMyTasksIndexRouteImport.update({
-    id: '/my-tasks/',
-    path: '/my-tasks/',
-    getParentRoute: () => WorkspaceSlugRoute,
-  } as any)
-const WorkspaceSlugMessagesIndexRoute =
-  WorkspaceSlugMessagesIndexRouteImport.update({
-    id: '/messages/',
-    path: '/messages/',
-    getParentRoute: () => WorkspaceSlugRoute,
-  } as any)
+const WorkspaceSlugProjectsIndexRoute = WorkspaceSlugProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => WorkspaceSlugRoute,
+} as any)
+const WorkspaceSlugMyTasksIndexRoute = WorkspaceSlugMyTasksIndexRouteImport.update({
+  id: '/my-tasks/',
+  path: '/my-tasks/',
+  getParentRoute: () => WorkspaceSlugRoute,
+} as any)
+const WorkspaceSlugMessagesIndexRoute = WorkspaceSlugMessagesIndexRouteImport.update({
+  id: '/messages/',
+  path: '/messages/',
+  getParentRoute: () => WorkspaceSlugRoute,
+} as any)
 const WorkspaceSlugFilesIndexRoute = WorkspaceSlugFilesIndexRouteImport.update({
   id: '/files/',
   path: '/files/',
@@ -432,12 +428,11 @@ const WorkspaceSlugRouteChildren: WorkspaceSlugRouteChildren = {
   WorkspaceSlugProjectsIndexRoute: WorkspaceSlugProjectsIndexRoute,
   WorkspaceSlugTeamIndexRoute: WorkspaceSlugTeamIndexRoute,
   WorkspaceSlugTimeTrackerIndexRoute: WorkspaceSlugTimeTrackerIndexRoute,
-  WorkspaceSlugProjectsProjectIdIndexRoute:
-    WorkspaceSlugProjectsProjectIdIndexRoute,
+  WorkspaceSlugProjectsProjectIdIndexRoute: WorkspaceSlugProjectsProjectIdIndexRoute,
 }
 
 const WorkspaceSlugRouteWithChildren = WorkspaceSlugRoute._addFileChildren(
-  WorkspaceSlugRouteChildren,
+  WorkspaceSlugRouteChildren
 )
 
 const rootRouteChildren: RootRouteChildren = {

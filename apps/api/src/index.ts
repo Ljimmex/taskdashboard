@@ -43,10 +43,6 @@ import { startWebhookWorker } from './modules/webhooks/worker'
 // Create OpenAPI Hono app
 const app = new OpenAPIHono()
 
-console.log('🚀 API initializing...')
-console.log('🌍 Environment:', process.env.NODE_ENV || 'development')
-console.log('📡 Expected Port:', process.env.PORT || 3000)
-
 // =============================================================================
 // MIDDLEWARE
 // =============================================================================
@@ -385,8 +381,6 @@ app.notFound((c) => {
 // =============================================================================
 
 const port = Number(process.env.PORT) || 3000
-
-console.log(`🚀 Server running at http://localhost:${port}`)
 
 // Start Background Workers
 startWebhookWorker(60000) // Process every minute
