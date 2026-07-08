@@ -7,9 +7,9 @@ import {
   FileText,
   ListChecks,
   CalendarClock,
-  Bell,
   Users,
-  HardDrive,
+  Clock,
+  LayoutGrid,
 } from 'lucide-react'
 import { UpcomingMeetingsPanel } from './UpcomingMeetingsPanel'
 import { ProjectsPanel } from './ProjectsPanel'
@@ -19,9 +19,10 @@ import { ChatSectionPanel } from './ChatSectionPanel'
 import { LastResourcesPanel } from './LastResourcesPanel'
 import { MyTasksPanel } from './MyTasksPanel'
 import { TasksDueTodayPanel } from './TasksDueTodayPanel'
-import { NotificationsPanel } from './NotificationsPanel'
 import { TeamMembersPanel } from './TeamMembersPanel'
-import { StorageQuotaPanel } from './StorageQuotaPanel'
+import { TimeTrackerPanel } from './TimeTrackerPanel'
+import { ProjectKanbanPanel } from './ProjectKanbanPanel'
+import { CalendarCompactPanel } from './CalendarCompactPanel'
 import type { DashboardPanelDefinition } from '@/lib/dashboard'
 
 export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
@@ -47,6 +48,27 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
     component: CalendarPanel,
   },
   {
+    id: 'project-kanban',
+    titleKey: 'dashboard.projectKanban',
+    icon: LayoutGrid,
+    colSpan: 8,
+    component: ProjectKanbanPanel,
+  },
+  {
+    id: 'my-tasks',
+    titleKey: 'dashboard.myTasks',
+    icon: ListChecks,
+    colSpan: 6,
+    component: MyTasksPanel,
+  },
+  {
+    id: 'tasks-due-today',
+    titleKey: 'dashboard.tasksDueToday',
+    icon: CalendarClock,
+    colSpan: 6,
+    component: TasksDueTodayPanel,
+  },
+  {
     id: 'overall-progress',
     titleKey: 'dashboard.overallProgress',
     icon: TrendingUp,
@@ -68,27 +90,6 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
     component: LastResourcesPanel,
   },
   {
-    id: 'my-tasks',
-    titleKey: 'dashboard.myTasks',
-    icon: ListChecks,
-    colSpan: 6,
-    component: MyTasksPanel,
-  },
-  {
-    id: 'tasks-due-today',
-    titleKey: 'dashboard.tasksDueToday',
-    icon: CalendarClock,
-    colSpan: 6,
-    component: TasksDueTodayPanel,
-  },
-  {
-    id: 'notifications',
-    titleKey: 'dashboard.notifications',
-    icon: Bell,
-    colSpan: 4,
-    component: NotificationsPanel,
-  },
-  {
     id: 'team-members',
     titleKey: 'dashboard.team',
     icon: Users,
@@ -96,11 +97,18 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
     component: TeamMembersPanel,
   },
   {
-    id: 'storage-quota',
-    titleKey: 'dashboard.storage',
-    icon: HardDrive,
+    id: 'time-tracker',
+    titleKey: 'dashboard.timeTracker',
+    icon: Clock,
     colSpan: 4,
-    component: StorageQuotaPanel,
+    component: TimeTrackerPanel,
+  },
+  {
+    id: 'calendar-compact',
+    titleKey: 'dashboard.calendarCompact',
+    icon: Calendar,
+    colSpan: 4,
+    component: CalendarCompactPanel,
   },
 ]
 
@@ -116,12 +124,13 @@ export {
   UpcomingMeetingsPanel,
   ProjectsPanel,
   CalendarPanel,
+  ProjectKanbanPanel,
   OverallProgressPanel,
   ChatSectionPanel,
   LastResourcesPanel,
   MyTasksPanel,
   TasksDueTodayPanel,
-  NotificationsPanel,
   TeamMembersPanel,
-  StorageQuotaPanel,
+  TimeTrackerPanel,
+  CalendarCompactPanel,
 }

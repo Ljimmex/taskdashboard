@@ -199,8 +199,19 @@ timeRoutes.get('/', async (c) => {
   try {
     const user = c.get('user')
     const userId = user.id
-    const { taskId, projectId, startDate, endDate, approvalStatus } = c.req.query()
+    const { taskId, projectId, startDate, endDate, approvalStatus, workspaceSlug } = c.req.query()
     const filterUserId = c.req.query('userId')
+
+    // Resolve workspace id for optional workspace-scoped filtering
+    let workspaceId: string | undefined
+    if (workspaceSlug) {
+      const [workspace] = await db
+        .select({ id: workspaces.id })
+        .from(workspaces)
+        .where(eq(workspaces.slug, workspaceSlug))
+        .limit(1)
+      workspaceId = workspace?.id
+    }
 
     let query = db.select().from(timeEntries).orderBy(desc(timeEntries.startedAt))
     let result = await query
@@ -260,6 +271,7 @@ timeRoutes.get('/', async (c) => {
 
     if (filterUserId) result = result.filter((e) => e.userId === filterUserId)
     else result = result.filter((e) => e.userId === userId) // Default: own entries only
+    if (workspaceId) result = result.filter((e) => e.workspaceId === workspaceId)
     if (startDate) result = result.filter((e) => new Date(e.startedAt) >= new Date(startDate))
     if (endDate) result = result.filter((e) => new Date(e.startedAt) <= new Date(endDate))
     if (approvalStatus) result = result.filter((e) => e.approvalStatus === approvalStatus)

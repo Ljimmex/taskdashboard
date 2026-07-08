@@ -41,11 +41,11 @@ export function StorageQuota({ workspaceId }: StorageQuotaProps) {
     <div className="px-4 pb-2">
       <div className="mb-1.5 flex items-end justify-between">
         <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--app-text-muted)]">
-          {t('dashboard.storage')}
+          {t('files.storage')}
         </span>
         <span className="text-[10px] font-medium text-[var(--app-text-secondary)]">
           {isReady
-            ? t('dashboard.storageOf', {
+            ? t('files.storageOf', {
                 used: formatStorageSize(usedBytes),
                 total: `${data.maxStorageGB} GB`,
               })

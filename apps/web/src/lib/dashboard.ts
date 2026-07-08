@@ -28,11 +28,16 @@ export interface DashboardPanelDefinition {
 
 export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutItem[] = [
   { panelId: 'upcoming-meetings', order: 0 },
-  { panelId: 'overall-progress', order: 1 },
-  { panelId: 'projects', order: 2 },
-  { panelId: 'chat-section', order: 3 },
-  { panelId: 'calendar', order: 4 },
-  { panelId: 'last-resources', order: 5 },
+  { panelId: 'project-kanban', order: 1 },
+  { panelId: 'calendar', order: 2 },
+  { panelId: 'my-tasks', order: 3 },
+  { panelId: 'tasks-due-today', order: 4 },
+  { panelId: 'overall-progress', order: 5 },
+  { panelId: 'time-tracker', order: 6 },
+  { panelId: 'team-members', order: 7 },
+  { panelId: 'chat-section', order: 8 },
+  { panelId: 'last-resources', order: 9 },
+  { panelId: 'calendar-compact', order: 10 },
 ]
 
 export function normalizeLayout(saved: DashboardLayoutItem[] | undefined): DashboardLayoutItem[] {

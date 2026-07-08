@@ -27,7 +27,15 @@
     "error": {
       "default": "Wystąpił nieoczekiwany błąd",
       "login": "Błąd logowania",
-      "provider": "Błąd logowania przez {{provider}}"
+      "provider": "Błąd logowania przez {{provider}}",
+      "badRequest": "Nieprawidłowe żądanie. Sprawdź wprowadzone dane.",
+      "unauthorized": "Nieprawidłowy email lub hasło.",
+      "forbidden": "Brak dostępu.",
+      "notFound": "Nie znaleziono żądanego zasobu.",
+      "conflict": "Te dane już istnieją.",
+      "validation": "Niektóre pola są wypełnione nieprawidłowo.",
+      "tooManyRequests": "Zbyt wiele prób. Poczekaj chwilę i spróbuj ponownie.",
+      "server": "Błąd serwera. Spróbuj ponownie później."
     },
     "resetPassword": {
       "title": "Zresetuj swoje hasło",
@@ -184,8 +192,6 @@
     "files": "Pliki",
     "resources": "Zasoby",
     "settings": "Ustawienia Org.",
-    "storage": "Przestrzeń",
-    "storageOf": "{{used}} z {{total}}",
     "logout": "Wyloguj się",
     "dayMode": "Jasny motyw",
     "nightMode": "Ciemny motyw",
@@ -260,7 +266,6 @@
     },
     "upcomingMeetings": "Nadchodzące spotkania",
     "tasksDueToday": "Zadania na dziś",
-    "notifications": "Powiadomienia",
     "noPanels": "Brak paneli do wyświetlenia",
     "customize": "Dostosuj dashboard",
     "doneEditing": "Gotowe",
@@ -270,9 +275,33 @@
     "removePanel": "Usuń panel",
     "noMyTasks": "Brak przypisanych zadań",
     "noTasksDueToday": "Brak zadań na dziś",
-    "noNotifications": "Brak powiadomień",
     "noTeamMembers": "Brak członków zespołu",
-    "timeTracker": "Śledzenie Czasu"
+    "timeTracker": "Śledzenie Czasu",
+    "activeTimers": "Aktywne timery",
+    "noActiveTimers": "Brak aktywnych timerów",
+    "startTimer": "Uruchom timer",
+    "stopTimer": "Zatrzymaj timer",
+    "pauseTimer": "Wstrzymaj timer",
+    "resumeTimer": "Wznów timer",
+    "openTimeTracker": "Otwórz time tracker",
+    "viewAllTimers": "Zobacz wszystkie timery",
+    "generalTimer": "Ogólny timer",
+    "markDone": "Oznacz jako gotowe",
+    "taskBlocked": "Zablokowane przez zależności",
+    "allCaughtUp": "Wszystko załatwione",
+    "relax": "Możesz odetchnąć",
+    "activeTask": "aktywne zadanie",
+    "activeTasks": "aktywne zadania",
+    "sendMessage": "Wyślij wiadomość",
+    "noTasks": "Brak zadań",
+    "projectKanban": "Kanban projektu",
+    "selectProject": "Wybierz projekt",
+    "noProjectSelected": "Nie wybrano projektu",
+    "noProjectStages": "Brak kolumn w tym projekcie",
+    "calendarCompact": "Kalendarz kompaktowy",
+    "noEventsThisWeek": "Brak wydarzeń w tym tygodniu",
+    "today": "Dzisiaj",
+    "tomorrow": "Jutro"
   },
   "notifications": {
     "title": "Powiadomienia",
@@ -2273,6 +2302,8 @@
     "duplicate_not_implemented": "Duplikowanie nie jest jeszcze zaimplementowane na serwerze"
   },
   "files": {
+    "storage": "Przestrzeń",
+    "storageOf": "{{used}} z {{total}}",
     "viewer": {
       "undo": "Cofnij",
       "redo": "Ponów",

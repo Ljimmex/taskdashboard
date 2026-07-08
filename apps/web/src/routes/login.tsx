@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { signIn, authClient, emailOtp } from '@/lib/auth'
+import { signIn, authClient, emailOtp, getAuthErrorMessage } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -55,10 +55,10 @@ function LoginPage() {
       })
 
       if (result?.error) {
-        setError(t('auth.error.provider', { provider }))
+        setError(getAuthErrorMessage(result.error, t('auth.error.provider', { provider }), t))
       }
     } catch (err: any) {
-      setError(t('auth.error.provider', { provider }))
+      setError(getAuthErrorMessage(err, t('auth.error.provider', { provider }), t))
     } finally {
       setLoading(false)
     }
@@ -75,7 +75,7 @@ function LoginPage() {
       setError(t('auth.resentVerification'))
       setTimeout(() => setError(''), 3000)
     } catch (err) {
-      setError(t('auth.error.default'))
+      setError(getAuthErrorMessage(err, t('auth.error.default'), t))
     } finally {
       setLoading(false)
     }
@@ -139,7 +139,7 @@ function LoginPage() {
       })
 
       if (res.error) {
-        setError(res.error.message || t('auth.error.default'))
+        setError(getAuthErrorMessage(res.error, t('auth.error.default'), t))
       } else {
         if (password) {
           const loginRes = await signIn.email({
@@ -149,7 +149,7 @@ function LoginPage() {
           })
 
           if (loginRes.error) {
-            setError(loginRes.error.message || t('auth.error.login'))
+            setError(getAuthErrorMessage(loginRes.error, t('auth.error.login'), t))
           } else if (loginRes.data?.user) {
             await new Promise((r) => setTimeout(r, 150))
             if (!localStorage.getItem('bearer_token')) {
@@ -168,7 +168,7 @@ function LoginPage() {
         }
       }
     } catch (err: any) {
-      setError(err.message || t('auth.error.default'))
+      setError(getAuthErrorMessage(err, t('auth.error.default'), t))
     } finally {
       setLoading(false)
     }
@@ -185,7 +185,7 @@ function LoginPage() {
       })
 
       if (res.error) {
-        setError(res.error.message || t('auth.error.login'))
+        setError(getAuthErrorMessage(res.error, t('auth.error.login'), t))
       } else if (res.data?.user) {
         await new Promise((r) => setTimeout(r, 150))
         if (!localStorage.getItem('bearer_token')) {
@@ -197,7 +197,7 @@ function LoginPage() {
         navigate({ to: '/dashboard' })
       }
     } catch (err: any) {
-      setError(err.message)
+      setError(getAuthErrorMessage(err, t('auth.error.default'), t))
     } finally {
       setLoading(false)
     }
@@ -249,7 +249,7 @@ function LoginPage() {
           return
         }
 
-        setError(result.error.message || t('auth.error.login'))
+        setError(getAuthErrorMessage(result.error, t('auth.error.login'), t))
       } else if (result.data?.user) {
         // The bearer token is captured by the authClient's global onSuccess handler
         // via the 'set-auth-token' response header. Wait a tick to ensure it's stored
@@ -276,7 +276,7 @@ function LoginPage() {
         setError('')
         return
       }
-      setError(t('auth.error.default'))
+      setError(getAuthErrorMessage(err, t('auth.error.default'), t))
     } finally {
       setLoading(false)
     }

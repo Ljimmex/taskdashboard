@@ -51,3 +51,51 @@ export const isAuthenticated = async () => {
 
 // Types
 export type AuthSession = Awaited<ReturnType<typeof getSession>>
+
+type TranslateFn = (key: string) => string
+
+const HTTP_ERROR_KEYS: Record<number, string> = {
+  400: 'auth.error.badRequest',
+  401: 'auth.error.unauthorized',
+  403: 'auth.error.forbidden',
+  404: 'auth.error.notFound',
+  409: 'auth.error.conflict',
+  422: 'auth.error.validation',
+  429: 'auth.error.tooManyRequests',
+  500: 'auth.error.server',
+  502: 'auth.error.server',
+  503: 'auth.error.server',
+}
+
+export function getAuthErrorMessage(
+  err: unknown,
+  fallback = 'Unknown error',
+  t?: TranslateFn
+): string {
+  let status: number | undefined
+  let message = ''
+
+  if (err instanceof Error) {
+    message = err.message
+  } else if (typeof err === 'string') {
+    message = err
+  } else if (err && typeof err === 'object') {
+    const e = err as Record<string, unknown>
+    if (typeof e.status === 'number') status = e.status
+    if (typeof e.statusCode === 'number') status = e.statusCode
+    if (typeof e.message === 'string' && e.message) message = e.message
+    else if (typeof e.error === 'string' && e.error) message = e.error
+    else if (typeof e.errorMessage === 'string' && e.errorMessage) message = e.errorMessage
+  }
+
+  if (t && status) {
+    const key = HTTP_ERROR_KEYS[status]
+    if (key) {
+      const translated = t(key)
+      // i18next returns the key itself when the translation is missing
+      if (translated !== key) return translated
+    }
+  }
+
+  return message || fallback
+}

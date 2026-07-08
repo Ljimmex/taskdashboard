@@ -30,7 +30,15 @@
     "error": {
       "default": "An unexpected error occurred",
       "login": "Login error",
-      "provider": "Login error via {{provider}}"
+      "provider": "Login error via {{provider}}",
+      "badRequest": "Invalid request. Please check the entered data.",
+      "unauthorized": "Invalid email or password.",
+      "forbidden": "Access denied.",
+      "notFound": "The requested resource was not found.",
+      "conflict": "This data already exists.",
+      "validation": "Some fields are filled in incorrectly.",
+      "tooManyRequests": "Too many attempts. Please wait a moment and try again.",
+      "server": "Server error. Please try again later."
     },
     "resetPassword": {
       "title": "Reset your password",
@@ -183,8 +191,6 @@
     "files": "Files",
     "resources": "Resources",
     "settings": "Org. Settings",
-    "storage": "Storage",
-    "storageOf": "{{used}} of {{total}}",
     "logout": "Log Out",
     "dayMode": "Day mode",
     "nightMode": "Night mode",
@@ -259,7 +265,6 @@
     },
     "upcomingMeetings": "Upcoming meetings",
     "tasksDueToday": "Tasks due today",
-    "notifications": "Notifications",
     "noPanels": "No panels to display",
     "customize": "Customize dashboard",
     "doneEditing": "Done",
@@ -269,9 +274,33 @@
     "removePanel": "Remove panel",
     "noMyTasks": "No assigned tasks",
     "noTasksDueToday": "No tasks due today",
-    "noNotifications": "No notifications",
     "noTeamMembers": "No team members",
-    "timeTracker": "Time Tracker"
+    "timeTracker": "Time Tracker",
+    "activeTimers": "Active timers",
+    "noActiveTimers": "No active timers",
+    "startTimer": "Start timer",
+    "stopTimer": "Stop timer",
+    "pauseTimer": "Pause timer",
+    "resumeTimer": "Resume timer",
+    "openTimeTracker": "Open time tracker",
+    "viewAllTimers": "View all timers",
+    "generalTimer": "General timer",
+    "markDone": "Mark as done",
+    "taskBlocked": "Blocked by dependencies",
+    "allCaughtUp": "You're all caught up",
+    "relax": "You can relax",
+    "activeTask": "active task",
+    "activeTasks": "active tasks",
+    "sendMessage": "Send message",
+    "noTasks": "No tasks",
+    "projectKanban": "Project kanban",
+    "selectProject": "Select project",
+    "noProjectSelected": "No project selected",
+    "noProjectStages": "No stages in this project",
+    "calendarCompact": "Compact calendar",
+    "noEventsThisWeek": "No events this week",
+    "today": "Today",
+    "tomorrow": "Tomorrow"
   },
   "notifications": {
     "title": "Notifications",
@@ -2334,6 +2363,8 @@
     "duplicate_not_implemented": "Duplicate is not yet implemented on the server"
   },
   "files": {
+    "storage": "Storage",
+    "storageOf": "{{used}} of {{total}}",
     "viewer": {
       "undo": "Undo",
       "redo": "Redo",

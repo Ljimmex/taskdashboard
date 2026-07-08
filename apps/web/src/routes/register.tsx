@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { signUp, signIn, emailOtp } from '@/lib/auth'
+import { signUp, signIn, emailOtp, getAuthErrorMessage } from '@/lib/auth'
 import { apiFetch, apiFetchJson } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -140,7 +140,7 @@ function RegisterPage() {
       navigate({ to: `/${targetSlug}` })
     } catch (err) {
       console.error(err)
-      setError(t('register.error.unexpected'))
+      setError(getAuthErrorMessage(err, t('register.error.unexpected'), t))
     } finally {
       setLoading(false)
     }
@@ -167,7 +167,7 @@ function RegisterPage() {
       } as any)
 
       if (signUpResult.error) {
-        setError(signUpResult.error.message || t('register.error.registration'))
+        setError(getAuthErrorMessage(signUpResult.error, t('register.error.registration'), t))
         setLoading(false)
         return
       }
@@ -184,7 +184,7 @@ function RegisterPage() {
           setLoading(false)
           return
         }
-        setError(t('register.error.loginAfterRegister'))
+        setError(getAuthErrorMessage(signInResult.error, t('register.error.loginAfterRegister'), t))
         navigate({ to: '/login' })
         setLoading(false)
         return
@@ -211,7 +211,7 @@ function RegisterPage() {
       navigate({ to: `/${workspaceSlug}` })
     } catch (err) {
       console.error(err)
-      setError(t('register.error.unexpected'))
+      setError(getAuthErrorMessage(err, t('register.error.unexpected'), t))
     } finally {
       setLoading(false)
     }
@@ -274,7 +274,7 @@ function RegisterPage() {
       } as any)
 
       if (signUpResult.error) {
-        setError(signUpResult.error.message || t('register.error.registration'))
+        setError(getAuthErrorMessage(signUpResult.error, t('register.error.registration'), t))
         setLoading(false)
         return
       }
@@ -295,7 +295,7 @@ function RegisterPage() {
           setLoading(false)
           return
         }
-        setError(t('register.error.loginAfterRegister'))
+        setError(getAuthErrorMessage(signInResult.error, t('register.error.loginAfterRegister'), t))
         navigate({ to: '/login' })
         setLoading(false)
         return
@@ -317,7 +317,7 @@ function RegisterPage() {
       if (!wsResponse.ok) {
         const errorText = await wsResponse.text()
         console.error('Failed to create workspace', errorText)
-        setError(t('register.error.unexpected'))
+        setError(errorText || t('register.error.unexpected'))
         setLoading(false)
         return
       }
@@ -356,7 +356,7 @@ function RegisterPage() {
       navigate({ to: `/${workspace.slug}` })
     } catch (err) {
       console.error(err)
-      setError(t('register.error.unexpected'))
+      setError(getAuthErrorMessage(err, t('register.error.unexpected'), t))
       setLoading(false)
     }
   }
@@ -377,10 +377,10 @@ function RegisterPage() {
       })
 
       if (result?.error) {
-        setError(t('register.error.provider', { provider }))
+        setError(getAuthErrorMessage(result.error, t('register.error.provider', { provider }), t))
       }
     } catch (err: any) {
-      setError(t('register.error.provider', { provider }))
+      setError(getAuthErrorMessage(err, t('register.error.provider', { provider }), t))
     } finally {
       setLoading(false)
     }
@@ -395,7 +395,7 @@ function RegisterPage() {
       })
 
       if (res.error) {
-        setError(res.error.message || t('auth.error.default'))
+        setError(getAuthErrorMessage(res.error, t('auth.error.default'), t))
       } else {
         setError('')
         navigate({
@@ -404,7 +404,7 @@ function RegisterPage() {
         })
       }
     } catch (err: any) {
-      setError(err.message || t('auth.error.default'))
+      setError(getAuthErrorMessage(err, t('auth.error.default'), t))
     } finally {
       setLoading(false)
     }
@@ -420,7 +420,7 @@ function RegisterPage() {
       setError(t('auth.resentVerification'))
       setTimeout(() => setError(''), 3000)
     } catch (err) {
-      setError(t('auth.error.default'))
+      setError(getAuthErrorMessage(err, t('auth.error.default'), t))
     } finally {
       setLoading(false)
     }
