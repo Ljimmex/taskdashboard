@@ -28,7 +28,8 @@
     "prettier": "^3.9.4",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "turbo": "^2.10.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.107.1"
   },
   "overrides": {
     "@babel/core": "^8.0.1",

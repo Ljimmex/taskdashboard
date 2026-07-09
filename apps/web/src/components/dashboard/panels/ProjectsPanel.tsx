@@ -9,6 +9,24 @@ import { ProjectCard } from '@/components/dashboard/ProjectCard'
 import { CreateProjectPanel } from '@/components/features/projects/CreateProjectPanel'
 import type { DashboardPanelProps } from '@/lib/dashboard'
 
+function getUniqueAssignees(
+  members: any[] | undefined
+): { id: string; name: string; avatar?: string }[] {
+  const map = new Map<string, { id: string; name: string; avatar?: string }>()
+  for (const m of members || []) {
+    const user = m?.user
+    const id = user?.id || m?.id
+    const name = user?.name || m?.name
+    if (!id || !name) continue
+    map.set(id, {
+      id,
+      name,
+      avatar: user?.image || m?.image || undefined,
+    })
+  }
+  return Array.from(map.values())
+}
+
 export function ProjectsPanel({ workspaceSlug }: DashboardPanelProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -175,13 +193,7 @@ export function ProjectsPanel({ workspaceSlug }: DashboardPanelProps) {
                     )
                   : 0
               }
-              assignees={
-                p.members?.map((m: any) => ({
-                  id: m.user?.id || m.id,
-                  name: m.user?.name || m.name,
-                  avatar: m.user?.image || m.image || undefined,
-                })) || []
-              }
+              assignees={getUniqueAssignees(p.members)}
               onViewProject={() => navigate({ to: `/${workspaceSlug}/projects/${p.id}` })}
             />
           ))

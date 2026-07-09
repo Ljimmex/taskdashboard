@@ -21,6 +21,7 @@ export interface DashboardPanelProps {
 export interface DashboardPanelDefinition {
   id: string
   titleKey: string
+  description?: string
   icon: LucideIcon
   colSpan: number
   component: React.ComponentType<DashboardPanelProps>

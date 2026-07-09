@@ -20,8 +20,8 @@ export function DashboardPanelShell({
     <div
       className={cn(
         'relative transition-shadow',
-        isDragging && 'z-50 opacity-90 shadow-2xl ring-2 ring-amber-500/50',
-        isEditing && 'ring-dashed rounded-2xl ring-1 ring-amber-500/30'
+        isDragging && 'ring-[var(--app-accent)]/50 z-50 opacity-90 shadow-2xl ring-2',
+        isEditing && 'ring-dashed ring-[var(--app-accent)]/30 rounded-2xl ring-1'
       )}
     >
       {isEditing && (

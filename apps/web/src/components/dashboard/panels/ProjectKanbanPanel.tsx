@@ -147,7 +147,7 @@ export function ProjectKanbanPanel({ workspaceSlug }: DashboardPanelProps) {
   }
 
   return (
-    <div className="flex h-full max-h-[480px] min-h-[280px] flex-col overflow-hidden rounded-2xl bg-[var(--app-bg-card)] p-5">
+    <div className="flex h-[480px] min-h-[280px] flex-col overflow-hidden rounded-2xl bg-[var(--app-bg-card)] p-5">
       <div className="mb-3">
         <Select value={selectedProjectId} onValueChange={handleProjectChange}>
           <SelectTrigger className="w-auto min-w-[180px] border-[var(--app-border)] bg-[var(--app-bg-elevated)] !text-[var(--app-text-primary)] focus:ring-amber-500 focus:ring-offset-0">

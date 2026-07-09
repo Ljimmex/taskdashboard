@@ -23,12 +23,14 @@ import { TeamMembersPanel } from './TeamMembersPanel'
 import { TimeTrackerPanel } from './TimeTrackerPanel'
 import { ProjectKanbanPanel } from './ProjectKanbanPanel'
 import { CalendarCompactPanel } from './CalendarCompactPanel'
+import { ProjectsViewPanel } from './ProjectsViewPanel'
 import type { DashboardPanelDefinition } from '@/lib/dashboard'
 
 export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'upcoming-meetings',
     titleKey: 'dashboard.upcomingMeetings',
+    description: 'Nadchodzące spotkania i terminy w kalendarzu.',
     icon: CalendarDays,
     colSpan: 8,
     component: UpcomingMeetingsPanel,
@@ -36,6 +38,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'projects',
     titleKey: 'dashboard.projects',
+    description: 'Lista projektów, ich postęp i członkowie.',
     icon: FolderKanban,
     colSpan: 8,
     component: ProjectsPanel,
@@ -43,6 +46,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'calendar',
     titleKey: 'dashboard.calendar',
+    description: 'Widok kalendarza nadchodzących wydarzeń.',
     icon: Calendar,
     colSpan: 8,
     component: CalendarPanel,
@@ -50,6 +54,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'project-kanban',
     titleKey: 'dashboard.projectKanban',
+    description: 'Mini widok Kanban wybranego projektu.',
     icon: LayoutGrid,
     colSpan: 8,
     component: ProjectKanbanPanel,
@@ -57,6 +62,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'my-tasks',
     titleKey: 'dashboard.myTasks',
+    description: 'Twoje zadania do wykonania.',
     icon: ListChecks,
     colSpan: 6,
     component: MyTasksPanel,
@@ -64,6 +70,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'tasks-due-today',
     titleKey: 'dashboard.tasksDueToday',
+    description: 'Zadania z terminem realizacji na dziś.',
     icon: CalendarClock,
     colSpan: 6,
     component: TasksDueTodayPanel,
@@ -71,6 +78,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'overall-progress',
     titleKey: 'dashboard.overallProgress',
+    description: 'Ogólny postęp projektów i zadań.',
     icon: TrendingUp,
     colSpan: 4,
     component: OverallProgressPanel,
@@ -78,6 +86,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'chat-section',
     titleKey: 'dashboard.chat',
+    description: 'Ostatnie wiadomości i czaty zespołowe.',
     icon: MessageCircle,
     colSpan: 4,
     component: ChatSectionPanel,
@@ -85,6 +94,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'last-resources',
     titleKey: 'dashboard.lastResources',
+    description: 'Ostatnio dodane pliki i zasoby.',
     icon: FileText,
     colSpan: 4,
     component: LastResourcesPanel,
@@ -92,6 +102,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'team-members',
     titleKey: 'dashboard.team',
+    description: 'Lista członków zespołu i ich statusy.',
     icon: Users,
     colSpan: 4,
     component: TeamMembersPanel,
@@ -99,6 +110,7 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'time-tracker',
     titleKey: 'dashboard.timeTracker',
+    description: 'Śledzenie czasu pracy i aktywności.',
     icon: Clock,
     colSpan: 4,
     component: TimeTrackerPanel,
@@ -106,9 +118,18 @@ export const DASHBOARD_PANELS: DashboardPanelDefinition[] = [
   {
     id: 'calendar-compact',
     titleKey: 'dashboard.calendarCompact',
+    description: 'Kompaktowy widok kalendarza.',
     icon: Calendar,
     colSpan: 4,
     component: CalendarCompactPanel,
+  },
+  {
+    id: 'projects-view',
+    titleKey: 'dashboard.projectsView',
+    description: 'Kompaktowy widok projektów w obszarze roboczym.',
+    icon: FolderKanban,
+    colSpan: 4,
+    component: ProjectsViewPanel,
   },
 ]
 
@@ -133,4 +154,5 @@ export {
   TeamMembersPanel,
   TimeTrackerPanel,
   CalendarCompactPanel,
+  ProjectsViewPanel,
 }
