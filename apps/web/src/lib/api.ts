@@ -1,9 +1,35 @@
+import { getSession } from './auth'
+import { toast } from '@/hooks/useToast'
+
 // API client helper for making authenticated requests
 const getApiUrl = () => {
   return import.meta.env.VITE_API_URL || ''
 }
 
 export const apiUrl = getApiUrl()
+
+async function getBearerToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null
+
+  let token = localStorage.getItem('bearer_token')
+  if (token) return token
+
+  // Token missing from localStorage - try to refresh it from the auth client.
+  // Better Auth's bearer plugin sends set-auth-token whenever it sets the
+  // session cookie, and our auth client's onSuccess stores it.
+  try {
+    await getSession()
+    token = localStorage.getItem('bearer_token')
+    if (token) return token
+  } catch {
+    // ignore
+  }
+
+  if (import.meta.env.DEV) {
+    console.warn('[apiFetch] No bearer token available; mutating requests may be blocked by CSRF')
+  }
+  return null
+}
 
 // Helper to make fetch calls to the API with credentials
 export async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
@@ -13,7 +39,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}): Pro
     ...((options.headers as Record<string, string>) || {}),
   }
 
-  const token = localStorage.getItem('bearer_token')
+  const token = await getBearerToken()
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
@@ -29,8 +55,6 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}): Pro
     headers,
   })
 }
-
-import { toast } from '@/hooks/useToast'
 
 // Typed wrapper for JSON responses
 export async function apiFetchJson<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

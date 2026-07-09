@@ -51,16 +51,7 @@ import { rateLimiter } from 'hono-rate-limiter'
 
 // 1. CORS - MUST be first to handle preflight OPTIONS requests before any other middleware
 // This ensures that even if other middleware fails or has security policies, CORS preflight still succeeds.
-const ALLOWED_ORIGINS = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://taskdashboard.pages.dev',
-  'https://taskdashboard-api.onrender.com',
-  'https://taskdashboard-web.onrender.com',
-  'https://zadanoapp.com',
-  'https://www.zadanoapp.com',
-  'https://api.zadanoapp.com',
-]
+import { ALLOWED_ORIGINS } from './lib/allowedOrigins'
 
 app.use(
   '*',

@@ -1151,13 +1151,35 @@ timeRoutes.post('/', zValidator('json', createTimeEntrySchema), async (c) => {
       }
     }
 
+    console.log('[POST /api/time] context check', {
+      currentUserId: currentUser.id,
+      targetUserId,
+      workspaceSlug: body.workspaceSlug,
+      taskId: body.taskId,
+      currentUserWsRole,
+      currentUserTeamLevel,
+      canCreate: canCreateTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any),
+      canManage: canManageTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any),
+    })
+
     if (!currentUserWsRole && !currentUserTeamLevel) {
-      return c.json({ success: false, error: 'Unauthorized context' }, 403)
+      return c.json(
+        { success: false, error: 'Unauthorized context: no workspace or team role found' },
+        403
+      )
     }
 
     // Basic permission check for current user
     if (!canCreateTimeEntries(currentUserWsRole as any, currentUserTeamLevel as any)) {
-      return c.json({ success: false, error: 'Unauthorized' }, 403)
+      return c.json(
+        {
+          success: false,
+          error: 'Unauthorized: time tracking create permission denied',
+          role: currentUserWsRole,
+          teamLevel: currentUserTeamLevel,
+        },
+        403
+      )
     }
 
     // If adding for someone else, need manage permission
