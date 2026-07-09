@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState, useCallback } from 'react'
 import {
   DndContext,
-  closestCenter,
+  rectIntersection,
   PointerSensor,
   useSensor,
   useSensors,
@@ -83,11 +83,7 @@ function SortablePanelItem({
   const colSpan = definition.colSpan || 12
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn('col-span-12 h-full', getColSpanClass(colSpan))}
-    >
+    <div ref={setNodeRef} style={style} className={cn('col-span-12', getColSpanClass(colSpan))}>
       <DashboardPanelShell
         isEditing={isEditing}
         onRemove={() => onRemove(item.panelId)}
@@ -116,9 +112,9 @@ function SortableGrid({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((i) => i.panelId)} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-12 gap-4" style={{ gridTemplateRows: 'masonry' }}>
+        <div className="grid grid-flow-dense grid-cols-12 items-start gap-4">
           {items.map((item) => (
             <SortablePanelItem
               key={item.panelId}
