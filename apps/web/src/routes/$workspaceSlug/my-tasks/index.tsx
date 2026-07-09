@@ -127,14 +127,14 @@ function MyTasksPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center bg-[var(--app-bg-page)] p-8 text-white">
+      <div className="flex flex-1 items-center justify-center p-8 text-white">
         <div className="text-gray-500">{t('common.loading')}</div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-[var(--app-bg-page)] p-8 text-white">
+    <div className="flex h-full flex-1 flex-col overflow-hidden p-8 text-white">
       <header className="mb-6 flex shrink-0 flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>

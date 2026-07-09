@@ -208,7 +208,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             <div className="absolute right-0 top-14 z-50 w-56 overflow-hidden rounded-xl bg-[var(--app-bg-card)] shadow-2xl">
               <div className="space-y-1 p-2">
                 <a
-                  href={baseUrl}
+                  href={`${baseUrl}/profile`}
                   className="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-amber-500"
                 >
                   {/* My Profile icon */}
@@ -249,7 +249,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                   <span>{t('dashboard.myProfile')}</span>
                 </a>
                 <a
-                  href={baseUrl}
+                  href={`${baseUrl}/messages`}
                   className="group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[var(--app-text-secondary)] transition-colors hover:bg-[var(--app-bg-elevated)] hover:text-amber-500"
                 >
                   {/* My Chat icon - Messages from Sidebar */}

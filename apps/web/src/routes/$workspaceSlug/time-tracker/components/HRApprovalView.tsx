@@ -57,6 +57,8 @@ export function HRApprovalView({ workspaceSlug }: { workspaceSlug: string }) {
         body: JSON.stringify({ difficultyLevel, bonusPoints }),
       }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-time-entries'] })
+      queryClient.invalidateQueries({ queryKey: ['time-entries'] })
       queryClient.invalidateQueries({ queryKey: ['revshare'] })
       queryClient.invalidateQueries({ queryKey: ['project-time-entries'] })
       toast.success(t('timeTracker.approveSuccess', 'Wpis został zatwierdzony.'))

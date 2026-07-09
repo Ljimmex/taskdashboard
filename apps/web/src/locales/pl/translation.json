@@ -306,6 +306,40 @@
     "today": "Dzisiaj",
     "tomorrow": "Jutro"
   },
+  "profile": {
+    "title": "Mój profil",
+    "subtitle": "Przeglądaj swoją aktywność, zadania i dane konta",
+    "edit": "Edytuj profil",
+    "unknownUser": "Nieznany użytkownik",
+    "noPosition": "Nie ustawiono stanowiska",
+    "online": "Dostępny",
+    "offline": "Niedostępny",
+    "lastActive": "Ostatnio aktywny {{date}}",
+    "roles": {
+      "owner": "Właściciel",
+      "admin": "Administrator",
+      "member": "Członek",
+      "viewer": "Obserwator"
+    },
+    "about": "O mnie",
+    "noDescription": "Nie dodano jeszcze opisu.",
+    "memberSince": "Członek od {{date}}",
+    "recentTasks": "Ostatnie zadania",
+    "noTasks": "Brak przypisanych zadań",
+    "unknownProject": "Nieznany projekt",
+    "recentTime": "Ostatnie wpisy czasu",
+    "generalTime": "Czas ogólny",
+    "stats": {
+      "assignedTasks": "Przypisane zadania",
+      "completedTasks": "Ukończone zadania",
+      "approvedHours": "Zatwierdzone godziny",
+      "projects": "Projekty"
+    }
+  },
+  "messages": {
+    "title": "Wiadomości",
+    "subtitle": "Czatuj z członkami zespołu"
+  },
   "notifications": {
     "title": "Powiadomienia",
     "unreadCount": "Masz {{count}} nowych powiadomień",

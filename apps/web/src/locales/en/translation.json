@@ -305,6 +305,40 @@
     "today": "Today",
     "tomorrow": "Tomorrow"
   },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "View your activity, tasks, and account details",
+    "edit": "Edit profile",
+    "unknownUser": "Unknown user",
+    "noPosition": "No position set",
+    "online": "Online",
+    "offline": "Offline",
+    "lastActive": "Last active {{date}}",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member",
+      "viewer": "Viewer"
+    },
+    "about": "About",
+    "noDescription": "No description added yet.",
+    "memberSince": "Member since {{date}}",
+    "recentTasks": "Recent tasks",
+    "noTasks": "No assigned tasks",
+    "unknownProject": "Unknown project",
+    "recentTime": "Recent time entries",
+    "generalTime": "General time",
+    "stats": {
+      "assignedTasks": "Assigned tasks",
+      "completedTasks": "Completed tasks",
+      "approvedHours": "Approved hours",
+      "projects": "Projects"
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "subtitle": "Chat with your team members"
+  },
   "notifications": {
     "title": "Notifications",
     "unreadCount": "You have {{count}} new notifications",
