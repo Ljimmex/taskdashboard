@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { DashboardPanelProps } from '@/lib/dashboard'
+import { getInitials } from '@taskdashboard/utils'
 import type { Task } from '@taskdashboard/types'
 
 function MiniTaskCard({
@@ -50,15 +51,27 @@ function MiniTaskCard({
         </span>
         {assignees.length > 0 && (
           <div className="flex -space-x-1.5">
-            {visibleAssignees.map((assignee: any) => (
-              <img
-                key={assignee.id}
-                src={assignee.avatar || assignee.image}
-                alt={assignee.name}
-                className="h-5 w-5 rounded-full border-2 border-[var(--app-bg-card)] object-cover"
-                title={assignee.name}
-              />
-            ))}
+            {visibleAssignees.map((assignee: any) => {
+              const userImage = assignee.avatar || assignee.image
+              const initials = getInitials(assignee.name || '') || '?'
+              return (
+                <div
+                  key={assignee.id}
+                  className={`flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--app-bg-card)] text-[9px] font-bold text-black ${userImage ? 'bg-transparent' : 'bg-gradient-to-br from-amber-400 to-orange-500'}`}
+                  title={assignee.name}
+                >
+                  {userImage ? (
+                    <img
+                      src={userImage}
+                      alt={assignee.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    initials
+                  )}
+                </div>
+              )
+            })}
             {extraAssignees > 0 && (
               <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-[var(--app-bg-card)] bg-[var(--app-bg-elevated)] text-[9px] font-medium text-[var(--app-text-muted)]">
                 +{extraAssignees}
@@ -134,7 +147,7 @@ export function ProjectKanbanPanel({ workspaceSlug }: DashboardPanelProps) {
   }
 
   return (
-    <div className="flex h-full max-h-[480px] min-h-[280px] flex-col rounded-2xl bg-[var(--app-bg-card)] p-5">
+    <div className="flex h-full max-h-[480px] min-h-[280px] flex-col overflow-hidden rounded-2xl bg-[var(--app-bg-card)] p-5">
       <div className="mb-3">
         <Select value={selectedProjectId} onValueChange={handleProjectChange}>
           <SelectTrigger className="w-auto min-w-[180px] border-[var(--app-border)] bg-[var(--app-bg-elevated)] !text-[var(--app-text-primary)] focus:ring-amber-500 focus:ring-offset-0">
@@ -169,11 +182,11 @@ export function ProjectKanbanPanel({ workspaceSlug }: DashboardPanelProps) {
           </p>
         </div>
       ) : (
-        <div className="custom-gantt-scroll flex flex-1 gap-3 overflow-x-auto overflow-y-hidden pb-2">
+        <div className="custom-gantt-scroll flex min-h-0 flex-1 gap-3 overflow-x-auto overflow-y-hidden pb-2">
           {columns.map(({ stage, tasks }) => (
             <div
               key={stage.id}
-              className="bg-[var(--app-bg-elevated)]/30 flex h-full w-52 shrink-0 flex-col rounded-xl border border-[var(--app-border)] p-2"
+              className="bg-[var(--app-bg-elevated)]/30 flex h-full min-h-0 w-52 shrink-0 flex-col rounded-xl border border-[var(--app-border)] p-2"
             >
               <div className="mb-2 flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
